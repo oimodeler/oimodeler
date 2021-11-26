@@ -5,10 +5,10 @@ Created on Tue Nov 23 15:26:42 2021
 @author: Ame
 """
 
-from oimModel import *
-from oimData import *
-from oimFitter import *
-from oimSimulator import *
+from .oimModel import *
+from .oimData import *
+from .oimFitter import *
+from .oimSimulator import *
 
 
 from os.path import join, dirname, split
