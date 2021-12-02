@@ -19,9 +19,9 @@ spf0=spf*0
 gd=oim.oimGauss(fwhm=oim.oimInterpWl(wl=[3e-6,3.5e-6,4e-6],value=[1,4,4]),
                  f=oim.oimInterpWl([3e-6,4e-6],[1,4]))
 ud=oim.oimUD(d=0.7,f=1)
-ud2=oim.oimUD(x=0,y=5,d=1.5,f=oim.oimInterpWl(wl=[3e-6,4e-6],value=[1,0.1]))
+ud2=oim.oimUD(x=0,y=5,d=1.5,f=oim.oimInterpWl(wl=[3e-6,4e-6],value=[1,0.]))
 ud3=oim.oimUD(x=-5,y=2,d=0.5,f=oim.oimInterpWl(wl=[3e-6,4e-6],value=[0.1,1]))
-eg=oim.oimEGauss(fwhm=1,elong=1.5,pa=70,f=oim.oimInterpWl([3e-6,4e-6],[1,0.1]))
+eg=oim.oimEGauss(fwhm=1,elong=1.5,pa=oim.oimInterpWl([3e-6,4e-6],[20,60]),f=oim.oimInterpWl([3e-6,4e-6],[1,0.1]))
 er=oim.oimERing(din= 8,dout=oim.oimInterpWl([3e-6,4e-6],[15,20]),elong=2,pa=0)
 
 
@@ -81,7 +81,7 @@ pix=0.1  #size of the pixel in the image in mas
 wls=[3e-6,4e-6] #wavelengths array for the images
 
 for i,m in enumerate(models):    
-    im=m.getImage(dim,pix,wls)
+    im=m.getImage(dim,pix,wls,fromFT=True)
     for iwl,wli in enumerate(wls):     
         imi=im[iwl,:,:]
         imi/=np.max(imi)
@@ -92,11 +92,7 @@ for i,m in enumerate(models):
                        color="w",va="top",ha="center")
         if i!=0:
             ax[iwl,i].get_yaxis().set_visible(False)
-        #if iwl!=1:
-        #    ax[iwl,i].get_xaxis().set_visible(False)
-        #if iwl==1:
-        ax[iwl,i].set_xlabel("$\\alpha$(mas)")
-           
+        ax[iwl,i].set_xlabel("$\\alpha$(mas)")          
         if i==0:
             ax[iwl,i].set_ylabel("$\\delta$(mas)")
             

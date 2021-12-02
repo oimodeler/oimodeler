@@ -577,21 +577,27 @@ class oimModel(object):
 
         """
         
-        
         if fromFT:
             #TODO multiple wavelengths and time
             if wl==None:
-                wl=1e-6
+                wl=np.array((1e-6))
+            else:
+                wl=np.array(wl)
+            nwl=len(wl)    
             Bmax=wl/pixSize/mas2rad #meter
-            B=np.linspace(-Bmax/2,Bmax/2,dim)
-            spfy=np.outer(B,B*0+1)/wl
-            spfx=np.transpose(spfy)
-            spfy=spfy.flatten()
-            spfx=spfx.flatten()
-            
-            ft=self.getComplexCoherentFlux(spfx,spfy).reshape(dim,dim)
-
-            return np.abs(np.fft.fftshift(np.fft.ifft2(ft)))  
+           
+            # TODO remplace loop by better stuff
+            ims=np.ndarray([nwl,dim,dim])
+            for iwl,wli in enumerate(wl):
+                B=np.linspace(-Bmax[iwl]/2,Bmax[iwl]/2,dim)
+                spfy=np.outer(B,B*0+1)/wli
+                spfx=np.transpose(spfy)
+                spfy=spfy.flatten()
+                spfx=spfx.flatten()        
+                ft=self.getComplexCoherentFlux(spfx,spfy,np.ones(dim*dim)*wli).reshape(dim,dim)
+                
+                ims[iwl,:,:]=np.abs(np.fft.fftshift(np.fft.ifft2(ft)))  
+            return ims
         
         else:
             #TODO add time (which can lead to 4D hypercube images!!)
