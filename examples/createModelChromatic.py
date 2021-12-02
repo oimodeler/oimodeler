@@ -103,4 +103,4 @@ sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sc, ax=ax[2:,:].ravel().tolist(),label="$\\lambda$ ($\\mu$m)")
 
 
-#fig.savefig("createModelChromatic.png")
+fig.savefig("..\images\createModelChromatic.png")
