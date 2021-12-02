@@ -6,9 +6,17 @@ Created on Tue Nov 23 15:26:42 2021
 """
 
 import numpy as np
-from astropy import units 
-from scipy.special import j1
+from astropy import units as units
+from scipy.special import j0,j1
+import numbers
 
+
+###############################################################################
+"""
+Useful definitions.
+Maybeto be  put in a separate file later
+"""
+mas2rad=units.mas.to(units.rad)
 I=np.complex(0,1)
 ###############################################################################
 
@@ -17,7 +25,7 @@ class oimParam(object):
     Class of model parameters
     """
     def __init__(self,name=None,value=None,mini=-1*np.inf,maxi=np.inf,
-                 description="",unit=1):
+                 description="",unit=1,free=True,error=0):
         """
         Create and initiliaze a new instance of the oimParam class
         Parameters
@@ -42,29 +50,104 @@ class oimParam(object):
         """
         self.name=name
         self.value=value 
-        self.error=None
+        self.error=error
         self.min=mini
         self.max=maxi
-        self.free=True              
+        self.free=free              
         self.description=description
         self.unit=unit
 
     
     def __call__(self,wl=None,t=None):
         """ The call function will be useful for wavelength or time dependent
-        parameters. In a simple OImParam it only return the parameter value
+        parameters. In a simple oimParam it only return the parameter value
         """
         return self.value
     
-#Here is a list of standard parameters
+
+
+
+###############################################################################
+
+class oimInterpWl(object):
+    def __init__(self,wl=[],value=None):
+        self.wl=wl
+        self.value=value
+
+###############################################################################
+        
+class oimParamInterpWl(oimParam):
+    def __init__(self,param,interpWl):
+        
+        self.name=param.name
+        self.description=param.description
+        self.unit=param.unit
+        
+        value= interpWl.value
+        wl=interpWl.wl
+        nwl=len(wl)
+      
+        if value==None:
+            value=[self.value]*nwl
+        elif isinstance(value,numbers.Number):
+            value=[value]*nwl
+        else:
+            if len(value)!=nwl:
+                raise TypeError("wl and val should have the same length :"  
+                            "len(x)={}, len(y)={}".format(len(wl), len(value)))
+                
+        self.params=[]
+        self._wl=wl
+        self._nwl=nwl
+        
+        for i in range(nwl):
+           
+            pi=oimParam(name=param.name,value=value[i],mini=param.min,
+                        maxi=param.max,description=param.description,
+                        unit=param.unit,free=param.free,error=param.error)
+            self.params.append(pi)
+            
+
+
+                    
+
+    def __call__(self,wl=None,t=None):
+        values=np.array([pi.value for pi in self.params])
+        return np.interp(wl,self.wl,values,left=values[0], right=values[-1])
+  
+             
+        
+    @property
+    def wl(self):
+        return self._wl
+    
+    @wl.setter
+    def wl(self,_wl):
+        nwl=len(_wl)
+        if nwl== self._nwl:
+            self._wl=np.array(_wl)
+        else:
+             raise TypeError("Can't modify number of key wls in oimParamInterpWl "
+                             "after creation. Consider creating a new parameter")    
+
+
+
+
+###############################################################################
+
+
+    
+#Here is a list of standard parameters to be used when defining new components
 _standardParameters={
     "x":{"name":"x","value":0,"description":"x position","unit":units.mas},
     "y":{"name":"x","value":0,"description":"y position","unit":units.mas},
     "f":{"name":"f","value":1,"description":"flux","unit":1},
     "fwhm":{"name":"fwhm","value":0,"description":"FWHM","unit":units.mas},
-    "d":{"name":"d","value":0,"description":"Major-axis diameter","unit":units.mas},
+    "d":{"name":"d","value":0,"description":"Diameter","unit":units.mas},
+    "din":{"name":"din","value":0,"description":"Inner Diameter","unit":units.mas},
+    "dout":{"name":"dout","value":0,"description":"Outer Diameter","unit":units.mas},    
     "elong":{"name":"elong","value":1,"description":"Elongation Ratio","unit":1},
-    "pa":{"name":"pa","value":0,"description":"Position Angle of Major-axis","unit":units.deg}
+    "pa":{"name":"pa","value":0,"description":"Major-axis Position angle","unit":units.deg}
     }
     
 
@@ -112,7 +195,13 @@ class oimComponent(object):
     def _eval(self,**kwargs):
         for key, value in kwargs.items():
             if key in self.params.keys(): 
-                self.params[key].value=value
+                if isinstance(value,numbers.Number):
+                    self.params[key].value=value
+                elif isinstance(value,oimInterpWl):
+                    if not(isinstance(self.params[key],oimParamInterpWl)):
+                        self.params[key]=oimParamInterpWl(self.params[key],value)
+                    
+                    
                             
     def getComplexComplexCoherentFlux(self,u,v,wl=None,t=None):
         """
@@ -200,7 +289,8 @@ class oimComponentFourier(oimComponent):
     def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
         
         if self.elliptic==True:     
-            pa_rad=(self.params["pa"](wl,t)+90)*self.params["pa"].unit.to(units.rad)      
+            pa_rad=(self.params["pa"](wl,t)+90)* \
+                        self.params["pa"].unit.to(units.rad)      
             co=np.cos(pa_rad)
             si=np.sin(pa_rad)
             fxp=ucoord*co-vcoord*si
@@ -213,7 +303,8 @@ class oimComponentFourier(oimComponent):
                
         vc=self._visFunction(fxp,fyp,rho,wl,t)
                
-        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)*self.params["f"](wl,t)
+        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
+                                                     self.params["f"](wl,t)
     
         
     def _ftTranslateFactor(self,ucoord,vcoord,wl,t): 
@@ -236,11 +327,12 @@ class oimComponentFourier(oimComponent):
         x,y=self._directTranslate(x,y,wl,t)
         
         if self.elliptic:
-            pa_rad=(self.params["pa"](wl)+90)*self.params["pa"].unit.to(units.rad)
+            pa_rad=(self.params["pa"](wl)+90)* \
+                               self.params["pa"].unit.to(units.rad)
             xp=x*np.cos(pa_rad)-y*np.sin(pa_rad)
             yp=x*np.sin(pa_rad)+y*np.cos(pa_rad)
             x=xp
-            y=yp
+            y=yp*self.params["elong"].value
         image = self._imageFunction(x,y,wl,t)
         tot=np.sum(image)
         if tot!=0:  
@@ -318,7 +410,7 @@ class oimEllipse(oimUD):
 
 class oimGauss(oimComponentFourier):
     name="Gaussian Disk"
-    shortname = "Gauss"
+    shortname = "GD"
     def __init__(self,**kwargs):        
          super().__init__(**kwargs)
          self.params["fwhm"]=oimParam(**_standardParameters["fwhm"])
@@ -333,10 +425,81 @@ class oimGauss(oimComponentFourier):
         return np.sqrt(4*np.log(2*self.params["fwhm"](wl,t))/np.pi)* \
                    np.exp(-4*np.log(2)*r2/self.params["fwhm"](wl,t)**2)
 
-
-
+###############################################################################   
+class oimEGauss(oimGauss):
+    name="Gaussian Ellipse"
+    shortname = "EG"
+    elliptic=True
+    def __init__(self,**kwargs):        
+         super().__init__(**kwargs)
+         self._eval(**kwargs)
 ###############################################################################
+
+class oimIRing(oimComponentFourier):
+    def __init__(self,**kwargs):        
+         super().__init__(**kwargs)
+         self.name="Infinitesimal Ring"
+         self.shortname = "IR"
+         self.params["d"]=oimParam(**_standardParameters["d"])    
+         self._eval(**kwargs)
+
+    def _visFunction(self,xp,yp,rho,wl,t):     
+        xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho
+        return j0(xx)
     
+    def _imageFunction(self,xx,yy,wl,t):
+        r2=(xx**2+yy**2)   
+        dx=np.max([np.abs(1.*(xx[0,1]-xx[0,0])),np.abs(1.*(yy[1,0]-yy[0,0]))])
+        return ((r2<=(self.params["d"](wl,t)/2+dx)**2) & 
+                (r2>=(self.params["d"](wl,t)/2)**2)).astype(float)
+
+###############################################################################   
+class oimEIRing(oimIRing):
+    name="Ellitical infinitesimal ring"
+    shortname = "EIR"
+    elliptic=True
+    def __init__(self,**kwargs):        
+         super().__init__(**kwargs)
+         self._eval(**kwargs)
+         
+###############################################################################
+
+class oimRing(oimComponentFourier):
+    def __init__(self,**kwargs):        
+         super().__init__(**kwargs)
+         self.name="Ring"
+         self.shortname = "R"
+         self.params["din"]=oimParam(**_standardParameters["din"]) 
+         self.params["dout"]=oimParam(**_standardParameters["din"])           
+         self._eval(**kwargs)
+
+    def _visFunction(self,xp,yp,rho,wl,t):     
+        xxin=np.pi*self.params["din"](wl,t)* \
+                         self.params["din"].unit.to(units.rad)*rho
+        xxout=np.pi*self.params["dout"](wl,t)* \
+                         self.params["dout"].unit.to(units.rad)*rho
+    
+        fin=(self.params["din"](wl,t))**2
+        fout=(self.params["dout"](wl,t))**2
+           
+        return 2*(j1(xxout)/xxout*fout-j1(xxin)/xxin*fin)/(fout-fin)
+          
+    
+    def _imageFunction(self,xx,yy,wl,t):
+        r2=(xx**2+yy**2*self.params["elong"](wl,t)**2)               
+        return ((r2<=(self.params["dout"](wl,t)/2)**2) & 
+                (r2>=(self.params["din"](wl,t)/2)**2)).astype(float)
+
+###############################################################################   
+class oimERing(oimRing):
+    name="Ellitical  ring"
+    shortname = "ER"
+    elliptic=True
+    def __init__(self,**kwargs):        
+         super().__init__(**kwargs)
+         self._eval(**kwargs)
+                  
+###############################################################################    
 class oimModel(object):
     """
     The oimModel class hold a model made of one or more components (derived 
@@ -385,7 +548,7 @@ class oimModel(object):
         return res
         
         return None;
-    def getImage(self,dim,pixSize,wl=None,t=None,fits=False, fromTF=False):
+    def getImage(self,dim,pixSize,wl=None,t=None,fits=False, fromFT=False):
         """
         Compute and return an image or and image cube (if wavelength and time 
         are given). The returned image as the x,y dimension dim in pixel with
@@ -415,31 +578,39 @@ class oimModel(object):
         """
         
         
-        if fromTF:
-            raise ValueError("TODO")
-            #TODO
-            return 0
-        #Used if wl is a scalar
-        wl=np.array(wl)
-        nwl=np.size(wl)
-        #wl=np.reshape(wl,nwl)
-     
-        if np.shape(wl)==():
-            image=np.zeros([dim,dim])
-            for c in self.components:
-                image+=c.getImage(dim,pixSize,wl)
+        if fromFT:
+            #TODO multiple wavelengths and time
+            if wl==None:
+                wl=1e-6
+            Bmax=wl/pixSize/mas2rad #meter
+            B=np.linspace(-Bmax/2,Bmax/2,dim)
+            spfy=np.outer(B,B*0+1)/wl
+            spfx=np.transpose(spfy)
+            spfy=spfy.flatten()
+            spfx=spfx.flatten()
+            
+            ft=self.getComplexCoherentFlux(spfx,spfy).reshape(dim,dim)
+
+            return np.abs(np.fft.fftshift(np.fft.ifft2(ft)))  
+        
         else:
-            #TODO : this is very slow!!!
-            image=np.zeros([nwl,dim,dim])
-            for iwl,wli in enumerate(wl):
+            #TODO add time (which can lead to 4D hypercube images!!)
+            #Used if wl is a scalar
+            wl=np.array(wl)
+            nwl=np.size(wl)
+
+            if np.shape(wl)==():
+                image=np.zeros([dim,dim])
                 for c in self.components:
-                    image[iwl,:,:]+=c.getImage(dim,pixSize,wli)
-        
-        
-        
-    
-    
-        return image;    
+                    image+=c.getImage(dim,pixSize,wl)
+            else:
+                #TODO : this is very slow!!!
+                image=np.zeros([nwl,dim,dim])
+                for iwl,wli in enumerate(wl):
+                    for c in self.components:
+                        image[iwl,:,:]+=c.getImage(dim,pixSize,wli)
+
+            return image;    
 
 
     
