@@ -6,4 +6,4 @@ A modular modelling tool for optical interferometry
 Only the oimodel is partly working with simple models.
 
 
-![boo](./images/oimodel_test_chromatic.png)
+![boo](./images/createModelChromatic.png)
