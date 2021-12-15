@@ -9,7 +9,7 @@ import numpy as np
 from astropy import units as units
 from scipy.special import j0,j1
 import numbers
-
+from scipy import interpolate
 
 ###############################################################################
 """
@@ -64,12 +64,22 @@ class oimParam(object):
         """
         return self.value
     
+    
+    def __str__(self):
+        return "oimParam={}{}+-{} range=[{},{}] free={} ".format(self.name,
+                self.value,self.error,self.min,self.max,self.free)
 
+    def __repr__(self):
+        return "oimParam at {} : {}{}+-{} range=[{},{}] free={} ".format(hex(id(self)),self.name,
+                self.value,self.error,self.min,self.max,self.free)
 
 
 ###############################################################################
 
 class oimInterpWl(object):
+    """
+    Structure for creating oimParamInterpWl directly in oimParam defintion
+    """
     def __init__(self,wl=[],value=None):
         self.wl=wl
         self.value=value
@@ -130,8 +140,39 @@ class oimParamInterpWl(oimParam):
              raise TypeError("Can't modify number of key wls in oimParamInterpWl "
                              "after creation. Consider creating a new parameter")    
 
+###############################################################################
+class oimParamLinker(object):
+    def __init__(self,param,operator="add",fact=0):
+        self.param=param    
+        self.fact=fact        
+        
+        self.op=None
+        self._setOperator(operator)
+       
+          
+    @property
+    def unit(self):
+        return self.param.unit
+    
+       
 
-
+    def _setOperator(self,operator):
+         if operator=="add":
+             self.op=self._add
+         elif operator=="mult":
+             self.op=self._mult            
+             
+    def _add(self,val):
+        return val+ self.fact
+    
+    def _mult(self,val):
+        return val+ self.fact
+    
+        
+    def __call__(self,wl=None,t=None):  
+        return self.op(self.param.__call__(wl,t))
+        
+        
 
 ###############################################################################
 
@@ -139,15 +180,18 @@ class oimParamInterpWl(oimParam):
     
 #Here is a list of standard parameters to be used when defining new components
 _standardParameters={
-    "x":{"name":"x","value":0,"description":"x position","unit":units.mas},
-    "y":{"name":"x","value":0,"description":"y position","unit":units.mas},
+    "x":{"name":"x","value":0,"description":"x position","unit":units.mas,"free":False},
+    "y":{"name":"x","value":0,"description":"y position","unit":units.mas,"free":False},
     "f":{"name":"f","value":1,"description":"flux","unit":1},
     "fwhm":{"name":"fwhm","value":0,"description":"FWHM","unit":units.mas},
     "d":{"name":"d","value":0,"description":"Diameter","unit":units.mas},
     "din":{"name":"din","value":0,"description":"Inner Diameter","unit":units.mas},
     "dout":{"name":"dout","value":0,"description":"Outer Diameter","unit":units.mas},    
     "elong":{"name":"elong","value":1,"description":"Elongation Ratio","unit":1},
-    "pa":{"name":"pa","value":0,"description":"Major-axis Position angle","unit":units.deg}
+    "pa":{"name":"pa","value":0,"description":"Major-axis Position angle","unit":units.deg},
+    "skw":{"name":"skw","value":0,"description":"Skewedness","unit":"1"},
+    "skwPa":{"name":"skwPa","value":0,"description":"Skewedness Position angle","unit":units.deg},
+    "pixSize":{"name":"pixSize","value":0.1,"description":"Pixel Size","unit":units.mas}
     }
     
 
@@ -256,12 +300,70 @@ class oimComponent(object):
 
         """          
         return np.zeros(dim,dim);    
+
+        
+    def _ftTranslateFactor(self,ucoord,vcoord,wl,t): 
+        x=self.params["x"](wl,t)*self.params["x"].unit.to(units.rad)
+        y=self.params["y"](wl,t)*self.params["y"].unit.to(units.rad)
+        return np.exp(-2*I*np.pi*(ucoord*x+vcoord*y))
+    
+
     
     def __str__(self):
         txt=self.name
         for name,param in self.params.items():  
             txt+=" {0}={1:.2f}".format(param.name,param.value)
         return txt
+    
+
+###############################################################################
+
+
+class oimComponentImage(oimComponent):    
+    """
+    Class  for
+    """    
+    def __init__(self,**kwargs): 
+        super().__init__(**kwargs)
+        self.params["pixSize"]=oimParam(**_standardParameters["pixSize"])
+        self.image=None
+        self.dim=0
+        self._eval(**kwargs)      
+        self.zpfact=1
+      
+    def setImage(self,image):
+        self.image=image
+        s=np.shape(image)
+        if len(s)!=2:
+            raise TypeError("image should be a 2D numpy array")
+        elif s[0]!=s[1]:
+            raise TypeError("image should be squared!")
+        self.dim=s[0]
+
+    def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
+
+        fft2D=np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.image),
+                                s=[self.zpfact*self.dim,self.zpfact*self.dim]))
+
+        
+        pixSize=self.params["pixSize"]()*self.params["pixSize"].unit.to(units.rad)
+        freqVect=np.fft.fftshift(np.fft.fftfreq(self.dim*self.zpfact,pixSize))
+        
+        grid=(freqVect,freqVect)
+        coord=np.transpose([ucoord,vcoord])
+               
+        real=interpolate.interpn(grid,np.real(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
+        imag=interpolate.interpn(grid,np.imag(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
+        
+        
+        vc=real+imag*np.complex(0,1)
+        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
+                                                     self.params["f"](wl,t)
+    
+        
+
+###############################################################################
+
 
 class oimComponentFourier(oimComponent):
     """
@@ -306,12 +408,7 @@ class oimComponentFourier(oimComponent):
         return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
                                                      self.params["f"](wl,t)
     
-        
-    def _ftTranslateFactor(self,ucoord,vcoord,wl,t): 
-        x=self.params["x"](wl,t)*self.params["x"].unit.to(units.rad)
-        y=self.params["y"](wl,t)*self.params["y"].unit.to(units.rad)
-        return np.exp(-2*I*np.pi*(ucoord*x+vcoord*y))
-    
+
           
     def _visFunction(self,ucoord,vcoord,rho,wl,t):
         return ucoord*0
@@ -486,7 +583,11 @@ class oimRing(oimComponentFourier):
           
     
     def _imageFunction(self,xx,yy,wl,t):
-        r2=(xx**2+yy**2*self.params["elong"](wl,t)**2)               
+        #TODO Fix the elong pb!
+        if self.elliptic==True:
+            r2=(xx**2+yy**2*self.params["elong"](wl,t)**2) 
+        else:
+            r2=(xx**2+yy**2)
         return ((r2<=(self.params["dout"](wl,t)/2)**2) & 
                 (r2>=(self.params["din"](wl,t)/2)**2)).astype(float)
 
@@ -499,6 +600,40 @@ class oimERing(oimRing):
          super().__init__(**kwargs)
          self._eval(**kwargs)
                   
+###############################################################################
+          
+class ESKRing(oimComponentFourier):
+    name="Skewed Ellitical ring"
+    shortname = "SKER"
+    elliptic=True   
+    def __init__(self,**kwargs): 
+         super().__init__(**kwargs)
+         self.params["d"]=oimParam(**_standardParameters["d"])   
+         self.params["skw"]=oimParam(**_standardParameters["skw"])    
+         self.params["skwPa"]=oimParam(**_standardParameters["skwPa"])      
+         self._eval(**kwargs)
+    
+    def _visFunction(self,xp,yp,rho,wl,t):
+
+        xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho    
+        
+        phi=  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
+            self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp);
+       
+        return j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t)
+          
+    def _imageFunction(self,xx,yy,wl,t):
+        r2=(xx**2+yy**2)  
+        # dr=np.sqrt(np.abs(np.roll(r2,(-1,-1),(0,1))-np.roll(r2,(1,1),(0,1))))
+        phi=np.arctan2(yy,xx)  +  self.params["skwPa"](wl,t)* \
+                                  self.params["skwPa"].unit.to(units.rad)
+        dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0])*self.params["elong"](wl,t))
+        #dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0]))*3
+        F=1+self.params["skw"](wl,t)*np.cos(phi)           
+        return  ((r2<=(self.params["d"](wl,t)/2+dx/2)**2) & 
+                 (r2>=(self.params["d"](wl,t)/2-dx/2)**2)).astype(float)*F
+        
+
 ###############################################################################    
 class oimModel(object):
     """
@@ -517,7 +652,6 @@ class oimModel(object):
 
         """
         self.components=components
-        
         
     def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
         """
@@ -580,10 +714,12 @@ class oimModel(object):
         if fromFT:
             #TODO multiple wavelengths and time
             if wl==None:
-                wl=np.array((1e-6))
-            else:
-                wl=np.array(wl)
-            nwl=len(wl)    
+                wl=np.array([1e-6])
+            try:
+                nwl=len(wl)    
+            except:
+                wl=np.array([wl])
+                nwl=1
             Bmax=wl/pixSize/mas2rad #meter
            
             # TODO remplace loop by better stuff
@@ -596,7 +732,10 @@ class oimModel(object):
                 spfx=spfx.flatten()        
                 ft=self.getComplexCoherentFlux(spfx,spfy,np.ones(dim*dim)*wli).reshape(dim,dim)
                 
-                ims[iwl,:,:]=np.abs(np.fft.fftshift(np.fft.ifft2(ft)))  
+                ims[iwl,:,:]=np.abs(np.fft.fftshift(np.fft.ifft2(ft))) 
+                
+                if nwl==1:
+                    ims=ims[0,:,:]
             return ims
         
         else:
@@ -618,5 +757,37 @@ class oimModel(object):
 
             return image;    
 
+    def getParameters(self,free=False):       
+        params={}
+        for i,c in enumerate(self.components):
+            for name,param in c.params.items():
+                if not(param in params.values()):
+                    if isinstance(param,oimParamInterpWl):
+                        for iparam,parami in enumerate(param.params):
+                            if not(parami in params.values()):
+                                if (parami.free==True or free==False):
+                                    params["c{0}_{1}_{2}_interp{3}".format(
+                                        i+1, c.shortname.replace(" ", "_"), 
+                                        name, iparam+1)]=parami
+                    elif isinstance(param,oimParamLinker):
+                        pass
+                    else:
+                        if (param.free==True or free==False):
+                            
+                             params["c{0}_{1}_{2}".format(i+1, 
+                                  c.shortname.replace(" ", "_"), name)]=param                           
+        return params
 
-    
+    def getFreeParameters(self):  
+        return self.getParameters(free=True)    
+
+
+
+
+
+
+
+
+
+
+
