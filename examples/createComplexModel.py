@@ -61,7 +61,7 @@ plt.margins(0,0)
 # Create images of the model from their formula in direct space or using 
 # the FT formula
 
-normPow=1
+normPow=0.1
 dim=1024   #Number of pixel for the image
 pix=0.1  #size of the pixel in the image in mas
 fig,ax=plt.subplots(1,1,figsize=(9,9))
