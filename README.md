@@ -12,6 +12,6 @@ Modules:
 * **oimFitter** : Define and perform model-fitting   
 * **oimSiumlulator** : Main class holding evertyhing together and producing final results :plots, tables...
 
-Various examples of models are available in the examples directory.  
-Here is the result from  the createModelChromatic example.
+Various example scripts are available in the examples directory.  
+Here is the resulting plot from the createModelChromatic.py script.
 ![boo](./images/createModelChromatic.png)
