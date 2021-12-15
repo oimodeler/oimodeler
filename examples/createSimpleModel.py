@@ -19,9 +19,9 @@ ud=oim.oimUD(d=3,f=0.5)
 g=oim.oimGauss(fwhm=5,f=1)
 e=oim.oimEllipse(d=10,f=0.5,pa=0,elong=2)
 eg=oim.oimEGauss(fwhm=8,f=0.5,pa=0,elong=2)
-r=oim.oimRing(d=5,f=0.5)
-er=oim.oimRing(d=10,f=0.5,pa=30,elong=2)
-
+r=oim.oimIRing(d=5,f=0.5)
+er=oim.oimEIRing(d=10,f=0.5,pa=30,elong=2)
+skwer=oim.ESKRing(d=10,f=0.5,pa=0,elong=2,skw=1,skwPa=90)
 
 #Building a few models from the components 
 m1=oim.oimModel([ud])
@@ -31,11 +31,12 @@ m4=oim.oimModel([pt,e])
 m5=oim.oimModel([eg])
 m6=oim.oimModel([r])
 m7=oim.oimModel([er])
+m8=oim.oimModel([skwer])
 
-models=[m1,m2,m3,m4,m5,m6,m7]
-names=["UD","UD+PT","G","PT+EL","EG","R","ER"]
+
+models=[m1,m2,m3,m4,m5,m6,m7,m8]
+names=["UD","UD+PT","G","PT+EL","EG","R","ER","SKER"]
 cols= plt.rcParams['axes.prop_cycle'].by_key()['color']
-
 
 fig,ax=plt.subplots(1,1,figsize=(10,7))
 for i,m in enumerate(models):
@@ -57,8 +58,8 @@ plt.margins(0,0)
 # Create images of the model from their formula in direct space or using 
 # the FT formula
 
-normPow=0.2
-dim=256   #Number of pixel for the image
+normPow=1
+dim=512   #Number of pixel for the image
 pix=0.1  #size of the pixel in the image in mas
 fig,ax=plt.subplots(3,len(models),figsize=(3*len(models),9))
 for i,m in enumerate(models):    
