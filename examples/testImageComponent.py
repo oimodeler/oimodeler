@@ -8,7 +8,7 @@ mas2rad=u.mas.to(u.rad)
 
 # Create some spatial frequencies (Baselines from 0 to 400m at 2.1 microns)
 wl=0.65e-6
-B=np.linspace(0.01,100,num=10000)
+B=np.linspace(1e-10,100,num=10000)
 spf=B/wl
 spf0=spf*0
 
@@ -22,7 +22,7 @@ D=10 #mas
 xx=np.tile((np.arange(dim)-dim/2)*pixSize,(dim,1))
 yy=np.transpose(xx)
 data=((xx**2+yy**2)<(D/2)**2).astype(float)
-data=data/np.sum(data) 
+#data=data/np.sum(data) 
 
 # A few quantities useful to know if the object is well sampled
 
@@ -40,13 +40,13 @@ print("Baseline sampling with fov={}mas: {:.1f}m".format(fov,dB))
 ud0=oim.oimUD(f=0.2,d=2)
 
 # Building the model with the direct image of the UD  
-im=oim.oimComponentImage(pixSize=pixSize,x=10,f=0.8)
-im.setImage(data)
-im.zpfact=1
-modelDirect=oim.oimModel([im,ud0])
+imUD=oim.oimComponentImage(pixSize=pixSize,x=10)
+imUD.setImage(data)
+imUD.zpfact=1
+modelDirect=oim.oimModel([imUD,ud0])
 
 # Building the model with the FT analytical component
-ud=oim.oimUD(d=10,x=10,f=0.8)
+ud=oim.oimUD(d=10,x=10)
 modelFT=oim.oimModel([ud,ud0])
 
 

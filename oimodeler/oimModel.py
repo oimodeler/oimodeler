@@ -715,11 +715,13 @@ class oimModel(object):
             #TODO multiple wavelengths and time
             if wl==None:
                 wl=np.array([1e-6])
+            wl=np.array(wl)
             try:
                 nwl=len(wl)    
             except:
                 wl=np.array([wl])
                 nwl=1
+            
             Bmax=wl/pixSize/mas2rad #meter
            
             # TODO remplace loop by better stuff
