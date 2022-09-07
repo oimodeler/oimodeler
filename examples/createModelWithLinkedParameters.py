@@ -11,7 +11,7 @@ lam=2.1e-6
 B=np.linspace(0.01,400,num=1000)
 spf=B/lam
 spf0=spf*0
-
+lam=spf0+lam
 
 # Some components with parameter chromaticity
 ud=oim.oimUD(d=1,f=oim.oimInterpWl([2e-6,2.5e-6],[1,0.5]))
@@ -41,15 +41,15 @@ fparams=model.getFreeParameters()
 
 
 
-fig,ax=plt.subplots(2,1,figsize=(10,7))
+fig,ax=plt.subplots(1,1,figsize=(10,7))
 
 #Compute visibilities for the models and spatial frequencies
-v1=np.abs(model.getComplexCoherentFlux(spf,spf0)) # East-West baselines
-v2=np.abs(model.getComplexCoherentFlux(spf0,spf)) # North-South baselines
+v1=np.abs(model.getComplexCoherentFlux(spf,spf0,lam)) # East-West baselines
+v2=np.abs(model.getComplexCoherentFlux(spf0,spf,lam)) # North-South baselines
 Ftot=v1[0]
-plt.plot(B/lam*mas2rad,v1/Ftot)
-plt.plot(B/lam*mas2rad,v2/Ftot,ls=":")
-plt.xlabel("B/$\\lambda$ (cycle/mas)")
+ax.plot(B/lam*mas2rad,v1/Ftot)
+ax.plot(B/lam*mas2rad,v2/Ftot,ls=":")
+ax.set_xlabel("B/$\\lambda$ (cycle/mas)")
 plt.ylabel("Visibility")  
 
 plt.margins(0,0)
@@ -61,9 +61,9 @@ plt.margins(0,0)
 # Create images of the model from their formula in direct space or using 
 # the FT formula
 
-normPow=0.1
+normPow=0.5
 dim=1024   #Number of pixel for the image
-pix=0.1  #size of the pixel in the image in mas
+pix=0.02  #size of the pixel in the image in mas
 fig,ax=plt.subplots(1,1,figsize=(9,9))
 
 #get the image for the direct space formula
