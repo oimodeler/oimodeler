@@ -8,6 +8,7 @@ Created on Tue Nov 23 15:26:42 2021
 import numpy as np
 from astropy import units as units
 from scipy.special import j0,j1
+from scipy import integrate
 import numbers
 from scipy import interpolate
 
@@ -317,40 +318,127 @@ class oimComponent(object):
     
 
 ###############################################################################
-
-
+ 
 class oimComponentImage(oimComponent):    
     """
-    Class  for
-    """    
+    Base class for components define in 2D : x,y (regular grid) in the image plan.
+    """
+    def __init__(self,**kwargs): 
+        super().__init__(**kwargs)
+
+        self.dim=0
+        self.pixSize=0
+        
+        self.params["pixSize"]=oimParam(**_standardParameters["pixSize"])  
+        self.params["dim"]=oimParam(name="dim",value=256,
+                         description="Image dimension",unit=1,free=False)
+        
+        self._eval(**kwargs)   
+        self._compute2DCoordGrid(force=True)
+        
+      
+    def _compute2DCoordGrid(self,force=False):
+        dim=self.params["dim"].value
+        pixSize=self.params["pixSize"].value 
+        
+        #recompute grid only if pixSize or dim have changed
+        
+        if (dim!=self.dim or pixSize!=self.pixSize ):
+           self.xx=np.tile((np.arange(dim)-dim/2)*pixSize,(dim,1))
+           self.yy=np.transpose(self.xx)
+           self.dim=dim
+           self.pixSize=pixSize        
+
+    def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
+        
+        self._compute2DCoordGrid()        
+        image= self._imageFunction(self.xx,self.yy,wl,t)
+        s=np.shape(image) 
+        
+        fft2D=np.fft.fftshift(np.fft.fft2(np.fft.fftshift(image),
+                                s=[s[0],s[1]]))
+
+        pixSize=self.params["pixSize"]()*self.params["pixSize"].unit.to(units.rad)
+        
+        freqVectX=np.fft.fftshift(np.fft.fftfreq(s[0],pixSize))
+        freqVectY=np.fft.fftshift(np.fft.fftfreq(s[1],pixSize))
+        
+        grid=(freqVectX,freqVectY)
+        coord=np.transpose([ucoord,vcoord])
+               
+        real=interpolate.interpn(grid,np.real(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
+        imag=interpolate.interpn(grid,np.imag(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
+        
+        
+        vc=real+imag*np.complex(0,1)
+        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
+                                                     self.params["f"](wl,t)
+          
+    def _imageFunction(self,xx,yy,wl,t):
+        dim=self.params["dim"].value
+        return np.zeros([dim,dim])
+
+
+    def _directTranslate(self,x,y,wl,t):
+         x=x-self.params["x"](wl,t)
+         y=y-self.params["y"](wl,t)
+         return x,y
+
+    def getImage(self,dim,pixSize,wl=None,t=None):  
+           x=np.tile((np.arange(dim)-dim/2)*pixSize,(dim,1))
+           y=np.transpose(x)
+           x,y=self._directTranslate(x,y,wl,t)
+           
+           image = self._imageFunction(x,y,wl,t)
+           tot=np.sum(image)
+           if tot!=0:  
+               image = image / np.sum(image,axis=(0,1))*self.params["f"](wl,t)    
+
+           return image
+                                 
+    def getInternalImage(self,wl=None,t=None):  
+           self._compute2DCoordGrid()        
+           image= self._imageFunction(self.xx,self.yy,wl,t)
+           tot=np.sum(image)
+           if tot!=0:  
+               image = image / np.sum(image,axis=(0,1))*self.params["f"](wl,t)    
+
+           return image
+                                                
+###############################################################################
+    
+
+class oimComponentChromaticCube(oimComponent):    
+    """
+    Base class for components define in 3D : x,y (regular) and wl (non-regular) 
+    in Image plan.
+    """
     def __init__(self,**kwargs): 
         super().__init__(**kwargs)
         self.params["pixSize"]=oimParam(**_standardParameters["pixSize"])
         self.image=None
         self.dim=0
+        self.wl_vector=None
         self._eval(**kwargs)      
-        self.zpfact=1
       
-    def setImage(self,image):
+    def setImage(self,image,wl):
         self.image=image
         s=np.shape(image)
-        if len(s)!=2:
-            raise TypeError("image should be a 2D numpy array")
-        elif s[0]!=s[1]:
-            raise TypeError("image should be squared!")
-        self.dim=s[0]
-
+        
+        self.dim=s[-1]
+        self.wl_vector=wl
+        self.nwl=s[0]
+      
     def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
+              
+        fft2D=np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.image,axes=[2,1]),
+                                s=[self.dim,self.dim]),axes=(2,1))
 
-        fft2D=np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.image),
-                                s=[self.zpfact*self.dim,self.zpfact*self.dim]))
-
-        
         pixSize=self.params["pixSize"]()*self.params["pixSize"].unit.to(units.rad)
-        freqVect=np.fft.fftshift(np.fft.fftfreq(self.dim*self.zpfact,pixSize))
+        freqVect=np.fft.fftshift(np.fft.fftfreq(self.dim,pixSize))
         
-        grid=(freqVect,freqVect)
-        coord=np.transpose([ucoord,vcoord])
+        grid=(self.wl_vector,freqVect,freqVect)
+        coord=np.transpose([wl,ucoord,vcoord])
                
         real=interpolate.interpn(grid,np.real(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
         imag=interpolate.interpn(grid,np.imag(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
@@ -361,6 +449,43 @@ class oimComponentImage(oimComponent):
                                                      self.params["f"](wl,t)
     
         
+
+###############################################################################
+    
+
+class oimComponentRadialProfile(oimComponent):    
+    """
+    Base class for components define by a non-regular radial profile in Image plan.
+    """
+    def __init__(self,**kwargs): 
+        super().__init__(**kwargs)
+        self.hankel=self._trapeze     
+        self._eval(**kwargs)      
+      
+
+    @staticmethod
+    def _trapeze(Ir,r,sfreq):
+        res = np.zeros_like(sfreq)    
+        for i, sf in enumerate(sfreq):       
+            res[i] = integrate.trapezoid(2.*np.pi*r*Ir*j0(2.*np.pi*r*sf), r)     
+            
+        flux = integrate.trapezoid(2.*np.pi*r*Ir, r)
+        res = res/flux
+        return res
+    
+    
+    def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
+             
+        spf=np.sqrt(ucoord**2+vcoord**2)
+        radius,intensity=self._radialProfileFunction()
+        vc=self.hankel(intensity, radius,spf)
+        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
+                                                     self.params["f"](wl,t)
+    
+    def _radialProfileFunction(self):
+        return 0,0
+
+
 
 ###############################################################################
 
@@ -490,7 +615,8 @@ class oimUD(oimComponentFourier):
 
     def _visFunction(self,ucoord,vcoord,rho,wl,t):
         xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho
-        return 2*j1(xx)/xx
+        return np.nan_to_num(2*j1(xx)/xx,nan=1)
+
     
     def _imageFunction(self,xx,yy,wl,t):
         return ((xx**2+yy**2)<=(self.params["d"](wl,t)/2)**2).astype(float)
