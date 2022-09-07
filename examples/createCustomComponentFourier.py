@@ -1,15 +1,15 @@
 """
 In this example we show how to implement a new model component using a formula
 in the Fourier plan. The component derives from the  oimComponentFourier class.
-The Fourier formula shoulod be implemented in  _visFunction and optionally the 
+The Fourier formula should be implemented in  _visFunction and optionally the 
 formula in the image plan can be implemented using  _imageFunction.
 
 The component implemented here is a rectangular box.
 
 After the implementation it is used to build  two models: one with a single box
-and a more complex one consisting of thre boxes and a uniform disk. 
+and a more complex one consisting of three boxes and a uniform disk. 
 Complex visibility for North-South and East-West baselines between 0 and 100m 
-are compute for both models and plotted as well as images.
+are computed for both models and plotted as well as images.
 
 """
 
