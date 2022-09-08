@@ -18,7 +18,8 @@ from astropy.io import fits
 
 path = os.path.dirname(oim.__file__)
 #pathData=os.path.join(path,os.pardir,"examples","testData","FSCMA_MATISSE")
-pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE")
+#pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE")
+pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE2")
 files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData) if ".fits" in fi]
 
 
@@ -33,15 +34,21 @@ for fi in files:
 #eg=oim.oimEGauss(fwhm=1,elong=1.5,pa=oim.oimInterpWl([3e-6,4e-6],[20,60]),f=oim.oimInterpWl([3e-6,4e-6],[1,0.1]))
 #er=oim.oimERing(din= 8,dout=oim.oimInterpWl([3e-6,4e-6],[15,20]),elong=2,pa=0)
 
-ud=oim.oimUD(d=20,f=4)
-pt=oim.oimPt(f=6)
+#ud=oim.oimUD(d=20,f=4)
+#pt=oim.oimPt(f=6)
+#model=oim.oimModel([ud,pt])
+
+
+ud=oim.oimUD(d=5,f=1,y=10)
+pt=oim.oimPt(f=1)
 model=oim.oimModel([ud,pt])
+
 
 sim=oim.OImSimulator(data=files,model=model)
 
 sim.data.prepareData()
 
-n=10
+n=1
 
 
 
@@ -154,12 +161,12 @@ for ifile,d in enumerate(sim.data.data):
                     ax[5].plot(spFreqV[iB,ilam2:ilam2+2],flxSim[iB,ilam2:ilam2+2],color="blue")#col(lam[ilam2]))        
         except:
             pass
-
+ax[0].legend()
 ax[0].set_ylim(0,1)
 ax[1].set_ylim(0,1)
-ax[2].set_ylim(-20,20)
+ax[2].set_ylim(-180,180)
 
-ax[4].set_ylim(-20,20)
+ax[4].set_ylim(-180,180)
 #ax[4].set_ylim(0,20)
 
 
