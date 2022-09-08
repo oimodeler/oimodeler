@@ -143,8 +143,8 @@ def OimDataGetVectCoord(data,arr):
         vm1=arr.data["V1COORD"]
         um2=arr.data["U2COORD"]
         vm2=arr.data["V2COORD"]        
-        um3=arr.data["U2COORD"]*0#BAD TO CHANGE WITH REAL VALUE
-        vm3=arr.data["V2COORD"]*0#BAD TO CHANGE WITH REAL VALUE
+        um3=arr.data["U1COORD"]+arr.data["U2COORD"]
+        vm3=arr.data["V1COORD"]+arr.data["V2COORD"]
         
         
         u1=np.outer(um1,1./wl).flatten()
@@ -152,6 +152,7 @@ def OimDataGetVectCoord(data,arr):
         u2=np.outer(um2,1./wl).flatten()
         v2=np.outer(vm2,1./wl).flatten()
         u3=np.outer(um3,1./wl).flatten()
+        
         v3=np.outer(vm3,1./wl).flatten()
         
         u=np.concatenate((u1,u2,u3))
