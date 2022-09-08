@@ -100,5 +100,5 @@ for c in model.components:
 txt=txt[:-3]
     
 plt.title("Computation time for a {} model".format(txt))
-filename=os.path.join(path,os.pardir,"images","oimodel_test_simulator_speed.png")
+filename=os.path.join(path,os.pardir,"images","oimodel_test_simulator_speed2.png")
 plt.savefig(filename)
