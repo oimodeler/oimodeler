@@ -40,21 +40,18 @@ def corrFlux2VisPhiDif(vcompl):
     norm=np.outer(np.ones(nB-1),np.mean(phi,axis=0))
     return phi-norm
 
-
 #TODO special function doing T3Amp and T3Phi simultaneously
 def corrFlux2T3Amp(vcompl):
     nB=vcompl.shape[0]
     nCP=(nB-1)//3
     norm=np.outer(np.ones(nCP),vcompl[0,:])
-    
     BS=vcompl[1:nCP+1,:]*vcompl[nCP+1:2*nCP+1,:]*np.conjugate(vcompl[2*nCP+1:,:])/norm**3
     return np.abs(BS)
 
 def corrFlux2T3Phi(vcompl):
     nB=vcompl.shape[0]
     nCP=(nB-1)//3
-    norm=np.outer(np.ones(nCP),vcompl[0,:])
-    
+    norm=np.outer(np.ones(nCP),vcompl[0,:])   
     BS=vcompl[1:nCP+1,:]*vcompl[nCP+1:2*nCP+1,:]*np.conjugate(vcompl[2*nCP+1:,:])/norm**3
     return np.rad2deg(np.angle(BS))
 
