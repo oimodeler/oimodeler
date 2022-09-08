@@ -183,4 +183,8 @@ for i in range(len(ax)-1):
 
 ax[-1].set_xlabel("B/$\lambda$ (cycles/mas)")
 
+fig.suptitle("Data Simulated with ASPRO (red) and oimmodeler (blue)")
+filename=os.path.join(path,os.pardir,"images","oimodel_Create_simulator_data.png")
+plt.savefig(filename)
+
 print("Chi2r={}".format(sim.chi2r))
