@@ -13,7 +13,6 @@ import numpy as np
 import astropy.units as u
 import os
 from datetime import datetime
-import oifitstools
 from astropy.io import fits
 import numpy as np
 
