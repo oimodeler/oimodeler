@@ -21,7 +21,7 @@ Various example scripts are available in the examples directory.
 Here is the resulting plot from the createModelChromatic.py script.
 ![boo](./images/createModelChromatic.png)
  
-Here is the resulting plot from the oimodel_Create_simulator_data.py script.
+Here is the resulting plot from the oimodel_Create_simulator_data.py script. 
 It plots data of a partly resolved binary created with:
 - the [ASPRO](https://www.jmmc.fr/english/tools/proposal-preparation/aspro/) software from JMMC (including realistic noise)
 - oimodeler using a shifted uniform disk + unresolved component
