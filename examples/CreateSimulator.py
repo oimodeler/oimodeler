@@ -13,84 +13,49 @@ import numpy as np
 import astropy.units as u
 import os
 from datetime import datetime
-import oifitstools
 from astropy.io import fits
 
 path = os.path.dirname(oim.__file__)
-#pathData=os.path.join(path,os.pardir,"examples","testData","FSCMA_MATISSE")
-#pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE")
+
+# Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
 pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE2")
 files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData) if ".fits" in fi]
 
-
-#ASPRO T3AMP set to 0
-"""
-for fi in files:
-    d=fits.open(fi,mode='update')
-    d["OI_T3"].data["T3AMP"]*=0
-    d.flush()
-"""
-
-#eg=oim.oimEGauss(fwhm=1,elong=1.5,pa=oim.oimInterpWl([3e-6,4e-6],[20,60]),f=oim.oimInterpWl([3e-6,4e-6],[1,0.1]))
-#er=oim.oimERing(din= 8,dout=oim.oimInterpWl([3e-6,4e-6],[15,20]),elong=2,pa=0)
-
-#ud=oim.oimUD(d=20,f=4)
-#pt=oim.oimPt(f=6)
-#model=oim.oimModel([ud,pt])
-
-
+#Building a oimodeler model with the same parameters
 ud=oim.oimUD(d=5,f=1,y=10)
 pt=oim.oimPt(f=1)
 model=oim.oimModel([ud,pt])
 
-
+# Creating the simulator with the filename list and the model
 sim=oim.OImSimulator(data=files,model=model)
 
+# Preparing data (building vectors of corrdinates and structure of data types)
 sim.data.prepareData()
 
-n=1
-
-
-
+#Computing the complex corr flux from the model at the data spatial freq
+# with option to compute chi2 and final simulated data in oifits format
 start_time = datetime.now()
-for k in range(n): 
-    sim.compute(computeChi2=False,computeSimulatedData=False)
+sim.compute(computeChi2=True,computeSimulatedData=True)
 end_time = datetime.now()
-print('complexCorrFlux only {:.3f}ms'.format((end_time - start_time).total_seconds() * 1000/n))
+print('Simulation computation time = {:.3f}ms'.format((end_time - start_time).total_seconds()*1000 ))
 
-
-start_time = datetime.now()
-for k in range(n): 
-    sim.compute(computeChi2=True,computeSimulatedData=False)
-end_time = datetime.now()
-print('CCF+Chi2  {:.3f}ms'.format((end_time - start_time).total_seconds() * 1000/n))
-
-
-start_time = datetime.now()
-for k in range(n): 
-    sim.compute(computeChi2=False,computeSimulatedData=True)
-end_time = datetime.now()
-print('CCF+SimData  {:.3f}ms'.format((end_time - start_time).total_seconds() * 1000/n))
-
-
-start_time = datetime.now()
-for k in range(n): 
-    sim.compute(computeChi2=True,computeSimulatedData=True)
-end_time = datetime.now()
-print('Full Computation {:.3f}ms'.format((end_time - start_time).total_seconds() * 1000/n))
-
+#Printing data model chi2r
+print("Chi2r = {}".format(sim.chi2r))
 
 
 #%%
+# plotting  data and simulated data
+#TODO : to be remplaced by some internal functions
 
-fig,ax=plt.subplots(6,1,sharex=True)
+
+fig,ax=plt.subplots(6,1,sharex=True,figsize=(10,8))
 
 nfiles=len(sim.data.data)
   
 for ifile,d in enumerate(sim.data.data):
 
         dsim=sim.simulatedData.data[ifile]
-        spFreqV=oifitstools.getSpaFreq(d,unit="cycles/mas")   
+        spFreqV=oim.getSpaFreq(d,unit="cycles/mas")   
         V2=d["OI_VIS2"].data["VIS2DATA"]
         V2sim=dsim["OI_VIS2"].data["VIS2DATA"]     
         nBV2=np.shape(V2)[0]    
@@ -103,7 +68,7 @@ for ifile,d in enumerate(sim.data.data):
         phiSim=dsim["OI_VIS"].data["VISPHI"]     
         nBPhi=np.shape(phiSim)[0]    
  
-        spFreqCP=oifitstools.getSpaFreq(d,"OI_T3",unit="cycles/mas")
+        spFreqCP=oim.getSpaFreq(d,"OI_T3",unit="cycles/mas")
         CP=d["OI_T3"].data["T3PHI"]
         CPsim=dsim["OI_T3"].data["T3PHI"]        
         flagCP=d["OI_T3"].data["FLAG"]    
@@ -126,55 +91,44 @@ for ifile,d in enumerate(sim.data.data):
         nlam=np.size(lam)
            
         for iB in range(nBV2):
-            for ilam2 in range(nlam-2):
-                ax[0].plot(spFreqV[iB,ilam2:ilam2+2],V2[iB,ilam2:ilam2+2],color="red")#col(lam[ilam2]))
-                ax[0].plot(spFreqV[iB,ilam2:ilam2+2],V2sim[iB,ilam2:ilam2+2],color="blue")#col(lam[ilam2]))
-                
-                
-                   
+            ax[0].plot(spFreqV[iB,:],V2[iB,:],color="red")
+            ax[0].plot(spFreqV[iB,:],V2sim[iB,:],color="blue")
+                              
         for iB in range(nBV):
-            for ilam2 in range(nlam-2):
-                ax[1].plot(spFreqV[iB,ilam2:ilam2+2],V[iB,ilam2:ilam2+2],color="red")#col(lam[ilam2]))
-                ax[1].plot(spFreqV[iB,ilam2:ilam2+2],Vsim[iB,ilam2:ilam2+2],color="blue")#col(lam[ilam2]))        
+            ax[1].plot(spFreqV[iB,:],V[iB,:],color="red")
+            ax[1].plot(spFreqV[iB,:],Vsim[iB,:],color="blue")    
 
         for iB in range(nBPhi):
-            for ilam2 in range(nlam-2):
-                ax[2].plot(spFreqV[iB,ilam2:ilam2+2],phi[iB,ilam2:ilam2+2],color="red")#col(lam[ilam2]))
-                ax[2].plot(spFreqV[iB,ilam2:ilam2+2],phiSim[iB,ilam2:ilam2+2],color="blue")#col(lam[ilam2]))        
+
+            ax[2].plot(spFreqV[iB,:],phi[iB,:],color="red")
+            ax[2].plot(spFreqV[iB,:],phiSim[iB,:],color="blue")      
                                 
                 
         for iB in range(nBT3):
-            for ilam2 in range(nlam-2):
-                ax[3].plot(spFreqCP[iB,ilam2:ilam2+2],T3[iB,ilam2:ilam2+2],color="red")#col(lam[ilam2]))
-                ax[3].plot(spFreqCP[iB,ilam2:ilam2+2],T3sim[iB,ilam2:ilam2+2],color="blue")#col(lam[ilam2]))                
+            ax[3].plot(spFreqCP[iB,:],T3[iB,:],color="red")
+            ax[3].plot(spFreqCP[iB,:],T3sim[iB,:],color="blue")        
             
                 
         for iB in range(nBCP):
-            for ilam2 in range(nlam-2):
-                ax[4].plot(spFreqCP[iB,ilam2:ilam2+2],CP[iB,ilam2:ilam2+2],color="red")#col(lam[ilam2]))
-                ax[4].plot(spFreqCP[iB,ilam2:ilam2+2],CPsim[iB,ilam2:ilam2+2],color="blue")#col(lam[ilam2]))                
+            ax[4].plot(spFreqCP[iB,:],CP[iB,:],color="red")
+            ax[4].plot(spFreqCP[iB,:],CPsim[iB,:],color="blue")              
             
         try:
-            for iB in range(nBFlx):
-                for ila52 in range(nlam-2):
-                    ax[5].plot(spFreqV[iB,ilam2:ilam2+2],flx[iB,ilam2:ilam2+2],color="red")#col(lam[ilam2]))
-                    ax[5].plot(spFreqV[iB,ilam2:ilam2+2],flxSim[iB,ilam2:ilam2+2],color="blue")#col(lam[ilam2]))        
+            ax[5].plot(spFreqV[iB,:],flx[iB,:],color="red")
+            ax[5].plot(spFreqV[iB,:],flxSim[iB,:],color="blue")     
         except:
             pass
-ax[0].legend()
+        
 ax[0].set_ylim(0,1)
 ax[1].set_ylim(0,1)
 ax[2].set_ylim(-180,180)
-
 ax[4].set_ylim(-180,180)
-#ax[4].set_ylim(0,20)
-
 
 ax[0].set_ylabel("VIS2DATA")
 ax[1].set_ylabel("VISAMP")
-ax[2].set_ylabel("VISPHI")
+ax[2].set_ylabel("VISPHI (deg)")
 ax[3].set_ylabel("T3AMP")
-ax[4].set_ylabel("T3PHI")
+ax[4].set_ylabel("T3PHI (deg)")
 ax[5].set_ylabel("FLUXADATA")
 
 for i in range(len(ax)-1):
@@ -183,8 +137,11 @@ for i in range(len(ax)-1):
 
 ax[-1].set_xlabel("B/$\lambda$ (cycles/mas)")
 
-fig.suptitle("Data Simulated with ASPRO (red) and oimmodeler (blue)")
+fig.suptitle("Data Simulated with ASPRO (red) and oimodeler (blue)")
+fig.tight_layout() 
+#%%
+#Saving the plot
+
 filename=os.path.join(path,os.pardir,"images","oimodel_Create_simulator_data.png")
 plt.savefig(filename)
 
-print("Chi2r={}".format(sim.chi2r))

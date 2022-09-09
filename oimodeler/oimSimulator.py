@@ -23,8 +23,8 @@ def corrFlux2VisAmpAbs(vcompl):
 
 # TODO : not real formula for diff Vis 
 def corrFlux2VisAmpDif(vcompl):
-    nB=vcompl.shape[0]
-    norm=np.outer(np.ones(nB-1),np.mean(vcompl[1:,:],axis=1))
+    nlam=vcompl.shape[1]
+    norm=np.outer(np.mean(vcompl[1:,:],axis=1),np.ones(nlam))
     return np.abs(vcompl[1:,:]/norm)
         
 def corrFlux2VisAmpCor(vcompl):
@@ -35,10 +35,12 @@ def corrFlux2VisPhiAbs(vcompl):
 
 # TODO : not real formula for diff phase + should do it in complex space
 def corrFlux2VisPhiDif(vcompl):
-    nB=vcompl.shape[0]
-    phi= np.rad2deg(np.angle(vcompl[1:,:]))
-    norm=np.outer(np.ones(nB-1),np.mean(phi,axis=0))
-    return phi-norm
+    nlam=vcompl.shape[1]
+    norm=np.outer(np.mean(vcompl[1:,:],axis=1),np.ones(nlam))
+    
+    phi= np.rad2deg(np.angle(vcompl[1:,:]*np.conjugate(norm)))
+    #norm=np.outer(np.mean(phi,axis=1),np.ones(nlam))
+    return phi#-norm
 
 #TODO special function doing T3Amp and T3Phi simultaneously
 def corrFlux2T3Amp(vcompl):

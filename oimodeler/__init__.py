@@ -10,7 +10,8 @@ from .oimModel import _standardParameters
 from .oimData import *
 from .oimFitter import *
 from .oimSimulator import *
-
+from .oimUtils import *
+from .oimDataFilter import *
 
 from os.path import join, dirname, split
 import inspect

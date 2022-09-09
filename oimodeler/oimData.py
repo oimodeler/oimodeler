@@ -42,6 +42,8 @@ class OImDataType(IntFlag):
     FLUXDATA    = 256
 
 
+###############################################################################
+
 def OImGetDataValErrAndTypeFlag(arr):
     
     dtype=OImDataType(0)
@@ -301,8 +303,6 @@ class OImData(object):
                     self.struct_val[-1].append(val)
                     self.struct_err[-1].append(err) 
 
-        
-    
     def __str__(self):
        nfiles=np.size(self.data)
        txt="OImData containing {} file(s)\n".format(nfiles)
