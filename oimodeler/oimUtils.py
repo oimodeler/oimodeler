@@ -8,6 +8,37 @@ import numpy as np
 from astropy.io import fits
 import astropy.units as units
 
+
+#--------------------------------------------baselinename-------------------------
+
+def baselinename(oifits,hduname="OI_VIS2",length=False,angle=False):
+    stanames=oifits['OI_ARRAY'].data['STA_NAME']
+    staindexes=oifits['OI_ARRAY'].data['STA_INDEX']
+
+    staidx=oifits[hduname].data['STA_INDEX']
+
+    shape=np.shape(staidx)
+    name=[]
+    if length or angle and hduname!="OI_T3":
+        u=oifits[hduname].data['UCOORD']
+        v=oifits[hduname].data['VCOORD']
+        B=np.sqrt(u**2+v**2)
+        PA=np.rad2deg(np.arctan2(u,v))
+    for i in range(shape[0]):
+        namei=""
+        for j in range(shape[1]):
+            namei+=stanames[np.where(staindexes==staidx[i,j])[0]][0]
+            if j<shape[1]-1:
+                namei+="-"
+        if hduname!="OI_T3":
+            if length:
+                namei+=" {0:.0f}m".format(B[i])
+            if angle:
+                namei+=" {0:.0f}$^o$".format(PA[i])
+        name.append(namei)
+
+    return name
+
 #----------------------------------------------getBaselineLengthAndPA------------------------------------------
 
 def getBaselineLengthAndPA(oifits,arr="OI_VIS2"):

@@ -20,4 +20,3 @@ files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData)
 data=oim.OImData(files)
 
 print(data)
-data.vectorizeData()
