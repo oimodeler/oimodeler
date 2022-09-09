@@ -1,6 +1,6 @@
 # oimodeler
 
-A modular modelling tool for optical interferometry
+###### A modular modelling tool for optical interferometry
 
 
 >:warning: In early development!  
@@ -18,7 +18,8 @@ Modules:
 * **oimPlot** : Plotting tools
 * **oimUtils** : Various utility for optical-interferometry
 
-Various example scripts are available in the examples directory.  
+###### Various example scripts are available in the examples directory. 
+
 Here is the resulting plot from the createModelChromatic.py script.
 ![boo](./images/createModelChromatic.png)
  
