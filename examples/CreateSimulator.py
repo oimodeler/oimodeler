@@ -48,7 +48,7 @@ print("Chi2r = {}".format(sim.chi2r))
 #TODO : to be remplaced by some internal functions
 
 
-fig,ax=plt.subplots(6,1,sharex=True,figsize=(10,8))
+fig,ax=plt.subplots(6,1,sharex=True,figsize=(7,7))
 
 nfiles=len(sim.data.data)
   
