@@ -33,14 +33,12 @@ def corrFlux2VisAmpCor(vcompl):
 def corrFlux2VisPhiAbs(vcompl):
     return np.rad2deg(np.angle(vcompl[1:,:]))
 
-# TODO : not real formula for diff phase + should do it in complex space
+# TODO : not real formula for diff phase 
 def corrFlux2VisPhiDif(vcompl):
     nlam=vcompl.shape[1]
-    norm=np.outer(np.mean(vcompl[1:,:],axis=1),np.ones(nlam))
-    
+    norm=np.outer(np.mean(vcompl[1:,:],axis=1),np.ones(nlam))  
     phi= np.rad2deg(np.angle(vcompl[1:,:]*np.conjugate(norm)))
-    #norm=np.outer(np.mean(phi,axis=1),np.ones(nlam))
-    return phi#-norm
+    return phi
 
 #TODO special function doing T3Amp and T3Phi simultaneously
 def corrFlux2T3Amp(vcompl):
@@ -103,8 +101,7 @@ class OImSimulator(object):
             for ifile in range(nfiles):
                 #print("Data {}".format(ifile))
                 narr=len(self.data.struct_arrType[ifile])
-                for iarr in range(narr):
-                    
+                for iarr in range(narr):                    
                     arrNum=self.data.struct_arrNum[ifile][iarr]
                     arrType=self.data.struct_arrType[ifile][iarr]
                     dataType=self.data.struct_dataType[ifile][iarr]
@@ -112,7 +109,6 @@ class OImSimulator(object):
                     nwl=self.data.struct_nwl[ifile][iarr]
                     vcompli=self.vcompl[idx:idx+nB*nwl]              
                     vcompli=np.reshape(vcompli,[nB,nwl])
-                    
                     
                     dataVal=self.data.struct_val[ifile][iarr]
                     dataErr=self.data.struct_err[ifile][iarr]
@@ -136,14 +132,14 @@ class OImSimulator(object):
                             quantities.append("VISAMP")
                         elif dataType&oim.OImDataType.VISAMP_COR:
                             val.append(corrFlux2VisAmpCor(vcompli))
-                            quantities.append("VISAMP")
-                        
+                            quantities.append("VISAMP")       
                         if dataType&oim.OImDataType.VISPHI_ABS:
                             val.append(corrFlux2VisPhiAbs(vcompli))
                             quantities.append("VISPHI")                        
                         elif dataType&oim.OImDataType.VISPHI_DIF:
                             val.append(corrFlux2VisPhiDif(vcompli))
                             quantities.append("VISPHI") 
+                            
                     elif arrType=="OI_T3":
                         if dataType&oim.OImDataType.T3AMP:
                             val.append(corrFlux2T3Amp(vcompli))
@@ -154,8 +150,7 @@ class OImSimulator(object):
                     elif arrType=="OI_FLUX":
                         val.append(corrFlux2Flux(vcompli))
                         quantities.append("FLUXDATA")
-                    
-                    
+                      
                     #Filling the simulatedData astropy array with the computed values
                     if computeSimulatedData==True:
                         for ival in range(len(val)):
@@ -164,9 +159,16 @@ class OImSimulator(object):
                     #Computing the chi2
                     if computeChi2==True:
                         for ival in range(len(val)):
-                            chi2+=np.sum(((dataVal[ival]-val[ival])/dataErr[ival])**2)
+                            if quantities[ival] in ["VISPHI","T3PHI"]:
+                                dphi= np.rad2deg(np.angle(np.exp(1j*np.deg2rad(dataVal[ival]))
+                                                          *np.exp(-1j*np.deg2rad((val[ival])))))
+                                chi2+=np.sum((dphi/dataErr[ival])**2)
+                                chi2List.append((dphi/dataErr[ival])**2)
+                            else:
+                                chi2+=np.sum(((dataVal[ival]-val[ival])/dataErr[ival])**2)
+                                chi2List.append(((dataVal[ival]-val[ival])/dataErr[ival])**2)
                             nelChi2+=np.size(dataVal[ival])
-                            chi2List.append(((dataVal[ival]-val[ival])/dataErr[ival])**2)
+                            
     
        
         if computeChi2==True: 
