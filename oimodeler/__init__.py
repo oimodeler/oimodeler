@@ -12,9 +12,13 @@ from .oimFitter import *
 from .oimSimulator import *
 from .oimUtils import *
 from .oimDataFilter import *
+from .oimPlots import *
 
 from os.path import join, dirname, split
 import inspect
+import matplotlib.projections as proj
+
+proj.register_projection(oimAxes)
 
 __pkg_dir__ = dirname(inspect.getfile(inspect.currentframe()))
 
