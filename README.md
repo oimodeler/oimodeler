@@ -12,7 +12,7 @@ Modules:
 * **oimUtils** : Various utility for optical-interferometry
 
 
->:warning: In early development!
+>:warning: In early development!     
 >Partially implemented :     
 >* oimModel: Working with gray and chromatic models defined in Fourier plane   
 >* oimData class: No filtering, no optimization of data      
