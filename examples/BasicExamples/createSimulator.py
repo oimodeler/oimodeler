@@ -50,7 +50,7 @@ from matplotlib.collections import LineCollection
 
 #Set the projection to oimAxes for all subplots to be able to use oimodeler custom plots
 fig,ax=plt.subplots(5,1,sharex=True,figsize=(8,6),subplot_kw=dict(projection='oimAxes'))
-plt.subplots_adjust(left=0,top=0.98,right=0.98,hspace=0.14)
+plt.subplots_adjust(left=0.09,top=0.98,right=0.98,hspace=0.14)
 
 #list of data type to be plotted
 arr=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI"]
