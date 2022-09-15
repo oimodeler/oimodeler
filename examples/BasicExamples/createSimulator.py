@@ -59,8 +59,8 @@ for iax,axi in enumerate(ax):
     
     #plotting the data with wavelength colorscale + errorbars vs spatial frequencies
     scale=axi.oiplot(sim.data.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
-            color="byWavelength",lw=2,cmap="hsv",errorbar=True,label="ASPRO")
-    
+            cname="EFF_WAVE",cunitmultiplier=1e6,lw=2,cmap="coolwarm",errorbar=True,label="ASPRO")
+
     #over-plotting the simulated data as a dotted line  vs spatial frequencies
     axi.oiplot(sim.simulatedData.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
             color="k",ls=":",lw=1,label="oimodeler")
@@ -72,7 +72,7 @@ for iax,axi in enumerate(ax):
     axi.autolim()
     
 #Create the colorbar for the wavlength for the data plotted with "byWavelength" color option
-fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ (m)")
+fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ ($\mu$m)")
 
 fig.suptitle("ASPRO and oimodeler simulated data \n"
              " for a partially resolved binary star")
