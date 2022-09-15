@@ -7,13 +7,13 @@ Created on Wed Jun 29 16:16:59 2022
 
 import oimodeler as oim
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
 import numpy as np
 import astropy.units as u
 import os
 from datetime import datetime
 from astropy.io import fits
+
+
 
 path = os.path.dirname(oim.__file__)
 
@@ -45,100 +45,39 @@ print("Chi2r = {}".format(sim.chi2r))
 
 #%%
 # plotting  data and simulated data
-#TODO : to be remplaced by some internal functions
+from matplotlib.legend_handler import HandlerLineCollection
+from matplotlib.collections import LineCollection
 
 
-fig,ax=plt.subplots(6,1,sharex=True,figsize=(7,7))
+fig,ax=plt.subplots(5,1,sharex=True,figsize=(7,7),subplot_kw=dict(projection='oimAxes'))
 
-nfiles=len(sim.data.data)
-  
-for ifile,d in enumerate(sim.data.data):
+#list of data type to be plotted
+arr=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI"]
 
-        dsim=sim.simulatedData.data[ifile]
-        spFreqV=oim.getSpaFreq(d,unit="cycles/mas")   
-        V2=d["OI_VIS2"].data["VIS2DATA"]
-        V2sim=dsim["OI_VIS2"].data["VIS2DATA"]     
-        nBV2=np.shape(V2)[0]    
+# Ploting loop :  plotting data and simulated data for each data type
+for iax,axi in enumerate(ax):
+    
+    #plotting the data with wavelength colorscale + errorbars vs spatial frequencies
+    scale=axi.oiplot(sim.data.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
+            color="byWavelength",lw=2,cmap="hsv",errorbar=True,label="ASPRO")
+    
+    #over-plotting the simulated data as a dotted line  vs spatial frequencies
+    axi.oiplot(sim.simulatedData.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
+            color="k",ls=":",lw=1,label="oimodeler")
+    
+    if axi!=ax[-1]: axi.get_xaxis().set_visible(False)
+    if axi==ax[0]:axi.legend()
+    
+    #automatic ylim => 0-1 for visibilties, -180,180 for phases
+    axi.autolim()
+    
+#Create the colorbar for the wavlength for the data plotted with "byWavelength" color option
+fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ (m)")
 
-        V=d["OI_VIS"].data["VISAMP"]
-        Vsim=dsim["OI_VIS"].data["VISAMP"]     
-        nBV=np.shape(V)[0]    
-        
-        phi=d["OI_VIS"].data["VISPHI"]
-        phiSim=dsim["OI_VIS"].data["VISPHI"]     
-        nBPhi=np.shape(phiSim)[0]    
- 
-        spFreqCP=oim.getSpaFreq(d,"OI_T3",unit="cycles/mas")
-        CP=d["OI_T3"].data["T3PHI"]
-        CPsim=dsim["OI_T3"].data["T3PHI"]        
-        flagCP=d["OI_T3"].data["FLAG"]    
-        nBCP=np.shape(CP)[0]      
-        
-        T3=d["OI_T3"].data["T3AMP"]
-        T3sim=dsim["OI_T3"].data["T3AMP"]        
-        flagCP=d["OI_T3"].data["FLAG"]    
-        nBT3=np.shape(T3)[0]
-        
-        try:
-            flx=d["OI_FLUX"].data["FLUXDATA"]
-            flxSim=dsim["OI_FLUX"].data["FLUXDATA"]     
-            nBFlx=np.shape(flx)[0]    
-
-        except:
-            pass
-
-        lam=d["OI_WAVELENGTH"].data["EFF_WAVE"]
-        nlam=np.size(lam)
-           
-        for iB in range(nBV2):
-            ax[0].plot(spFreqV[iB,:],V2[iB,:],color="red")
-            ax[0].plot(spFreqV[iB,:],V2sim[iB,:],color="blue")
-                              
-        for iB in range(nBV):
-            ax[1].plot(spFreqV[iB,:],V[iB,:],color="red")
-            ax[1].plot(spFreqV[iB,:],Vsim[iB,:],color="blue")    
-
-        for iB in range(nBPhi):
-
-            ax[2].plot(spFreqV[iB,:],phi[iB,:],color="red")
-            ax[2].plot(spFreqV[iB,:],phiSim[iB,:],color="blue")      
-                                
-                
-        for iB in range(nBT3):
-            ax[3].plot(spFreqCP[iB,:],T3[iB,:],color="red")
-            ax[3].plot(spFreqCP[iB,:],T3sim[iB,:],color="blue")        
-            
-                
-        for iB in range(nBCP):
-            ax[4].plot(spFreqCP[iB,:],CP[iB,:],color="red")
-            ax[4].plot(spFreqCP[iB,:],CPsim[iB,:],color="blue")              
-            
-        try:
-            ax[5].plot(spFreqV[iB,:],flx[iB,:],color="red")
-            ax[5].plot(spFreqV[iB,:],flxSim[iB,:],color="blue")     
-        except:
-            pass
-        
-ax[0].set_ylim(0,1)
-ax[1].set_ylim(0,1)
-ax[2].set_ylim(-180,180)
-ax[4].set_ylim(-180,180)
-
-ax[0].set_ylabel("VIS2DATA")
-ax[1].set_ylabel("VISAMP")
-ax[2].set_ylabel("VISPHI (deg)")
-ax[3].set_ylabel("T3AMP")
-ax[4].set_ylabel("T3PHI (deg)")
-ax[5].set_ylabel("FLUXADATA")
-
-for i in range(len(ax)-1):
-    ax[i].get_xaxis().set_visible(False)
+fig.suptitle("ASPRO and oimodeler simulated data \n"
+             " for a partially resolved binary star")
 
 
-ax[-1].set_xlabel("B/$\lambda$ (cycles/mas)")
-
-fig.suptitle("Data Simulated with ASPRO (red) and oimodeler (blue)")
-fig.tight_layout() 
 #%%
 #Saving the plot
 
