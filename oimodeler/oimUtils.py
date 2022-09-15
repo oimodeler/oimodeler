@@ -11,7 +11,7 @@ import astropy.units as units
 
 #--------------------------------------------baselinename-------------------------
 
-def baselinename(oifits,hduname="OI_VIS2",length=False,angle=False):
+def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False):
     stanames=oifits['OI_ARRAY'].data['STA_NAME']
     staindexes=oifits['OI_ARRAY'].data['STA_INDEX']
 
