@@ -5,26 +5,25 @@ import matplotlib.cm as cm
 import numpy as np
 import astropy.units as u
 import os
+path = os.path.dirname(oim.__file__)
 
 mas2rad=u.mas.to(u.rad)
 
 #Create some spatial frequencies (Baselines from 0 to 400m at 2.1 microns)
 lam=2.1e-6
-B=np.linspace(0.01,400,num=1000)
+B=np.linspace(0.,400,num=1000)
 spf=B/lam
 spf0=spf*0
 
 
 #Some components
-gd=oim.oimGauss(fwhm=oim.oimInterpWl(wl=[3e-6,3.5e-6,4e-6],value=[1,4,4]),
+gd=oim.oimGauss(fwhm=oim.oimInterpWl(wl=[3e-6,3.5e-6,4e-6],value=[1,3,4]),
                  f=oim.oimInterpWl([3e-6,4e-6],[1,4]))
 ud=oim.oimUD(d=0.7,f=1)
 ud2=oim.oimUD(x=0,y=5,d=1.5,f=oim.oimInterpWl(wl=[3e-6,4e-6],value=[0,1]))
 ud3=oim.oimUD(x=-5,y=2,d=0.5,f=oim.oimInterpWl(wl=[3e-6,4e-6],value=[0.1,1]))
 eg=oim.oimEGauss(fwhm=1,elong=1.5,pa=oim.oimInterpWl([3e-6,4e-6],[20,60]),f=oim.oimInterpWl([3e-6,4e-6],[1,0.1]))
 er=oim.oimERing(din= 8,dout=oim.oimInterpWl([3e-6,4e-6],[15,20]),elong=2,pa=0)
-
-
 
 #linking some parameters, actually replacing them
 er.params["elong"]=eg.params["elong"]
@@ -48,10 +47,7 @@ wls=np.transpose(np.tile(wl,(nB,1))).flatten()
 spf=Bs/wls
 spf0=spf*0
 
-
-
 fig,ax=plt.subplots(4,4,figsize=(8,8))
-
 for i,m in enumerate(models):
     
     #Compute visibilities for the models and spatial frequencies
@@ -102,5 +98,5 @@ norm = colors.Normalize(vmin=np.min(wl),vmax=np.max(wl))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sc, ax=ax[2:,:].ravel().tolist(),label="$\\lambda$ ($\\mu$m)")
 
-
-fig.savefig("..\images\createModelChromatic.png")
+filename=os.path.join(path,os.pardir,"images","createModelChromatic.png")
+fig.savefig(filename)
