@@ -112,6 +112,7 @@ class OImSimulator(object):
                     
                     dataVal=self.data.struct_val[ifile][iarr]
                     dataErr=self.data.struct_err[ifile][iarr]
+                    flag=self.data.struct_flag[ifile][iarr]
                         
                     idx+=nB*nwl
                     quantities=[]
@@ -162,13 +163,14 @@ class OImSimulator(object):
                             if quantities[ival] in ["VISPHI","T3PHI"]:
                                 dphi= np.rad2deg(np.angle(np.exp(1j*np.deg2rad(dataVal[ival]))
                                                           *np.exp(-1j*np.deg2rad((val[ival])))))
-                                chi2+=np.sum((dphi/dataErr[ival])**2)
-                                chi2List.append((dphi/dataErr[ival])**2)
+                                chi2i=(dphi*np.logical_not(flag[ival])/dataErr[ival])**2
+                                
                             else:
-                                chi2+=np.sum(((dataVal[ival]-val[ival])/dataErr[ival])**2)
-                                chi2List.append(((dataVal[ival]-val[ival])/dataErr[ival])**2)
-                            nelChi2+=np.size(dataVal[ival])
-                            
+                                chi2i=((dataVal[ival]-val[ival])*np.logical_not(flag[ival])/dataErr[ival])**2
+                                
+                            nelChi2+=np.size(np.where(flag[ival]==False))
+                            chi2+=np.sum(chi2i)
+                            chi2List.append(chi2i)
     
        
         if computeChi2==True: 
