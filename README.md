@@ -12,12 +12,12 @@ Modules:
 * **oimUtils** : Various utility for optical-interferometry
 
 
->:warning: In early development!  
->The oimModel: Working with gray and chromatic models defined in Fourier plane
->imData class: No filtering, no optimization of data
->oimSiumlulator: Simulated data and chi2 computation (no filtering no flagging yet)
->oimPlot: Basics plots of oifits data (see example below)
->oimUtils: Spatial frequencies, baseline name, length and PA.
+>:warning: In early development. Partially implemented:     
+>* oimModel: Working with gray and chromatic models defined in Fourier plane   
+>* oimData class: No filtering, no optimization of data      
+>* oimSiumlulator: Simulated data and chi2 computation (no filtering no flagging yet)    
+>* oimPlot: Basics plots of oifits data (see example below)    
+>* oimUtils: Spatial frequencies, baseline name, length and PA    
 
 
 
