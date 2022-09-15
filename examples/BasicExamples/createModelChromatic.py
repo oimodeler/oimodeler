@@ -96,7 +96,8 @@ for i,m in enumerate(models):
         if i==0:
             ax[iwl,i].set_ylabel("$\\delta$(mas)")
             
-fig.tight_layout()            
+fig.tight_layout()    
+plt.subplots_adjust(right=1.05)        
 fig.colorbar(imshow, ax=ax[:2,:].ravel().tolist(),label="Normalized Intensity")
 norm = colors.Normalize(vmin=np.min(wl),vmax=np.max(wl))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
