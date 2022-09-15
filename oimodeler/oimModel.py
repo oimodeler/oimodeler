@@ -705,7 +705,7 @@ class oimRing(oimComponentFourier):
         fin=(self.params["din"](wl,t))**2
         fout=(self.params["dout"](wl,t))**2
            
-        return 2*(j1(xxout)/xxout*fout-j1(xxin)/xxin*fin)/(fout-fin)
+        return np.nan_to_num(2*(j1(xxout)/xxout*fout-j1(xxin)/xxin*fin)/(fout-fin),nan=1)
           
     
     def _imageFunction(self,xx,yy,wl,t):
