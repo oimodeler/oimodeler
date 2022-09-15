@@ -2,13 +2,6 @@
 
 #### A modular modelling tool for optical interferometry
 
-
->:warning: In early development!  
->The oimModel is partly working with gray and chromatic models defined in Fourier plane (as shown in the image below)  
->Partial implementation of oimData class: no filtering, no optimization of data)  
->Partial implementation of oimSiumlulator: simulated data and chi2 computation for all kind of data but no model-fitting  
- 
-
 Modules:
 * **oimModel** : Create models with various components as bricks 
 * **oimData** :  Handle interferometric, spectroscopic and photometric data
@@ -17,6 +10,16 @@ Modules:
 * **oimFitter** : Define and perform model-fitting   
 * **oimPlot** : Plotting tools
 * **oimUtils** : Various utility for optical-interferometry
+
+
+>:warning: In early development!  
+>The oimModel: Working with gray and chromatic models defined in Fourier plane
+>imData class: No filtering, no optimization of data
+>oimSiumlulator: Simulated data and chi2 computation (no filtering no flagging yet)
+>oimPlot: Basics plots of oifits data (see example below)
+>oimUtils: Spatial frequencies, baseline name, length and PA.
+
+
 
 #### Various example scripts are available in the examples directory. 
 
@@ -28,3 +31,5 @@ It plots data of a partly resolved binary created with:
 - the [ASPRO](https://www.jmmc.fr/english/tools/proposal-preparation/aspro/) software from JMMC (including realistic noise)
 - oimodeler using a shifted uniform disk + unresolved component
 ![boo](./images/oimodel_Create_simulator_data.png)
+
+
