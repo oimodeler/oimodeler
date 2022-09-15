@@ -48,8 +48,9 @@ print("Chi2r = {}".format(sim.chi2r))
 from matplotlib.legend_handler import HandlerLineCollection
 from matplotlib.collections import LineCollection
 
-
-fig,ax=plt.subplots(5,1,sharex=True,figsize=(7,7),subplot_kw=dict(projection='oimAxes'))
+#Set the projection to oimAxes for all subplots to be able to use oimodeler custom plots
+fig,ax=plt.subplots(5,1,sharex=True,figsize=(8,6),subplot_kw=dict(projection='oimAxes'))
+plt.subplots_adjust(top=0.98,right=0.98,hspace=0.14)
 
 #list of data type to be plotted
 arr=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI"]
@@ -73,10 +74,6 @@ for iax,axi in enumerate(ax):
     
 #Create the colorbar for the wavlength for the data plotted with "byWavelength" color option
 fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ ($\mu$m)")
-
-fig.suptitle("ASPRO and oimodeler simulated data \n"
-             " for a partially resolved binary star")
-
 
 #%%
 #Saving the plot

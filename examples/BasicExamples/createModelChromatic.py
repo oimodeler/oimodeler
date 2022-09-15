@@ -47,6 +47,10 @@ wls=np.transpose(np.tile(wl,(nB,1))).flatten()
 spf=Bs/wls
 spf0=spf*0
 
+
+#%%
+
+
 fig,ax=plt.subplots(4,4,figsize=(8,8))
 for i,m in enumerate(models):
     
