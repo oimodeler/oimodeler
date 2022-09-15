@@ -15,8 +15,6 @@ import os
 from astropy.io import fits
 import oimodeler as oim
 
-#TODO replace functions imported from external library oifitstools
-import oifitstools
 
 
 ###############################################################################
@@ -107,6 +105,67 @@ def _colorPlot(axe,x,y,z,**kwargs):
         
         
         
+
+
+###############################################################################
+
+
+def uvPlot(oifits,extension="OI_VIS2",marker="o", facecolors='red',
+           edgecolors='k',size=10,axe=None,maxi=None,xytitle=[True,True],
+           title=None,gridcolor="k",grid=True,fontsize=None,**kwargs):
+
+    kwargs2={}
+    for key in kwargs:
+        if key!="label":
+            kwargs2[key]=kwargs[key]
+        
+    data=[]
+    u=np.array([])
+    v=np.array([])
+    if type(oifits)==type(""):
+        data.append(fits.open(oifits))
+    elif type(oifits)==type([]):
+        for item in oifits:
+            if type(item)==type(""):
+                data.append(fits.open(item))
+            else:
+                data.append(item)
+    else:
+        data.append(oifits)
+
+
+    for datai in data:
+
+        extnames=np.array([datai[i].name for i in range(len(datai))])
+        idx=np.where(extnames==extension)[0]
+        for j in idx:
+            u=np.append(u,datai[j].data['UCOORD'])
+            v=np.append(v,datai[j].data['VCOORD'])
+
+
+    if not(axe):
+        fig,axe=plt.subplots(nrows=1,ncols=1)
+    axe.scatter(u,v,marker=marker,facecolors=facecolors, edgecolors=edgecolors,
+                s=size,zorder=10,lw=1,**kwargs)
+
+    axe.scatter(-u,-v,marker=marker,facecolors=facecolors, edgecolors=edgecolors,
+                s=size,zorder=10,lw=1,**kwargs2)
+    if not(maxi):
+        maxi=1.1*np.max(np.abs(np.array([u,v])))
+    if grid:
+        axe.plot([-maxi,maxi],[0,0],linewidth=1,color=gridcolor,zorder=5)
+        axe.plot([0,0],[-maxi,maxi],linewidth=1,color=gridcolor,zorder=5)
+    axe.set_aspect('equal','box')
+    axe.set_xlim([maxi,-maxi])
+    axe.set_ylim([-maxi,maxi])
+    if xytitle[0]:
+        axe.set_xlabel('u (m)',fontsize=fontsize)
+    if xytitle[1]:
+        axe.set_ylabel('v (m)',fontsize=fontsize)
+    if title:
+        axe.set_title(title)
+    return [axe]
+
 ###############################################################################
 
 oimPlotParamName=np.array(["B","PA","UCOORD","VCOORD","SPAFREQ","EFF_WAVE",
@@ -126,8 +185,8 @@ oimPlotParamUnit0=np.array(["m","$^o$","m","m","cycles/rad","$\mu$m","","","$^o$
 oimPlotParamIsUVcoord=np.array([1,1,1,1,1,0,0,0,0,0,0,0])
 
 oimPlotParamColorCycle=plt.rcParams['axes.prop_cycle'].by_key()['color']
-
 ###############################################################################
+
 
 def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             yunit=None,yunitmultiplier=1,cname=None,cunit=None,cunitmultiplier=1,
@@ -355,7 +414,7 @@ class oimAxes(plt.Axes):
     xtype=None
             
     def uvplot(self,oifits, **kwargs ):
-        oifitstools.uvplot(oifits,axe=self)
+        uvPlot(oifits,axe=self,**kwargs)
         
     def oiplot(self,oifitsList,xname,yname,**kwargs ):
           res=oimPlot(oifitsList,xname,yname,axe=self,**kwargs) 
