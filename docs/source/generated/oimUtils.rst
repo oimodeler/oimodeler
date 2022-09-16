@@ -20,7 +20,6 @@
       getBaselineLengthAndPA
       getBaselineName
       getSpaFreq
-      oimTest
    
    
 
@@ -29,12 +28,6 @@
    
 
    
-   
-   .. rubric:: Exceptions
-
-   .. autosummary::
-   
-      InvalidKindError
    
    
 
