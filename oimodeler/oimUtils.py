@@ -191,7 +191,7 @@ def createOiWavelength(insname,eff_wave,eff_band):
 
 def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
                  ucoord,vcoord,sta_index,flag,dateobs):
-    
+
     nb=len(target_id)
     
     v2shape=np.shape(vis2data)
@@ -227,5 +227,3 @@ def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
     oivis2.header['ARRNAME']=arrname
 
     return oivis2
-    
-
