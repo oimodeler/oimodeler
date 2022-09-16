@@ -1,0 +1,7 @@
+[build-system]
+requires = ["numpy","scipy","matplotlib","astropy"]
+
+[project]
+name = "oimodeler"
+authors = [{name = "A. Meilland", email = "ame@oca.eu"}]
+dynamic = ["version", "description"]
