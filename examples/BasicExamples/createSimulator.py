@@ -29,7 +29,7 @@ model=oim.oimModel([ud,pt])
 # Creating the simulator with the filename list and the model
 sim=oim.OImSimulator(data=files,model=model)
 
-# Preparing data (building vectors of corrdinates and structure of data types)
+# Preparing data (building vectors of coordinates and structure of data types)
 sim.data.prepareData()
 
 #Computing the complex corr flux from the model at the data spatial freq
