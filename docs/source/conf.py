@@ -64,10 +64,12 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_logo = "../../images/logo.png"
+html_favicon = "../../images/favicon.ico"
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
     'style_nav_header_background':'#eeeeee',
+    'collapse_navigation': False,
 }
 html_css_files = ["custom.css"]
 #numpydoc_class_members_toctree = False
