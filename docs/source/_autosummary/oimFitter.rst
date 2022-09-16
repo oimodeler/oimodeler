@@ -1,0 +1,5 @@
+﻿oimFitter
+=========
+
+.. automodule:: oimFitter
+    :members:

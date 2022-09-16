@@ -1,0 +1,5 @@
+﻿oimSimulator
+============
+
+.. automodule:: oimSimulator
+    :members:

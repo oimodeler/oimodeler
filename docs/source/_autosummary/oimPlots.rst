@@ -1,0 +1,5 @@
+﻿oimPlots
+========
+
+.. automodule:: oimPlots
+    :members:

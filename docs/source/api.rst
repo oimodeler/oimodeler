@@ -4,7 +4,7 @@ API
 The oimodeler library contains the following modules:
 
 .. autosummary::
-   :toctree: generated
+   :toctree:  _autosummary
    
     oimModel
     oimData
@@ -13,3 +13,4 @@ The oimodeler library contains the following modules:
     oimFitter
     oimPlots
     oimUtils
+    

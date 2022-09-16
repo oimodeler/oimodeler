@@ -1,0 +1,5 @@
+﻿oimUtils
+========
+
+.. automodule:: oimUtils
+    :members:

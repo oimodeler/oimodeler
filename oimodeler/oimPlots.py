@@ -390,8 +390,8 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     axe.set_ylabel(ylabel)
     
     return res
-
-class HandlerColorLineCollection(HandlerLineCollection):
+###############################################################################
+class _HandlerColorLineCollection(HandlerLineCollection):
     def create_artists(self, legend, artist ,xdescent, ydescent,
                         width, height, fontsize,trans):
         x = np.linspace(0,width,self.get_numpoints(legend)+1)
@@ -443,7 +443,7 @@ class oimAxes(plt.Axes):
         hmap={}
         for hi in h:
             if isinstance(hi,LineCollection):
-                hmap[hi]=HandlerColorLineCollection(numpoints=100)
+                hmap[hi]=_HandlerColorLineCollection(numpoints=100)
         super().legend(h,l,handler_map=hmap,**kwargs)            
 
 ###############################################################################
