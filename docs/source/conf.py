@@ -15,6 +15,14 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here.
+import pathlib
+import sys
+sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
+
+
+
 # -- Project information -----------------------------------------------------
 
 project = 'oimodeler'
@@ -28,6 +36,11 @@ author = 'A. Meilland'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+ 'sphinx.ext.duration',
+ 'sphinx.ext.doctest',
+ 'sphinx.ext.autodoc',
+ 'sphinx.ext.autosummary',
+ 'sphinx_rtd_theme',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -44,9 +57,17 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_logo = "../../images/logo.png"
+html_theme_options = {
+    'logo_only': True,
+    'display_version': False,
+    'style_nav_header_background':'#eeeeee',
+}
+html_css_files = ["custom.css"]
+#numpydoc_class_members_toctree = False

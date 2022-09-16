@@ -1,0 +1,23 @@
+﻿oimFitter
+=========
+
+.. automodule:: oimFitter
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
