@@ -1,6 +1,8 @@
 API
 ===
 
+The oimodeler library contains the following modules:
+
 .. autosummary::
    :toctree: generated
    
