@@ -2,6 +2,8 @@
 
 #### A modular modelling tool for optical interferometry
 
+See full documentation [here](https://oimodeler.readthedocs.io/en/latest/)
+
 Modules:
 * **oimModel** : Create models with various components as bricks 
 * **oimData** :  Handle interferometric, spectroscopic and photometric data
