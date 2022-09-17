@@ -130,6 +130,7 @@ class OImSimulator(object):
                             quantities.append("VISAMP")
                         elif dataType&oim.OImDataType.VISAMP_DIF:
                             val.append(corrFlux2VisAmpDif(vcompli))
+                            
                             quantities.append("VISAMP")
                         elif dataType&oim.OImDataType.VISAMP_COR:
                             val.append(corrFlux2VisAmpCor(vcompli))
