@@ -60,7 +60,7 @@ def corrFlux2Flux(vcompl):
 
 
 
-class OImSimulator(object):
+class oimSimulator(object):
     """
     contains 
     """
