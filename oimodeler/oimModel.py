@@ -68,11 +68,11 @@ class oimParam(object):
     
     
     def __str__(self):
-        return "oimParam={}{}+-{} range=[{},{}] free={} ".format(self.name,
+        return "oimParam={}={}+-{} range=[{},{}] free={} ".format(self.name,
                 self.value,self.error,self.min,self.max,self.free)
 
     def __repr__(self):
-        return "oimParam at {} : {}{}+-{} range=[{},{}] free={} ".format(hex(id(self)),self.name,
+        return "oimParam at {} : {}={}+-{} range=[{},{}] free={} ".format(hex(id(self)),self.name,
                 self.value,self.error,self.min,self.max,self.free)
 
 
