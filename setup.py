@@ -18,4 +18,6 @@ setup(name='oimodeler',
                         'scipy',
                         'matplotlib',
                         'astropy',
-                        'astroquery'])
+                        'astroquery'
+                        ,'emcee',
+                        'corner'])
