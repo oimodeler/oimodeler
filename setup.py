@@ -13,4 +13,9 @@ setup(name='oimodeler',
       author='Anthony Meilland',
       author_email='ame@oca.eu',
       url='https://gitlab.oca.eu/oimodeler/oimodeler',
-      packages=['oimodeler'])
+      packages=['oimodeler'],
+      install_requires=['numpy',
+                        'scipy',
+                        'matplotlib',
+                        'astropy',
+                        'astroquery'])
