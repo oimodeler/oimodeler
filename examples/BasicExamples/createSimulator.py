@@ -27,7 +27,7 @@ pt=oim.oimPt(f=1)
 model=oim.oimModel([ud,pt])
 
 # Creating the simulator with the filename list and the model
-sim=oim.OImSimulator(data=files,model=model)
+sim=oim.oimSimulator(data=files,model=model)
 
 # Preparing data (building vectors of coordinates and structure of data types)
 sim.data.prepareData()
