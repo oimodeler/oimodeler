@@ -6,7 +6,36 @@
 oimodeler documentation
 =======================
 
-OiModeler is a modular modeling tool for optical interferometric. It allows to load data in oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting, and plot results easily. The model components includes gray or chromatic analytical models defined in Fourier or image plan, imported radial profile, image, image-cube (with chromaticity), or precomputed grids of models providing that the outpu is in fits image format. As the software is modular and object oriented, it is easy to expand it by creating new components by deriving abstract classes. 
+oimodeler is a project aiming at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at a very early stage of development. 
+
+
+It will allow to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting (using mcmc or other fitters), and plot results easily. It will allow many model components including gray or chromatic analytical models defined in Fourier or image plan, imported radial profile, images, image-cubes (with chromaticity), or the use of precomputed grids of models providing that the output is in fits image format. As the software is modular and object oriented, it is easy to expand it by creating new components by deriving abstract classes. 
+
+
+Modules
+-----------------------
+
+- **oimModel** : Create models with various components as bricks 
+- **oimData** :  Handle interferometric, spectroscopic and photometric data
+- **oimDataFilter** : Filtering and modifying data (wavelength-range cut, smoothing, removing flags...)  
+- **oimSimulator** : Main class holding evertyhing together and producing final results :plots, tables...
+- **oimFitter** : Define and perform model-fitting   
+- **oimPlot** : Plotting tools
+- **oimUtils** : Various utility for optical-interferometry
+
+
+.. warning::
+
+    The software is in very early development. Partially implemented modules are the following:  
+    
+    - oimModel: Working with gray and chromatic models defined in Fourier plan, early implementation of Image-plan based models
+    - oimData class: No filtering, no optimization of data      
+    - oimSimulator: Simulated data and chi2 computation (no filtering no flagging yet)    
+    - oimPlot: Basics plots of oifits data and uv-plan plot    
+    - oimUtils: Spatial frequencies, baseline name, length and PA, create oifits arrays    
+
+
+
 
 
 .. image:: ../../images/createModelChromatic.png
@@ -15,12 +44,12 @@ OiModeler is a modular modeling tool for optical interferometric. It allows to l
 
 
 .. toctree::
-   installation
-   getting_started
-   examples
-   api
-   :maxdepth: 2
-   :caption: Contents:
+    installation
+    getting_started
+    examples
+    api
+    :maxdepth: 2
+   
 
 
 

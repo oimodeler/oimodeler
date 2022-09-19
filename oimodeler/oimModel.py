@@ -12,13 +12,14 @@ from scipy import integrate
 import numbers
 from scipy import interpolate
 
+np.seterr(invalid='ignore')
 ###############################################################################
 """
 Useful definitions.
 Maybeto be  put in a separate file later
 """
 mas2rad=units.mas.to(units.rad)
-I=np.complex(0,1)
+I=complex(0,1)
 ###############################################################################
 
 class oimParam(object):
@@ -615,7 +616,7 @@ class oimUD(oimComponentFourier):
 
     def _visFunction(self,ucoord,vcoord,rho,wl,t):
         xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho
-        return np.nan_to_num(2*j1(xx)/xx,nan=1)
+        return np.nan_to_num(np.divide(2*j1(xx),xx),nan=1)
 
     
     def _imageFunction(self,xx,yy,wl,t):
