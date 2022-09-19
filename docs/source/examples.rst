@@ -10,8 +10,15 @@ Basic Examples
 Create a simple model
 ^^^^^^^^^^^^^^^^^^^^^
 
+
+.. _createModelChromatic:
+
 Create a chromatic model
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+.. _createSimulator:
 
 Create a Simulator
 ^^^^^^^^^^^^^^^^^^

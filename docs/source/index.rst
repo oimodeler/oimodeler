@@ -13,7 +13,7 @@ It will allow to manipulate data in the oifits format, build complex models from
 
 
 Modules
------------------------
+--------
 
 - **oimModel** : Create models with various components as bricks 
 - **oimData** :  Handle interferometric, spectroscopic and photometric data
@@ -34,11 +34,19 @@ Modules
     - oimPlot: Basics plots of oifits data and uv-plan plot    
     - oimUtils: Spatial frequencies, baseline name, length and PA, create oifits arrays    
 
+A Few examples
+--------------
 
-
-
+Here are some plots for the :ref:`createModelChromatic.py <createModelChromatic>` example showing various chromatic-geometric models and the corresponding simulated Visibilities.
 
 .. image:: ../../images/createModelChromatic.png
+  :width: 4600
+  :alt: Alternative text
+
+
+Here is an example from the :ref:`createSimulator.py <createSimulator>` script showing high-end plots of some MATISSE LM-band data and a model create with oimodeler . In that case the data were simulated using the `APSRO <https://www.jmmc.fr/english/tools/proposal-preparation/aspro/>`_ software from `JMMC <http://www.jmmc.fr/>`_.
+
+.. image:: ../../images/oimodel_Create_simulator_data.png
   :width: 4600
   :alt: Alternative text
 
