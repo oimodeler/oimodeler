@@ -22,9 +22,7 @@ import sys
 sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.join(pathlib.Path(__file__).parents[2].resolve().as_posix(),"oimodeler"))
-print("**************************************")
-print(sys.path)
-print("**************************************")
+
 # -- Project information -----------------------------------------------------
 
 project = 'oimodeler'
@@ -75,3 +73,6 @@ html_theme_options = {
 }
 html_css_files = ["custom.css"]
 #numpydoc_class_members_toctree = False
+
+
+autodoc_mock_imports = ['numpy','scipy','matplotlib','astropy','astroquery']
