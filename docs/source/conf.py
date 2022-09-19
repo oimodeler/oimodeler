@@ -38,6 +38,7 @@ author = 'A. Meilland'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+ 'numpydoc',
  'sphinx.ext.duration',
  'sphinx.ext.doctest',
  'sphinx.ext.autodoc',
@@ -74,6 +75,15 @@ html_theme_options = {
     'collapse_navigation': False,
 }
 html_css_files = ["custom.css"]
+
 #numpydoc_class_members_toctree = False
 
 
+autodoc_default_options = {
+    'members': 'var1, var2',
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'undoc-members': True,
+    'exclude-members': '__weakref__',
+    'show-inheritance': False
+}

@@ -13,6 +13,30 @@ from  astropy.coordinates import Angle
 ###############################################################################
 
 def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False):
+    """
+    Return the baseline names, i.e. telescopes names 
+    separated by minus sign, in an extension of a oifits file. 
+    By default it is reading the OI_VIS extension
+    
+
+    Parameters
+    ----------
+    oifits : astropy.io.fits.hdu.hdulist.HDUList
+        An oifits file structure already opened with astropy.io.fits
+    hduname : str, optional
+        The fits extension name. The default is "OI_VIS2".
+    length : bool, optional
+        Add baseline length to the returned result. The default is False.
+    angle : bool, optional
+        Add baseline position angle ((in deg)à=)to the returned result. 
+        The default is False.
+
+    Returns
+    -------
+    name :  python list of str
+        The array containing the baseline names (or triplet) and optionally 
+        the baseline length and orientation.
+    """
     stanames=oifits['OI_ARRAY'].data['STA_NAME']
     staindexes=oifits['OI_ARRAY'].data['STA_INDEX']
 
@@ -43,6 +67,28 @@ def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False):
 ###############################################################################
 
 def getBaselineLengthAndPA(oifits,arr="OI_VIS2"):
+    """
+    
+    Return a tuple (B, PA) of the baseline lengths and orientation
+    (position angles) from a fits extension within an opened oifits file.
+    By default it is reading the OI_VIS extension.
+    
+
+    Parameters
+    ----------
+    oifits : astropy.io.fits.hdu.hdulist.HDUList
+        An oifits file structure already opened with astropy.io.fits.
+    arr : str, optional
+        The fits extension name. The default is "OI_VIS2".
+
+    Returns
+    -------
+    B : numpy.ndarray
+        the array containing the baselines length.
+    PA : numpy.ndarray
+        the array containing the baselines orientation (in deg).
+
+    """
     if type(oifits)==type(""):
         data=fits.open(oifits)
     else:
@@ -58,6 +104,24 @@ def getBaselineLengthAndPA(oifits,arr="OI_VIS2"):
 ###############################################################################
 
 def getSpaFreq(oifits,arr="OI_VIS2",unit=None):
+    """
+    
+
+    Parameters
+    ----------
+    oifits : TYPE
+        DESCRIPTION.
+    arr : TYPE, optional
+        DESCRIPTION. The default is "OI_VIS2".
+    unit : TYPE, optional
+        DESCRIPTION. The default is None.
+
+    Returns
+    -------
+    spaFreq : TYPE
+        DESCRIPTION.
+
+    """
     if type(oifits)==type(""):
         data=fits.open(oifits)
     else:
@@ -101,6 +165,34 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None):
 ###############################################################################
 
 def createOiArray(arrname,arrx,arry,arrz,sta_name,tel_name,diameter,staxyz):
+    """
+    
+
+    Parameters
+    ----------
+    arrname : TYPE
+        DESCRIPTION.
+    arrx : TYPE
+        DESCRIPTION.
+    arry : TYPE
+        DESCRIPTION.
+    arrz : TYPE
+        DESCRIPTION.
+    sta_name : TYPE
+        DESCRIPTION.
+    tel_name : TYPE
+        DESCRIPTION.
+    diameter : TYPE
+        DESCRIPTION.
+    staxyz : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    arr : TYPE
+        DESCRIPTION.
+
+    """
     nstation=np.size(sta_name)
     tel_name=fits.Column(name="TEL_NAME",format="A16",array=np.array(tel_name))
     sta_name=fits.Column(name="STA_NAME",format="A16",array=np.array(sta_name))
@@ -125,6 +217,20 @@ def createOiArray(arrname,arrx,arry,arrz,sta_name,tel_name,diameter,staxyz):
 
 
 def createOiTargetFromSimbad(names):
+    """
+    
+
+    Parameters
+    ----------
+    names : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    tar : TYPE
+        DESCRIPTION.
+
+    """
     customSimbad = Simbad()
     customSimbad.add_votable_fields('plx','plx_error','propermotions','sptype','velocity')
     if type(names)==type(""):
@@ -175,6 +281,24 @@ def createOiTargetFromSimbad(names):
 ###############################################################################
 
 def createOiWavelength(insname,eff_wave,eff_band):
+    """
+    
+
+    Parameters
+    ----------
+    insname : TYPE
+        DESCRIPTION.
+    eff_wave : TYPE
+        DESCRIPTION.
+    eff_band : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    wave : TYPE
+        DESCRIPTION.
+
+    """
     eff_wave=fits.Column(name="EFF_WAVE",format="E",array=np.array(eff_wave),unit='m')
     eff_band=fits.Column(name="EFF_BAND",format="E",array=np.array(eff_band),unit='m')
 
@@ -191,6 +315,44 @@ def createOiWavelength(insname,eff_wave,eff_band):
 
 def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
                  ucoord,vcoord,sta_index,flag,dateobs):
+    """
+    
+
+    Parameters
+    ----------
+    arrname : TYPE
+        DESCRIPTION.
+    insname : TYPE
+        DESCRIPTION.
+    target_id : TYPE
+        DESCRIPTION.
+    time : TYPE
+        DESCRIPTION.
+    mjd : TYPE
+        DESCRIPTION.
+    int_time : TYPE
+        DESCRIPTION.
+    vis2data : TYPE
+        DESCRIPTION.
+    vis2err : TYPE
+        DESCRIPTION.
+    ucoord : TYPE
+        DESCRIPTION.
+    vcoord : TYPE
+        DESCRIPTION.
+    sta_index : TYPE
+        DESCRIPTION.
+    flag : TYPE
+        DESCRIPTION.
+    dateobs : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    oivis2 : TYPE
+        DESCRIPTION.
+
+    """
 
     nb=len(target_id)
     
