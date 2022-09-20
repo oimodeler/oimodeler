@@ -38,7 +38,7 @@ author = 'A. Meilland'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
- 'numpydoc',
+ 'sphinx.ext.napoleon',
  'sphinx.ext.duration',
  'sphinx.ext.doctest',
  'sphinx.ext.autodoc',
@@ -46,6 +46,7 @@ extensions = [
  'sphinx_rtd_theme',
 ]
 
+napoleon_google_docstring = False
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -78,7 +79,7 @@ html_css_files = ["custom.css"]
 
 #numpydoc_class_members_toctree = False
 
-
+"""
 autodoc_default_options = {
     'members': 'var1, var2',
     'member-order': 'bysource',
@@ -87,3 +88,4 @@ autodoc_default_options = {
     'exclude-members': '__weakref__',
     'show-inheritance': False
 }
+"""

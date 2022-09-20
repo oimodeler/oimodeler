@@ -193,7 +193,62 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             xlim=None,ylim=None,xscale=None,yscale=None,shortLabel=True,
             color=None,colorTab=None,errorbar=False,showFlagged=False,
             kwargs_error={},**kwargs):
+    """
+    
 
+    Parameters
+    ----------
+    oifitsList : TYPE
+        DESCRIPTION.
+    xname : TYPE
+        DESCRIPTION.
+    yname : TYPE
+        DESCRIPTION.
+    axe : TYPE, optional
+        DESCRIPTION. The default is None.
+    xunit : TYPE, optional
+        DESCRIPTION. The default is None.
+    xunitmultiplier : TYPE, optional
+        DESCRIPTION. The default is 1.
+    yunit : TYPE, optional
+        DESCRIPTION. The default is None.
+    yunitmultiplier : TYPE, optional
+        DESCRIPTION. The default is 1.
+    cname : TYPE, optional
+        DESCRIPTION. The default is None.
+    cunit : TYPE, optional
+        DESCRIPTION. The default is None.
+    cunitmultiplier : TYPE, optional
+        DESCRIPTION. The default is 1.
+    xlim : TYPE, optional
+        DESCRIPTION. The default is None.
+    ylim : TYPE, optional
+        DESCRIPTION. The default is None.
+    xscale : TYPE, optional
+        DESCRIPTION. The default is None.
+    yscale : TYPE, optional
+        DESCRIPTION. The default is None.
+    shortLabel : TYPE, optional
+        DESCRIPTION. The default is True.
+    color : TYPE, optional
+        DESCRIPTION. The default is None.
+    colorTab : TYPE, optional
+        DESCRIPTION. The default is None.
+    errorbar : TYPE, optional
+        DESCRIPTION. The default is False.
+    showFlagged : TYPE, optional
+        DESCRIPTION. The default is False.
+    kwargs_error : TYPE, optional
+        DESCRIPTION. The default is {}.
+    **kwargs : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    res : TYPE
+        DESCRIPTION.
+
+    """
     
     res= None
     
@@ -408,6 +463,10 @@ class _HandlerColorLineCollection(HandlerLineCollection):
 
 ###############################################################################
 class oimAxes(plt.Axes):
+    
+    """
+    Class derived from plt.Axes that allows easy plotting of oifits data
+    """
     name = 'oimAxes'
     
     ytype=None
