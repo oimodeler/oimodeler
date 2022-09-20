@@ -52,6 +52,7 @@ Here is an example from the :ref:`createSimulator.py <createSimulator>` script s
 
 
 .. toctree::
+    overview
     installation
     getting_started
     examples

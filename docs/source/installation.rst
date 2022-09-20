@@ -23,13 +23,13 @@ Dependancies
 
 oimodeler python library depends only on the following packages:
 
-- numpy
-- scipy
-- matplotlib
-- astropy
-- astroquery
-- emcee
-- corner
+- `numpy <https://numpy.org/>`_
+- `scipy <https://scipy.org/>`_
+- `matplotlib <https://matplotlib.org/>`_
+- `astropy <https://www.astropy.org/>`_
+- `astroquery <https://astroquery.readthedocs.io/en/latest/>`_
+- `emcee <https://emcee.readthedocs.io/en/stable/>`_
+- `corner <https://corner.readthedocs.io/en/latest/>`_
 
     
 These packages are automatically installed if missing when installing oimodeler with the pip command but manual installation are required when cloning the repository.
