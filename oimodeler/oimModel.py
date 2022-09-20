@@ -59,6 +59,13 @@ class oimParam(object):
         self.description=description
         self.unit=unit
 
+    def set(self,**kwargs):
+        for key, value in kwargs.items(): 
+            try:
+                self.__dict__[key]=value
+            except  NameError:
+                print("Note valid parameter : {}".format(value))
+                
     
     def __call__(self,wl=None,t=None):
         """ The call function will be useful for wavelength or time dependent
@@ -74,6 +81,7 @@ class oimParam(object):
     def __repr__(self):
         return "oimParam at {} : {}={}+-{} range=[{},{}] free={} ".format(hex(id(self)),self.name,
                 self.value,self.error,self.min,self.max,self.free)
+
 
 
 ###############################################################################
