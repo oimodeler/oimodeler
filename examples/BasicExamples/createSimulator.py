@@ -7,11 +7,8 @@ Created on Wed Jun 29 16:16:59 2022
 
 import oimodeler as oim
 import matplotlib.pyplot as plt
-import numpy as np
-import astropy.units as u
 import os
 from datetime import datetime
-from astropy.io import fits
 
 
 
@@ -37,7 +34,8 @@ sim.data.prepareData()
 start_time = datetime.now()
 sim.compute(computeChi2=True,computeSimulatedData=True)
 end_time = datetime.now()
-print('Simulation computation time = {:.3f}ms'.format((end_time - start_time).total_seconds()*1000 ))
+print('Simulation computation time = {:.3f}ms'.format((end_time - start_time)
+                                                      .total_seconds()*1000 ))
 
 #Printing data model chi2r
 print("Chi2r = {}".format(sim.chi2r))
@@ -45,22 +43,23 @@ print("Chi2r = {}".format(sim.chi2r))
 
 #%%
 # plotting  data and simulated data
-from matplotlib.legend_handler import HandlerLineCollection
-from matplotlib.collections import LineCollection
-
-#Set the projection to oimAxes for all subplots to be able to use oimodeler custom plots
-fig,ax=plt.subplots(5,1,sharex=True,figsize=(8,6),subplot_kw=dict(projection='oimAxes'))
-plt.subplots_adjust(left=0.09,top=0.98,right=0.98,hspace=0.14)
 
 #list of data type to be plotted
 arr=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI"]
 
-# Ploting loop :  plotting data and simulated data for each data type
+#Set the projection to oimAxes for all subplots to use oimodeler custom plots
+fig,ax=plt.subplots(len(arr),1,sharex=True,figsize=(8,6),
+                    subplot_kw=dict(projection='oimAxes'))
+
+plt.subplots_adjust(left=0.09,top=0.98,right=0.98,hspace=0.14)
+
+# Ploting loop :  plotting data and simulated data for each data type in arr
 for iax,axi in enumerate(ax):
     
     #plotting the data with wavelength colorscale + errorbars vs spatial frequencies
     scale=axi.oiplot(sim.data.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
-            cname="EFF_WAVE",cunitmultiplier=1e6,lw=2,cmap="coolwarm",errorbar=True,label="ASPRO")
+            cname="EFF_WAVE",cunitmultiplier=1e6,lw=2,cmap="coolwarm",
+            errorbar=True,label="ASPRO")
 
     #over-plotting the simulated data as a dotted line  vs spatial frequencies
     axi.oiplot(sim.simulatedData.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
@@ -72,12 +71,11 @@ for iax,axi in enumerate(ax):
     #automatic ylim => 0-1 for visibilties, -180,180 for phases
     axi.autolim()
     
-#Create the colorbar for the wavlength for the data plotted with "byWavelength" color option
+#Create a colorbar for the data plotted with wavelength colorscale option
 fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ ($\mu$m)")
 
 #%%
-#Saving the plot
-
+#Save the plot
 filename=os.path.join(path,os.pardir,"images","oimodel_Create_simulator_data.png")
 plt.savefig(filename)
 
