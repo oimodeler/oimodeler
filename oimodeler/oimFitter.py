@@ -158,6 +158,7 @@ class oimFitterEmcee(oimFitter):
             txt=namei
             if uniti.to_string()!="":
                 txt+=" ("+uniti.to_string()+")"
+            txt+="\n"    
             labels.append(txt)
         
         c=self.sampler.get_chain(discard=discard,flat=True)
@@ -167,7 +168,7 @@ class oimFitterEmcee(oimFitter):
         c2=c[idx,:]
 
         corner.corner(c2,labels=labels,quantiles=[0.16, 0.5, 0.84],show_titles=True,bins=50
-                      ,smooth=2,smooth1d=2)
+                      ,smooth=2,smooth1d=2,fontsize=10)
 
         if savefig!=None:
             plt.savefig(savefig)
@@ -200,6 +201,7 @@ class oimFitterEmcee(oimFitter):
             txt=pnames[i]
             if punits[i].to_string()!="":
                 txt+=" ("+punits[i].to_string()+")"
+            
             
             ax[i].set_ylabel(txt)
             ax[i].yaxis.set_label_coords(-0.1, 0.5)

@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-oimodeler documentation
-=======================
+oimodeler 
+=========
 
 oimodeler is a project aiming at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at a very early stage of development. 
 
@@ -30,9 +30,12 @@ Modules
     
     - oimModel: Working with gray and chromatic models defined in Fourier plan, early implementation of Image-plan based models
     - oimData class: No filtering, no optimization of data      
-    - oimSimulator: Simulated data and chi2 computation (no filtering no flagging yet)    
+    - oimSimulator: Simulated data and chi2 computation (no filtering yet) 
+    - oimFitter : Implementation of a basic emcee-based fitter
     - oimPlot: Basics plots of oifits data and uv-plan plot    
     - oimUtils: Spatial frequencies, baseline name, length and PA, create oifits arrays    
+    
+    No module is complete and have been fully verified up to now
 
 A Few examples
 --------------
@@ -40,16 +43,28 @@ A Few examples
 Here are some plots for the :ref:`createModelChromatic.py <createModelChromatic>` example showing various chromatic-geometric models and the corresponding simulated Visibilities.
 
 .. image:: ../../images/createModelChromatic.png
-  :width: 4600
   :alt: Alternative text
 
 
 Here is an example from the :ref:`createSimulator.py <createSimulator>` script showing high-end plots of some MATISSE LM-band data and a model create with oimodeler . In that case the data were simulated using the `APSRO <https://www.jmmc.fr/english/tools/proposal-preparation/aspro/>`_ software from `JMMC <http://www.jmmc.fr/>`_.
 
 .. image:: ../../images/oimodel_Create_simulator_data.png
-  :width: 4600
   :alt: Alternative text
 
+
+
+Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script showing :
+
+- the parameters values (and corresponding chi2 as a colorscale) for walkers from a emcee run on a binary model
+- the famous corners plots for the 4 free parameters: x and y positions of the binary, diameter and flux
+
+ Again, the data is simulated with `APSRO <https://www.jmmc.fr/english/tools/proposal-preparation/aspro/>`.
+
+.. image:: ../../images/SimpleFitWalkers.png
+  :alt: Alternative text
+  
+.. image:: ../../images/SimpleFitCorner.png
+  :alt: Alternative text
 
 .. toctree::
     overview
