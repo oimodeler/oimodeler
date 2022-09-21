@@ -65,8 +65,8 @@ class oimSimulator(object):
     contains 
     """
     def __init__(self,data=None,model=None,fitter=None):
-        self.data=oim.OImData()
-        self.simulatedData=oim.OImData()
+        self.data=oim.oimData()
+        self.simulatedData=oim.oimData()
         self.model=None
         
         if data!=None:
@@ -125,28 +125,28 @@ class oimSimulator(object):
                           
                     #Computing observables from complex Coherent Flux
                     elif arrType=="OI_VIS":
-                        if dataType&oim.OImDataType.VISAMP_ABS:
+                        if dataType&oim.oimDataType.VISAMP_ABS:
                             val.append(corrFlux2VisAmpAbs(vcompli))
                             quantities.append("VISAMP")
-                        elif dataType&oim.OImDataType.VISAMP_DIF:
+                        elif dataType&oim.oimDataType.VISAMP_DIF:
                             val.append(corrFlux2VisAmpDif(vcompli))
                             
                             quantities.append("VISAMP")
-                        elif dataType&oim.OImDataType.VISAMP_COR:
+                        elif dataType&oim.oimDataType.VISAMP_COR:
                             val.append(corrFlux2VisAmpCor(vcompli))
                             quantities.append("VISAMP")       
-                        if dataType&oim.OImDataType.VISPHI_ABS:
+                        if dataType&oim.oimDataType.VISPHI_ABS:
                             val.append(corrFlux2VisPhiAbs(vcompli))
                             quantities.append("VISPHI")                        
-                        elif dataType&oim.OImDataType.VISPHI_DIF:
+                        elif dataType&oim.oimDataType.VISPHI_DIF:
                             val.append(corrFlux2VisPhiDif(vcompli))
                             quantities.append("VISPHI") 
                             
                     elif arrType=="OI_T3":
-                        if dataType&oim.OImDataType.T3AMP:
+                        if dataType&oim.oimDataType.T3AMP:
                             val.append(corrFlux2T3Amp(vcompli))
                             quantities.append("T3AMP") 
-                        if  dataType&oim.OImDataType.T3PHI:
+                        if  dataType&oim.oimDataType.T3PHI:
                             val.append(corrFlux2T3Phi(vcompli))
                             quantities.append("T3PHI")                         
                     elif arrType=="OI_FLUX":

@@ -389,3 +389,4 @@ def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
     oivis2.header['ARRNAME']=arrname
 
     return oivis2
+

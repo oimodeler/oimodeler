@@ -75,7 +75,7 @@ class oimParam(object):
     
     
     def __str__(self):
-        return "oimParam={}={}+-{} range=[{},{}] free={} ".format(self.name,
+        return "oimParam={} = {}+-{} range=[{},{}] free={} ".format(self.name,
                 self.value,self.error,self.min,self.max,self.free)
 
     def __repr__(self):
@@ -192,14 +192,14 @@ class oimParamLinker(object):
 _standardParameters={
     "x":{"name":"x","value":0,"description":"x position","unit":units.mas,"free":False},
     "y":{"name":"x","value":0,"description":"y position","unit":units.mas,"free":False},
-    "f":{"name":"f","value":1,"description":"flux","unit":1},
+    "f":{"name":"f","value":1,"description":"flux","unit":units.one},
     "fwhm":{"name":"fwhm","value":0,"description":"FWHM","unit":units.mas},
     "d":{"name":"d","value":0,"description":"Diameter","unit":units.mas},
     "din":{"name":"din","value":0,"description":"Inner Diameter","unit":units.mas},
     "dout":{"name":"dout","value":0,"description":"Outer Diameter","unit":units.mas},    
-    "elong":{"name":"elong","value":1,"description":"Elongation Ratio","unit":1},
+    "elong":{"name":"elong","value":1,"description":"Elongation Ratio","unit":units.one},
     "pa":{"name":"pa","value":0,"description":"Major-axis Position angle","unit":units.deg},
-    "skw":{"name":"skw","value":0,"description":"Skewedness","unit":"1"},
+    "skw":{"name":"skw","value":0,"description":"Skewedness","unit":units.one},
     "skwPa":{"name":"skwPa","value":0,"description":"Skewedness Position angle","unit":units.deg},
     "pixSize":{"name":"pixSize","value":0.1,"description":"Pixel Size","unit":units.mas}
     }

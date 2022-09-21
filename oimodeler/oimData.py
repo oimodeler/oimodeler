@@ -10,16 +10,16 @@ from astropy.io import fits
 import os
 from enum import IntFlag
 
-_OImDataType=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"]
-_OImDataTypeErr=["VIS2ERR","VISAMPERR","VISPHIERR","T3AMPERR","T3PHIERR","FLUXERR"]
-_OImDataTypeArr=["OI_VIS2","OI_VIS","OI_T3","OI_FLUX"]
+_oimDataType=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"]
+_oimDataTypeErr=["VIS2ERR","VISAMPERR","VISPHIERR","T3AMPERR","T3PHIERR","FLUXERR"]
+_oimDataTypeArr=["OI_VIS2","OI_VIS","OI_T3","OI_FLUX"]
 
 
 ###############################################################################
 
 ###############################################################################    
     
-def OimDataGetWl(data,arr,dwl=True):
+def oimDataGetWl(data,arr,dwl=True):
         insname=arr.header['INSNAME']
         oiWlArr=[arri for arri in data if (arri.name=="OI_WAVELENGTH" 
                                            and arri.header['INSNAME']==insname)][0]
@@ -30,7 +30,7 @@ def OimDataGetWl(data,arr,dwl=True):
 
 ###############################################################################
 
-class OImDataType(IntFlag):
+class oimDataType(IntFlag):
     VIS2DATA    = 1
     VISAMP_ABS  = 2    
     VISAMP_DIF  = 4  
@@ -44,9 +44,9 @@ class OImDataType(IntFlag):
 
 ###############################################################################
 
-def OImGetDataValErrAndTypeFlag(arr):
+def oimGetDataValErrAndTypeFlag(arr):
     
-    dtype=OImDataType(0)
+    dtype=oimDataType(0)
     val=[]
     err=[]
     flag=[]
@@ -56,7 +56,7 @@ def OImGetDataValErrAndTypeFlag(arr):
             val.append(arr.data["VIS2DATA"]) 
             err.append(arr.data["VIS2ERR"])
             flag.append(arr.data["FLAG"])
-            dtype|=OImDataType.VIS2DATA
+            dtype|=oimDataType.VIS2DATA
     if arr.name=="OI_VIS":
         nvamp=np.size(np.where(arr.data["VISAMP"]!=0))
         if nvamp!=0:
@@ -65,13 +65,13 @@ def OImGetDataValErrAndTypeFlag(arr):
             flag.append(arr.data["FLAG"])
             try:
                 if arr.header["AMPTYP"].lower()=="absolute":
-                    dtype|=OImDataType.VISAMP_ABS
+                    dtype|=oimDataType.VISAMP_ABS
                 elif arr.header["AMPTYP"].lower()=="differential":
-                    dtype|=OImDataType.VISAMP_DIF
+                    dtype|=oimDataType.VISAMP_DIF
                 else:
-                    dtype|=OImDataType.VISAMP_COR
+                    dtype|=oimDataType.VISAMP_COR
             except:
-                dtype|=OImDataType.VISAMP_ABS
+                dtype|=oimDataType.VISAMP_ABS
         nvphi=np.size(np.where(arr.data["VISPHI"]!=0))
         if nvphi!=0:
             val.append(arr.data["VISPHI"]) 
@@ -79,36 +79,36 @@ def OImGetDataValErrAndTypeFlag(arr):
             flag.append(arr.data["FLAG"])
             try:
                 if arr.header["PHITYP"].lower()=="absolute":
-                    dtype|=OImDataType.VISPHI_ABS
+                    dtype|=oimDataType.VISPHI_ABS
                 else:
-                    dtype|=OImDataType.VISPHI_DIF
+                    dtype|=oimDataType.VISPHI_DIF
             except:
-                dtype|=OImDataType.VISPHI_ABS           
+                dtype|=oimDataType.VISPHI_ABS           
     if arr.name=="OI_T3": 
         t3amp=np.size(np.where(arr.data["T3AMP"]!=0))
         if t3amp!=0:
             val.append(arr.data["T3AMP"]) 
             err.append(arr.data["T3AMPERR"])
             flag.append(arr.data["FLAG"])
-            dtype|=OImDataType.T3AMP
+            dtype|=oimDataType.T3AMP
         t3phi=np.size(np.where(arr.data["T3PHI"]!=0))
         if t3phi!=0:
             val.append(arr.data["T3PHI"]) 
             err.append(arr.data["T3PHIERR"])
             flag.append(arr.data["FLAG"])
-            dtype|=OImDataType.T3PHI
+            dtype|=oimDataType.T3PHI
     if arr.name=="OI_FLUX":     
         nflx=np.size(np.where(arr.data["FLUXDATA"]!=0))
         if nflx!=0:
             val.append(arr.data["FLUXDATA"]) 
             err.append(arr.data["FLUXERR"])
             flag.append(arr.data["FLAG"])
-            dtype|=OImDataType.FLUXDATA
+            dtype|=oimDataType.FLUXDATA
     return dtype,val,err,flag
 
 ###############################################################################
 
-def OimDataCheckData(arr):
+def oimDataCheckData(arr):
     cdata=[]
     if np.size(np.where(arr.data["FLAG"]==False))!=0:
         if arr.name=="OI_VIS2":
@@ -137,8 +137,8 @@ def OimDataCheckData(arr):
 
 ###############################################################################
 
-def OimDataGetVectCoord(data,arr):
-    wl,dwl=OimDataGetWl(data,arr)
+def oimDataGetVectCoord(data,arr):
+    wl,dwl=oimDataGetWl(data,arr)
     nwl=np.size(wl)    
     mjd=arr.data["TIME"]
     mjd=np.outer(mjd,np.ones(nwl)).flatten()
@@ -193,7 +193,7 @@ def OimDataGetVectCoord(data,arr):
    
 ###############################################################################
 
-class OImData(object):
+class oimData(object):
     """
     A class to hold and manipulate data
     """
@@ -230,9 +230,9 @@ class OImData(object):
         
         for iarr,arri in enumerate(data):
             info=None
-            if arri.name in _OImDataTypeArr:
+            if arri.name in _oimDataTypeArr:
                 info={'arr':arri.name, 'idx':iarr}
-                cdata=OimDataCheckData(arri)
+                cdata=oimDataCheckData(arri)
                 if arri.name=="OI_VIS2":
                     nB=np.shape(arri.data["VIS2DATA"])
                 if arri.name=="OI_VIS":
@@ -243,7 +243,7 @@ class OImData(object):
                     nB=np.shape(arri.data["FLUXDATA"])
                     
                 info["nB"]=nB
-                cdata=OimDataCheckData(arri)
+                cdata=oimDataCheckData(arri)
                 info["data"]=cdata
             if info:
                 dataInfo.append(info)
@@ -287,11 +287,11 @@ class OImData(object):
             self.struct_err.append([]) 
             self.struct_flag.append([])
             for iarr,arri in enumerate(datai):
-                if arri.name in _OImDataTypeArr:
+                if arri.name in _oimDataTypeArr:
                     
                     #print("arr {} : type={}".format(iarr,arri.name))
-                    u,v,wl,dwl,mjd,nB,nwl=OimDataGetVectCoord(datai,arri)
-                    dataTypeFlag,val,err,flag=OImGetDataValErrAndTypeFlag(arri)
+                    u,v,wl,dwl,mjd,nB,nwl=oimDataGetVectCoord(datai,arri)
+                    dataTypeFlag,val,err,flag=oimGetDataValErrAndTypeFlag(arri)
                     #print(np.shape(u))
                     self.vect_u=np.concatenate((self.vect_u,u))
                     self.vect_v=np.concatenate((self.vect_v,v))
@@ -315,7 +315,7 @@ class OImData(object):
 
     def __str__(self):
        nfiles=np.size(self.data)
-       txt="OImData containing {} file(s)\n".format(nfiles)
+       txt="oimData containing {} file(s)\n".format(nfiles)
        for ifile,fi in enumerate(self.dataInfo):
            fname=os.path.basename(self.data[ifile].filename())
            txt+="{}\n".format(fname)
@@ -330,3 +330,5 @@ class OImData(object):
             
     
 ###############################################################################    
+
+
