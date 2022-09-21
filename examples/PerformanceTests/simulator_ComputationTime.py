@@ -38,7 +38,7 @@ for idata in range(ndata):
     
     files=files0*(idata+1)
     
-    sim=oim.OImSimulator(data=files,model=model)    
+    sim=oim.oimSimulator(data=files,model=model)    
     sim.data.prepareData()
     
     if idata==0:
