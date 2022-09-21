@@ -71,7 +71,7 @@ html_logo = "../../images/logo.png"
 html_favicon = "../../images/favicon.ico"
 html_theme_options = {
     'logo_only': True,
-    'display_version': False,
+    'display_version': True,
     'style_nav_header_background':'#eeeeee',
     'collapse_navigation': False,
 }
