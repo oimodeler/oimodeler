@@ -157,8 +157,7 @@ class oimFitterEmcee(oimFitter):
         for namei,uniti in zip(pnames,punits):
             txt=namei
             if uniti.to_string()!="":
-                txt+=" ("+uniti.to_string()+")"
-            txt+="\n"    
+                txt+=" ("+uniti.to_string()+")"  
             labels.append(txt)
         
         c=self.sampler.get_chain(discard=discard,flat=True)
@@ -168,7 +167,7 @@ class oimFitterEmcee(oimFitter):
         c2=c[idx,:]
 
         corner.corner(c2,labels=labels,quantiles=[0.16, 0.5, 0.84],show_titles=True,bins=50
-                      ,smooth=2,smooth1d=2,fontsize=10)
+                      ,smooth=2,smooth1d=2,fontsize=8,title_kwargs={'fontsize':8},use_math_text=True)
 
         if savefig!=None:
             plt.savefig(savefig)

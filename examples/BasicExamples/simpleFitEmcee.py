@@ -46,12 +46,11 @@ fit.prepare(init="random")
 print(fit.initialParams)
 
 #run a 1000 steps fit with fixed starting inital and 1000 steps 
-fit.run(nsteps=1000,progress=True)
+fit.run(nsteps=2000,progress=True)
 
-#%%
+#%% Saving corner and walkers plots
+fit.cornerPlot(discard=400,savefig=
+               os.path.join(path,os.pardir,"images","SimpleFitCorner.png"))
 
-#Saving corner and walkers plots
-filename_corner=os.path.join(path,os.pardir,"images","SimpleFitCorner.png")
-filename_steps=os.path.join(path,os.pardir,"images","SimpleFitWalkers.png")
-fit.cornerPlot(discard=400,savefig=filename_corner)
-fit.walkersPlot(cmap="plasma_r",savefig=filename_steps)
+fit.walkersPlot(cmap="plasma_r",savefig=
+                os.path.join(path,os.pardir,"images","SimpleFitWalkers.png"))
