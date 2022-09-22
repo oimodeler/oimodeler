@@ -63,7 +63,7 @@ class oimFitter(object):
         return kwargs
         
     def getResults(**kwargs):
-        return kwargs
+        return 0
     
     def _prepare(self,**kwargs):
         return kwargs
@@ -147,9 +147,39 @@ class oimFitterEmcee(oimFitter):
         
         self.simulator.compute(computeChi2=True)
         return -0.5 * self.simulator.chi2r  
+    
+    
+    def getResults(self,mode='best',discard=0,chi2limfact=20,**kwargs):
+        chi2=-2*self.sampler.get_log_prob(discard=discard,flat=True)
+        chain=self.sampler.get_chain(discard=discard,flat=True)
+        
+        idx=np.where(chi2<=chi2limfact*chi2.min())[0]
+        chain2=chain[idx,:]
+        
+        if mode=='best':
+            idx=np.argmin(chi2)
+            res=chain[idx]
+        elif mode=='mean':
+            res=np.mean(chain2,axis=0)
+        elif mode=='median':
+            res=np.median(chain2,axis=0)  
+        else:
+            raise NameError ("'mode' should be either 'best', 'mean' or 'median'")
+        
+        nparam=chain.shape[1]
+        err_m=np.ndarray([nparam])
+        err_p=np.ndarray([nparam])
+        for iparam in range(nparam):
+            err_m[iparam]=np.abs(np.quantile(chain2[:,iparam],0.16)-res[iparam])
+            err_p[iparam]=np.abs(np.quantile(chain2[:,iparam],0.84)-res[iparam])
+            
+            
+        err=0.5*(err_m+err_p)
+        return res,err,err_m,err_p
+            
         
     
-    def cornerPlot(self,discard=0,chi2lim=20,savefig=None,**kwargs):
+    def cornerPlot(self,discard=0,chi2limfact=20,savefig=None,**kwargs):
         pnames=list(self.freeParams.keys())
         punits=[p.unit for p in list(self.freeParams.values())]
         
@@ -163,14 +193,16 @@ class oimFitterEmcee(oimFitter):
         c=self.sampler.get_chain(discard=discard,flat=True)
         chi2=-2*self.sampler.get_log_prob(discard=discard,flat=True)
 
-        idx=np.where(chi2<chi2lim)[0]
+        idx=np.where(chi2<chi2limfact*chi2.min())[0]
         c2=c[idx,:]
 
-        corner.corner(c2,labels=labels,quantiles=[0.16, 0.5, 0.84],show_titles=True,bins=50
+        fig=corner.corner(c2,labels=labels,quantiles=[0.16, 0.5, 0.84],show_titles=True,bins=50
                       ,smooth=2,smooth1d=2,fontsize=8,title_kwargs={'fontsize':8},use_math_text=True)
 
         if savefig!=None:
             plt.savefig(savefig)
+        
+        return fig,fig.axes
 
     def walkersPlot(self,savefig=None,**kwargs):
         fig, ax = plt.subplots(4, figsize=(10, 7), sharex=True)
@@ -211,5 +243,8 @@ class oimFitterEmcee(oimFitter):
 
         if savefig!=None:
             plt.savefig(savefig)
-    
+            
+        return fig,ax
+
+
     

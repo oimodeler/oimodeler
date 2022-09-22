@@ -33,7 +33,7 @@ ud.params['y'].set(min=-50,max=50,free=True)
 ud.params['f'].set(min=0.,max=10.)
 pt.params['f'].free=False
 
-#Create a new fitter wwith 32 walkers and the list of oifits files and the model
+#Create a new fitter with 32 walkers and the list of oifits files and the model
 fit=oim.oimFitterEmcee(files,model,nwalkers=32)
 #print(fit._logProbability([0,10,1,5]))
 
@@ -43,14 +43,22 @@ fit=oim.oimFitterEmcee(files,model,nwalkers=32)
 fit.prepare(init="random")
 
 #Printing the initial values of the walkers
+print("Initial values of the free parameters for the {} walkers".format(fit.params["nwalkers"].value))
 print(fit.initialParams)
 
 #run a 1000 steps fit with fixed starting inital and 1000 steps 
-fit.run(nsteps=2000,progress=True)
+fit.run(nsteps=10000,progress=True)
+
+
+#%%
+best,err_m,err_p,err=fit.getResults(mode='best')
+mean,err_m,err_p,err=fit.getResults(mode='mean',discard=2000,chi2limfact=10)
+median,err_m,err_p,err=fit.getResults(mode='median',discard=2000,chi2limfact=10)
 
 #%% Saving corner and walkers plots
-fit.cornerPlot(discard=400,savefig=
-               os.path.join(path,os.pardir,"images","SimpleFitCorner.png"))
+figCorner,axeCorner=fit.cornerPlot(discard=2000)#,savefig=
+               #os.path.join(path,os.pardir,"images","SimpleFitCorner.png"))
 
-fit.walkersPlot(cmap="plasma_r",savefig=
-                os.path.join(path,os.pardir,"images","SimpleFitWalkers.png"))
+figWalkers,axeWalkers=fit.walkersPlot(cmap="plasma_r")#,savefig=
+                #os.path.join(path,os.pardir,"images","SimpleFitWalkers.png"))
+
