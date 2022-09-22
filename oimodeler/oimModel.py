@@ -11,6 +11,8 @@ from scipy.special import j0,j1
 from scipy import integrate
 import numbers
 from scipy import interpolate
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 
 np.seterr(invalid='ignore')
 ###############################################################################
@@ -75,12 +77,12 @@ class oimParam(object):
     
     
     def __str__(self):
-        return "oimParam={} = {}+-{} range=[{},{}] free={} ".format(self.name,
-                self.value,self.error,self.min,self.max,self.free)
+        return "oimParam {} = {} \xB1 {} {} range=[{},{}] {} ".format(self.name,
+                self.value,self.error,self.unit.to_string(),self.min,self.max,'free' if self.free else 'fixed')
 
     def __repr__(self):
-        return "oimParam at {} : {}={}+-{} range=[{},{}] free={} ".format(hex(id(self)),self.name,
-                self.value,self.error,self.min,self.max,self.free)
+        return "oimParam at {} : {}={} \xB1 {} {} range=[{},{}] free={} ".format(hex(id(self)),self.name,
+                self.value,self.error,self.unit.to_string(),self.min,self.max,self.free)
 
 
 
@@ -191,7 +193,7 @@ class oimParamLinker(object):
 #Here is a list of standard parameters to be used when defining new components
 _standardParameters={
     "x":{"name":"x","value":0,"description":"x position","unit":units.mas,"free":False},
-    "y":{"name":"x","value":0,"description":"y position","unit":units.mas,"free":False},
+    "y":{"name":"y","value":0,"description":"y position","unit":units.mas,"free":False},
     "f":{"name":"f","value":1,"description":"flux","unit":units.one},
     "fwhm":{"name":"fwhm","value":0,"description":"FWHM","unit":units.mas},
     "d":{"name":"d","value":0,"description":"Diameter","unit":units.mas},
@@ -920,7 +922,32 @@ class oimModel(object):
 
 
 
+    def showModel(self,dim,pixSize,wl=None,t=None,fits=False, 
+                  fromFT=False,axe=None,normPow=0.5,figsize=(8,6),
+                  savefig=None,**kwargs):
+        
+        im=self.getImage(dim,pixSize,wl,t,fits,fromFT)
+        im=im/np.sum(im)
+        
+        if axe==None:
+            fig,axe=plt.subplots(figsize=figsize,
+                                 subplot_kw=dict(projection='oimAxes'))
+        else:
+            fig=axe.get_figure()
+            
+        cb=axe.imshow(im,extent=[dim/2*pixSize,-dim/2*pixSize,
+                              -dim/2*pixSize,dim/2*pixSize],
+                       norm=colors.PowerNorm(gamma=normPow))
+        axe.set_xlabel("$\\alpha$(mas)")
+        axe.set_ylabel("$\\delta$(mas)")
+        fig.colorbar(cb, ax=axe,label="Normalized Intensity")
+        
+        
+        if savefig!=None:
+            plt.savefig(savefig)
+        return fig,axe
 
+        
 
 
 
