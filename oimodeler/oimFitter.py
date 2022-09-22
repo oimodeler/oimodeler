@@ -175,8 +175,18 @@ class oimFitterEmcee(oimFitter):
             
             
         err=0.5*(err_m+err_p)
+        
+        
+        for iparam,parami in enumerate(self.freeParams.values()):
+            parami.value=res[iparam]
+            parami.error=err[iparam]
+            
+        self.simulator.compute(computeChi2=True,computeSimulatedData=True)
+        
         return res,err,err_m,err_p
             
+    
+
         
     
     def cornerPlot(self,discard=0,chi2limfact=20,savefig=None,**kwargs):
