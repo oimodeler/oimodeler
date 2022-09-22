@@ -6,9 +6,8 @@ Created on Tue Nov 23 15:26:42 2021
 """
 
 import numpy as np
-from astropy.io import fits
-import os
 import oimodeler as oim
+import matplotlib.pyplot as plt
 
 
 def corrFlux2Vis2(vcompl):
@@ -179,5 +178,43 @@ class oimSimulator(object):
              self.chi2r=chi2/nelChi2
              self.chi2List=chi2List
                 
-                    
+           
+    def plot(self,arr,simulated=True,savefig=None,**kwargs):
+        # plotting  data and simulatiedData
+
+
+        #Set the projection to oimAxes for all subplots to use oimodeler custom plots
+        fig,ax=plt.subplots(len(arr),1,sharex=True,figsize=(8,6),
+                            subplot_kw=dict(projection='oimAxes'))
+
+        plt.subplots_adjust(left=0.09,top=0.98,right=0.98,hspace=0.14)
+
+        # Ploting loop :  plotting data and simulated data for each data type in arr
+        for iax,axi in enumerate(ax):
+            
+            #plotting the data with wavelength colorscale + errorbars vs spatial frequencies
+            scale=axi.oiplot(self.data.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
+                    cname="EFF_WAVE",cunitmultiplier=1e6,lw=2,cmap="coolwarm",
+                    errorbar=True,label="data")
+
+            #over-plotting the simulated data as a dotted line  vs spatial frequencies
+            axi.oiplot(self.simulatedData.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
+                    color="k",ls=":",lw=1,label="model")
+            
+            if axi!=ax[-1]: axi.get_xaxis().set_visible(False)
+            if axi==ax[0]:axi.legend()
+            
+            #automatic ylim => 0-1 for visibilties, -180,180 for phases
+            axi.autolim()
+            
+        #Create a colorbar for the data plotted with wavelength colorscale option
+        fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ ($\mu$m)")
+
+        if savefig!=None:
+            plt.savefig(savefig)
+            
+        return fig,ax
+
+
+        
 
