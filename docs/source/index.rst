@@ -66,6 +66,9 @@ Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script sh
 .. image:: ../../images/SimpleFitCorner.png
   :alt: Alternative text
 
+
+
+
 .. toctree::
     overview
     installation
