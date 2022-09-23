@@ -77,12 +77,18 @@ class oimParam(object):
     
     
     def __str__(self):
-        return "oimParam {} = {} \xB1 {} {} range=[{},{}] {} ".format(self.name,
+        try :
+            return "oimParam {} = {} \xB1 {} {} range=[{},{}] {} ".format(self.name,
                 self.value,self.error,self.unit.to_string(),self.min,self.max,'free' if self.free else 'fixed')
+        except:
+            return "oimParam is {}".format(type(self))
 
     def __repr__(self):
-        return "oimParam at {} : {}={} \xB1 {} {} range=[{},{}] free={} ".format(hex(id(self)),self.name,
+        try:
+            return "oimParam at {} : {}={} \xB1 {} {} range=[{},{}] free={} ".format(hex(id(self)),self.name,
                 self.value,self.error,self.unit.to_string(),self.min,self.max,self.free)
+        except:
+            return "oimParam at {} is  {}".format(hex(id(self)),type(self))
 
 
 
@@ -131,7 +137,7 @@ class oimParamInterpWl(oimParam):
             
 
 
-                    
+        self.value=self.params            
 
     def __call__(self,wl=None,t=None):
         values=np.array([pi.value for pi in self.params])
@@ -924,25 +930,40 @@ class oimModel(object):
 
     def showModel(self,dim,pixSize,wl=None,t=None,fits=False, 
                   fromFT=False,axe=None,normPow=0.5,figsize=(8,6),
-                  savefig=None,**kwargs):
+                  savefig=None,colorbar=True,**kwargs):
         
         im=self.getImage(dim,pixSize,wl,t,fits,fromFT)
-        im=im/np.sum(im)
         
+        try:
+            nwl=len(wl)         
+        except:
+            nwl=1
+            im=im.reshape((1,im.shape[0],im.shape[1]))
+            
+            
         if axe==None:
-            fig,axe=plt.subplots(figsize=figsize,
-                                 subplot_kw=dict(projection='oimAxes'))
+            fig,axe=plt.subplots(1,nwl,figsize=figsize,sharex=True,sharey=True,
+                                 subplot_kw=dict(projection='oimAxes'))    
         else:
             fig=axe.get_figure()
+             
+        if isinstance(axe,plt.Axes):
+            axe=[axe]
+        
+        
+        for iwl in range(nwl):
+            imi=im[iwl,:,:]/np.sum(im[iwl,:,:])
             
-        cb=axe.imshow(im,extent=[dim/2*pixSize,-dim/2*pixSize,
-                              -dim/2*pixSize,dim/2*pixSize],
-                       norm=colors.PowerNorm(gamma=normPow))
-        axe.set_xlabel("$\\alpha$(mas)")
-        axe.set_ylabel("$\\delta$(mas)")
-        fig.colorbar(cb, ax=axe,label="Normalized Intensity")
-        
-        
+            cb=axe[iwl].imshow(imi,extent=[dim/2*pixSize,-dim/2*pixSize,
+                                  -dim/2*pixSize,dim/2*pixSize],
+                           norm=colors.PowerNorm(gamma=normPow))
+            axe[iwl].set_xlabel("$\\alpha$(mas)")
+            axe[iwl].set_ylabel("$\\delta$(mas)")
+            
+        if colorbar!=False:
+            fig.colorbar(cb, ax=axe,label="Normalized Intensity")
+            
+            
         if savefig!=None:
             plt.savefig(savefig)
         return fig,axe
