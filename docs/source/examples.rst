@@ -12,11 +12,12 @@ Basic Examples
 
 In this section we presents script we presents showing the basic functionalities of the oimodeler software.
 
+..  _exampleOimData:
 
 Loading oifits data
 ^^^^^^^^^^^^^^^^^^^
 
-The ``exampleOimData.py`` script show how to create a oimData object from a list of oifits files and how the data in organized in the oimData instance.
+The `exampleOimData.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/exampleOimData.py>`_ script show how to create a oimData object from a list of oifits files and how the data in organized in the oimData instance.
 
 
 .. code-block:: python
@@ -73,7 +74,7 @@ For instance this create single vectors fgor the data coordinate : ``data.vect_u
 Basic models
 ^^^^^^^^^^^^
 
-The ``basicModel.py`` script demonstrate the basic functionalities of the oimModel and oimComponents object.
+The `basicModel.py https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/basicModel.py` script demonstrate the basic functionalities of the oimModel and oimComponents object.
 
 
 First we import the oimodeler and numpy.
@@ -297,7 +298,7 @@ Let's finish this example by creating a figure with the image and visibility for
 Complex models
 ^^^^^^^^^^^^^^
 
-In this examples we create and play with more complex Fourier-based models with includes:
+In the example `complexModel.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/complexModels.py>`_ we create and play with more complex Fourier-based models with includes:
 
 - flatenning of some components
 - linked parameters between components
@@ -504,20 +505,91 @@ Although quite complex this models only have 9 free parameters. If we change the
 
 .. code-block:: python
 
-    el.params['d'].value=4
-    el.params['pa'].value=45
+    el.params['d'].value = 4
+    el.params['pa'].value = 45
         
     m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(14, 2.5), normPow=0.2)    
-    
-    
+      
 .. image:: ../../images/complexModel_linkRotScale.png
   :alt: Alternative text  
 
 
-    
+
+
 .. _createSimulator:
 
-Create a Simulator
+Comparing data and model with the oimSimulator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the `exampleOimSimulator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/exampleOiSimulator.py>`_ script, we use the oimSimulator class to compare some oifits data with a model. We will compute the reduced chi2 and plot the comparison between the data an the simulated data from the model.
+
+Let's start by importing the needed modules and setting ``files`` to the list of the same oifits files as in the :ref:`exampleOimData` example. 
+
+.. code-block:: python
+
+    import oimodeler as oim
+    import matplotlib.pyplot as plt
+    import os
+    
+    path = os.path.dirname(oim.__file__)
+    pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE2")
+    files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData) if ".fits" in fi]
+
+These oifits were simulated with ASPRO as a MATISSE observation of a partly resolved binary star. 
+
+We set a model a binary star with one component resolved. It consists in two components : a uniform disk and a point source.
+
+.. code-block:: python
+
+    ud=oim.oimUD(d=3,f=1,x=10,y=20)
+    pt=oim.oimPt(f=0.5)
+    model=oim.oimModel([ud,pt])
+
+We now create a oimSimulator with the oimModel and the data. The data can either be :
+
+- an oimData instance previously created
+- a list of previously opened astropy.io.fits.hdulist
+- a list of filenames to the oifits files (list of string)
+
+.. code-block:: python
+
+    sim=oim.oimSimulator(data=files,model=model)
+    
+Before using the simulator we need to prepare the data using the `prepare` method. This call the `prepare` method of the created oimData instance within the oimSimulator instance. The function is used to create vectorized coordinates for the data (spatial frequencies in x and y and wavelengths) to be passed to the oimModel instance to compute the complex Coherent Flux (ccf) using the oimModel.getComplexCoherentFlux method, and some structures to go back from the ccf to the measured interferometric quantities contained in the oifits files: VIS2DATA, VISAMP, VISPHI, T3AMP, T3PHI, and FLUXDATA.
+
+.. code-block:: python
+
+    sim.data.prepareData()
+
+Once the data is prepared we can call the compute method to compute the chi2 and the simulatedData.
+
+.. code-block:: python
+
+    sim.compute(computeChi2=True,computeSimulatedData=True)
+    print("Chi2r = {}".format(sim.chi2r))
+
+.. code-block:: python
+
+    Chi2r = 5674.502111807307
+
+
+Our model isn't fitting well the data. Let's plot the data model comparison for all interferometric quantities contained in the oifits files.
+
+.. code-block:: python
+
+    fig0,ax0= sim.plot(["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI"])
+  
+  
+.. image:: ../../images/ExampleOimSimulator_model0.png
+  :alt: Alternative text  
+
+
+You can try to fit the model to the data "by hand", or go to the next example where we use a oimFitter subclass to automatically find the good parameters.
+
+
+
+
+Running a mcmc fit
 ^^^^^^^^^^^^^^^^^^
 
 
@@ -530,7 +602,7 @@ Plotting data from oifits files
 Expanding the Software
 ----------------------
 
-In this section we present examples that show how to expand the functionalities of the oimodeler sofwate by crezating customs objects : oimComponents, oimFilterComponents, oimFitters, and custom plotting function or utils.
+In this section we present examples that show how to expand the functionalities of the oimodeler sofwate by creating customs objects : oimComponents, oimFilterComponents, oimFitters, and custom plotting function or utils.
 
 Performance Tests
 -----------------
