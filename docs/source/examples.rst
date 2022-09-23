@@ -587,22 +587,242 @@ Our model isn't fitting well the data. Let's plot the data model comparison for 
 You can try to fit the model to the data "by hand", or go to the next example where we use a oimFitter subclass to automatically find the good parameters.
 
 
-
-
 Running a mcmc fit
 ^^^^^^^^^^^^^^^^^^
 
+In the `exampleOimFitterEmcee.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/exampleOimFitterEmcee>`_ script, we perform a complete emcee run to determine the values of the parameters of the same binary as in the :ref:`createSimulator` example.
 
+We start by setting up the script with imports, data list and a binary model. We don't need to specify values for the biary parameters as they will be fitted.
+
+.. code-block:: python
+
+    import oimodeler as oim
+    import os
+
+    path = os.path.dirname(oim.__file__)
+
+    pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE2")
+    files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData) if ".fits" in fi]
+
+    ud=oim.oimUD()
+    pt=oim.oimPt()
+    model=oim.oimModel([ud,pt])
+
+
+Before starting the run we need to specify which parameters are free and what are there range. By dafault all parameters are free but the components coordinates x and y. For a binary we need to set them to free for one of the components. As we only deal with relative fluxes, we can set the flux of one of the component to be fixed to one.
+
+.. code-block:: python
+
+    ud.params['d'].set(min=0.01,max=20)
+    ud.params['x'].set(min=-50,max=50,free=True)
+    ud.params['y'].set(min=-50,max=50,free=True)
+    ud.params['f'].set(min=0.,max=10.)
+    pt.params['f'].free=False
+    
+    print(model.getFreeParameters())
+    
+
+.. code-block::
+
+    {'c1_UD_x': oimParam at 0x23d940e4850 : x=0 ± 0 mas range=[-50,50] free=True , 
+    'c1_UD_y': oimParam at 0x23d940e4970 : y=0 ± 0 mas range=[-50,50] free=True ,
+    'c1_UD_f': oimParam at 0x23d940e4940 : f=0.5 ± 0  range=[0.0,10.0] free=True ,
+    'c1_UD_d': oimParam at 0x23d940e4910 : d=3 ± 0 mas range=[0.01,20] free=True }
+
+We have 4 free-parameters, the position (x,y) flux and diameters of the uniform disk component.
+
+Now we can create a fitter with our model and our filenames list of oifits files. We use the emcee fitter that have only one parameter, the number of walkers that will explore the parameters space. If you are not confident with emcee, you should have a look at the documentation `here <https://emcee.readthedocs.io/en/stable/>`_
+
+.. code-block:: python
+    
+    fit=oim.oimFitterEmcee(files,model,nwalkers=32)
+    
+
+We need to initialize the fitter using its prepare method. The an emcee run that mainly mean setting the initial values of the walkers. The default method is to set them to random values within the parameters space.
+
+.. code-block:: python
+    
+    fit.prepare(init="random")
+    print(fit.initialParams)
+    
+.. code-block::  
+ 
+    >>[[-37.71319618 -49.22761731   9.3299391   15.51294277]
+       [-12.92392301  17.49431852   7.76169304   9.23732472]
+       [-31.62470824 -11.05986877   8.71817772   0.34509237]
+       [-36.38546264  33.856871     0.81935324   9.04534926]
+       [ 45.30227534 -38.50625408   4.89978551  14.93004   ]
+       [-38.01416866  -6.24738348   5.26662714  13.16349304]
+       [-21.34600438 -14.98116997   1.20948714   8.15527356]
+       [-17.14913499  10.40965493   0.37541088  18.81733973]
+       [ -9.61039318 -12.02424002   6.81771974  16.22898422]
+       [ 49.07320952 -34.48933488   1.75258006  19.96859116]]
+       
+ 
+We can now run the fit. We choose to run 2000 as a start and show interactively the progress as a progress bar. The fit should take a minutes on a standard computer to compute 64000 models (``nwalkers`` x ``nsteps``).
+
+.. code-block:: python
+
+    fit.run(nsteps=2000,progress=True)
+ 
+The oimFitterEmcee instance store the emcee sampler as a member variable oimFitterEmcee.sampler. you can, for example, acces the chain of walkers and the log of probability directly.  
+
+.. code-block:: python
+
+    sampler = fit.sampler
+    chain   = fit.sampler.chain
+    lnprob  = fit.sampler.lnprobability
+    
+We can manipulate yourself these data. But the oimFitterEmcee implements varoius methods to retrieve and plot the results of the mcmc run.
+
+The walkers position as the function of the steps can be plotted using the walkersPlot method.
+
+.. code-block:: python
+
+    figWalkers,axeWalkers=fit.walkersPlot(cmap="plasma_r")
+
+
+.. image:: ../../images/exampleOimFitterEmceeWalkers.png
+  :alt: Alternative text  
+
+
+After a few hundred steps most walkers converge to a position with a good reduced chi2. However, from that figure will clearly see that:
+
+- not all walkers have converge after 2000 steps
+- some walkers converge to a solution that gives significantly worst chi2
+
+In optical interferometry there are often local minimas in the chi2 and it seems that some of our walkers are locked there. In our case, this minimum is due to the fact that object is close be symmetrical if not for the fact than one of the component is resolved. Neverless, the chi2 of the local minimum is about 20 times worst the one of the global minimum.
+
+We can plot the famous corner plot with the 1D and 2D density distribution. oimodel use the `corner.py <https://corner.readthedocs.io/en/latest/>`_ library for that purpose. We will discard the 1000 first steps as most of the walkers have converge after that. By default, the corner plot remove also the data with a chi2 greater than 20 times those of the best model. This option can be changed using the keyword ``chi2limfact`` 
+
+.. code-block:: python
+
+    figCorner,axeCorner=fit.cornerPlot(discard=1000)
+    
+   
+.. image:: ../../images/exampleOimFitterEmceeCorner.png
+  :alt: Alternative text  
+  
+  
+We now can get the result of our fit. The oimFitterEmcee fitter can either return the ``best``, the ``mean`` or the ``median`` model. It return uncertainties estimated from the density distribution (see emcee doc for more details. 
+
+.. code-block:: python
+    
+    median,err_l,err_u,err=fit.getResults(mode='median',discard=1000)
+
+To compute the median and mean model we have to remove, as in the corner plot, the walkers that didn't converge with the ``chi2limitfact`` keyword (default in 20) and remove the steps of the bruning phase with the ``discard`` option.
+
+When asking for the results, the simulatedData with these value are also produced in the fitter internal simulator. We can plot again the data/model and compute the final reduced chi2:
+
+.. code-block:: python 
+    
+    figSim,axSim=fit.simulator.plot(["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI"])
+    print("Chi2r = {}".format(fit.simulator.chi2r))
+    
+.. image:: ../../images/ExampleOimFitterEmcee_fittedData.png
+  :alt: Alternative text 
 
 
 Plotting data from oifits files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Beyond the specific plots shown in the previous example the oimPlot module allow to plot most of the oifits data in a very simple way. The example presented here comes from the `exampleOimPlot.py.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/exampleOimPlot.py>`_ script.
+
+Let's start by setting up the project with imports, path, and some data.
+
+.. code-block:: python 
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import os
+    from astropy.io import fits
+    import oimodeler as oim
+
+    path = os.path.dirname(oim.__file__)
+    pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE2")
+
+    files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData) if ".fits" in fi]
+    data=[fits.open(fi,mode="update") for fi in files]
+    
+oimodeler comes with the oimAxes class that subclass the standard matplotlib.pytplotAxes class (base class for all matplotlib plots). To use it you simply need to specify it as a projection (actually it calls the subclass) when creating the axe or axes.
+
+.. code-block:: python 
+
+    fig, ax = plt.subplots(subplot_kw=dict(projection='oimAxes'))
+   
+First we can plot the classic uv coverage using the uvplot method by passing the oifits data.
+
+.. code-block:: python 
+
+    ax[0,0].uvplot(data)
+    
+.. image:: ../../images/ExampleOimPlot_uv.png
+  :alt: Alternative text     
+    
+We can use the oiplot method of the oimAxes to plot any quantity inside an oifits file as a function of another one. For instance let's plot the squared visibilities as a function of the spatial frequencies with the wavelength as a colorscale
+
+.. code-block:: python
+   
+    ax = plt.subplot(projection='oimAxes')
+    lamcol=ax.oiplot(data,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas",label="Data",
+                    cname="EFF_WAVE",cunitmultiplier=1e6,errorbar=True)
+                    
+    plt.colorbar(lamcol, ax=ax,label="$\\lambda$ ($\mu$m)")
+    ax.legend()
+    
+.. image:: ../../images/ExampleOimPlot_v2.png
+  :alt: Alternative text     
+  
+  
+We can also plot the square visibility as the function of the wavelength.
+
+.. code-block:: python
+
+    ax.oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,
+               errorbar=True,kwargs_error={"alpha":0.3})
+  
+.. image:: ../../images/ExampleOimPlot_v2Wl.png
+  :alt: Alternative text       
+  
+Finally, we can create a 2x2 figure with multiple plots. The projection keyword have to be set for all Axes using the subplot_kw keyword in the subplots method.
+
+.. code-block:: python
+
+    fig, ax = plt.subplots(2,2, subplot_kw=dict(projection='oimAxes'),figsize=(8,8))
+   
+    ax[0,0].uvplot(data)
+
+    lamcol=ax[0,1].oiplot(data,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas",label="Data",
+                        cname="EFF_WAVE",cunitmultiplier=1e6,ls=":",errorbar=True)
+    fig.colorbar(lamcol, ax=ax[0,1],label="$\\lambda$ ($\mu$m)")
+    ax[0,1].legend()
+    ax[0,1].set_yscale('log')   
+
+    ax[1,0].oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,
+                   errorbar=True,kwargs_error={"alpha":0.3})
+    ax[1,0].autolim()
+
+    ax[1,1].oiplot(data,"SPAFREQ","T3PHI",xunit="cycles/mas",errorbar=True,
+                   lw=2,ls=":")
+    ax[1,1].autolim()
+    
+.. image:: ../../images/ExampleOimPlot_multi.png
+  :alt: Alternative text   
+    
 
 Expanding the Software
 ----------------------
 
 In this section we present examples that show how to expand the functionalities of the oimodeler sofwate by creating customs objects : oimComponents, oimFilterComponents, oimFitters, and custom plotting function or utils.
+
+Creating new Fourier Components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Creating new Image Components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Creating new Radial profile Components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Performance Tests
 -----------------

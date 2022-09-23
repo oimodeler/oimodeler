@@ -17,6 +17,31 @@ files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData)
 data=[fits.open(fi,mode="update") for fi in files]
 
 
+
+#%%
+
+ax = plt.subplot(projection='oimAxes')
+ax.uvplot(data)
+plt.savefig(os.path.join(path,os.pardir,"images","ExampleOimPlot_uv.png"))
+
+#%%
+ax = plt.subplot(projection='oimAxes')
+lamcol=ax.oiplot(data,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas",label="Data",
+                cname="EFF_WAVE",cunitmultiplier=1e6,errorbar=True)
+                
+plt.colorbar(lamcol, ax=ax,label="$\\lambda$ ($\mu$m)")
+ax.legend()
+
+plt.savefig(os.path.join(path,os.pardir,"images","ExampleOimPlot_v2.png"))
+
+#%%
+
+ax = plt.subplot(projection='oimAxes')
+ax.oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,
+               errorbar=True,kwargs_error={"alpha":0.3})
+
+plt.savefig(os.path.join(path,os.pardir,"images","ExampleOimPlot_v2Wl.png"))
+
 #%%
 # using the projection='oimAsxes' for all subpltos allow to use oimPlot custom plots
 fig, ax = plt.subplots(2,2, subplot_kw=dict(projection='oimAxes'),figsize=(8,8))
@@ -56,5 +81,5 @@ fig.tight_layout()
 
 #%%
 #Saving the plot
-filename=os.path.join(path,os.pardir,"images","oimodel_test_plots.png")
+filename=os.path.join(path,os.pardir,"images","ExampleOimPlot_multi.png")
 plt.savefig(filename)

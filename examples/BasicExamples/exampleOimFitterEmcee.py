@@ -28,7 +28,7 @@ ud.params['x'].set(min=-50,max=50,free=True)
 ud.params['y'].set(min=-50,max=50,free=True)
 ud.params['f'].set(min=0.,max=10.)
 pt.params['f'].free=False
-
+print(model.getFreeParameters())
 
 #%%
 #Create a new fitter with 32 walkers and the list of oifits files and the model
@@ -44,40 +44,32 @@ fit.prepare(init="random")
 print("Initial values of the free parameters for the {} walkers".format(fit.params["nwalkers"].value))
 print(fit.initialParams)
 
+#%%
 #run a 1000 steps fit with fixed starting inital and 1000 steps 
-fit.run(nsteps=10000,progress=True)
+fit.run(nsteps=2000,progress=True)
 
+#%%
 
-#%% Getting results from the mcmc run
-# Result method return the models values and 1 sigma uncertainties 
-#(low, up and avg) computed from the distrib qnuatiles (0.16,0.84)
-#It also compute simulated Data with the best/mean/median model
-
-# Results can be computed with various options : 
-    
-#Best return the  model with the lowest chi2
-best,err_l,err_u,err=fit.getResults(mode='best')
-
-#Mean return the mean value of the parameters excluding first "discard" steps
-# and models with a chi2 >chi2min*chi2limifact 
-mean,err_l,err_u,err=fit.getResults(mode='mean',discard=3000,chi2limfact=20)
-
-#Median return the median model
-median,err_l,err_u,err=fit.getResults(mode='median',discard=2000,chi2limfact=20)
-
-#%% plotting corner and walkers plots and saving them
-figCorner,axeCorner=fit.cornerPlot(discard=2000,savefig=
-                os.path.join(path,os.pardir,"images","SimpleFitCorner.png"))
-
-figWalkers,axeWalkers=fit.walkersPlot(cmap="plasma_r",savefig=
-                os.path.join(path,os.pardir,"images","SimpleFitWalkers.png"))
+sampler = fit.sampler
+chain   = fit.sampler.chain
+lnprob  = fit.sampler.lnprobability
 
 
 #%%
-#Plotting the median model (last computed) over the data
-fit.simulator.compute(computeChi2=True,computeSimulatedData=True)
-figSim,axSim=fit.simulator.plot(["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI"])
 
+figWalkers,axeWalkers=fit.walkersPlot(cmap="plasma_r",savefig=
+      os.path.join(path,os.pardir,"images","exampleOimFitterEmceeWalkers.png"))
+
+
+figCorner,axeCorner=fit.cornerPlot(discard=1000,savefig=
+                os.path.join(path,os.pardir,"images","exampleOimFitterEmceeCorner.png"))
+
+#%%
 median,err_l,err_u,err=fit.getResults(mode='median',discard=1000,chi2limfact=20)
+
+#%%
+fig0,ax0= fit.simulator.plot(["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI"],
+    savefig=os.path.join(path,os.pardir,"images","ExampleOimFitterEmcee_fittedData.png"))
+
 
 
