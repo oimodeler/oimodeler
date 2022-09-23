@@ -74,7 +74,7 @@ For instance this create single vectors fgor the data coordinate : ``data.vect_u
 Basic models
 ^^^^^^^^^^^^
 
-The `basicModel.py https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/basicModel.py` script demonstrate the basic functionalities of the oimModel and oimComponents object.
+The `basicModel.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/basicModel.py>` script demonstrate the basic functionalities of the oimModel and oimComponents object.
 
 
 First we import the oimodeler and numpy.
