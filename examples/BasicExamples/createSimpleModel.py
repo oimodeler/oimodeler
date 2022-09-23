@@ -8,7 +8,7 @@ mas2rad=u.mas.to(u.rad)
 
 #Create some spatial frequencies (Baselines from 0 to 400m at 2.1 microns)
 lam=2.1e-6
-B=np.linspace(0.01,400,num=1000)
+B=np.linspace(0.0,400,num=1000)
 spf=B/lam
 spf0=spf*0
 
