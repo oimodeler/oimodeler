@@ -74,7 +74,7 @@ For instance this create single vectors fgor the data coordinate : ``data.vect_u
 Basic models
 ^^^^^^^^^^^^
 
-The `basicModel.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/basicModel.py>` script demonstrate the basic functionalities of the oimModel and oimComponents object.
+The `basicModel.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/basicModel.py>`_ script demonstrate the basic functionalities of the oimModel and oimComponents object.
 
 
 First we import the oimodeler and numpy.
@@ -726,7 +726,7 @@ When asking for the results, the simulatedData with these value are also produce
 Plotting data from oifits files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Beyond the specific plots shown in the previous example the oimPlot module allow to plot most of the oifits data in a very simple way. The example presented here comes from the `exampleOimPlot.py.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/exampleOimPlot.py>`_ script.
+Beyond the specific plots shown in the previous example the oimPlot module allow to plot most of the oifits data in a very simple way. The example presented here comes from the `exampleOimPlot.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/exampleOimPlot.py>`_ script.
 
 Let's start by setting up the project with imports, path, and some data.
 
