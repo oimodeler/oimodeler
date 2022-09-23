@@ -9,12 +9,6 @@ path = os.path.dirname(oim.__file__)
 
 mas2rad=u.mas.to(u.rad)
 
-#Create some spatial frequencies (Baselines from 0 to 400m at 2.1 microns)
-lam=2.1e-6
-B=np.linspace(0.,400,num=1000)
-spf=B/lam
-spf0=spf*0
-
 
 #Some components
 gd=oim.oimGauss(fwhm=oim.oimInterpWl(wl=[3e-6,3.5e-6,4e-6],value=[1,3,4]),

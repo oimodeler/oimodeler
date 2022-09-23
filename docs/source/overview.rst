@@ -66,5 +66,5 @@ oimUtils containscontains various functions to manipulate oifits data such as : 
 Expandability
 -------------
 
-Thus code is written to allow easy implementation of new model component, fitters, data filters or loader (for non-oifits format data), and plots. Feel free to contact us if you develop custom features and want them to be distributed with the code.
+oimodeler is written to allow easy implementation of new model component, fitters, data filters or loader (e.g. for non-oifits format data), and plots. Feel free to contact us if you develop custom features and want them to be included in the oimodeler distribution.
 

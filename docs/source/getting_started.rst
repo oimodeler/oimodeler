@@ -1,8 +1,9 @@
+.. _getting_started:
+
 Getting Started
 ===============
 
-
-Let's starT by importing the oimodeler library. 
+Let's start by importing the oimodeler library. 
 
 .. code-block:: python
 
@@ -28,7 +29,7 @@ Let's create a simple binary model with one resolved component. It consist on tw
     ud=oim.oimUD(d=3,f=0.5,x=5,y=-5)
     pt=oim.oimPt(f=1)
     
-You can print the descirption of the component easily
+We can print the description of the component easily
 
 .. code-block:: python
 
@@ -38,13 +39,13 @@ You can print the descirption of the component easily
     
     >>Uniform Disk x=5.00 y=-5.00 f=0.50 d=3.00
 
-Or you want to print the details of a parameter:
+Or if we want to print the details of a parameter:
 
 .. code-block:: python
 
     print(ud.params['d'])
     
-.. code-block:: python
+.. code-block:: 
     
     >>oimParam d = 3 ± 0 mas range=[-inf,inf] free 
 
@@ -52,7 +53,7 @@ Or you want to print the details of a parameter:
 
     print(ud.params['x'])
 
-.. code-block:: python
+.. code-block:: 
     
     >>oimParam x = 5 ± 0 mas range=[-inf,inf] fixed 
 
@@ -80,7 +81,7 @@ We can print all model parameters:
 
     model.getParameters()
     
-.. code-block:: python
+.. code-block:: 
     
     >>{'c1_UD_x': oimParam at 0x1670462cca0 : x=5 ± 0 mas range=[-50,50] free=True ,
     'c1_UD_y': oimParam at 0x1670462cac0 : y=-5 ± 0 mas range=[-50,50] free=True ,
@@ -96,7 +97,7 @@ Or only the free paremters:
 
     print(model.getFreeParameters())
     
-.. code-block:: python
+.. code-block:: 
     
     >>{'c1_UD_x': oimParam at 0x167055ded30 : x=5 ± 0 mas range=[-50,50] free=True ,
     'c1_UD_y': oimParam at 0x167055deca0 : y=-5 ± 0 mas range=[-50,50] free=True ,
@@ -178,7 +179,7 @@ The initial parameters are stored in the ``initialParams`` member variable of th
     fit.run(nsteps=3000,progress=True)
     
 
-.. code-block:: python
+.. code-block:: 
 
     >>17%|█        | 349/2000 [00:10<00:48, 34.29it/s]
 
