@@ -144,6 +144,7 @@ fig5im, ax5im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize
      
 
 
+#%%
 
   
  
