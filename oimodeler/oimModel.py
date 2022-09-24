@@ -166,6 +166,7 @@ class oimParamLinker(object):
         
         self.op=None
         self._setOperator(operator)
+        self.free=False
        
           
     @property
@@ -184,13 +185,30 @@ class oimParamLinker(object):
         return val+ self.fact
     
     def _mult(self,val):
-        return val+ self.fact
-    
+        return val* self.fact
+       
         
     def __call__(self,wl=None,t=None):  
         return self.op(self.param.__call__(wl,t))
         
+###############################################################################
+class oimParamNorm(object):
+    def __init__(self,params,norm=1):
+        self.params=params    
+        self.norm=norm        
         
+        self.free=False
+       
+          
+    @property
+    def unit(self):
+        return self.param.unit
+        
+    def __call__(self,wl=None,t=None):  
+
+        return self.norm - np.sum([p.__call__(wl,t) for p in self.params])
+
+     
 
 ###############################################################################
 
