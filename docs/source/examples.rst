@@ -960,7 +960,7 @@ We could also create a chromatic box component using the oimInterpWl class or li
   :alt: Alternative text   
     
 
-Let's finished this example by plotting the visibility of such models for a set of East-West and North-South baselines and wavelengths in the K band.
+Let's finish this example by plotting the visibility of such models for a set of East-West and North-South baselines and wavelengths in the K band.
 
 
 
