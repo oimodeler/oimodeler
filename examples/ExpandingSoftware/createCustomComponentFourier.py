@@ -102,7 +102,7 @@ b4.params['dy']=oim.oimParamLinker(b4.params['dx'],'mult',4)
 m3=oim.oimModel([b4])
 
 m3.showModel(512,0.2,wl=[2e-6,2.2e-6,2.4e-6],colorbar=False,
-    savefig=os.path.join(path,os.pardir,"images","customCompChromBoxImages.png"))
+    savefig=os.path.join(path,os.pardir,"images","customCompChromBoxImages.png"),figsize=(10,4))
 
 
 
@@ -137,10 +137,9 @@ for i,m in enumerate(models):
     visNorth=np.abs(m.getComplexCoherentFlux(spf0,spf,wls)).reshape(nwl, nB)
     visNorth /= np.outer(np.max(visNorth, axis=1), np.ones(nB))
 
-    ax[i,0].scatter(spf, visWest, c=wls*1e6, s=0.2, cmap="plasma")
+    cb=ax[i,0].scatter(spf, visWest, c=wls*1e6, s=0.2, cmap="plasma")
     ax[i,1].scatter(spf, visNorth, c=wls*1e6, s=0.2, cmap="plasma")
-    ax[i,0].scatter(spf, visWest, c=wls*1e6, s=0.2, cmap="plasma")
-    ax[i,1].scatter(spf, visNorth, c=wls*1e6, s=0.2, cmap="plasma")
+
     
     ax[i,0].set_ylabel("Vis. of {}".format(names[i]))
     
@@ -151,6 +150,7 @@ for i,m in enumerate(models):
     ax[i,1].get_yaxis().set_visible(False)
         
 
+fig.colorbar(cb, ax=ax.ravel().tolist(),label="$\\lambda$ ($\\mu$m)")
 
 ax[2,0].set_xlabel("B/$\\lambda$ (cycles/rad)")
 ax[2,1].set_xlabel("B/$\\lambda$ (cycles/rad)")
