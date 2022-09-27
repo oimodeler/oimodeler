@@ -9,10 +9,11 @@ import numpy as np
 from astropy.io import fits
 import os
 from enum import IntFlag
+import oimodeler as oim
 
 _oimDataType=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"]
 _oimDataTypeErr=["VIS2ERR","VISAMPERR","VISPHIERR","T3AMPERR","T3PHIERR","FLUXERR"]
-_oimDataTypeArr=["OI_VIS2","OI_VIS","OI_T3","OI_FLUX"]
+_oimDataTypeArr=["OI_VIS2","OI_VIS","OI_VIS","OI_T3","OI_T3","OI_FLUX"]
 
 
 ###############################################################################
@@ -31,6 +32,7 @@ def oimDataGetWl(data,arr,dwl=True):
 ###############################################################################
 
 class oimDataType(IntFlag):
+    NONE        = 0
     VIS2DATA    = 1
     VISAMP_ABS  = 2    
     VISAMP_DIF  = 4  
@@ -197,8 +199,8 @@ class oimData(object):
     """
     A class to hold and manipulate data
     """
-    def __init__(self,dataOrFilename=None):
-        self.data=[]
+    def __init__(self,dataOrFilename=None,filt=None):
+        self._data=[]
         self.dataInfo=[]
         self.vect_u=None
         self.vect_v=None
@@ -206,24 +208,82 @@ class oimData(object):
         self.vect_dwl=None
         self.vect_mjd=None
         
+        self._prepared = False
         
+        self._filter=filt
+        self._useFilter=False
+        self._filteredData = None
+        self._filteredDataReady = False
+        
+ 
         if dataOrFilename:
            self.addData(dataOrFilename) 
         
+        self.prepareData()
+            
+    @property
+    def data(self):
+        if self._useFilter == False or self._filter==None:
+            return self._data
+        else:
+            if self._filteredDataReady == False:
+                self.applyFilter()
+            return self._filteredData
+   
+
     def addData(self,dataOrFilename):
         if type(dataOrFilename)==type([]):
             for el in dataOrFilename:
                 self.addData(el)
         else:        
             if type(dataOrFilename)==str:
-                self.data.append(fits.open(dataOrFilename))
+                self._data.append(fits.open(dataOrFilename))
             else:
-                self.data.append(dataOrFilename)
+                self._data.append(dataOrFilename)
             self._analyzeOIFitFile(self.data[-1])
-            
-    def removeData(dataOrIndex):
-        pass
+            self.prepared = False
+        
+        self._filteredDataReady = False
+        self.prepareData()
+        
+    def removeData(self,dataOrIndex):
+        self._prepared = False
+        self._filteredDataReady = False
+        self.prepareData()
         #TODO
+      
+        
+    def setFilter(self,filt,useFilter=True):
+        self._filter=filt
+        self._filteredDataReady = False
+        self.useFilter=useFilter
+        
+        
+    def applyFilter(self):
+        
+        self._filteredData=[]
+        for data in self._data:
+            self._filteredData.append(oim.hdulistDeepCopy(data))
+            
+        if self._filter!=None:
+            self._filter.applyFilter(self._filteredData)
+            
+        self._filteredDataReady =True
+        self.prepareData()
+        
+  
+    @property
+    def useFilter(self):
+        return self._useFilter
+        
+    @useFilter.setter
+    def useFilter(self,val):
+        if val==True:
+            self._useFilter=True
+            if self._filteredDataReady == False:
+                self.applyFilter()
+            
+    
                 
     def _analyzeOIFitFile(self,data):
         dataInfo=[]
@@ -290,29 +350,44 @@ class oimData(object):
                 if arri.name in _oimDataTypeArr:
                     
                     #print("arr {} : type={}".format(iarr,arri.name))
-                    u,v,wl,dwl,mjd,nB,nwl=oimDataGetVectCoord(datai,arri)
                     dataTypeFlag,val,err,flag=oimGetDataValErrAndTypeFlag(arri)
-                    #print(np.shape(u))
-                    self.vect_u=np.concatenate((self.vect_u,u))
-                    self.vect_v=np.concatenate((self.vect_v,v))
-                    self.vect_wl=np.concatenate((self.vect_wl,wl))
-                    self.vect_dwl=np.concatenate((self.vect_dwl,dwl))
-                    self.vect_mjd=np.concatenate((self.vect_mjd,mjd))
                     
-                    self.struct_u[-1].append(u)
-                    self.struct_v[-1].append(v)
-                    self.struct_wl[-1].append(wl)
-                    self.struct_dwl[-1].append(dwl)
-                    self.struct_mjd[-1].append(mjd)
-                    self.struct_nB[-1].append(nB)
-                    self.struct_nwl[-1].append(nwl)
+                    if dataTypeFlag != oimDataType.NONE:
+                        u,v,wl,dwl,mjd,nB,nwl=oimDataGetVectCoord(datai,arri)
+                        
+                        #print(np.shape(u))
+                        self.vect_u=np.concatenate((self.vect_u,u))
+                        self.vect_v=np.concatenate((self.vect_v,v))
+                        self.vect_wl=np.concatenate((self.vect_wl,wl))
+                        self.vect_dwl=np.concatenate((self.vect_dwl,dwl))
+                        self.vect_mjd=np.concatenate((self.vect_mjd,mjd))
+                        
+                        self.struct_u[-1].append(u)
+                        self.struct_v[-1].append(v)
+                        self.struct_wl[-1].append(wl)
+                        self.struct_dwl[-1].append(dwl)
+                        self.struct_mjd[-1].append(mjd)
+                        self.struct_nB[-1].append(nB)
+                        self.struct_nwl[-1].append(nwl)
+                      
+                    else:
+                        self.struct_u[-1].append(np.array([]))
+                        self.struct_v[-1].append(np.array([]))
+                        self.struct_wl[-1].append(np.array([]))
+                        self.struct_dwl[-1].append(np.array([]))
+                        self.struct_mjd[-1].append(np.array([]))
+                        self.struct_nB[-1].append(0)
+                        self.struct_nwl[-1].append(0)
+                        
                     self.struct_arrNum[-1].append(iarr)
                     self.struct_arrType[-1].append(arri.name)
                     self.struct_dataType[-1].append(dataTypeFlag)
                     self.struct_val[-1].append(val)
                     self.struct_err[-1].append(err) 
                     self.struct_flag[-1].append(flag) 
-
+        self._prepared = True
+        
+        
     def __str__(self):
        nfiles=np.size(self.data)
        txt="oimData containing {} file(s)\n".format(nfiles)

@@ -63,11 +63,12 @@ class oimSimulator(object):
     """
     contains 
     """
-    def __init__(self,data=None,model=None,fitter=None):
+    def __init__(self,data=None,model=None,fitter=None,**kwargs):
         self.data=oim.oimData()
-        self.simulatedData=oim.oimData()
+        self.simulatedData=None
         self.model=None
-        
+    
+    
         if data!=None:
             self.addData(data)
             
@@ -79,39 +80,50 @@ class oimSimulator(object):
     
     def addData(self,data):
             self.data.addData(data)
-            self.simulatedData.addData(data)
-         
+            
     def prepareData(self):
         self.data.prepareData()
-    
+        self.simulatedData=oim.oimData()
+        for datai in self.data.data:
+            self.simulatedData.addData(oim.hdulistDeepCopy(datai))
 
-    def compute(self,computeChi2=True,computeSimulatedData=True):
+    def compute(self,computeChi2=False,computeSimulatedData=False,checkSimulatedData=True):
         self.vcompl=self.model.getComplexCoherentFlux(self.data.vect_u,self.data.vect_v,self.data.vect_wl)
        
         nelChi2=0
         chi2=0
         chi2List=[]
        
-          
+        """
+        if computeSimulatedData==True and (checkSimulatedData==True or self.simulatedData==None):
+            self.simulatedData=oim.oimData()
+            for datai in self.data.data:
+                self.simulatedData.addData(oim.hdulistDeepCopy(datai))
+        """   
+        
+        
+        data=self.data
+        
+        
         if (computeChi2==True)|(computeSimulatedData==True):
             
             idx=0
-            nfiles=len(self.data.struct_u)
+            nfiles=len(data.struct_u)
             for ifile in range(nfiles):
                 #print("Data {}".format(ifile))
-                narr=len(self.data.struct_arrType[ifile])
+                narr=len(data.struct_arrType[ifile])
                 for iarr in range(narr):                    
-                    arrNum=self.data.struct_arrNum[ifile][iarr]
-                    arrType=self.data.struct_arrType[ifile][iarr]
-                    dataType=self.data.struct_dataType[ifile][iarr]
-                    nB=self.data.struct_nB[ifile][iarr]
-                    nwl=self.data.struct_nwl[ifile][iarr]
+                    arrNum=data.struct_arrNum[ifile][iarr]
+                    arrType=data.struct_arrType[ifile][iarr]
+                    dataType=data.struct_dataType[ifile][iarr]
+                    nB=data.struct_nB[ifile][iarr]
+                    nwl=data.struct_nwl[ifile][iarr]
                     vcompli=self.vcompl[idx:idx+nB*nwl]              
                     vcompli=np.reshape(vcompli,[nB,nwl])
                     
-                    dataVal=self.data.struct_val[ifile][iarr]
-                    dataErr=self.data.struct_err[ifile][iarr]
-                    flag=self.data.struct_flag[ifile][iarr]
+                    dataVal=data.struct_val[ifile][iarr]
+                    dataErr=data.struct_err[ifile][iarr]
+                    flag=data.struct_flag[ifile][iarr]
                         
                     idx+=nB*nwl
                     quantities=[]
@@ -177,6 +189,7 @@ class oimSimulator(object):
              self.chi2=chi2
              self.chi2r=chi2/nelChi2
              self.chi2List=chi2List
+             self.nelChi2=nelChi2
                 
            
     def plot(self,arr,simulated=True,savefig=None,**kwargs):

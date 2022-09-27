@@ -8,6 +8,7 @@ Created on Tue Nov 23 15:26:42 2021
 from .oimModel import *
 from .oimModel import _standardParameters
 from .oimData import *
+from .oimData import _oimDataType, _oimDataTypeErr, _oimDataTypeArr
 from .oimFitter import *
 from .oimSimulator import *
 from .oimUtils import *
