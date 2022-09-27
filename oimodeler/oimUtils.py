@@ -162,6 +162,88 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None):
 
     return spaFreq
 
+
+###############################################################################
+
+
+
+def hdulistDeepCopy(hdulist):
+    
+    res=hdulist.copy()
+    
+    for iext,exti in enumerate(res):
+        res[iext]=res[iext].copy()
+    
+    
+    return res
+    
+    
+###############################################################################
+
+_cutArr=['EFF_WAVE','EFF_BAND','VIS2DATA','VIS2ERR','FLAG','VISAMP','VISAMPERR',
+        'VISPHI','VISPHIERR','T3AMP','T3AMPERR','T3PHI','T3PHIERR',
+        'FLUXDATA','FLUXERR','FLAG']
+
+
+def cutWavelengthRange(oifits,wlRange = None,addCut=[]):
+    
+    if type(oifits)==type(""):
+        data=fits.open(oifits)
+    else:
+        data=oifits
+    extnames=np.array([data[i].name for i in range(len(data))])
+    
+    oiwl_idx=np.where(extnames=="OI_WAVELENGTH")[0]
+    
+    
+    wlRange=np.array(wlRange)
+    
+    if wlRange.ndim==1:
+        wlRange=wlRange.reshape((1,len(wlRange)))
+
+    for i in oiwl_idx:
+        insname=data[i].header['INSNAME']
+        
+        idx_wl_cut=[]
+        
+        for wlRangei in wlRange:
+            idx_wl_cut.extend(np.where((data[i].data['EFF_WAVE']>=wlRangei[0]) &
+                                (data[i].data['EFF_WAVE']<=wlRangei[1]))[0])
+        
+        idx_wl_cut=np.sort(idx_wl_cut)
+        nwl_cut=len(idx_wl_cut)
+        for idata,datai in enumerate(data):
+            if "INSNAME" in datai.header:
+                if datai.header['INSNAME']==insname:
+                    colDefs=[]
+                    for col in datai.columns:
+                        if np.isin(col.name,_cutArr) or np.isin(col.name,addCut):
+                            format0=col.format[-1]  
+                            shape=datai.data[col.name].shape
+                            if len(shape)==2:
+                                arr=np.take(datai.data[col.name],idx_wl_cut, axis=1)
+                                colDefs.append(fits.Column(name=col.name,format="{0}{1}".
+                                         format(nwl_cut,format0),array=arr,unit=col.unit))
+                            else:
+                                arr=np.take(datai.data[col.name],idx_wl_cut)
+                                colDefs.append(fits.Column(name=col.name,
+                                         format=col.format,array=arr,
+                                         unit=col.unit))
+                            
+                        else:
+                            colDefs.append(fits.Column(name=col.name,
+                                     format=col.format,array=datai.data[col.name],
+                                     unit=col.unit))
+                            
+                    
+                    cols = fits.ColDefs(colDefs)
+                    hdu=fits.BinTableHDU.from_columns(cols)
+                    hdu.header=datai.header
+                    hdu.update()
+                    data[idata]=hdu
+    return data
+
+    
 ###############################################################################
 
 def createOiArray(arrname,arrx,arry,arrz,sta_name,tel_name,diameter,staxyz):
@@ -389,4 +471,6 @@ def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
     oivis2.header['ARRNAME']=arrname
 
     return oivis2
+
+
 
