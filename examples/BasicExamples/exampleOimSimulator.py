@@ -6,9 +6,7 @@ Created on Wed Jun 29 16:16:59 2022
 """
 
 import oimodeler as oim
-import matplotlib.pyplot as plt
 import os
-from datetime import datetime
 
 
 
