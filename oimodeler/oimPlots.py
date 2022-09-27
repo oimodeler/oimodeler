@@ -78,7 +78,7 @@ def _colorPlot(axe,x,y,z,**kwargs):
     xmin=[]
     ymin=[]    
     for ci in axe.collections:
-        xy=np.array(ci.get_segments())
+        xy=np.array(ci.get_segments(),dtype=object)
         
         if len(np.shape(xy))==3:  
             xx=xy[:,:,0]  
@@ -185,8 +185,57 @@ oimPlotParamUnit0=np.array(["m","$^o$","m","m","cycles/rad","$\mu$m","","","$^o$
 oimPlotParamIsUVcoord=np.array([1,1,1,1,1,0,0,0,0,0,0,0])
 
 oimPlotParamColorCycle=plt.rcParams['axes.prop_cycle'].by_key()['color']
-###############################################################################
 
+
+###############################################################################
+def getColorIndices(oifitsList,color,yarr,yname):
+    idx=[]
+    names=[]
+    for idata,datai in enumerate(oifitsList):
+        val=datai[yarr].data[yname]
+        nB=val.shape[0]
+        if color=="byFile":
+            idx.append(np.zeros(nB,dtype=int)+idata)
+            fname=datai.filename()
+            if fname==None:
+                fname="File {}".format(idata)
+            names.append(fname)
+        elif color=="byArrname":
+            array=datai[yarr].header['ARRNAME']
+            if array in names:
+                iarr = names.index(array)
+            else:
+                iarr=len(names)
+                names.append(array)
+            idx.append(np.zeros(nB,dtype=int)+iarr)    
+        elif color=="byBaseline":
+                bnames=oim.getBaselineName(datai,yarr)
+                idxi=[]
+                for bname in bnames:
+                    if bname in names:
+                        iB = names.index(bname)
+                    else:
+                        iB=len(names)
+                        names.append(bname)   
+                    idxi.append(iB)  
+                idx.append(idxi)
+        elif color=="byConfiguration":
+                conf=oim.getConfigName(datai,yarr)
+                if conf in names:
+                    iconf = names.index(conf)
+                else:
+                    iconf=len(names)
+                    names.append(conf)
+                idx.append(np.zeros(nB,dtype=int)+iconf)
+        else:
+            idx.append(np.zeros(nB,dtype=int))
+            names.append("")
+    return idx,names
+        
+        
+            
+        
+    
 
 def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             yunit=None,yunitmultiplier=1,cname=None,cunit=None,cunitmultiplier=1,
@@ -256,17 +305,10 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
         oifitsList=[oifitsList]
         
     #TODO colors with lam, baselines, ...
-    icol=0
-    if colorTab==None:
-        colorTab=oimPlotParamColorCycle
-        
-    if not(color in ["byBaseline","byFile","byWavelength"]):
-        colorTab=[color]
-        
-    
    
-    ncol=len(colorTab)    
+    
         
+         
     ndata=len(oifitsList)
  
     idxX=np.where(oimPlotParamName == xname)[0][0]
@@ -338,9 +380,23 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
 
 
     if cname!=None:
-        idxC=np.where(oimPlotParamName == cname)[0][0]
-        carr=oimPlotParamArr[idxC]
-        cdata=[d[carr].data[cname] for d in oifitsList]
+        try:
+            idxC=np.where(oimPlotParamName == cname)[0][0]
+            carr=oimPlotParamArr[idxC]
+            cdata=[d[carr].data[cname] for d in oifitsList]
+        except:
+            idxC=np.where(oimPlotParamError == cname)[0][0]
+            carr=oimPlotParamArr[idxC]
+            cdata=[d[carr].data[cname] for d in oifitsList]            
+        
+        
+    if colorTab==None:
+        colorTab=oimPlotParamColorCycle
+    
+    ncol=len(colorTab)    
+      
+    colorIdx,ColorNames=getColorIndices(oifitsList,color,yarr,yname)
+
 
     if 'label' in kwargs:
         label=kwargs.pop('label')
@@ -388,7 +444,9 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                 flag0=True
                 ilam0=0
                 for ilam,flagi in enumerate(flags):
-                    doPlot=False              
+                    doPlot=False
+                    if np.isnan(ydata[idata][iB,ilam]):
+                        flagi=True
                     if flag0!=flagi:
                         if flagi==False:
                             ilam0=ilam
@@ -398,39 +456,39 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     elif ilam==(nflags-1) and flagi==False:
                             doPlot=True
                     
-                    if doPlot==True:  
+                    if doPlot==True: 
+                        labeli=label+ColorNames[colorIdx[idata][iB]]
                         if cname==None:
+                           
                             axe.plot(xdata[idata][iB,ilam0:ilam]*
                                  xunitmultiplier,ydata[idata][iB,ilam0:ilam],
-                                 color=colorTab[icol%ncol],label=label,**kwargs)
+                                 color=colorTab[colorIdx[idata][iB]%ncol],label=labeli,**kwargs)
                             if errorbar==True:
                                 _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
                                             ydata[idata][iB,ilam0:ilam],
-                                            ydataerr[idata][iB,ilam0:ilam],color=colorTab[icol%ncol],
+                                            ydataerr[idata][iB,ilam0:ilam],color=colorTab[colorIdx[idata][iB]%ncol],
                                             **kwargs_error)
                         else:
                             
                             res=_colorPlot(axe, xdata[idata][iB,ilam0:ilam]*
                                  xunitmultiplier, ydata[idata][iB,ilam0:ilam], cdata[idata][iB,ilam0:ilam]*cunitmultiplier,
-                                 label=label,**kwargs)
+                                 label=labeli,**kwargs)
+                            
                             if errorbar==True:
                                 _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
                                             ydata[idata][iB,ilam0:ilam],
                                             ydataerr[idata][iB,ilam0:ilam],color="gray",alpha=0.2,
                                             **kwargs_error)
-                        label=None
+                        #label=None
     
                         
             else:
                 axe.plot(xdata[idata][iB,:]*xunitmultiplier,
-                         ydata[idata][iB,:],color=colorTab[icol%ncol])
+                         ydata[idata][iB,:],color=colorTab[colorIdx[idata][iB]%ncol])
                 if errorbar==True:
                     _errorplot(axe,xdata[idata][iB,:]*xunitmultiplier,ydata[idata][iB,:],
-                               ydataerr[idata][iB,:],color=colorTab[icol%ncol],**kwargs_error)
-                 
-           
-            if color=="byBaseline":icol+=1
-        if color=="byFile":icol+=1
+                               ydataerr[idata][iB,:],color=colorTab[colorIdx[idata][iB]%ncol],**kwargs_error)
+                     
 
        
     if yscale!=None:
@@ -503,7 +561,10 @@ class oimAxes(plt.Axes):
         for hi in h:
             if isinstance(hi,LineCollection):
                 hmap[hi]=_HandlerColorLineCollection(numpoints=100)
-        super().legend(h,l,handler_map=hmap,**kwargs)            
+        
+        #use to remove duplicate legend
+        lh = dict(zip(l, h))
+        super().legend(lh.values(),lh.keys(),handler_map=hmap,**kwargs)            
 
 ###############################################################################
 

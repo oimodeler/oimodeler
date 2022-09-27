@@ -66,6 +66,22 @@ def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False):
 
 ###############################################################################
 
+def getConfigName(oifits,hduname="OI_VIS2"):
+    stanames=oifits['OI_ARRAY'].data['STA_NAME']
+    staindexes=oifits['OI_ARRAY'].data['STA_INDEX']
+    staidx=np.unique(oifits[hduname].data['STA_INDEX'].flatten())
+    s=staidx.size
+    name=""
+    for i in range(s):
+        name+=stanames[np.where(staindexes==staidx[i])[0]][0]
+        if i<s-1:
+            name+="-"
+    return name
+    
+    
+
+###############################################################################
+
 def getBaselineLengthAndPA(oifits,arr="OI_VIS2"):
     """
     
