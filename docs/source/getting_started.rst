@@ -195,7 +195,7 @@ Let's plot the parameters of the 10 walkers as a function of the steps of the mc
   :alt: Alternative text   
   
   
-After a few hundred steps most walkers converge to a position with a good reduced chi2. HOwever, from that figure will clearly see that:
+After a few hundred steps most walkers converge to a position with a good reduced chi2. However, from that figure will clearly see that:
 
 - not all walkers have converge after 2000 steps
 - some walkers converge to a solution that gives significantly worst chi2

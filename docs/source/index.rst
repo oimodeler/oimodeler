@@ -6,8 +6,7 @@
 oimodeler 
 =========
 
-oimodeler is a project aiming at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at a very early stage of development. 
-
+The oimodeler project aims at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at a very early stage of development. 
 
 It will allow to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting (using mcmc or other fitters), and plot results easily. It will allow many model components including gray or chromatic analytical models defined in Fourier or image plan, imported radial profile, images, image-cubes (with chromaticity), or the use of precomputed grids of models providing that the output is in fits image format. As the software is modular and object oriented, it is easy to expand it by creating new components by deriving abstract classes. 
 
@@ -26,15 +25,16 @@ Modules
 
 .. warning::
 
-    The software is in very early development. Partially implemented modules are the following:  
+    The software is in very early development. Current implementation:  
     
-    - oimModel: Working with gray and chromatic models defined in Fourier plan, early implementation of Image-plan based models
-    - oimData class: No filtering, no optimization of data      
-    - oimSimulator: Simulated data and chi2 computation (no filtering yet) 
-    - oimFitter : Implementation of a basic emcee-based fitter
+    - oimModel: Gray and chromatic models defined in Fourier plan, early implementation of Image-plan based models
+    - oimData class: interferometric data only (with basic filtering) 
+    - oimDataFilter: wavelength range, array (OI_VIS2, OI_VIS...), data type (VIS2DATA, VISAMP...)    
+    - oimSimulator: Simulated data and chi2 computation 
+    - oimFitter : Implementation of a basic emcee-based fitter with plots for results
     - oimPlot: Basics plots of oifits data and uv-plan plot    
-    - oimUtils: Spatial frequencies, baseline name, length and PA, create oifits arrays    
-    
+    - oimUtils: Spatial frequencies, baseline name, length and PA, create oifits arrays,    
+
     No module is complete and have been fully verified up to now
 
 A Few examples
