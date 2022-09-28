@@ -52,11 +52,7 @@ oimPlots contains various plotting tools for oifits data and oimodeler objects. 
 
 oimDataFilter
 ^^^^^^^^^^^^^
-
-.. warning::
-    Not Yet implemented!
-
-oimDataFilter is dedicated to filtering and modifying data. It allows data flaging based on various criteria (wavelengths, SNR ...), smoothing of the data.
+oimDataFilter is dedicated to filtering and modifying data. It allows data selection (truncating, removing arrays, and flagging) based on various criteria (wavelengths, SNR ...), and other data manipulation such as smoothing and binning of the data.
 
 oimUtils
 ^^^^^^^^

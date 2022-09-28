@@ -722,6 +722,101 @@ When asking for the results, the simulatedData with these value are also produce
 .. image:: ../../images/ExampleOimFitterEmcee_fittedData.png
   :alt: Alternative text 
 
+Filtering data
+^^^^^^^^^^^^^^
+
+Filtering can be applied to the oimData using the oimDataFilter class. The oimDataFilter is basically a stack of filters derived from the oimDataFilterComponent abstract class. The example presented here comes from the `exampleOimDataFilter.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/exampleOimDataFilter>`_ script.
+
+As for other example we will start by importing oimodeler and other useful packages and create a list of oifits files.  
+
+.. code-block:: python 
+    
+    import oimodeler as oim
+    import matplotlib.pyplot as plt
+    import os
+
+    path = os.path.dirname(oim.__file__)
+    pathData=os.path.join(path,os.pardir,"examples","testData","FSCMa_MATISSE")
+    files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData) if ".fits" in fi]
+
+We create an oimData object which will contain the oifits data. 
+
+.. code-block:: python 
+    
+    data=oim.oimData(files)
+
+We now create a simple filter to cut data to a specific wavelength range in the ``oimWavelengthRangeFilter`` class. 
+
+.. code-block:: python 
+    
+    f1=oim.oimWavelengthRangeFilter(targets="all",wlRange=[3.0e-6,4e-6])
+    
+The ``oimWavelengthRangeFilter`` has two parameters :
+
+- ``targets`` : which is common to all filter components : it specify the targeted files within the data structure to which the filter apply. Possible values are : "all" for all files, a single file specify by its index, or a list of indexes. Here we specify that we want to apply our filter to all data files.
+
+- ``wlRange`` : the wavelength range to cut as a two elements list (min wavelength and max wavelength), or a list of multiple two elements list if you want to cut multiple wavelengths ranges simultaneously. In our example you have selected wavelength between 3 and 4 microns. Wavelengths outside this range will be removed from the data.
+    
+Now we can create a filter stack with this single filter and apply it to our data.
+
+.. code-block:: python 
+
+    filters=oim.oimDataFilter([f1])
+    data.setFilter(filters)
+    
+
+By default the filter will be automatically activated as soon as a filter is set using the ``setFilter`` method of the oimData class. This means that the call to oimData.data will return the filtered data, and that if using the oimData class within a oimSimulator or a oimFitter, the filtered data will be used instead of the unfiltered data. 
+
+.. note::
+    The unfiltered data can always be accessed using oimData._data and the filtered data, that may be None if no filter have been set, using oimData._filteredData
+   
+To switch off a filter we can either call the setFilter without parameters (this will remove the filter completely) or set the useFilter variable to False.
+
+.. code-block:: python 
+
+    #data.setFilters() #removing the filter
+    data.useFilter = False
+    
+Let's plot the unfiltered and filtered data using the oimPlot method.
+
+.. code-block:: python 
+
+    fig=plt.figure()
+    ax = plt.subplot(projection='oimAxes')
+
+    data.useFilter = False
+    ax.oiplot(data,"SPAFREQ","VIS2DATA",color="tab:blue",lw=3,alpha=0.2,label="unfiltered")
+
+    data.useFilter = True
+    ax.oiplot(data,"SPAFREQ","VIS2DATA",color="tab:blue",label="filtered")
+
+    ax.set_yscale('log')
+    ax.legend()
+    ax.autolim()
+    
+
+.. image:: ../../images/ExampleFilter_wavelengthCut.png
+  :alt: Alternative text 
+  
+The other simple filters for data selection are :
+
+- ``oimRemoveArrayFilter`` : removing array (such as OI_VIS, OI_T3...) from the data. 
+- ``oimDataTypeFilter`` : removing data type (such as VISAMP, VISPHI, T3AMP...) from the data.
+
+.. note::
+    Actually oimDataTypeFilter doesn't remove the columns with the data type from any array as these column are complusory in the the oifits format definition. Instead it is setting all the values of the column to zero which oimodeler will recognize as emplty for data simulation and model fitting. 
+
+.. code-block:: python 
+
+    f2=oim.oimRemoveArrayFilter(targets="all",arr=["OI_VIS","OI_FLUX"])         
+    f3=oim.oimDataTypeFilter(targets="all",dataType=["T3AMP","T3PHI"])
+    data.setFilter(oim.oimDataFilter([f1,f2,f3]))
+
+Here we create a new filter stack with the previous wavelength filter (f1), a filter (f2) removing the array OI_VIS and OI_FLUX from the data, and a filter (f3) removing the columns T3AMP and T3PHI. Basically, we only have VIS2DATA left in our oifits structure.
+
+.. note::
+    Removing T3AMP and T3PHI from the OI_T3 is equivalent for model-fitting to remove the array OI_T3 for model-fitting. 
+
 
 Plotting data from oifits files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1021,11 +1116,18 @@ Of course, only the third model is chromatic.
 Creating new Image Components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. warning::
+    Example will be added when te oimComponentImage will be fully implemented
+
 Creating new Radial profile Components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. warning::
+    Example will be added when te oimComponentImage will be fully implemented
 
 Performance Tests
 -----------------
+
+
 
 Scripts concerning performance tests are presented in this section.
 
