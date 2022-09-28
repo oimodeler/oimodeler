@@ -253,7 +253,7 @@ class oimData(object):
         #TODO
       
         
-    def setFilter(self,filt,useFilter=True):
+    def setFilter(self,filt=None,useFilter=True):
         self._filter=filt
         self._filteredDataReady = False
         self.useFilter=useFilter
@@ -278,10 +278,11 @@ class oimData(object):
         
     @useFilter.setter
     def useFilter(self,val):
+        self._useFilter=val
         if val==True:
-            self._useFilter=True
             if self._filteredDataReady == False:
                 self.applyFilter()
+       
             
     
                 
