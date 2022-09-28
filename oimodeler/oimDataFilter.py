@@ -49,7 +49,12 @@ class oimDataFilterComponent(object):
         if type(self.params["arr"])!=type([]):
             self.params["arr"]= [self.params["arr"]]
         
-        for datai in data:
+        if self.params["targets"]==["all"]:
+            idx=list(range(len(data)))
+        else:
+            idx=self.params["targets"]
+    
+        for datai in [data[i] for i in idx]:
             self._filteringFunction(datai)
 
     
