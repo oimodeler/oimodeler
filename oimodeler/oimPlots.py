@@ -62,15 +62,6 @@ def _colorPlot(axe,x,y,z,**kwargs):
     lc.set_array(z) 
     line = axe.add_collection(lc)
     
-    """
-    if 'label' in kwargs:
-        label=kwargs.pop('label')
-        print(label)
-        legend=axe.get_legend_handles_labels()
-        legend[0].append(lc[0])
-        legend[1].append=label
-    """
-    
     for ci in axe.collections:
         ci.set_norm(norm)
     
@@ -529,7 +520,6 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                 else:
                     cdata[idata]=np.outer(np.ones(shapex[0]),cdata[idata])
                 shapec=np.shape(cdata[idata])
-            print(shapec)
         # separate multiples baselines
         nB=shapex[0]
         for iB in range(nB):
@@ -561,8 +551,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                             if errorbar==True:
                                 
                                 if not('color' in kwargs_error):
-                                    kwargs_error['color']=colorTab[colorIdx[idata][iB]%ncol]
-                                print(kwargs_error)   
+                                    kwargs_error['color']=colorTab[colorIdx[idata][iB]%ncol] 
                                 _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
                                             ydata[idata][iB,ilam0:ilam],
                                             ydataerr[idata][iB,ilam0:ilam],
