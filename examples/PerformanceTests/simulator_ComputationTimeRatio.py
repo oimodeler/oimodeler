@@ -15,6 +15,8 @@ import os
 from datetime import datetime
 from astropy.io import fits
 import numpy as np
+from tqdm import tqdm
+
 
 path = os.path.dirname(oim.__file__)
 #pathData=os.path.join(path,os.pardir,"examples","testData","FSCMA_MATISSE")
@@ -30,7 +32,7 @@ ndata=100
 dt=np.ndarray([2,ndata])
 
 start_time0 = datetime.now()
-for idata in range(ndata):
+for idata in tqdm(range(ndata)):
     
     ud=oim.oimUD(d=20,f=4)
     pt=oim.oimPt(f=6)
@@ -38,7 +40,7 @@ for idata in range(ndata):
     
     files=files0*(idata+1)
     
-    sim=oim.OImSimulator(data=files,model=model)    
+    sim=oim.oimSimulator(data=files,model=model)    
     sim.data.prepareData()
     
     if idata==0:
@@ -58,6 +60,7 @@ end_time0 = datetime.now()
 print('Full Computation time {:.3f}s'.format((end_time0 - start_time0).total_seconds() ))
 
 #%% Plot Time Ratio between CorrFlux and Chi2
+plt.figure()
 x=np.linspace(1,ndata,ndata)*len(files0)
 
 r=(dt[1,:]-dt[0,:])/dt[0,:]
@@ -77,9 +80,10 @@ for c in model.components:
     txt+="+ "
 txt=txt[:-3]
 plt.title("Computation time Ratio \n dt($\chi^2$)/dt(F$_{corr}$)")
-filename=os.path.join(path,os.pardir,"images","oimodel_test_simulator_speed_ratio.png")
+filename=os.path.join(path,os.pardir,"images","oimodel_test_simulator_speed_ratio3.png")
 plt.savefig(filename)
 #%%  Plot time
+plt.figure()
 x=np.linspace(1,ndata,ndata)*x0
 
 col=plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -99,5 +103,5 @@ for c in model.components:
 txt=txt[:-3]
     
 plt.title("Computation time for a {} model".format(txt))
-filename=os.path.join(path,os.pardir,"images","oimodel_test_simulator_speed2.png")
+filename=os.path.join(path,os.pardir,"images","oimodel_test_simulator_speed3.png")
 plt.savefig(filename)
