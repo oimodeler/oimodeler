@@ -18,18 +18,19 @@ import oimodeler as oim
 
 
 ###############################################################################
-def _errorplot(axe,X,Y,dY,smooth=1,line_kw=None, **kwargs ):
+def _errorplot(axe,X,Y,dY,smooth=1, **kwargs ):
     Ys=Y
     if not("alpha" in kwargs):
         kwargs["alpha"]=0.4
+    if not("color" in kwargs):
+        kwargs["color"]="grey"      
     if smooth!=1:      
         ker=np.ones(smooth)/smooth
         Ys=np.convolve(Y,ker,mode="same")#[smooth//2:-smooth//2-1]
     XX=np.concatenate([X,np.flip(X)])
     YY=np.concatenate([Ys-dY,np.flip(Ys+dY)])
     axe.fill(XX,YY,**kwargs)
-    if line_kw:
-        axe.plot(X,Y, **line_kw)
+
         
         
       
@@ -168,7 +169,7 @@ def uvPlot(oifits,extension="OI_VIS2",marker="o", facecolors='red',
 
 ###############################################################################
 
-oimPlotParamName=np.array(["B","PA","UCOORD","VCOORD","SPAFREQ","EFF_WAVE",
+oimPlotParamName=np.array(["LENGTH","PA","UCOORD","VCOORD","SPAFREQ","EFF_WAVE",
                     "VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"])
 oimPlotParamError=np.array(["","","","","","EFF_BAND","VIS2ERR","VISAMPERR",
                          "VISPHIERR","T3AMPERR","T3PHIERR","FLUXERR"])
@@ -233,9 +234,67 @@ def getColorIndices(oifitsList,color,yarr,yname):
     return idx,names
         
         
-            
-        
+"""
+Trying to simplify code in oimPlot
+But need to link the xdata, ydata and cdata
+---------------------------
+def oimPlotGetDataAndInfo(oifitsList,name,unit,shortlabel):
     
+    
+    try:
+        idx=np.where(oimPlotParamName == name)[0][0]
+        isError=False
+    except:
+        idx=np.where(oimPlotParamError == name)[0][0]
+        isError=True
+  
+
+    if not(shortlabel):
+        label=oimPlotParamLabel[idx]
+    else:
+        label=oimPlotParamLabelShort[idx] 
+        
+    #TODO implement units with astropy
+    if unit:
+        unit0=unit
+    else:
+        unit0=oimPlotParamUnit0[idx]
+    if unit0!="": label+=" ("+unit0+")"
+    
+    
+    IsUVcoord=oimPlotParamIsUVcoord[idx]      
+
+    if not(IsUVcoord):
+        if isError==False:
+            idx=np.where(oimPlotParamName == name)[0][0]
+            arr=oimPlotParamArr[idx]
+            data=[d[arr].data[name] for d in oifitsList] 
+            errname=oimPlotParamError[idx]
+            if errname!="":
+                errdata=[d[arr].data[errname] for d in oifitsList]
+            else:
+               errdata=None
+        else:
+            idx=np.where(oimPlotParamError == name)[0][0]
+            arr=oimPlotParamArr[idx]
+            data=[d[arr].data[name] for d in oifitsList]  
+            errdata=None
+        
+        data=[d[arr].data[name] for d in oifitsList]
+    else:
+        arr=oimPlotParamArr[idx]
+        if name=="SPAFREQ":
+            
+            data=[oim.getSpaFreq(d,arr=arr,unit=unit) for d in oifitsList]
+    
+        elif name=="LENGTH":
+            data=[oim.getBaselineLengthAndPA(d,arr=arr)[0] for d in oifitsList]
+            
+        elif name=="PA":
+            data=[oim.getBaselineLengthAndPA(d,arr=arr)[1] for d in oifitsList]
+            
+    return  data,errdata,label
+"""
 
 def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             yunit=None,yunitmultiplier=1,cname=None,cunit=None,cunitmultiplier=1,
@@ -301,18 +360,19 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     
     res= None
     
+    if isinstance(oifitsList,oim.oimData):
+        oifitsList=oifitsList.data
+    
     if type(oifitsList)!=type([]):
         oifitsList=[oifitsList]
         
     #TODO colors with lam, baselines, ...
-   
-    
-        
          
     ndata=len(oifitsList)
  
     idxX=np.where(oimPlotParamName == xname)[0][0]
     idxY=np.where(oimPlotParamName == yname)[0][0]
+
     
     xerrname=oimPlotParamError[idxX]
     yerrname=oimPlotParamError[idxY]
@@ -344,8 +404,8 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
         
 
     xIsUVcoord=oimPlotParamIsUVcoord[idxX]
-    yIsUVcoord=oimPlotParamIsUVcoord[idxY]    
-
+    yIsUVcoord=oimPlotParamIsUVcoord[idxY] 
+  
     if not(xIsUVcoord):
         xdata=[d[xarr].data[xname] for d in oifitsList]
     elif xname=="SPAFREQ":
@@ -353,12 +413,12 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     elif xname=="UCOORD" and yname!="VCOORD":
         pass
         #TODO
-    elif xname=="B":
-        xdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr,unit=xunit)[0],
+    elif xname=="LENGTH":
+        xdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[0],
                 (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
         
     elif xname=="PA":
-        xdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr,unit=xunit)[1],
+        xdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[1],
                 (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
          
 
@@ -368,30 +428,64 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     elif yname=="SPAFREQ":
         ydata=[oim.getSpaFreq(d,arr=yarr,unit=yunit) for d in oifitsList]
     elif yname=="VCOORD" and yname!="UCOORD":
-        pass
+        uvPlot(oifitsList, **kwargs)
+        return
         #TODO
-    elif yname=="B":
-        ydata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr,unit=yunit)[0],
+    elif yname=="LENGTH":
+        ydata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[0],
                 (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
         
     elif yname=="PA":
-        ydata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr,unit=yunit)[1],
+        ydata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[1],
                 (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
 
 
     if cname!=None:
-        try:
-            idxC=np.where(oimPlotParamName == cname)[0][0]
-            carr=oimPlotParamArr[idxC]
-            cdata=[d[carr].data[cname] for d in oifitsList]
-        except:
-            idxC=np.where(oimPlotParamError == cname)[0][0]
-            carr=oimPlotParamArr[idxC]
-            cdata=[d[carr].data[cname] for d in oifitsList]            
+        idxC=np.where(oimPlotParamName == cname)[0][0]
+        cIsUVcoord=oimPlotParamIsUVcoord[idxC] 
         
+        if cunit:
+            cunit0=cunit
+        else:
+            cunit0=oimPlotParamUnit0[idxC]
+            
+         
+        if not(cIsUVcoord):
+            try:
+                idxC=np.where(oimPlotParamName == cname)[0][0]
+                carr=oimPlotParamArr[idxC]
+                cdata=[d[carr].data[cname] for d in oifitsList]
+            except:
+                idxC=np.where(oimPlotParamError == cname)[0][0]
+                carr=oimPlotParamArr[idxC]
+                cdata=[d[carr].data[cname] for d in oifitsList]   
+                
+        elif cname=="SPAFREQ":
+            cdata=[oim.getSpaFreq(d,arr=yarr,unit=yunit) for d in oifitsList]
+        elif yname=="VCOORD" and yname!="UCOORD":
+            pass
+            #TODO
+        elif cname=="B":
+            cdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[0],
+                    (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
+            
+        elif cname=="PA":
+            cdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[1],
+                    (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
+
+        
+                
+        
+
         
     if colorTab==None:
         colorTab=oimPlotParamColorCycle
+    
+    try :
+        if not("by" in color):
+            colorTab=[color]
+    except:
+        pass
     
     ncol=len(colorTab)    
       
@@ -407,12 +501,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     
     #looping through oifits files
     for idata in range(ndata):
-        
-        
-        #if color=="byWavelength":
-        #    wl=oifitsList[idata]["OI_WAVELENGTH"].data["EFF_WAVE"]
-
-        
+              
         shapex=np.shape(xdata[idata])
         shapey=np.shape(ydata[idata])
         
@@ -432,9 +521,15 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
         shapey=np.shape(ydata[idata])
                 
         if cname!=None:
-            shapec=np.shape(cdata[idata]) 
+            shapec=np.shape(cdata[idata])
             if (np.size(shapec)==1):
-                cdata[idata]=np.outer(np.ones(shapex[0]),cdata[idata])
+                
+                if shapec==shapex[0]:
+                    cdata[idata]=np.outer(cdata[idata],np.ones(shapex[1]))
+                else:
+                    cdata[idata]=np.outer(np.ones(shapex[0]),cdata[idata])
+                shapec=np.shape(cdata[idata])
+            print(shapec)
         # separate multiples baselines
         nB=shapex[0]
         for iB in range(nB):
@@ -464,11 +559,16 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                                  xunitmultiplier,ydata[idata][iB,ilam0:ilam],
                                  color=colorTab[colorIdx[idata][iB]%ncol],label=labeli,**kwargs)
                             if errorbar==True:
+                                
+                                if not('color' in kwargs_error):
+                                    kwargs_error['color']=colorTab[colorIdx[idata][iB]%ncol]
+                                print(kwargs_error)   
                                 _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
                                             ydata[idata][iB,ilam0:ilam],
-                                            ydataerr[idata][iB,ilam0:ilam],color=colorTab[colorIdx[idata][iB]%ncol],
+                                            ydataerr[idata][iB,ilam0:ilam],
                                             **kwargs_error)
                         else:
+                        
                             
                             res=_colorPlot(axe, xdata[idata][iB,ilam0:ilam]*
                                  xunitmultiplier, ydata[idata][iB,ilam0:ilam], cdata[idata][iB,ilam0:ilam]*cunitmultiplier,
@@ -477,10 +577,8 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                             if errorbar==True:
                                 _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
                                             ydata[idata][iB,ilam0:ilam],
-                                            ydataerr[idata][iB,ilam0:ilam],color="gray",alpha=0.2,
+                                            ydataerr[idata][iB,ilam0:ilam],
                                             **kwargs_error)
-                        #label=None
-    
                         
             else:
                 axe.plot(xdata[idata][iB,:]*xunitmultiplier,
@@ -548,8 +646,9 @@ class oimAxes(plt.Axes):
                 mini=np.Infinity
                 for li in lines: 
                     mi= np.min(li.get_ydata())
-                    if mi<mini:
+                    if mi<mini and mi>0:
                         mini=mi  
+                
                 self.set_ylim(mini,1)
                 
         elif self.ytype in ["VISPHI","T3PHI"]:
