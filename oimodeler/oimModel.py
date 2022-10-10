@@ -699,12 +699,12 @@ class oimEGauss(oimGauss):
 ###############################################################################
 
 class oimIRing(oimComponentFourier):
-    def __init__(self,**kwargs):        
-         super().__init__(**kwargs)
-         self.name="Infinitesimal Ring"
-         self.shortname = "IR"
-         self.params["d"]=oimParam(**_standardParameters["d"])    
-         self._eval(**kwargs)
+    name="Infinitesimal Ring"
+    shortname = "IR"
+    def __init__(self,**kwargs):    
+        super().__init__(**kwargs)   
+        self.params["d"]=oimParam(**_standardParameters["d"])    
+        self._eval(**kwargs)
 
     def _visFunction(self,xp,yp,rho,wl,t):     
         xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho
@@ -728,13 +728,13 @@ class oimEIRing(oimIRing):
 ###############################################################################
 
 class oimRing(oimComponentFourier):
+    name="Ring"
+    shortname = "R"
     def __init__(self,**kwargs):        
-         super().__init__(**kwargs)
-         self.name="Ring"
-         self.shortname = "R"
-         self.params["din"]=oimParam(**_standardParameters["din"]) 
-         self.params["dout"]=oimParam(**_standardParameters["din"])           
-         self._eval(**kwargs)
+        super().__init__(**kwargs)
+        self.params["din"]=oimParam(**_standardParameters["din"]) 
+        self.params["dout"]=oimParam(**_standardParameters["din"])           
+        self._eval(**kwargs)
 
     def _visFunction(self,xp,yp,rho,wl,t):     
         xxin=np.pi*self.params["din"](wl,t)* \
@@ -773,11 +773,11 @@ class oimESKIRing(oimComponentFourier):
     shortname = "SKEIR"
     elliptic=True   
     def __init__(self,**kwargs): 
-         super().__init__(**kwargs)
-         self.params["d"]=oimParam(**_standardParameters["d"])   
-         self.params["skw"]=oimParam(**_standardParameters["skw"])    
-         self.params["skwPa"]=oimParam(**_standardParameters["skwPa"])      
-         self._eval(**kwargs)
+        super().__init__(**kwargs)
+        self.params["d"]=oimParam(**_standardParameters["d"])   
+        self.params["skw"]=oimParam(**_standardParameters["skw"])    
+        self.params["skwPa"]=oimParam(**_standardParameters["skwPa"])      
+        self._eval(**kwargs)
     
     def _visFunction(self,xp,yp,rho,wl,t):
 
@@ -806,12 +806,12 @@ class oimESKRing(oimComponentFourier):
     shortname = "SKER"
     elliptic=True   
     def __init__(self,**kwargs): 
-         super().__init__(**kwargs)
-         self.params["din"]=oimParam(**_standardParameters["din"]) 
-         self.params["dout"]=oimParam(**_standardParameters["din"])    
-         self.params["skw"]=oimParam(**_standardParameters["skw"])    
-         self.params["skwPa"]=oimParam(**_standardParameters["skwPa"])      
-         self._eval(**kwargs)
+        super().__init__(**kwargs)
+        self.params["din"]=oimParam(**_standardParameters["din"]) 
+        self.params["dout"]=oimParam(**_standardParameters["din"])    
+        self.params["skw"]=oimParam(**_standardParameters["skw"])    
+        self.params["skwPa"]=oimParam(**_standardParameters["skwPa"])      
+        self._eval(**kwargs)
     
     def _visFunction(self,xp,yp,rho,wl,t):
         
@@ -849,14 +849,14 @@ class oimESKRing(oimComponentFourier):
 
 class oimConvolutor(oimComponentFourier):
     def __init__(self,component1, component2,**kwargs):        
-         super().__init__(**kwargs)
-         
-         self.component1=component1
-         self.component2=component2
-         self.name="Convonlution Component"
-         self.shortname = "Conv"
-           
-         self._eval(**kwargs)
+        super().__init__(**kwargs)
+        
+        self.component1=component1
+        self.component2=component2
+        self.name="Convonlution Component"
+        self.shortname = "Conv"
+          
+        self._eval(**kwargs)
 
     def _visFunction(self,xp,yp,rho,wl,t):     
     
