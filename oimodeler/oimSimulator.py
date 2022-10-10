@@ -94,12 +94,12 @@ class oimSimulator(object):
         chi2=0
         chi2List=[]
        
-        """
+        
         if computeSimulatedData==True and (checkSimulatedData==True or self.simulatedData==None):
             self.simulatedData=oim.oimData()
             for datai in self.data.data:
                 self.simulatedData.addData(oim.hdulistDeepCopy(datai))
-        """   
+           
         
         
         data=self.data

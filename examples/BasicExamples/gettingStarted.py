@@ -34,12 +34,10 @@ model=oim.oimModel([ud,pt])
 #%%
 
 print(model.getParameters())
-
 print(model.getFreeParameters())
 
 #%%
 sim=oim.oimSimulator(data=files,model=model)
-sim.data.prepareData()
 sim.compute(computeChi2=True,computeSimulatedData=True)
 
 #%%
@@ -52,11 +50,8 @@ fig0,ax0= sim.plot(["VIS2DATA","T3PHI"],
 #%%
 
 fit=oim.oimFitterEmcee(files,model,nwalkers=10)
-
 fit.prepare(init="random")
-
 print(fit.initialParams)
-
 fit.run(nsteps=2000,progress=True)
 
 #%%
