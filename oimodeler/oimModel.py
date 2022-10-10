@@ -227,7 +227,8 @@ _standardParameters={
     "pa":{"name":"pa","value":0,"description":"Major-axis Position angle","unit":units.deg},
     "skw":{"name":"skw","value":0,"description":"Skewedness","unit":units.one},
     "skwPa":{"name":"skwPa","value":0,"description":"Skewedness Position angle","unit":units.deg},
-    "pixSize":{"name":"pixSize","value":0.1,"description":"Pixel Size","unit":units.mas}
+    "pixSize":{"name":"pixSize","value":0.1,"description":"Pixel Size","unit":units.mas},
+    "dim":{"name":"dim","value":128,"description":"Dimension in pixel","unit":units.one}    
     }
     
 
@@ -274,16 +275,15 @@ class oimComponent(object):
        
     def _eval(self,**kwargs):
         for key, value in kwargs.items():
-            if key in self.params.keys(): 
-                if isinstance(value,numbers.Number):
-                    self.params[key].value=value
-                elif isinstance(value,oimInterpWl):
+            if key in self.params.keys():
+                if isinstance(value,oimInterpWl):
                     if not(isinstance(self.params[key],oimParamInterpWl)):
-                        self.params[key]=oimParamInterpWl(self.params[key],value)
-                    
-                    
+                       self.params[key]=oimParamInterpWl(self.params[key],value)
+                else:
+                    self.params[key].value=value
+   
                             
-    def getComplexComplexCoherentFlux(self,u,v,wl=None,t=None):
+    def getComplexCoherentFlux(self,u,v,wl=None,t=None):
         """
         Compute and return the complex coherent flux for an array of u,v 
         (and optionally wavelength and time ) coordinates.
@@ -361,12 +361,15 @@ class oimComponentImage(oimComponent):
     def __init__(self,**kwargs): 
         super().__init__(**kwargs)
 
-        self.dim=0
-        self.pixSize=0
+        self._dim=0
+        self._pixSize=0
         
         self.params["pixSize"]=oimParam(**_standardParameters["pixSize"])  
         self.params["dim"]=oimParam(name="dim",value=256,
                          description="Image dimension",unit=1,free=False)
+        
+        self.params["interpMethod"]=oimParam(name="interpMethod",value='linear',
+                         description="interp method",unit=1,free=False)
         
         self._eval(**kwargs)   
         self._compute2DCoordGrid(force=True)
@@ -378,11 +381,11 @@ class oimComponentImage(oimComponent):
         
         #recompute grid only if pixSize or dim have changed
         
-        if (dim!=self.dim or pixSize!=self.pixSize ):
+        if (dim!=self._dim or pixSize!=self._pixSize ):
            self.xx=np.tile((np.arange(dim)-dim/2)*pixSize,(dim,1))
            self.yy=np.transpose(self.xx)
-           self.dim=dim
-           self.pixSize=pixSize        
+           self._dim=dim
+           self._pixSize=pixSize        
 
     def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
         
@@ -401,14 +404,16 @@ class oimComponentImage(oimComponent):
         grid=(freqVectX,freqVectY)
         coord=np.transpose([ucoord,vcoord])
                
-        real=interpolate.interpn(grid,np.real(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
-        imag=interpolate.interpn(grid,np.imag(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
+        real=interpolate.interpn(grid,np.real(fft2D),coord,method=self.params["interpMethod"].value,bounds_error=False,fill_value=0)
+        imag=interpolate.interpn(grid,np.imag(fft2D),coord,method=self.params["interpMethod"].value,bounds_error=False,fill_value=0)
         
+        #real=interpolate.RegularGridInterpolator(grid,np.real(fft2D),method=self.params["interpMethod"].value)(coord)
+        #imag=interpolate.RegularGridInterpolator(grid,np.imag(fft2D),method=self.params["interpMethod"].value)(coord)
         
         vc=real+imag*np.complex(0,1)
         return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
                                                      self.params["f"](wl,t)
-          
+       
     def _imageFunction(self,xx,yy,wl,t):
         dim=self.params["dim"].value
         return np.zeros([dim,dim])
@@ -763,9 +768,9 @@ class oimERing(oimRing):
                   
 ###############################################################################
           
-class ESKRing(oimComponentFourier):
-    name="Skewed Ellitical ring"
-    shortname = "SKER"
+class oimESKIRing(oimComponentFourier):
+    name="Skewed Ellitical Infinitesimal Ring"
+    shortname = "SKEIR"
     elliptic=True   
     def __init__(self,**kwargs): 
          super().__init__(**kwargs)
@@ -794,6 +799,75 @@ class ESKRing(oimComponentFourier):
         return  ((r2<=(self.params["d"](wl,t)/2+dx/2)**2) & 
                  (r2>=(self.params["d"](wl,t)/2-dx/2)**2)).astype(float)*F
         
+###############################################################################
+          
+class oimESKRing(oimComponentFourier):
+    name="Skewed Ellitical Ring"
+    shortname = "SKER"
+    elliptic=True   
+    def __init__(self,**kwargs): 
+         super().__init__(**kwargs)
+         self.params["din"]=oimParam(**_standardParameters["din"]) 
+         self.params["dout"]=oimParam(**_standardParameters["din"])    
+         self.params["skw"]=oimParam(**_standardParameters["skw"])    
+         self.params["skwPa"]=oimParam(**_standardParameters["skwPa"])      
+         self._eval(**kwargs)
+    
+    def _visFunction(self,xp,yp,rho,wl,t):
+        
+        
+        xxin=np.pi*self.params["din"](wl,t)* \
+                         self.params["din"].unit.to(units.rad)*rho
+        xxout=np.pi*self.params["dout"](wl,t)* \
+                         self.params["dout"].unit.to(units.rad)*rho
+    
+        xx=(xxin+xxout)/2
+        
+        xx2=(xxout-xxin)/2
+        
+        
+        phi=  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
+            self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp);
+       
+        return (j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t))*np.divide(2*j1(xx2),xx2)
+          
+        
+          
+    def _imageFunction(self,xx,yy,wl,t):
+        r2=(xx**2+yy**2)  
+        # dr=np.sqrt(np.abs(np.roll(r2,(-1,-1),(0,1))-np.roll(r2,(1,1),(0,1))))
+        phi=np.arctan2(yy,xx)  +  self.params["skwPa"](wl,t)* \
+                                  self.params["skwPa"].unit.to(units.rad)
+        dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0])*self.params["elong"](wl,t))
+        #dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0]))*3
+        F=1+self.params["skw"](wl,t)*np.cos(phi)           
+        return  ((r2<=(self.params["d"](wl,t)/2+dx/2)**2) & 
+                 (r2>=(self.params["d"](wl,t)/2-dx/2)**2)).astype(float)*F
+    
+    
+###############################################################################    
+
+class oimConvolutor(oimComponentFourier):
+    def __init__(self,component1, component2,**kwargs):        
+         super().__init__(**kwargs)
+         
+         self.component1=component1
+         self.component2=component2
+         self.name="Convonlution Component"
+         self.shortname = "Conv"
+           
+         self._eval(**kwargs)
+
+    def _visFunction(self,xp,yp,rho,wl,t):     
+    
+        return  self.component1.getComplexCoherentFlux(xp,yp,wl,t)*self.component2._visFunction(xp,yp,rho,wl,t)
+     
+    def _imageFunction(self,xx,yy,wl,t):
+        r2=(xx**2+yy**2)   
+        dx=np.max([np.abs(1.*(xx[0,1]-xx[0,0])),np.abs(1.*(yy[1,0]-yy[0,0]))])
+        return ((r2<=(self.params["d"](wl,t)/2+dx)**2) & 
+                (r2>=(self.params["d"](wl,t)/2)**2)).astype(float)
+
 
 ###############################################################################    
 class oimModel(object):
@@ -803,16 +877,23 @@ class oimModel(object):
     for wavelength or time dependent models) and complex coherent fluxes for a 
     vector of u,v,wl, and t coordinates.
     """
-    def __init__(self,components=[]): 
+    def __init__(self,*components): 
         """
-        Create and initialize a new instance of oimModel
+        Parameters
+        ----------
+        *components : list or serie of oimComponents
+           The components of the model
 
         Returns
         -------
         None.
-
         """
-        self.components=components
+        
+    
+        if len(components)==1 and type(components[0])==list:
+            self.components=components[0]
+        else:    
+            self.components=components
         
     def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
         """
@@ -854,23 +935,27 @@ class oimModel(object):
         Parameters
         ----------
         dim : integer
-            image x & y dimension in pixels.
+            image x & y dimension in pixels..
         pixSize : float
-            pixel angular size.in rad
+            pixel angular size.in mas
         wl : integer, list or numpy array, optional
-             wavelength(s) in meter. The default is None.
+            wavelength(s) in meter. The default is None.
         t :  integer, list or numpy array, optional
             time in s (mjd). The default is None.
         fits : bool, optional
             if True returns result as a fits hdu. The default is False.
-
+        fromFT : bool, optional
+            If True compute the image using FT formula when available
+            The default is False.
+            
         Returns
         -------
-        a numpy 2D array (or 3 or 4D array if wl, t or both are given) or an
-        astropy.io.fits hdu. image hdu if fits=True.
-            The image of the component with given size in pixels and rad.
-
+            numpy.ndarray or astropy.io.fits.hdu
+             a numpy 2D array (or 3 or 4D array if wl, t or both are given) or an
+             astropy.io.fits hdu.imagehdu if fits=True.
+             The image of the component with given size in pixels and mas or rasd
         """
+
         
         if fromFT:
             #TODO multiple wavelengths and time
@@ -920,7 +1005,25 @@ class oimModel(object):
 
             return image;    
 
-    def getParameters(self,free=False):       
+    def getParameters(self,free=False): 
+        """
+        
+        Get the Model paramters (or free parameters)
+        
+        Parameters
+        ----------
+        free : Bool, optional
+            If True retrieve the free parameters of the models only. 
+            The default is False.
+
+        Returns
+        -------
+        params : Dict of oimParam
+            a Dictionnary of the model parameters (or free parameters).
+
+        """
+        
+   
         params={}
         for i,c in enumerate(self.components):
             for name,param in c.params.items():
@@ -942,6 +1045,14 @@ class oimModel(object):
         return params
 
     def getFreeParameters(self):  
+        """
+        Get the Model free paramters 
+
+        Returns
+        -------
+        Dict of oimParam
+            A Dictionnary of the model free parameters.
+        """
         return self.getParameters(free=True)    
 
 
@@ -949,6 +1060,50 @@ class oimModel(object):
     def showModel(self,dim,pixSize,wl=None,t=None,fits=False, 
                   fromFT=False,axe=None,normPow=0.5,figsize=(8,6),
                   savefig=None,colorbar=True,**kwargs):
+        """
+        
+        Show the mode Image or image-Cube
+
+        Parameters
+        ----------
+        dim : integer
+            image x & y dimension in pixels..
+        pixSize : float
+            pixel angular size.in mas
+        wl : integer, list or numpy array, optional
+            wavelength(s) in meter. The default is None.
+        t :  integer, list or numpy array, optional
+            time in s (mjd). The default is None.
+        fits : bool, optional
+            if True returns result as a fits hdu. The default is False.
+        fromFT : bool, optional
+            If True compute the image using FT formula when available
+            The default is False.
+        axe : matplotlib.axes.Axes, optional
+            If provided the image will be shown in this axe. If not a new figure 
+            will be created. The default is None.
+        normPow : float, optional
+            Exponent for the Image colorcale powerLaw normalisation.
+            The default is 0.5.
+        figsize : tuple of int, optional
+            The Figure size in inches. The default is (8,6).
+        savefig : str, optional
+            Name of the files for saving the figure If None the figure is not saved.
+            The default is None.
+        colorbar : bool, optional
+            Add a colobar to the Axe. The default is True.
+        **kwargs : dict
+            Arguments to be passed to the plt.imshow function
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+            The Figure created if needed
+        axe : matplotlib.axes.Axes
+            The Axes instances, created if needed.
+
+        """
+
         
         im=self.getImage(dim,pixSize,wl,t,fits,fromFT)
         
