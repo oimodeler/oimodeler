@@ -5,7 +5,7 @@ import os
 
 path = os.path.dirname(oim.__file__)
 
-
+fromFT=False
 nB = 500  # number of baselines
 nwl = 100  # number of walvengths
 
@@ -25,7 +25,7 @@ print(g.params['fwhm']([3e-6, 3.5e-6, 4e-6, 4.5e-6]))
 # %%
 mg = oim.oimModel([g])
 
-figGim, axGim = mg.showModel(256, 0.1, wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6], figsize=(14, 2.5),
+figGim, axGim,im = mg.showModel(256, 0.1, wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6],swapAxes=True, figsize=(2.5, 2.5),fromFT=fromFT,
    savefig=os.path.join(path, os.pardir, "images", "complexModel_chromaticGaussian.png"))
 
 
@@ -50,7 +50,7 @@ plt.savefig(os.path.join(path, os.pardir, "images",
 ud = oim.oimUD(d=0.5, f=oim.oimInterpWl([3e-6, 4e-6], [2, 0.2]))
 
 m2 = oim.oimModel([ud, g])
-fig2im, ax2im = m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(14, 2.5), normPow=0.2,
+fig2im, ax2im,im = m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],swapAxes=True, normPow=0.2, figsize=(2.5, 2.5),fromFT=fromFT,
    savefig=os.path.join(path, os.pardir, "images", "complexModel_UDAndGauss.png"))
 
 vis = np.abs(m2.getComplexCoherentFlux(
@@ -72,8 +72,8 @@ eg = oim.oimEGauss(fwhm=oim.oimInterpWl([3e-6, 4e-6], [2, 8]), elong=2, pa=90)
 el = oim.oimEllipse(d=0.5, f=oim.oimInterpWl([3e-6, 4e-6], [2, 0.2]), elong=2, pa=90)
 
 m3 = oim.oimModel([el, eg])
-fig3im, ax3im = m3.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(14, 2.5), normPow=0.2,
-   savefig=os.path.join(path, os.pardir, "images", "complexModel_Elong.png"))
+fig3im, ax3im,im = m3.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(2.5, 2.5), normPow=0.2,fromFT=fromFT,
+   savefig=os.path.join(path, os.pardir, "images", "complexModel_Elong.png"),swapAxes=True)
 
 
 # %%
@@ -129,7 +129,7 @@ er.params['dout']=oim.oimParamLinker(el.params["d"],"mult",4)
 
 m4= oim.oimModel([el, eg,er])
 
-fig4im, ax4im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(14, 2.5), normPow=0.2,
+fig4im, ax4im,im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(2.5, 2.5), normPow=0.2,swapAxes=True,fromFT=fromFT,
    savefig=os.path.join(path, os.pardir, "images", "complexModel_link.png"))    
     
 
@@ -139,7 +139,7 @@ print(m4.getFreeParameters())
 el.params['d'].value=4
 el.params['pa'].value=45
     
-fig5im, ax5im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(14, 2.5), normPow=0.2,
+fig5im, ax5im,im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],  figsize=(2.5, 2.5),swapAxes=True, normPow=0.2,fromFT=fromFT,
        savefig=os.path.join(path, os.pardir, "images", "complexModel_linkRotScale.png"))    
      
 
