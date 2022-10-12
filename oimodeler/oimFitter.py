@@ -214,8 +214,13 @@ class oimFitterEmcee(oimFitter):
         
         return fig,fig.axes
 
-    def walkersPlot(self,savefig=None,**kwargs):
-        fig, ax = plt.subplots(4, figsize=(10, 7), sharex=True)
+    def walkersPlot(self,savefig=None,chi2limfact=20,**kwargs):
+        
+        
+        fig, ax = plt.subplots(self.nfree, figsize=(10, 7), sharex=True)
+        if self.nfree==1:
+            ax=np.array([ax])
+        
         samples=self.sampler.get_chain()
         chi2=-2*self.sampler.get_log_prob()
         pnames=list(self.freeParams.keys())
@@ -236,7 +241,7 @@ class oimFitterEmcee(oimFitter):
         for i in range(self.nfree):
             
             scale=ax[i].scatter(xf,samples[:,i],c=chi2f,marker=".",
-                           vmin=chi2.min(), vmax=50*chi2.min(),s=0.1,**kwargs)
+                           vmin=chi2.min(), vmax=chi2limfact*chi2.min(),s=0.1,**kwargs)
             ax[i].set_xlim(0, np.max(xf))
             
             txt=pnames[i]
