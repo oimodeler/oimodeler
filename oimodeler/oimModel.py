@@ -710,11 +710,12 @@ class oimComponentFourier(oimComponent):
         
         tot=np.sum(image,axis=(2,3))
         
-        for it in range(nt):
-            for iwl in range(nwl):
+        #TODO no loop for normalization
+        for it,ti in enumerate(t):
+            for iwl,wli in enumerate(wl):
                 if tot[it,iwl]!=0:  
                     image[it,iwl,:,:] = image[it,iwl,:,:]  \
-                              / tot[it,iwl]*self.params["f"](wl,t)    
+                              / tot[it,iwl]*self.params["f"](wli,ti)    
 
         return image    
     
@@ -1136,7 +1137,7 @@ class oimModel(object):
         return res
         
         return None;
-    def getImage(self,dim,pixSize,wl=None,t=None,fits=False, 
+    def getImage(self,dim,pixSize,wl=None,t=0,fits=False, 
                  fromFT=False,dontSqueeze=False):
         """
         Compute and return an image or and image cube (if wavelength and time 
