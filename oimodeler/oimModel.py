@@ -7,7 +7,7 @@ Created on Tue Nov 23 15:26:42 2021
 
 import numpy as np
 from astropy import units as units
-from scipy.special import j0,j1
+from scipy.special import j0,j1,jv
 from scipy import integrate
 import numbers
 from scipy import interpolate
@@ -718,7 +718,7 @@ class oimIRing(oimComponentFourier):
 
 ###############################################################################   
 class oimEIRing(oimIRing):
-    name="Ellitical infinitesimal ring"
+    name="Ellitical infinitesimal Ring"
     shortname = "EIR"
     elliptic=True
     def __init__(self,**kwargs):        
@@ -759,7 +759,7 @@ class oimRing(oimComponentFourier):
 
 ###############################################################################   
 class oimERing(oimRing):
-    name="Ellitical  ring"
+    name="Ellitical  Ring"
     shortname = "ER"
     elliptic=True
     def __init__(self,**kwargs):        
@@ -844,8 +844,102 @@ class oimESKRing(oimComponentFourier):
         return  ((r2<=(self.params["d"](wl,t)/2+dx/2)**2) & 
                  (r2>=(self.params["d"](wl,t)/2-dx/2)**2)).astype(float)*F
     
+###############################################################################    
+
+class oimLorentz(oimComponentFourier):
+    #From Lazareff 2017 A&A 599, 85
+    #TODO : Small difference between images using direct formula or inverse of vis function
+    name="Pseudo-Lorentzian"
+    shortname = "LO"
+    elliptic=True   
+    def __init__(self,**kwargs): 
+        super().__init__(**kwargs)
+        self.params["fwhm"]=oimParam(**_standardParameters["fwhm"])  
+        self._eval(**kwargs)
+    
+    def _visFunction(self,xp,yp,rho,wl,t):
+               
+        xx=np.pi*self.params["fwhm"](wl,t)* self.params["fwhm"].unit.to(units.rad)*rho
+        return np.exp(-2*np.pi*xx/3**0.5)
+            
+        
+    def _imageFunction(self,xx,yy,wl,t):
+        r2=(xx**2+yy**2)  
+        a=np.pi*self.params["fwhm"](wl,t)* self.params["fwhm"].unit.to(units.mas)
+        return a/(2*np.pi*3**0.5)*(a**2/3+r2)**(-1.5)
     
 ###############################################################################    
+    
+class oimELorentz(oimLorentz):
+    name="Ellitical  Pseudo-Lorentzian"
+    shortname = "ELO"
+    elliptic=True
+    def __init__(self,**kwargs):        
+         super().__init__(**kwargs)
+         self._eval(**kwargs)
+    
+###############################################################################    
+   
+class oimLinearLDD(oimComponentFourier):
+    name="Linear Limb Darkened Disk "
+    shortname = "LLDD" 
+    def __init__(self,**kwargs): 
+        super().__init__(**kwargs)
+        self.params["d"]=oimParam(**_standardParameters["d"])  
+        self.params["a"]=oimParam(name="a",value=0,description="Linear LDD coeff",
+                                  unit=units.one,mini=-1,maxi=1)
+               
+        self._eval(**kwargs)
+    
+    def _visFunction(self,xp,yp,rho,wl,t):
+               
+        xx=np.pi*self.params["d"](wl,t)* self.params["d"].unit.to(units.rad)*rho
+        
+        a=self.params["a"](wl,t)
+  
+        c1=2*np.divide(j1(xx),xx)
+        c2=1.5*(np.pi*2)**0.5*np.divide(jv(1.5,xx),xx**1.5)    
+        return  np.nan_to_num((1-a)*c1+a*c2,nan=1)
+            
+###############################################################################    
+
+
+
+class oimQuadLDD(oimComponentFourier):
+    #From Domiciano de Souza 2003 (phd thesis)
+    name="Quadratic Limb Darkened Disk "
+    shortname = "QLDD"  
+    def __init__(self,**kwargs): 
+        super().__init__(**kwargs)
+        self.params["d"]=oimParam(**_standardParameters["d"])  
+        self.params["a1"]=oimParam(name="a1",value=0,description="1st QLDD coeff",
+                                   unit=units.one,mini=-1,maxi=1)
+        self.params["a2"]=oimParam(name="a2",value=0,description="2nd QLDD coeff",
+                                   unit=units.one,mini=-1,maxi=1)
+                
+        self._eval(**kwargs)
+    
+    def _visFunction(self,xp,yp,rho,wl,t):
+               
+        xx=np.pi*self.params["d"](wl,t)* self.params["d"].unit.to(units.rad)*rho
+        
+        a1=self.params["a1"](wl,t)
+        a2=self.params["a2"](wl,t)
+
+        
+        
+        c1=np.divide(j1(xx),xx)
+        c2=(np.pi/2)**0.5*np.divide(jv(1.5,xx),xx**1.5)
+        c3=2*np.divide(jv(2.,xx),xx**2.)
+        s=(6-2*a1-a2)/12
+        return np.nan_to_num(((1-a1-a2)*c1+(a1+2*a2)*c2-a2*c3)/s,nan=1)
+    
+
+
+###############################################################################    
+
+
+
 
 class oimConvolutor(oimComponentFourier):
     def __init__(self,component1, component2,**kwargs):        
@@ -867,6 +961,7 @@ class oimConvolutor(oimComponentFourier):
         dx=np.max([np.abs(1.*(xx[0,1]-xx[0,0])),np.abs(1.*(yy[1,0]-yy[0,0]))])
         return ((r2<=(self.params["d"](wl,t)/2+dx)**2) & 
                 (r2>=(self.params["d"](wl,t)/2)**2)).astype(float)
+
 
 
 ###############################################################################    
@@ -1101,6 +1196,7 @@ class oimModel(object):
             The Figure created if needed
         axe : matplotlib.axes.Axes
             The Axes instances, created if needed.
+        im  : the image Cube as a numpy array
 
         """
 
@@ -1113,6 +1209,8 @@ class oimModel(object):
             nwl=1
             im=im.reshape((1,im.shape[0],im.shape[1]))
             
+        for iwl in range(nwl):
+            im[iwl,:,:]/=np.sum(im[iwl,:,:])
             
         if axe==None:
             fig,axe=plt.subplots(1,nwl,figsize=figsize,sharex=True,sharey=True,
@@ -1125,11 +1223,9 @@ class oimModel(object):
         
         
         for iwl in range(nwl):
-            imi=im[iwl,:,:]/np.sum(im[iwl,:,:])
-            
-            cb=axe[iwl].imshow(imi,extent=[dim/2*pixSize,-dim/2*pixSize,
+            cb=axe[iwl].imshow(im[iwl,:,:],extent=[dim/2*pixSize,-dim/2*pixSize,
                                   -dim/2*pixSize,dim/2*pixSize],
-                           norm=colors.PowerNorm(gamma=normPow))
+                           norm=colors.PowerNorm(gamma=normPow),**kwargs)
             axe[iwl].set_xlabel("$\\alpha$(mas)")
             axe[iwl].set_ylabel("$\\delta$(mas)")
             
@@ -1139,7 +1235,8 @@ class oimModel(object):
             
         if savefig!=None:
             plt.savefig(savefig)
-        return fig,axe
+            
+        return fig,axe,im
 
         
 
