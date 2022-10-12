@@ -179,15 +179,15 @@ class oimSimulator(object):
                                 
                             else:
                                 chi2i=((dataVal[ival]-val[ival])*np.logical_not(flag[ival])/dataErr[ival])**2
-                                
-                            nelChi2+=np.size(np.where(flag[ival]==False))
+                            
+                            nelChi2+=np.sum(np.logical_not(flag[ival]))
                             chi2+=np.sum(chi2i)
                             chi2List.append(chi2i)
     
        
         if computeChi2==True: 
              self.chi2=chi2
-             self.chi2r=chi2/nelChi2
+             self.chi2r=chi2/(nelChi2-len(self.model.getFreeParameters()))
              self.chi2List=chi2List
              self.nelChi2=nelChi2
                 
@@ -195,10 +195,16 @@ class oimSimulator(object):
     def plot(self,arr,simulated=True,savefig=None,**kwargs):
         # plotting  data and simulatiedData
 
-
+        if type(arr)!=type([]):
+           
+            arr=[arr]
+        
         #Set the projection to oimAxes for all subplots to use oimodeler custom plots
         fig,ax=plt.subplots(len(arr),1,sharex=True,figsize=(8,6),
                             subplot_kw=dict(projection='oimAxes'))
+
+        if len(arr)==1:
+            ax=np.array([ax])
 
         plt.subplots_adjust(left=0.09,top=0.98,right=0.98,hspace=0.14)
 
@@ -219,6 +225,22 @@ class oimSimulator(object):
             
             #automatic ylim => 0-1 for visibilties, -180,180 for phases
             axi.autolim()
+         
+        xmin=1e99
+        xmax=-1e99
+        for axi in ax:
+            for li in axi.get_lines():
+                x=li.get_xdata()
+                xmini=np.min(x)
+                xmaxi=np.max(x)
+                if xmini<xmin:
+                    xmin=xmini
+                if xmaxi>xmax:
+                    xmax=xmaxi
+        
+        ax[0].set_xlim(xmin,xmax)
+
+         
             
         #Create a colorbar for the data plotted with wavelength colorscale option
         fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ ($\mu$m)")
