@@ -1136,7 +1136,8 @@ class oimModel(object):
         return res
         
         return None;
-    def getImage(self,dim,pixSize,wl=None,t=None,fits=False, fromFT=False):
+    def getImage(self,dim,pixSize,wl=None,t=None,fits=False, 
+                 fromFT=False,dontSqueeze=False):
         """
         Compute and return an image or and image cube (if wavelength and time 
         are given). The returned image as the x,y dimension dim in pixel with
@@ -1202,7 +1203,10 @@ class oimModel(object):
             for c in self.components:
                 image+=c.getImage(dim,pixSize,wl,t)
           
-        return np.squeeze(image)
+            
+        if dontSqueeze==False:
+            image= np.squeeze(image)
+        return image
 
     def getParameters(self,free=False): 
         """
@@ -1256,9 +1260,9 @@ class oimModel(object):
 
 
 
-    def showModel(self,dim,pixSize,wl=None,t=None,fits=False, 
-                  fromFT=False,axe=None,normPow=0.5,figsize=(8,6),
-                  savefig=None,colorbar=True,**kwargs):
+    def showModel(self,dim,pixSize,wl=None,t=None, 
+                  fromFT=False,axe=None,normPow=0.5,figsize=(3,3),
+                  savefig=None,colorbar=True,legend=False,kwargs_legend={},**kwargs):
         """
         
         Show the mode Image or image-Cube
@@ -1300,38 +1304,55 @@ class oimModel(object):
             The Figure created if needed
         axe : matplotlib.axes.Axes
             The Axes instances, created if needed.
-        im  : the image Cube as a numpy array
+        im  : the image(s) as a numpy array
 
         """
 
         
-        im=self.getImage(dim,pixSize,wl,t,fits,fromFT)
+        im=self.getImage(dim,pixSize,wl,t,fromFT,dontSqueeze=True)
         
-        try:
-            nwl=len(wl)         
-        except:
-            nwl=1
-            im=im.reshape((1,im.shape[0],im.shape[1]))
-            
-        for iwl in range(nwl):
-            im[iwl,:,:]/=np.sum(im[iwl,:,:])
+        
+        t=np.array(t).flatten()
+        nt=t.size
+        wl=np.array(wl).flatten()
+        nwl=wl.size
+
+    
+
             
         if axe==None:
-            fig,axe=plt.subplots(1,nwl,figsize=figsize,sharex=True,sharey=True,
-                                 subplot_kw=dict(projection='oimAxes'))    
+            fig,axe=plt.subplots(nwl,nt,figsize=(figsize[0]*nt,figsize[1]*nwl)
+                ,sharex=True,sharey=True,subplot_kw=dict(projection='oimAxes'))    
         else:
             fig=axe.get_figure()
-             
+         
+
         if isinstance(axe,plt.Axes):
-            axe=[axe]
+            axe=np.array(axe).flatten.reshape(nwl,nt)
         
-        
-        for iwl in range(nwl):
-            cb=axe[iwl].imshow(im[iwl,:,:],extent=[dim/2*pixSize,-dim/2*pixSize,
-                                  -dim/2*pixSize,dim/2*pixSize],
-                           norm=colors.PowerNorm(gamma=normPow),**kwargs)
-            axe[iwl].set_xlabel("$\\alpha$(mas)")
-            axe[iwl].set_ylabel("$\\delta$(mas)")
+               
+        for iwl,wli in enumerate(wl):
+            for it,ti in enumerate(t):
+                cb=axe[iwl,it].imshow(im[it,iwl,:,:],extent=[dim/2*pixSize,-dim/2*pixSize,
+                                      -dim/2*pixSize,dim/2*pixSize],
+                               norm=colors.PowerNorm(gamma=normPow),**kwargs)
+                
+                if iwl==nwl-1:
+                    axe[iwl,it].set_xlabel("$\\alpha$(mas)")
+                if it==0:     
+                    axe[iwl,it].set_ylabel("$\\delta$(mas)")
+            
+                if legend==True:
+                    txt=""
+                    if wl[0]!=None:
+                        txt+="wl={}$\mu$m\n".format(wli*1e6)
+                    if t[0]!=None:
+                        txt+="Time={}".format(ti)
+                    if not('color' in kwargs_legend):
+                        kwargs_legend['color']="w"
+                    axe[iwl,it].text(0,0.95*dim/2*pixSize,txt,
+                                     va='top',ha='center',**kwargs_legend)
+                    
             
         if colorbar!=False:
             fig.colorbar(cb, ax=axe,label="Normalized Intensity")
