@@ -624,7 +624,7 @@ class oimComponentFourier(oimComponent):
         
     def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
         
-        if self.elliptic==True:     
+        if self.elliptic==True:   
             pa_rad=(self.params["pa"](wl,t)+90)* \
                         self.params["pa"].unit.to(units.rad)      
             co=np.cos(pa_rad)
@@ -705,7 +705,7 @@ class oimComponentFourier(oimComponent):
             xp=x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
             yp=y_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
             x_arr=xp
-            y_arr=yp*self.params["elong"].value
+            y_arr=yp*self.params["elong"](wl,t)
         image = self._imageFunction(x_arr,y_arr,wl_arr,t_arr).reshape(dims)
         
         tot=np.sum(image,axis=(2,3))
@@ -1175,12 +1175,8 @@ class oimModel(object):
         nwl=wl.size
         dims=(nt,nwl,dim,dim)
         
-        if fromFT:
-            
-            
-            
-           
-                 
+        if fromFT==True:
+
             v=np.linspace(-0.5,0.5,dim) 
             vx,vy=np.meshgrid(v,v)
             
@@ -1193,7 +1189,7 @@ class oimModel(object):
             spfy_arr=(vy_arr/pixSize/mas2rad).flatten()   
             wl_arr=wl_arr.flatten()
             t_arr=t_arr.flatten()
-            
+
             ft=self.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr,t_arr).reshape(dims)
             
             image=np.abs(np.fft.fftshift(np.fft.ifft2(ft,axes=[-2,-1]),axes=[-2,-1]))
@@ -1309,8 +1305,7 @@ class oimModel(object):
 
         """
 
-        
-        im=self.getImage(dim,pixSize,wl,t,fromFT,dontSqueeze=True)
+        im=self.getImage(dim,pixSize,wl,t,fromFT=fromFT,dontSqueeze=True)
         
         
         t=np.array(t).flatten()
