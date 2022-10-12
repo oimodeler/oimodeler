@@ -393,7 +393,10 @@ class oimData(object):
        nfiles=np.size(self.data)
        txt="oimData containing {} file(s)\n".format(nfiles)
        for ifile,fi in enumerate(self.dataInfo):
-           fname=os.path.basename(self.data[ifile].filename())
+           try :
+               fname=os.path.basename(self.data[ifile].filename())
+           except:
+               fname="None:"
            txt+="{}\n".format(fname)
            for di in fi:
                shapetxt="({},{})".format(di["nB"][0],di["nB"][1])
