@@ -1262,7 +1262,7 @@ class oimModel(object):
 
     def showModel(self,dim,pixSize,wl=None,t=None, 
                   fromFT=False,axe=None,normPow=0.5,figsize=(3,3),
-                  savefig=None,colorbar=True,legend=False,kwargs_legend={},**kwargs):
+                  savefig=None,colorbar=True,legend=False,swapAxes=False,kwargs_legend={},**kwargs):
         """
         
         Show the mode Image or image-Cube
@@ -1313,13 +1313,16 @@ class oimModel(object):
         
         
         t=np.array(t).flatten()
-        nt=t.size
+        
         wl=np.array(wl).flatten()
-        nwl=wl.size
-
-    
-
+        
+        
+        if swapAxes:
+            t,wl=wl,t
             
+        nt=t.size    
+        nwl=wl.size
+    
         if axe==None:
             fig,axe=plt.subplots(nwl,nt,figsize=(figsize[0]*nt,figsize[1]*nwl)
                 ,sharex=True,sharey=True,subplot_kw=dict(projection='oimAxes'))    
@@ -1334,9 +1337,14 @@ class oimModel(object):
         print(im.shape)
         for iwl,wli in enumerate(wl):
             for it,ti in enumerate(t):
-                cb=axe[iwl,it].imshow(im[it,iwl,:,:],extent=[dim/2*pixSize,-dim/2*pixSize,
-                                      -dim/2*pixSize,dim/2*pixSize],
-                               norm=colors.PowerNorm(gamma=normPow),**kwargs)
+                if swapAxes==False:
+                    cb=axe[iwl,it].imshow(im[it,iwl,:,:],
+                        extent=[dim/2*pixSize,-dim/2*pixSize,-dim/2*pixSize,dim/2*pixSize],
+                        norm=colors.PowerNorm(gamma=normPow),**kwargs)
+                else:
+                    cb=axe[iwl,it].imshow(im[iwl,it,:,:],
+                        extent=[dim/2*pixSize,-dim/2*pixSize,-dim/2*pixSize,dim/2*pixSize],
+                        norm=colors.PowerNorm(gamma=normPow),**kwargs)
                 
                 if iwl==nwl-1:
                     axe[iwl,it].set_xlabel("$\\alpha$(mas)")
@@ -1345,14 +1353,23 @@ class oimModel(object):
             
                 if legend==True:
                     txt=""
-                    if wl[0]!=None:
-                        txt+="wl={}$\mu$m\n".format(wli*1e6)
-                    if t[0]!=None:
-                        txt+="Time={}".format(ti)
-                    if not('color' in kwargs_legend):
-                        kwargs_legend['color']="w"
+                    if swapAxes==False:
+
+                        if wl[0]!=None:
+                            txt+="wl={}$\mu$m\n".format(wli*1e6)
+                        if t[0]!=None:
+                            txt+="Time={}".format(ti)
+                        if not('color' in kwargs_legend):
+                            kwargs_legend['color']="w"
+                    else: 
+                        if t[0]!=None:
+                            txt+="wl={}$\mu$m\n".format(ti*1e6)
+                        if wl[0]!=None:
+                            txt+="Time={}".format(wli)
+                        if not('color' in kwargs_legend):
+                            kwargs_legend['color']="w"
                     axe[iwl,it].text(0,0.95*dim/2*pixSize,txt,
-                                     va='top',ha='center',**kwargs_legend)
+                            va='top',ha='center',**kwargs_legend)
                     
             
         if colorbar!=False:
