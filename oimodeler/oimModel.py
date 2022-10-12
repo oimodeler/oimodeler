@@ -1137,7 +1137,7 @@ class oimModel(object):
         return res
         
         return None;
-    def getImage(self,dim,pixSize,wl=None,t=0,fits=False, 
+    def getImage(self,dim,pixSize,wl=None,t=None,fits=False, 
                  fromFT=False,dontSqueeze=False):
         """
         Compute and return an image or and image cube (if wavelength and time 
