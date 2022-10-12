@@ -87,8 +87,10 @@ def _colorPlot(axe,x,y,z,**kwargs):
     ymax=np.max(ymax)
     ymin=np.min(ymin)           
     
-    axe.set_xlim(xmin,xmax)
-    axe.set_ylim(ymin,ymax)
+    if xmin!=xmax:
+        axe.set_xlim(xmin,xmax)
+    if ymin!=ymax:
+        axe.set_ylim(ymin,ymax)
     
     
     
