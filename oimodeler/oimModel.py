@@ -652,6 +652,8 @@ class oimComponentFourier(oimComponent):
         y=y-self.params["y"](wl,t)
         return x,y
     
+    
+    """
     def getImage(self,dim,pixSize,wl=None,t=None):  
         x=np.tile((np.arange(dim)-dim/2)*pixSize,(dim,1))
         y=np.transpose(x)
@@ -670,8 +672,54 @@ class oimComponentFourier(oimComponent):
             image = image / np.sum(image,axis=(0,1))*self.params["f"](wl,t)    
 
         return image
+    """
+    def getImage(self,dim,pixSize,wl=None,t=None):  
+
+        
+        t=np.array(t).flatten()
+        nt=t.size
+        wl=np.array(wl).flatten()
+        nwl=wl.size
+        
+        dims=(nt,nwl,dim,dim)
+             
+        v=np.linspace(-0.5,0.5,dim)
+        
+        vx,vy=np.meshgrid(v,v)
+        
+        vx_arr=np.tile(vx[None,None,:,:], (nt,nwl, 1, 1))
+        vy_arr=np.tile(vy[None,None,:,:], (nt,nwl, 1, 1))
+        wl_arr=np.tile(wl[None,:,None,None], (nt,1, dim, dim))
+        t_arr=np.tile(t[:,None,None,None], (1,nwl, dim, dim))
+        
+        x_arr=(vx_arr*pixSize*dim).flatten()   
+        y_arr=(vy_arr*pixSize*dim).flatten()   
+        wl_arr=wl_arr.flatten()
+        t_arr=t_arr.flatten()
+        
+        x_arr,y_arr=self._directTranslate(x_arr,y_arr,wl_arr,t_arr)
+        
+        if self.elliptic:
+            pa_rad=(self.params["pa"](wl,t)+90)* \
+                               self.params["pa"].unit.to(units.rad)
+            xp=x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
+            yp=y_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
+            x_arr=xp
+            y_arr=yp*self.params["elong"].value
+        image = self._imageFunction(x_arr,y_arr,wl_arr,t_arr).reshape(dims)
+        
+        tot=np.sum(image,axis=(2,3))
+        
+        for it in range(nt):
+            for iwl in range(nwl):
+                if tot[it,iwl]!=0:  
+                    image[it,iwl,:,:] = image[it,iwl,:,:]  \
+                              / tot[it,iwl]*self.params["f"](wl,t)    
+
+        return image    
     
-    def _imageFunction(self,xx,yy,wl=None):
+    
+    def _imageFunction(self,xx,yy,wl,t):
         image=xx*0+1
         return image
     
@@ -1119,55 +1167,42 @@ class oimModel(object):
              astropy.io.fits hdu.imagehdu if fits=True.
              The image of the component with given size in pixels and mas or rasd
         """
-
+        t=np.array(t).flatten()
+        nt=t.size
+        wl=np.array(wl).flatten()
+        nwl=wl.size
+        dims=(nt,nwl,dim,dim)
         
         if fromFT:
-            #TODO multiple wavelengths and time
-            if wl==None:
-                wl=np.array([1e-6])
-            wl=np.array(wl)
-            try:
-                nwl=len(wl)    
-            except:
-                wl=np.array([wl])
-                nwl=1
             
-            Bmax=wl/pixSize/mas2rad #meter
+            
+            
            
-            # TODO remplace loop by better stuff
-            ims=np.ndarray([nwl,dim,dim])
-            for iwl,wli in enumerate(wl):
-                B=np.linspace(-Bmax[iwl]/2,Bmax[iwl]/2,dim)
-                spfy=np.outer(B,B*0+1)/wli
-                spfx=np.transpose(spfy)
-                spfy=spfy.flatten()
-                spfx=spfx.flatten()        
-                ft=self.getComplexCoherentFlux(spfx,spfy,np.ones(dim*dim)*wli).reshape(dim,dim)
-                
-                ims[iwl,:,:]=np.abs(np.fft.fftshift(np.fft.ifft2(ft))) 
-                
-                if nwl==1:
-                    ims=ims[0,:,:]
-            return ims
+                 
+            v=np.linspace(-0.5,0.5,dim) 
+            vx,vy=np.meshgrid(v,v)
+            
+            vx_arr=np.tile(vx[None,None,:,:], (nt,nwl, 1, 1))
+            vy_arr=np.tile(vy[None,None,:,:], (nt,nwl, 1, 1))
+            wl_arr=np.tile(wl[None,:,None,None], (nt,1, dim, dim))
+            t_arr=np.tile(t[:,None,None,None], (1,nwl, dim, dim))
+            
+            spfx_arr=(vx_arr/pixSize/mas2rad).flatten()   
+            spfy_arr=(vy_arr/pixSize/mas2rad).flatten()   
+            wl_arr=wl_arr.flatten()
+            t_arr=t_arr.flatten()
+            
+            ft=self.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr,t_arr).reshape(dims)
+            
+            image=np.abs(np.fft.fftshift(np.fft.ifft2(ft,axes=[-2,-1]),axes=[-2,-1]))
+           
         
         else:
-            #TODO add time (which can lead to 4D hypercube images!!)
-            #Used if wl is a scalar
-            wl=np.array(wl)
-            nwl=np.size(wl)
-
-            if np.shape(wl)==():
-                image=np.zeros([dim,dim])
-                for c in self.components:
-                    image+=c.getImage(dim,pixSize,wl,t)
-            else:
-                #TODO : this is very slow!!!
-                image=np.zeros([nwl,dim,dim])
-                for iwl,wli in enumerate(wl):
-                    for c in self.components:
-                        image[iwl,:,:]+=c.getImage(dim,pixSize,wli,t)
-
-            return image;    
+            image=np.ndarray(dims)
+            for c in self.components:
+                image+=c.getImage(dim,pixSize,wl,t)
+          
+        return np.squeeze(image)
 
     def getParameters(self,free=False): 
         """
