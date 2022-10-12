@@ -700,12 +700,19 @@ class oimComponentFourier(oimComponent):
         x_arr,y_arr=self._directTranslate(x_arr,y_arr,wl_arr,t_arr)
         
         if self.elliptic:
-            pa_rad=(self.params["pa"](wl,t)+90)* \
+            print(self.name)
+            print(wl_arr.shape)
+            
+            pa_rad=(self.params["pa"](wl_arr,t_arr)+90)* \
                                self.params["pa"].unit.to(units.rad)
+            print(pa_rad)
+            print(self.params["elong"](wl_arr,t_arr))
             xp=x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
-            yp=y_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
+            yp=x_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
+            
             x_arr=xp
-            y_arr=yp*self.params["elong"](wl,t)
+            y_arr=yp*self.params["elong"](wl_arr,t_arr)
+            
         image = self._imageFunction(x_arr,y_arr,wl_arr,t_arr).reshape(dims)
         
         tot=np.sum(image,axis=(2,3))
