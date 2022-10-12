@@ -1333,8 +1333,6 @@ class oimModel(object):
         
         axe=np.array(axe).flatten().reshape((nwl,nt))
         
-        print(axe.shape)
-        print(im.shape)
         for iwl,wli in enumerate(wl):
             for it,ti in enumerate(t):
                 if swapAxes==False:
