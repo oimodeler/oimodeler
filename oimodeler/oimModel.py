@@ -1327,10 +1327,11 @@ class oimModel(object):
             fig=axe.get_figure()
          
 
-        if isinstance(axe,plt.Axes):
-            axe=np.array(axe).flatten.reshape(nwl,nt)
         
-               
+        axe=np.array(axe).flatten().reshape((nwl,nt))
+        
+        print(axe.shape)
+        print(im.shape)
         for iwl,wli in enumerate(wl):
             for it,ti in enumerate(t):
                 cb=axe[iwl,it].imshow(im[it,iwl,:,:],extent=[dim/2*pixSize,-dim/2*pixSize,
