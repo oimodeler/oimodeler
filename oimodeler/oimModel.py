@@ -157,6 +157,72 @@ class oimParamInterpWl(oimParam):
         else:
              raise TypeError("Can't modify number of key wls in oimParamInterpWl "
                              "after creation. Consider creating a new parameter")    
+###############################################################################
+
+class oimInterpTime(object):
+    """
+    Structure for creating oimParamInterpTime directly in oimParam defintion
+    """
+    def __init__(self,t=[],value=None):
+        self.t=t
+        self.value=value
+###############################################################################
+        
+class oimParamInterpTime(oimParam):
+    def __init__(self,param,interpTime):
+        
+        self.name=param.name
+        self.description=param.description
+        self.unit=param.unit
+        
+        value= interpTime.value
+        t=interpTime.t
+        nt=len(t)
+      
+        if value==None:
+            value=[self.value]*nt
+        elif isinstance(value,numbers.Number):
+            value=[value]*nt
+        else:
+            if len(value)!=nt:
+                raise TypeError("nt and val should have the same length :"  
+                            "len(x)={}, len(y)={}".format(len(nt), len(value)))
+                
+        self.params=[]
+        self._t=t
+        self._nt=nt
+        
+        for i in range(nt):
+           
+            pi=oimParam(name=param.name,value=value[i],mini=param.min,
+                        maxi=param.max,description=param.description,
+                        unit=param.unit,free=param.free,error=param.error)
+            self.params.append(pi)
+            
+
+
+        self.value=self.params            
+
+    def __call__(self,wl=None,t=None):
+        values=np.array([pi.value for pi in self.params])
+        return np.interp(t,self.t,values,left=values[0], right=values[-1])
+  
+             
+        
+    @property
+    def t(self):
+        return self._t
+    
+    @t.setter
+    def t(self,_t):
+        nt=len(_t)
+        if nt== self._nt:
+            self._t=np.array(_t)
+        else:
+             raise TypeError("Can't modify number of key wls in oimParamInterpTime "
+                             "after creation. Consider creating a new parameter")    
+
+
 
 ###############################################################################
 class oimParamLinker(object):
@@ -279,6 +345,9 @@ class oimComponent(object):
                 if isinstance(value,oimInterpWl):
                     if not(isinstance(self.params[key],oimParamInterpWl)):
                        self.params[key]=oimParamInterpWl(self.params[key],value)
+                elif isinstance(value,oimInterpTime):
+                     if not(isinstance(self.params[key],oimParamInterpTime)):
+                        self.params[key]=oimParamInterpTime(self.params[key],value)       
                 else:
                     self.params[key].value=value
    
@@ -1090,13 +1159,13 @@ class oimModel(object):
             if np.shape(wl)==():
                 image=np.zeros([dim,dim])
                 for c in self.components:
-                    image+=c.getImage(dim,pixSize,wl)
+                    image+=c.getImage(dim,pixSize,wl,t)
             else:
                 #TODO : this is very slow!!!
                 image=np.zeros([nwl,dim,dim])
                 for iwl,wli in enumerate(wl):
                     for c in self.components:
-                        image[iwl,:,:]+=c.getImage(dim,pixSize,wli)
+                        image[iwl,:,:]+=c.getImage(dim,pixSize,wli,t)
 
             return image;    
 
