@@ -32,9 +32,6 @@ oimData
 
 The oimDate module allows to encapsulate interferometric (but also photometric and spectroscopic) data. The oimData allow to retrieve the original data as a list of astropy.io.fits.hdulist (oimData.data) but also provide optimization of the data as vector/structure for faster model fitting. OimDataFilter can be plugged to the oimData to filter the data.
 
-.. warning::
-    OimDataFilter not Yet implemented!
-
 oimSimulator
 ^^^^^^^^^^^^
 

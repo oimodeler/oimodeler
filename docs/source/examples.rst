@@ -88,31 +88,44 @@ First we import the oimodeler and numpy.
     
 A model is a collection of components. All components derived from the oimComponent class. The components may be described in the image plan by their intensity distribution or directly in the Fourier plan for components with known analytical Fourier transforms. In these example we will only focus on this later type of component which all derived from the oimFourierComponent class. In the table below is a list of the currently implemented oimFourierComponents:
 
-+---------------+--------------------------------+------------------------------+
-| class         | description                    | parameters                   |
-+===============+================================+==============================+
-| oimPt         | Point source                   | x,y,f                        |
-+---------------+--------------------------------+------------------------------+
-| oimBackground | Background                     | x,y,f                        |
-+---------------+--------------------------------+------------------------------+
-| oimUD         | Uniform Disk                   | x,y,f,d                      |
-+---------------+--------------------------------+------------------------------+
-| oimEllipse    | Uniform Ellipse                | x,y,f,d,pa,elong             |
-+---------------+--------------------------------+------------------------------+
-| oimGauss      | Gaussian Disk                  | x,y,f,fwhm                   |
-+---------------+--------------------------------+------------------------------+
-| oimEGauss     | Point source                   | x,y,f,fwhm,pa,elong          |
-+---------------+--------------------------------+------------------------------+
-| oimIRing      | Infinitesimal Ring             | x,y,f,d                      |
-+---------------+--------------------------------+------------------------------+
-| oimEIRing     | Ellitical infinitesimal ring   | x,y,f,d,pa,elong             |
-+---------------+--------------------------------+------------------------------+
-| oimRing       | Ring                           | x,y,f,din,dout               |
-+---------------+--------------------------------+------------------------------+
-| oimERing      | Ellitical  ring                | x,y,f,din,dout,pa,elong      |
-+---------------+--------------------------------+------------------------------+
-| ESKRing       | Skewed Ellitical ring          | x,y,f,d,skw,skwPa,pa,elong   |
-+---------------+--------------------------------+------------------------------+
++---------------+-------------------------------------+-----------------------------------+
+| class         | description                         | parameters                        |
++===============+=====================================+===================================+
+| oimPt         | Point source                        | x,y,f                             |
++---------------+-------------------------------------+-----------------------------------+
+| oimBackground | Background                          | x,y,f                             |
++---------------+-------------------------------------+-----------------------------------+
+| oimUD         | Uniform Disk                        | x,y,f,d                           |
++---------------+-------------------------------------+-----------------------------------+
+| oimEllipse    | Uniform Ellipse                     | x,y,f,d,pa,elong                  |
++---------------+-------------------------------------+-----------------------------------+
+| oimGauss      | Gaussian Disk                       | x,y,f,fwhm                        |
++---------------+-------------------------------------+-----------------------------------+
+| oimEGauss     | Point source                        | x,y,f,fwhm,pa,elong               |
++---------------+-------------------------------------+-----------------------------------+
+| oimIRing      | Infinitesimal Ring                  | x,y,f,d                           |
++---------------+-------------------------------------+-----------------------------------+
+| oimEIRing     | Ellitical infinitesimal ring        | x,y,f,d,pa,elong                  |
++---------------+-------------------------------------+-----------------------------------+
+| oimRing       | Ring                                | x,y,f,din,dout                    |
++---------------+-------------------------------------+-----------------------------------+
+| oimERing      | Ellitical  ring                     | x,y,f,din,dout,pa,elong           |
++---------------+-------------------------------------+-----------------------------------+
+| ESKIRing      | Skewed infinitesimal Ellitical ring | x,y,f,d,skw,skwPa,pa,elong        |
++---------------+-------------------------------------+-----------------------------------+
+| ESKRing       | Skewed Ellitical ring               | x,y,f,din,dout,skw,skwPa,pa,elong |
++---------------+-------------------------------------+-----------------------------------+
+| oimLinearLDD  | Linear Limb Darkened Disk           | x,y,f,d,a                         |
++---------------+-------------------------------------+-----------------------------------+
+| oimQuadLDD    | Quadratic Limb Darkened Disk        | x,y,f,d,a1,a2                     |
++---------------+-------------------------------------+-----------------------------------+
+| oimLorentz    | Pseudo-Lorenztian                   | x,y,fwhm                          |
++---------------+-------------------------------------+-----------------------------------+
+| oimELorentz   | Ellitical Pseudo-Lorenztian         | x,y,f,fwhm,pa,elong               |
++---------------+-------------------------------------+-----------------------------------+
+| oimConvolutor | Convolution between 2 components    | Parameters from the 2 components  |
++---------------+-------------------------------------+-----------------------------------+
+
 
 
 To create models we must first create the components. Let's create a few simple components.

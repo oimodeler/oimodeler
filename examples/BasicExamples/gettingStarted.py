@@ -69,6 +69,6 @@ figSim,axSim=fit.simulator.plot(["VIS2DATA","T3PHI"],
     savefig=os.path.join(path,os.pardir,"images","gettingStarted_modelFinal.png"))
 print("Chi2r = {}".format(fit.simulator.chi2r))
 
-figImg,axImg=model.showModel(512,0.1,normPow=0.1,
+figImg,axImg,im=model.showModel(512,0.1,normPow=0.1,figsize=(6,4.8),
     savefig=os.path.join(path,os.pardir,"images","gettingStarted_modelImage.png"))
 

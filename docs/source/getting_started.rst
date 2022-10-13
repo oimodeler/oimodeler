@@ -57,7 +57,7 @@ Or if we want to print the details of a parameter:
     
     >>oimParam x = 5 ± 0 mas range=[-inf,inf] fixed 
 
-Note that the x parameter is fixed by default (for model fitting) whereas the diameter d is free. The oimParams instance also contains the unit (as a astropy.unit instace),  uncertainties(oimParam.error), and range (for model fitting) (oimParam.min and oimParam.max). There are various way of accessing and modify the value of the parameter or one of its other quantities. 
+Note that the x parameter is fixed by default (for model fitting) whereas the diameter d is free. The oimParams instance also contains the unit (oimParam.unit as a astropy.units),  uncertainties(oimParam.error), and range  for model fitting (oimParam.mini and oimParam.maxi). There are various way of accessing and modify the value of the parameter or one of its other quantities. 
 
 For our example, we want to set the coordinates of the uniform disk to free and set them to a range of 50 mas. We will explore the diameter between 0.01 and 20 mas. and the flux between 0 and 10. On the other hand flux of the point source will be left to ta fixed value of one.
 
@@ -110,7 +110,6 @@ Let's now compare our data and our model. We will use the class oimSimulator.
 .. code-block:: python
 
     sim=oim.oimSimulator(data=files,model=model)
-    sim.data.prepareData()
     sim.compute(computeChi2=True,computeSimulatedData=True)
     
 
@@ -136,7 +135,7 @@ Obviously, our model is quite bad. Let's plot a model/data comparison for the sq
   :alt: Alternative text   
   
  
-The figure and axes list are returned so that you can modify them after creation. YOu can directly save the figure using the savefig=`filename` option.
+The figure and axes list are returned so that you can modify them after creation. You can directly save the figure using the savefig=`filename` option.
 
 Let's do a simple model fitting using the oimFitterEmcee class. This class encapsulate the famous `emcee <https://emcee.readthedocs.io/en/stable/>`_  implementation of Goodman & Weare’s Affine Invariant Markov chain Monte Carlo (MCMC) Ensemble sampler. 
 
@@ -176,7 +175,7 @@ The initial parameters are stored in the ``initialParams`` member variable of th
 
 .. code-block:: python
 
-    fit.run(nsteps=3000,progress=True)
+    fit.run(nsteps=2000,progress=True)
     
 
 .. code-block:: 
@@ -245,7 +244,7 @@ We can also show an image of the model with the best paramaters. Here we generat
 
 .. code-block:: python 
 
-    figImg,axImg=model.showModel(512,0.1,normPow=0.2)
+    figImg,axImg,im=model.showModel(512,0.1,normPow=0.1)
        
 .. image:: ../../images/gettingStarted_modelImage.png
   :alt: Alternative text 

@@ -58,7 +58,7 @@ Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script sh
 - the parameters values (and corresponding chi2 as a colorscale) for walkers from a emcee run on a binary model
 - the famous corners plots for the 4 free parameters: x and y positions of the binary, diameter and flux
 
- Again, the data is simulated with `APSRO <https://www.jmmc.fr/english/tools/proposal-preparation/aspro/>`.
+ Again, the data is simulated with `APSRO <https://www.jmmc.fr/english/tools/proposal-preparation/aspro/>`_.
 
 .. image:: ../../images/SimpleFitWalkers.png
   :alt: Alternative text
