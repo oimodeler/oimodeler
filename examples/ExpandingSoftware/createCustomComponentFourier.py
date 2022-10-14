@@ -89,7 +89,7 @@ b2=oimBox(dx=2,dy=2,x=20,y=0,f=0.5)
 b3=oimBox(dx=10,dy=20,x=-30,y=10,pa=50,f=10)
 c=oim.oimUD(d=10,x=-30,y=-10)
 m2=oim.oimModel([b1,b2,b3,c])
-m2.showModel(512,0.2,colorbar=False,swapAxes=True,
+m2.showModel(512,0.2,colorbar=False,figsize=(5,5),
     savefig=os.path.join(path,os.pardir,"images","customCompBoxesImage.png"))
 
 
@@ -102,7 +102,7 @@ b4.params['dy']=oim.oimParamLinker(b4.params['dx'],'mult',4)
 m3=oim.oimModel([b4])
 
 m3.showModel(512,0.2,wl=[2e-6,2.2e-6,2.4e-6],colorbar=False,swapAxes=True,
-    savefig=os.path.join(path,os.pardir,"images","customCompChromBoxImages.png"),figsize=(10,4))
+    savefig=os.path.join(path,os.pardir,"images","customCompChromBoxImages.png"))
 
 
 
