@@ -97,11 +97,12 @@ class oimFitterEmcee(oimFitter):
         elif init=="fixed":
             self.initialParams=self._initFixed()
             
+        moves=[(emcee.moves.DEMove(), 0.8), 
+               (emcee.moves.DESnookerMove(), 0.2)]
+       
         print(self.params["nwalkers"].value)
         self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value, 
-                        self.nfree,self._logProbability,
-                        moves=[(emcee.moves.DEMove(), 0.8), 
-                               (emcee.moves.DESnookerMove(), 0.2)],**kwargs)
+                        self.nfree,self._logProbability,moves=moves,**kwargs)
         return kwargs   
             
     def _initRandom(self):
