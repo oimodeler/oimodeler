@@ -13,6 +13,7 @@ import numbers
 from scipy import interpolate
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import oimodeler as oim
 
 np.seterr(invalid='ignore')
 ###############################################################################
@@ -23,6 +24,25 @@ Maybeto be  put in a separate file later
 mas2rad=units.mas.to(units.rad)
 I=complex(0,1)
 ###############################################################################
+
+def getFourierComponents():
+    fnames=dir(oim)
+    res=[]
+    for f in fnames:
+        try:
+            if issubclass(oim.__dict__[f], oim.oimComponentFourier):
+                res.append(f)
+        except:
+            pass
+    return res
+            
+###############################################################################
+
+
+
+
+
+
 
 class oimParam(object):
     """
@@ -700,20 +720,18 @@ class oimComponentFourier(oimComponent):
         x_arr,y_arr=self._directTranslate(x_arr,y_arr,wl_arr,t_arr)
         
         if self.elliptic:
-            print(self.name)
-            print(wl_arr.shape)
-            
+       
             pa_rad=(self.params["pa"](wl_arr,t_arr)+90)* \
                                self.params["pa"].unit.to(units.rad)
-            print(pa_rad)
-            print(self.params["elong"](wl_arr,t_arr))
+                               
             xp=x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
             yp=x_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
             
             x_arr=xp
             y_arr=yp*self.params["elong"](wl_arr,t_arr)
             
-        image = self._imageFunction(x_arr,y_arr,wl_arr,t_arr).reshape(dims)
+        image = self._imageFunction(x_arr.reshape(dims),y_arr.reshape(dims),
+                                    wl_arr.reshape(dims),t_arr.reshape(dims))
         
         tot=np.sum(image,axis=(2,3))
         
@@ -835,9 +853,10 @@ class oimIRing(oimComponentFourier):
         xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho
         return j0(xx)
     
-    def _imageFunction(self,xx,yy,wl,t):
-        r2=(xx**2+yy**2)   
-        dx=np.max([np.abs(1.*(xx[0,1]-xx[0,0])),np.abs(1.*(yy[1,0]-yy[0,0]))])
+    def _imageFunction(self,xx,yy,wl,t,minPixSize=None):
+        r2=(xx**2+yy**2)
+        dx=np.max([np.abs(1.*(xx[0,0,0,1]-xx[0,0,0,0])),
+                   np.abs(1.*(yy[0,0,1,0]-yy[0,0,0,0]))])
         return ((r2<=(self.params["d"](wl,t)/2+dx)**2) & 
                 (r2>=(self.params["d"](wl,t)/2)**2)).astype(float)
 
@@ -918,7 +937,8 @@ class oimESKIRing(oimComponentFourier):
         # dr=np.sqrt(np.abs(np.roll(r2,(-1,-1),(0,1))-np.roll(r2,(1,1),(0,1))))
         phi=np.arctan2(yy,xx)  +  self.params["skwPa"](wl,t)* \
                                   self.params["skwPa"].unit.to(units.rad)
-        dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0])*self.params["elong"](wl,t))
+        dx=np.abs(1*(xx[0,0,0,1]-xx[0,0,0,0]
+                    +xx[0,0,1,0]-xx[0,0,0,0])*self.params["elong"](wl,t))
         #dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0]))*3
         F=1+self.params["skw"](wl,t)*np.cos(phi)           
         return  ((r2<=(self.params["d"](wl,t)/2+dx/2)**2) & 
@@ -954,7 +974,8 @@ class oimESKRing(oimComponentFourier):
         phi=  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
             self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp);
        
-        return (j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t))*np.divide(2*j1(xx2),xx2)
+        return (j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t))  \
+                 *np.divide(2*j1(xx2),xx2)
           
         
           
@@ -963,11 +984,11 @@ class oimESKRing(oimComponentFourier):
         # dr=np.sqrt(np.abs(np.roll(r2,(-1,-1),(0,1))-np.roll(r2,(1,1),(0,1))))
         phi=np.arctan2(yy,xx)  +  self.params["skwPa"](wl,t)* \
                                   self.params["skwPa"].unit.to(units.rad)
-        dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0])*self.params["elong"](wl,t))
-        #dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0]))*3
-        F=1+self.params["skw"](wl,t)*np.cos(phi)           
-        return  ((r2<=(self.params["d"](wl,t)/2+dx/2)**2) & 
-                 (r2>=(self.params["d"](wl,t)/2-dx/2)**2)).astype(float)*F
+
+        F=1+self.params["skw"](wl,t)*np.cos(phi)     
+        
+        return  ((r2<=(self.params["dout"](wl,t)/2)**2) & 
+                 (r2>=(self.params["din"](wl,t)/2)**2)).astype(float)*F
     
 ###############################################################################    
 
@@ -1028,8 +1049,6 @@ class oimLinearLDD(oimComponentFourier):
             
 ###############################################################################    
 
-
-
 class oimQuadLDD(oimComponentFourier):
     #From Domiciano de Souza 2003 (phd thesis)
     name="Quadratic Limb Darkened Disk "
@@ -1059,12 +1078,7 @@ class oimQuadLDD(oimComponentFourier):
         s=(6-2*a1-a2)/12
         return np.nan_to_num(((1-a1-a2)*c1+(a1+2*a2)*c2-a2*c3)/s,nan=1)
     
-
-
 ###############################################################################    
-
-
-
 
 class oimConvolutor(oimComponentFourier):
     def __init__(self,component1, component2,**kwargs):        
