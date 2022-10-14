@@ -37,6 +37,7 @@ def _errorplot(axe,X,Y,dY,smooth=1, **kwargs ):
 ###############################################################################
         
 def _colorPlot(axe,x,y,z,**kwargs):
+
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
     
@@ -46,9 +47,12 @@ def _colorPlot(axe,x,y,z,**kwargs):
     maxi=[np.max(z)]
     mini=[np.min(z)]
     for ci in axe.collections:
-        maxi.append(np.max(ci.get_array()))
-        mini.append(np.min(ci.get_array()))
-     
+        maxii=np.max(ci.get_array())
+        minii=np.min(ci.get_array())
+        if maxii!=None and minii!=None:
+            maxi.append(maxii)
+            mini.append(minii)
+
     maxi=np.max(maxi)
     mini=np.min(mini)
     
@@ -108,6 +112,10 @@ def uvPlot(oifits,extension="OI_VIS2",marker="o", facecolors='red',
            edgecolors='k',size=10,axe=None,maxi=None,xytitle=[True,True],
            title=None,gridcolor="k",grid=True,fontsize=None,**kwargs):
 
+    
+    if isinstance(oifits,oim.oimData):
+        oifits=oifits.data
+    
     kwargs2={}
     for key in kwargs:
         if key!="label":
@@ -193,6 +201,8 @@ def getColorIndices(oifitsList,color,yarr,yname):
             fname=datai.filename()
             if fname==None:
                 fname="File {}".format(idata)
+            else:
+                fname=os.path.basename(fname)
             names.append(fname)
         elif color=="byArrname":
             array=datai[yarr].header['ARRNAME']
@@ -226,68 +236,6 @@ def getColorIndices(oifitsList,color,yarr,yname):
             names.append("")
     return idx,names
         
-        
-"""
-Trying to simplify code in oimPlot
-But need to link the xdata, ydata and cdata
----------------------------
-def oimPlotGetDataAndInfo(oifitsList,name,unit,shortlabel):
-    
-    
-    try:
-        idx=np.where(oimPlotParamName == name)[0][0]
-        isError=False
-    except:
-        idx=np.where(oimPlotParamError == name)[0][0]
-        isError=True
-  
-
-    if not(shortlabel):
-        label=oimPlotParamLabel[idx]
-    else:
-        label=oimPlotParamLabelShort[idx] 
-        
-    #TODO implement units with astropy
-    if unit:
-        unit0=unit
-    else:
-        unit0=oimPlotParamUnit0[idx]
-    if unit0!="": label+=" ("+unit0+")"
-    
-    
-    IsUVcoord=oimPlotParamIsUVcoord[idx]      
-
-    if not(IsUVcoord):
-        if isError==False:
-            idx=np.where(oimPlotParamName == name)[0][0]
-            arr=oimPlotParamArr[idx]
-            data=[d[arr].data[name] for d in oifitsList] 
-            errname=oimPlotParamError[idx]
-            if errname!="":
-                errdata=[d[arr].data[errname] for d in oifitsList]
-            else:
-               errdata=None
-        else:
-            idx=np.where(oimPlotParamError == name)[0][0]
-            arr=oimPlotParamArr[idx]
-            data=[d[arr].data[name] for d in oifitsList]  
-            errdata=None
-        
-        data=[d[arr].data[name] for d in oifitsList]
-    else:
-        arr=oimPlotParamArr[idx]
-        if name=="SPAFREQ":
-            
-            data=[oim.getSpaFreq(d,arr=arr,unit=unit) for d in oifitsList]
-    
-        elif name=="LENGTH":
-            data=[oim.getBaselineLengthAndPA(d,arr=arr)[0] for d in oifitsList]
-            
-        elif name=="PA":
-            data=[oim.getBaselineLengthAndPA(d,arr=arr)[1] for d in oifitsList]
-            
-    return  data,errdata,label
-"""
 
 def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             yunit=None,yunitmultiplier=1,cname=None,cunit=None,cunitmultiplier=1,
@@ -352,14 +300,13 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     """
     
     res= None
+
     
     if isinstance(oifitsList,oim.oimData):
         oifitsList=oifitsList.data
     
     if type(oifitsList)!=type([]):
         oifitsList=[oifitsList]
-        
-    #TODO colors with lam, baselines, ...
          
     ndata=len(oifitsList)
  
@@ -553,14 +500,17 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                             if errorbar==True:
                                 
                                 if not('color' in kwargs_error):
-                                    kwargs_error['color']=colorTab[colorIdx[idata][iB]%ncol] 
+                                    kwargs_errori=kwargs_error.copy()
+                                    kwargs_errori['color']=colorTab[colorIdx[idata][iB]%ncol] 
+                                    
+                                   
                                 _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
                                             ydata[idata][iB,ilam0:ilam],
                                             ydataerr[idata][iB,ilam0:ilam],
-                                            **kwargs_error)
+                                            **kwargs_errori)
+                                
                         else:
                         
-                            
                             res=_colorPlot(axe, xdata[idata][iB,ilam0:ilam]*
                                  xunitmultiplier, ydata[idata][iB,ilam0:ilam], cdata[idata][iB,ilam0:ilam]*cunitmultiplier,
                                  label=labeli,**kwargs)
