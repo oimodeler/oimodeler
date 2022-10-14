@@ -24,11 +24,11 @@ model=oim.oimModel([ud,pt])
 sim=oim.oimSimulator(data=files,model=model)
 
 # Preparing data (building vectors of coordinates and structure of data types)
-sim.data.prepareData()
+#This is automatically called when creating the simulator.
+#sim.data.prepareData()
 
 #Computing the complex corr flux from the model at the data spatial freq
 # with option to compute chi2 and final simulated data in oifits format
-
 sim.compute(computeChi2=True,computeSimulatedData=True)
 #Printing data model chi2r
 print("Chi2r = {}".format(sim.chi2r))

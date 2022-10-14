@@ -74,17 +74,17 @@ For instance this create single vectors fgor the data coordinate : ``data.vect_u
 Basic models
 ^^^^^^^^^^^^
 
-The `basicModel.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/basicModel.py>`_ script demonstrate the basic functionalities of the oimModel and oimComponents object.
+The `basicModel.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/basicModel.py>`_ script demonstrate the basic functionalities of the oimModel and oimComponents objects.
 
 
-First we import the oimodeler and numpy.
+First we import oimodeler, numpy and pyplot.
 
 
 .. code-block:: python
 
     import oimodeler as oim
     import numpy as np
-    
+    import matplotlib.pyplot as plt
     
 A model is a collection of components. All components derived from the oimComponent class. The components may be described in the image plan by their intensity distribution or directly in the Fourier plan for components with known analytical Fourier transforms. In these example we will only focus on this later type of component which all derived from the oimFourierComponent class. In the table below is a list of the currently implemented oimFourierComponents:
 
@@ -173,20 +173,19 @@ Note that the components parameters are instances of the oimParam class which ho
 - oimParam.free : True=free parameter and False=fixed parameter (for model fitting)
 - oimParam.description : A string that describes the model parameter
 
-We can now create our first models uinsg the oimModel class.
+We can now create our first models using the oimModel class.
 
 
 .. code-block:: python
 
-    mPt   = oim.oimModel([pt])
-    mUD   = oim.oimModel([ud])
-    mG    = oim.oimModel([g])
-    mR    = oim.oimModel([r])
-    mUDPt = oim.oimModel([ud,pt])
-    
+    mPt   = oim.oimModel(pt)
+    mUD   = oim.oimModel(ud)
+    mG    = oim.oimModel(g)
+    mR    = oim.oimModel(r)
+    mUDPt = oim.oimModel(ud,pt)
     
 
-we now have 4 one-component models and 1 2-components models.
+we now have four one-component models and one two-components models.
 
 We can get the parameters of our models using the getParameter method of the oimModel class. 
 
@@ -239,14 +238,14 @@ Alternatively we can use the method showModel which take the same argument as th
 
 .. code-block:: python
 
-    figImg,axImg=mUDPt.showModel(512,0.2,normPow=0.1
+    figImg,axImg=mUDPt.showModel(512,0.2,normPow=0.1)
 
 
 .. image:: ../../images/basicModel_showModel.png
   :alt: Alternative text  
 
 
-In other examples, we use  oimModel and oimData objects within a oimSimulator to simulate interferometric quantities from the model at the spatial frequencies from the data.  Without the oimSimulator the oimModel can only produce complex coherent flux (i.e. non normalized complex visibility) for a vector of spatial frequecies and wavelengths. 
+In other examples, we use oimModel and oimData objects within a oimSimulator to simulate interferometric quantities from the model at the spatial frequencies from our data. Without the oimSimulator the oimModel can only produce complex coherent flux (i.e. non normalized complex visibility) for a vector of spatial frequecies and wavelengths. 
 
 .. code-block:: python
 
@@ -263,7 +262,7 @@ Here we have create a vector of 200 spatial frequencies for baselines ranging fr
 
     ccf = mUDPt.getComplexCoherentFlux(spf,spf*0) 
     
-The getComplexCoherentFlux take three parameters : the spatial frequencies along the east-west axis, the spatial frequencies along the North-South axis, and optionally, the wavelength. Here we are dealing with grey models so we don't need to specify the wavelength. And, as our models are circular, we don't care about the baseline orientation and a set the North-South component of the spatial frequencies to zero.
+The getComplexCoherentFlux take four parameters : the spatial frequencies along the east-west axis, the spatial frequencies along the North-South axis, and optionally, the wavelength and the time (mjd). Here we are dealing with grey and time-independent models so we don't need to specify the wavelength. And, as our models are circular, we don't care about the baseline orientation. That why we set the North-South component of the spatial frequencies to zero.
 
 
 We can now plot the visibility from the CCF as the function of the spatial frequencies:
@@ -338,7 +337,7 @@ First we import the useful packages and create a set of spatial frequencies and 
     wls=np.transpose(np.tile(wl,(nB,1))).flatten()
     spf=Bs/wls
     
-Unlike in the previous example with the grey data, we create a 2D-array for the spatial frequencies of ``nB`` baselines by ``nwl`` wavelengths. The wavlength vector is tiled itself to have the same length as the spatial frequency vector.
+Unlike in the previous example with the grey data, we create a 2D-array for the spatial frequencies of ``nB`` baselines by ``nwl`` wavelengths. The wavlength vector is tiled itself to have the same length as the spatial frequency vector. Finally, we flatten the vector to be passed to the getComplexCoherentFlux method.
 
 Let's create our first chromatic components. Chromaticity can added to grey Fourier-based model by using the oimInterpWl when creating a new component.
 
@@ -358,7 +357,7 @@ We can access to the interpolated value of the parameters using the call operato
     
     >>[2. 5. 8. 8.]
     
-The values are interpolated within the wavelength range [3e-6,4e-6] and fixed beyond these range.
+The values are interpolated within the wavelength range [3e-6,4e-6] and fixed beyond this range.
 
 Let's build a simple model with this component and plot the images at few wavelengths and the visibilities for the baselines we created before.
 
@@ -388,7 +387,7 @@ Now let's add a second component: a uniform disk with a chromatic flux.
     ud=oim.oimUD(d=0.5,f=oim.oimInterpWl([3e-6,4e-6],[2,0.2]))
     m2=oim.oimModel([ud,g])
 
-    fig2im,ax2im = m2.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(14,2.5))
+    fig2im,ax2im,im2 = m2.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(3.5,2.5))
     vis=np.abs(m2.getComplexCoherentFlux(spf,spf*0,wls)).reshape(len(wl),len(B))
     vis/=np.outer(np.max(vis,axis=1),np.ones(nB))
 
@@ -417,7 +416,7 @@ Now let's create a similar model but with elongated components. We will replace 
     el=oim.oimEllipse(d=0.5,f=oim.oimInterpWl([3e-6,4e-6],[2,0.1]),elong=2, pa=90)
 
     m3=oim.oimModel([el,eg])
-    fig3im,ax3im = m3.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(14,2.5),normPow=0.2)
+    fig3im,ax3im,im3 = m3.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(3.5,2.5),normPow=0.2)
 
 .. image:: ../../images/complexModel_Elong.png
   :alt: Alternative text
@@ -472,7 +471,7 @@ Let's have a look at our last model free parameters.
   
 We see here that for the Ellipse (C1_eUD) the f parameter has been replaced by two independent parameters called ``c1_eUD_f_interp1`` and ``c1_eUD_f_interp2``. They represent the value of the flux at 3 and 4 microns. We could have added more reference wavelengths in our model and would have ended with more parameters. The same happens for the elongated Gaussian (C2_EG) fwhm.
 
-Currently our model has 10 free parameters. In certain cases we might want to link or share two or more parameters. In our case, we might consider that the two components have the same ``pa`` and ``elong``. The can be done easily. To share a parameter you can just replace one parameter by another.
+Currently our model has 10 free parameters. In certain cases we might want to link or share two or more parameters. In our case, we might consider that the two components have the same ``pa`` and ``elong``. This can be done easily. To share a parameter you can just replace one parameter by another.
 
 .. code-block:: python
    
@@ -508,7 +507,7 @@ Let's create a new model which include a elongated ring perpendicular to the Gau
 
     m4= oim.oimModel([el, eg,er])
 
-    m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(14, 2.5), normPow=0.2)
+    fig4im,ax4im,im4 = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.2,figsize=(3.5,2.5))
        
  
 .. image:: ../../images/complexModel_link.png
@@ -521,12 +520,30 @@ Although quite complex this models only have 9 free parameters. If we change the
     el.params['d'].value = 4
     el.params['pa'].value = 45
         
-    m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], figsize=(14, 2.5), normPow=0.2)    
+    m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.2,figsize=(3.5,2.5))    
       
 .. image:: ../../images/complexModel_linkRotScale.png
   :alt: Alternative text  
 
 
+You can also add time dependent parameters to your model using oimInterpTime class which works similarly to the oimInterpWl class.
+
+Here we create a two-components model with a time dependent Gaussian fwhm and a wavelength dependent uniform disk diameter.
+
+.. code-block:: python
+
+    gd1=oim.oimGauss(fwhm=oim.oimInterpTime(t=[0,1,3],value=[1,4,1]))
+    ud1=oim.oimUD(d=oim.oimInterpWl(wl=[1e-6,3e-6],value=[0.5,2]),x=-4,y=0,f=0.1)
+
+    m5=oim.oimModel(gd1,ud1)
+
+    wls=np.array([1,2,3])*1e-6
+    times=[0,1,2,3,4]
+
+    fig5im,ax5im,im5 = m5.showModel(256,0.04,wl=wls,t=times,legend=True,figsize=(2.5,2))
+
+.. image:: ../../images/complexModel_time.png
+  :alt: Alternative text  
 
 
 .. _createSimulator:
@@ -568,11 +585,7 @@ We now create a oimSimulator with the oimModel and the data. The data can either
 
     sim=oim.oimSimulator(data=files,model=model)
     
-Before using the simulator we need to prepare the data using the `prepare` method. This call the `prepare` method of the created oimData instance within the oimSimulator instance. The function is used to create vectorized coordinates for the data (spatial frequencies in x and y and wavelengths) to be passed to the oimModel instance to compute the complex Coherent Flux (ccf) using the oimModel.getComplexCoherentFlux method, and some structures to go back from the ccf to the measured interferometric quantities contained in the oifits files: VIS2DATA, VISAMP, VISPHI, T3AMP, T3PHI, and FLUXDATA.
-
-.. code-block:: python
-
-    sim.data.prepareData()
+When creating the simulator, it automatically calls the prepareData method of the created oimData instance within the oimSimulator instance. This call the `prepare` method of  The function is used to create vectorized coordinates for the data (spatial frequencies in x and y and wavelengths) to be passed to the oimModel instance to compute the complex Coherent Flux (ccf) using the oimModel.getComplexCoherentFlux method, and some structures to go back from the ccf to the measured interferometric quantities contained in the oifits files: VIS2DATA, VISAMP, VISPHI, T3AMP, T3PHI, and FLUXDATA.
 
 Once the data is prepared we can call the compute method to compute the chi2 and the simulatedData.
 
@@ -583,7 +596,7 @@ Once the data is prepared we can call the compute method to compute the chi2 and
 
 .. code-block:: python
 
-    Chi2r = 5674.502111807307
+    Chi2r = 11356.162973124885
 
 
 Our model isn't fitting well the data. Let's plot the data model comparison for all interferometric quantities contained in the oifits files.

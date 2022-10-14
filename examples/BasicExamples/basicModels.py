@@ -20,11 +20,11 @@ print(ud.params['d'])
 
 
 #Building a few models from the components 
-mPt   = oim.oimModel([pt])
-mUD   = oim.oimModel([ud])
-mG    = oim.oimModel([g])
-mR    = oim.oimModel([r])
-mUDPt = oim.oimModel([ud,pt])
+mPt   = oim.oimModel(pt)
+mUD   = oim.oimModel(ud)
+mG    = oim.oimModel(g)
+mR    = oim.oimModel(r)
+mUDPt = oim.oimModel(ud,pt)
 
 
 
@@ -42,7 +42,7 @@ plt.imshow(im**0.1)
 plt.savefig(os.path.join(path,os.pardir,"images","basicModel_imshow.png"))
 
 #%%
-figImg,axImg=mUDPt.showModel(512,0.1,normPow=0.2,
+figImg,axImg=mUDPt.showModel(512,0.1,normPow=0.2, figsize=(5,4),
     savefig=os.path.join(path,os.pardir,"images","basicModel_showModel.png"))
 
 #%%
