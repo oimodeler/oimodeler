@@ -1102,8 +1102,6 @@ Let's finish this example by plotting the visibility of such models for a set of
 
 
 .. code-block:: python
-
-
      
     nB = 200  # number of baselines
     nwl = 50  # number of walvengths
@@ -1117,7 +1115,6 @@ Let's finish this example by plotting the visibility of such models for a set of
     spf0 = spf*0
 
     fig,ax=plt.subplots(3,2,figsize=(10,7))
-
 
     models=[m1,m2,m3]
     names =["1 Box", "Multi Boxes","Chromatic box"]
@@ -1142,8 +1139,6 @@ Let's finish this example by plotting the visibility of such models for a set of
             
         ax[i,1].get_yaxis().set_visible(False)
             
-
-
     ax[2,0].set_xlabel("B/$\\lambda$ (cycles/rad)")
     ax[2,1].set_xlabel("B/$\\lambda$ (cycles/rad)")
     ax[0,0].set_title("East-West baselines")
