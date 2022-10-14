@@ -6,7 +6,6 @@ Created on Sat Sep 10 07:28:17 2022
 """
 import matplotlib.pyplot as plt
 import os
-from astropy.io import fits
 import oimodeler as oim
 
 path = os.path.dirname(oim.__file__)
@@ -38,6 +37,7 @@ fig3= plt.figure()
 ax3 = plt.subplot(projection='oimAxes')
 ax3.oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,color="byConfiguration",
                errorbar=True,kwargs_error={"alpha":0.3})
+ax3.legend()
 
 plt.savefig(os.path.join(path,os.pardir,"images","ExampleOimPlot_v2Wl.png"))
 
@@ -60,13 +60,17 @@ ax4[0,1].legend()
 
 # Plotting the V² as a function of the wavlength with errorbars 
 #kwargs_error keyword allows to pass keywords to the errorbar plot
-ax4[1,0].oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,
+ax4[1,0].oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,color="byBaseline",
                errorbar=True,kwargs_error={"alpha":0.1})
+ax4[1,0].legend(fontsize=6)
 
 
 # Finally we plot the Closure Phase with a fewstyling options
 ax4[1,1].oiplot(data,"SPAFREQ","T3PHI",xunit="cycles/mas",errorbar=True,
-               lw=2,ls=":")
+               lw=2,ls=":",color="byFile")
+ax4[1,1].legend(fontsize=4)
+
+
 
 #setting log scale as for normal matplotlib plots
 ax4[0,1].set_yscale('log')

@@ -779,9 +779,9 @@ We now create a simple filter to cut data to a specific wavelength range in the 
     
 The ``oimWavelengthRangeFilter`` has two parameters :
 
-- ``targets`` : which is common to all filter components : it specify the targeted files within the data structure to which the filter apply. Possible values are : "all" for all files, a single file specify by its index, or a list of indexes. Here we specify that we want to apply our filter to all data files.
+- ``targets`` : which is common to all filter components : it specify the targeted files within the data structure to which the filter applies. Possible values are : "all" for all files, a single file specify by its index, or a list of indexes. Here we specify that we want to apply our filter to all data files.
 
-- ``wlRange`` : the wavelength range to cut as a two elements list (min wavelength and max wavelength), or a list of multiple two elements list if you want to cut multiple wavelengths ranges simultaneously. In our example you have selected wavelength between 3 and 4 microns. Wavelengths outside this range will be removed from the data.
+- ``wlRange`` : the wavelength range to cut as a two elements list (min wavelength and max wavelength), or a list of multiple two-elements lists if you want to cut multiple wavelengths ranges simultaneously. In our example you have selected wavelength between 3 and 4 microns. Wavelengths outside this range will be removed from the data.
     
 Now we can create a filter stack with this single filter and apply it to our data.
 
@@ -794,7 +794,7 @@ Now we can create a filter stack with this single filter and apply it to our dat
 By default the filter will be automatically activated as soon as a filter is set using the ``setFilter`` method of the oimData class. This means that the call to oimData.data will return the filtered data, and that if using the oimData class within a oimSimulator or a oimFitter, the filtered data will be used instead of the unfiltered data. 
 
 .. note::
-    The unfiltered data can always be accessed using oimData._data and the filtered data, that may be None if no filter have been set, using oimData._filteredData
+    The unfiltered data can always be accessed using oimData._data and the filtered data, that may be ``None`` if no filter have been set, using oimData._filteredData
    
 To switch off a filter we can either call the setFilter without parameters (this will remove the filter completely) or set the useFilter variable to False.
 
@@ -830,7 +830,7 @@ The other simple filters for data selection are :
 - ``oimDataTypeFilter`` : removing data type (such as VISAMP, VISPHI, T3AMP...) from the data.
 
 .. note::
-    Actually oimDataTypeFilter doesn't remove the columns with the data type from any array as these column are complusory in the the oifits format definition. Instead it is setting all the values of the column to zero which oimodeler will recognize as emplty for data simulation and model fitting. 
+    Actually, oimDataTypeFilter doesn't remove the columns with the data type from any array as these columns are complusory in the the oifits format definition. Instead it is setting all the values of the column to zero which oimodeler will recognize as emplty for data simulation and model fitting. 
 
 .. code-block:: python 
 
@@ -841,7 +841,7 @@ The other simple filters for data selection are :
 Here we create a new filter stack with the previous wavelength filter (f1), a filter (f2) removing the array OI_VIS and OI_FLUX from the data, and a filter (f3) removing the columns T3AMP and T3PHI. Basically, we only have VIS2DATA left in our oifits structure.
 
 .. note::
-    Removing T3AMP and T3PHI from the OI_T3 is equivalent for model-fitting to remove the array OI_T3 for model-fitting. 
+    Removing T3AMP and T3PHI from the OI_T3 is equivalent for model-fitting to removing the array OI_T3. 
 
 
 Plotting data from oifits files
@@ -854,82 +854,98 @@ Let's start by setting up the project with imports, path, and some data.
 .. code-block:: python 
 
     import matplotlib.pyplot as plt
-    import numpy as np
     import os
-    from astropy.io import fits
     import oimodeler as oim
 
     path = os.path.dirname(oim.__file__)
     pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE2")
 
     files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData) if ".fits" in fi]
-    data=[fits.open(fi,mode="update") for fi in files]
+    data=oim.oimData(files)
     
 oimodeler comes with the oimAxes class that subclass the standard matplotlib.pytplotAxes class (base class for all matplotlib plots). To use it you simply need to specify it as a projection (actually it calls the subclass) when creating the axe or axes.
 
 .. code-block:: python 
 
-    fig, ax = plt.subplots(subplot_kw=dict(projection='oimAxes'))
+    fig1 = plt.figure()
+    ax1 = plt.subplot(projection='oimAxes')
+
    
-First we can plot the classic uv coverage using the uvplot method by passing the oifits data.
+First we can plot the classic uv coverage using the uvplot method by passing the list of oifits files (filename or opened) or a instance of a oimData class.
 
 .. code-block:: python 
 
-    ax[0,0].uvplot(data)
+    ax1.uvplot(data)
     
 .. image:: ../../images/ExampleOimPlot_uv.png
   :alt: Alternative text     
     
-We can use the oiplot method of the oimAxes to plot any quantity inside an oifits file as a function of another one. For instance let's plot the squared visibilities as a function of the spatial frequencies with the wavelength as a colorscale
+We can use the oiplot method of the oimAxes to plot any quantity inside an oifits file as a function of another one. For instance let's plot the squared visibilities as a function of the spatial frequencies with the wavelength (in microns) as a colorscale.
 
 .. code-block:: python
    
-    ax = plt.subplot(projection='oimAxes')
-    lamcol=ax.oiplot(data,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas",label="Data",
-                    cname="EFF_WAVE",cunitmultiplier=1e6,errorbar=True)
-                    
-    plt.colorbar(lamcol, ax=ax,label="$\\lambda$ ($\mu$m)")
-    ax.legend()
+    fig2 = plt.figure()
+    ax2 = plt.subplot(projection='oimAxes')
+    lamcol=ax2.oiplot(data,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas",label="Data",
+                cname="EFF_WAVE",cunitmultiplier=1e6,errorbar=True)
+                
+    plt.colorbar(lamcol, ax=ax2,label="$\\lambda$ ($\mu$m)")
+    ax2.legend()
+
     
 .. image:: ../../images/ExampleOimPlot_v2.png
   :alt: Alternative text     
   
   
-We can also plot the square visibility as the function of the wavelength.
+We can also plot the square visibility as the function of the wavelength with an colouring the curves by the interferometer configurations (i.e. the list of all baselines within one file). Note that we can pass parameters to the error plots with the option ``kwargs_error``.
 
 .. code-block:: python
 
-    ax.oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,
+   fig3= plt.figure()
+    ax3 = plt.subplot(projection='oimAxes')
+    ax3.oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,color="byConfiguration",
                errorbar=True,kwargs_error={"alpha":0.3})
+    ax3.legend()
+
   
 .. image:: ../../images/ExampleOimPlot_v2Wl.png
   :alt: Alternative text       
+
+.. note::
+    Special values of the color option are byFile, byConfiguration, byArrname, or byBaseline. Other value will be interpreted as a standard matplotlib colorname. When using one of these values, the corresponding labels are added to the plots. Using the Axes.legend method will automatically add the proper names.
   
 Finally, we can create a 2x2 figure with multiple plots. The projection keyword have to be set for all Axes using the subplot_kw keyword in the subplots method.
 
 .. code-block:: python
 
-    fig, ax = plt.subplots(2,2, subplot_kw=dict(projection='oimAxes'),figsize=(8,8))
-   
-    ax[0,0].uvplot(data)
+    fig4, ax4 = plt.subplots(2,2, subplot_kw=dict(projection='oimAxes'),figsize=(8,8))
 
-    lamcol=ax[0,1].oiplot(data,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas",label="Data",
-                        cname="EFF_WAVE",cunitmultiplier=1e6,ls=":",errorbar=True)
-    fig.colorbar(lamcol, ax=ax[0,1],label="$\\lambda$ ($\mu$m)")
-    ax[0,1].legend()
-    ax[0,1].set_yscale('log')   
+    
+    ax4[0,0].uvplot(data)
 
-    ax[1,0].oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,
-                   errorbar=True,kwargs_error={"alpha":0.3})
-    ax[1,0].autolim()
+    
+    lamcol=ax4[0,1].oiplot(data,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas",label="Data",
+                    cname="EFF_WAVE",cunitmultiplier=1e6,ls=":",errorbar=True)
+    fig4.colorbar(lamcol, ax=ax4[0,1],label="$\\lambda$ ($\mu$m)")
+    ax4[0,1].legend()
+    ax4[0,1].set_yscale('log')
 
-    ax[1,1].oiplot(data,"SPAFREQ","T3PHI",xunit="cycles/mas",errorbar=True,
-                   lw=2,ls=":")
-    ax[1,1].autolim()
+
+    ax4[1,0].oiplot(data,"EFF_WAVE","VIS2DATA",xunitmultiplier=1e6,color="byBaseline",
+               errorbar=True,kwargs_error={"alpha":0.1})
+    ax4[1,0].legend(fontsize=6)
+    ax4[1,0].autolim()
+
+
+    ax4[1,1].oiplot(data,"SPAFREQ","T3PHI",xunit="cycles/mas",errorbar=True,
+               lw=2,ls=":",color="byFile")
+    ax4[1,1].legend(fontsize=4)
+    ax4[1,1].autolim()
     
 .. image:: ../../images/ExampleOimPlot_multi.png
   :alt: Alternative text   
     
+   
 
 Expanding the Software
 ----------------------
@@ -1060,7 +1076,7 @@ Let's create a complex model with boxes and uniform disk.
     b3=oimBox(dx=10,dy=20,x=-30,y=10,pa=50,f=10)
     c=oim.oimUD(d=10,x=-30,y=-10)
     m2=oim.oimModel([b1,b2,b3,c])
-    m2.showModel(512,0.2,colorbar=False)
+    m2.showModel(512,0.2,colorbar=False,figsize=(5,5))
 
 
 .. image:: ../../images/customCompBoxesImage.png
@@ -1075,7 +1091,7 @@ We could also create a chromatic box component using the oimInterpWl class or li
     
     m3=oim.oimModel([b4])
 
-    m3.showModel(512,0.2,wl=[2e-6,2.2e-6,2.4e-6],colorbar=False)
+    m3.showModel(512,0.2,wl=[2e-6,2.2e-6,2.4e-6],colorbar=False,swapAxes=True)
 
 .. image:: ../../images/customCompChromBoxImages.png
   :alt: Alternative text   
@@ -1148,15 +1164,15 @@ Creating new Image Components
 Creating new Radial profile Components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. warning::
-    Example will be added when te oimComponentImage will be fully implemented
+    Example will be added when te oimComponentRadialProfile will be fully implemented
 
 Performance Tests
 -----------------
 
 
-
-Scripts concerning performance tests are presented in this section.
+Scripts concerning performance tests will be presented in this section.
 
 Data for tests
 --------------
 
+Here is a short description example datasets 
