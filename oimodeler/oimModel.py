@@ -26,6 +26,15 @@ I=complex(0,1)
 ###############################################################################
 
 def getFourierComponents():
+    """
+    A function to get the list of all available components deriving from the 
+    oimComponentFourier class.
+
+    Returns
+    -------
+    res : list
+        list of all available components deriving from the oimComponentFourier class.
+    """
     fnames=dir(oim)
     res=[]
     for f in fnames:
@@ -37,12 +46,6 @@ def getFourierComponents():
     return res
             
 ###############################################################################
-
-
-
-
-
-
 
 class oimParam(object):
     """
