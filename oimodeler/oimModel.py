@@ -1159,7 +1159,7 @@ class oimModel(object):
         
         return None;
     def getImage(self,dim,pixSize,wl=None,t=None,fits=False, 
-                 fromFT=False,dontSqueeze=False):
+                 fromFT=False,squeeze=True):
         """
         Compute and return an image or and image cube (if wavelength and time 
         are given). The returned image as the x,y dimension dim in pixel with
@@ -1182,6 +1182,9 @@ class oimModel(object):
         fromFT : bool, optional
             If True compute the image using FT formula when available
             The default is False.
+        squeeze : bool, optional
+            If False returns a (nt,nwl,dim,dim) array even if nt and/or nwl equal 1
+            The default is True
             
         Returns
         -------
@@ -1222,7 +1225,7 @@ class oimModel(object):
                 image+=c.getImage(dim,pixSize,wl,t)
           
             
-        if dontSqueeze==False:
+        if squeeze==True:
             image= np.squeeze(image)
         return image
 
@@ -1279,8 +1282,8 @@ class oimModel(object):
 
 
     def showModel(self,dim,pixSize,wl=None,t=None, 
-                  fromFT=False,axe=None,normPow=0.5,figsize=(3,3),
-                  savefig=None,colorbar=True,legend=False,swapAxes=False,kwargs_legend={},**kwargs):
+        fromFT=False,axe=None,normPow=0.5,figsize=(3,3),savefig=None,
+        colorbar=True,legend=False,swapAxes=False,kwargs_legend={},**kwargs):
         """
         
         Show the mode Image or image-Cube
@@ -1326,14 +1329,11 @@ class oimModel(object):
 
         """
 
-        im=self.getImage(dim,pixSize,wl,t,fromFT=fromFT,dontSqueeze=True)
-        
-        
-        t=np.array(t).flatten()
-        
+        im=self.getImage(dim,pixSize,wl,t,fromFT=fromFT,squeeze=False)
+              
+        t=np.array(t).flatten()      
         wl=np.array(wl).flatten()
-        
-        
+              
         if swapAxes:
             t,wl=wl,t
             
@@ -1347,18 +1347,19 @@ class oimModel(object):
             fig=axe.get_figure()
          
 
-        
         axe=np.array(axe).flatten().reshape((nwl,nt))
         
         for iwl,wli in enumerate(wl):
             for it,ti in enumerate(t):
                 if swapAxes==False:
                     cb=axe[iwl,it].imshow(im[it,iwl,:,:],
-                        extent=[dim/2*pixSize,-dim/2*pixSize,-dim/2*pixSize,dim/2*pixSize],
+                        extent=[dim/2*pixSize,-dim/2*pixSize,
+                                -dim/2*pixSize,dim/2*pixSize],
                         norm=colors.PowerNorm(gamma=normPow),**kwargs)
                 else:
                     cb=axe[iwl,it].imshow(im[iwl,it,:,:],
-                        extent=[dim/2*pixSize,-dim/2*pixSize,-dim/2*pixSize,dim/2*pixSize],
+                        extent=[dim/2*pixSize,-dim/2*pixSize,
+                                -dim/2*pixSize,dim/2*pixSize],
                         norm=colors.PowerNorm(gamma=normPow),**kwargs)
                 
                 if iwl==nwl-1:
