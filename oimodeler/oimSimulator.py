@@ -70,7 +70,12 @@ class oimSimulator(object):
     
     
         if data!=None:
-            self.addData(data)
+            if isinstance(data,oim.oimData):
+                self.data=data
+            else:
+                self.addData(data)
+            
+                
             
         if model!=None:        
             self.setModel(model)

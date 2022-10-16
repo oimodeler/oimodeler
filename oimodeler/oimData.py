@@ -140,10 +140,19 @@ def oimDataCheckData(arr):
 ###############################################################################
 
 def oimDataGetVectCoord(data,arr):
+
     wl,dwl=oimDataGetWl(data,arr)
     nwl=np.size(wl)    
-    mjd=arr.data["TIME"]
-    mjd=np.outer(mjd,np.ones(nwl)).flatten()
+   
+    #TODO: Here I assume that the mjd is the same for all baselines 
+    #This is the case for all know instruments, but it is not a requirement of 
+    #the oifits format. If the mjd are different, then we should have more data
+    #passed to the simulator, i.e we need to compute the zero frequency 
+    #not only for all wl but also all mjd.
+    
+    mjd0=arr.data["MJD"][0]
+    mjd=np.outer(mjd0,np.ones(nwl)).flatten()
+   
     
     #zero freq vector for vis normalization
     uv0=wl*0
@@ -169,7 +178,6 @@ def oimDataGetVectCoord(data,arr):
         u=np.concatenate((u1,u2,u3))
         v=np.concatenate((v1,v2,v3)) 
         
-        mjd=np.outer(np.ones(3),mjd).flatten()
         
     elif arr.name=="OI_FLUX":
         nB=np.shape(arr.data["FLUXDATA"])[0]
@@ -187,7 +195,8 @@ def oimDataGetVectCoord(data,arr):
     if  arr.name!="OI_FLUX":
         u=np.concatenate((uv0,u))
         v=np.concatenate((uv0,v))
-    
+        
+    mjd=np.outer(np.ones(nB),mjd).flatten()
     wl=np.outer(np.ones(nB),wl).flatten()
     dwl=np.outer(np.ones(nB),dwl).flatten()
         

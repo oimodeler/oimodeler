@@ -1151,13 +1151,14 @@ class oimModel(object):
             The complex coherent flux.
 
         """
+        
         res=complex(0,0)
         for c in self.components:
             res+=c.getComplexCoherentFlux(ucoord,vcoord,wl,t)
    
         return res
         
-        return None;
+
     def getImage(self,dim,pixSize,wl=None,t=None,fits=False, 
                  fromFT=False,squeeze=True):
         """
@@ -1252,7 +1253,7 @@ class oimModel(object):
         for i,c in enumerate(self.components):
             for name,param in c.params.items():
                 if not(param in params.values()):
-                    if isinstance(param,oimParamInterpWl):
+                    if isinstance(param,oimParamInterpWl) or isinstance(param,oimParamInterpTime):
                         for iparam,parami in enumerate(param.params):
                             if not(parami in params.values()):
                                 if (parami.free==True or free==False):
