@@ -88,7 +88,8 @@ class oimSimulator(object):
             self.simulatedData.addData(oim.hdulistDeepCopy(datai))
 
     def compute(self,computeChi2=False,computeSimulatedData=False,checkSimulatedData=True):
-        self.vcompl=self.model.getComplexCoherentFlux(self.data.vect_u,self.data.vect_v,self.data.vect_wl)
+        self.vcompl=self.model.getComplexCoherentFlux(self.data.vect_u,
+                        self.data.vect_v,self.data.vect_wl,self.data.vect_mjd)
        
         nelChi2=0
         chi2=0
