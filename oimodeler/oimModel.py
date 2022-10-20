@@ -283,7 +283,15 @@ class oimParamLinker(object):
 ###############################################################################
 class oimParamNorm(object):
     def __init__(self,params,norm=1):
-        self.params=params    
+        
+        if type(params)==list:
+            self.params=params    
+        else:
+            self.params=[params] 
+        
+        
+        
+        
         self.norm=norm        
         
         self.free=False
@@ -317,7 +325,9 @@ _standardParameters={
     "skw":{"name":"skw","value":0,"description":"Skewedness","unit":units.one},
     "skwPa":{"name":"skwPa","value":0,"description":"Skewedness Position angle","unit":units.deg},
     "pixSize":{"name":"pixSize","value":0.1,"description":"Pixel Size","unit":units.mas},
-    "dim":{"name":"dim","value":128,"description":"Dimension in pixel","unit":units.one}    
+    "dim":{"name":"dim","value":128,"description":"Dimension in pixel","unit":units.one},
+    "wl":{"name":"wl","value":0,"description":"Wavelength","unit":units.m, "mini":0},
+    "mjd":{"name":"mjd","value":0,"description":"MJD","unit":units.day} 
     }
     
 
@@ -443,183 +453,7 @@ class oimComponent(object):
             txt+=" {0}={1:.2f}".format(param.name,param.value)
         return txt
     
-
-###############################################################################
- 
-class oimComponentImage(oimComponent):    
-    """
-    Base class for components define in 2D : x,y (regular grid) in the image plan.
-    """
-    def __init__(self,**kwargs): 
-        super().__init__(**kwargs)
-
-        self._dim=0
-        self._pixSize=0
-        
-        self.params["pixSize"]=oimParam(**_standardParameters["pixSize"])  
-        self.params["dim"]=oimParam(name="dim",value=256,
-                         description="Image dimension",unit=1,free=False)
-        
-        self.params["interpMethod"]=oimParam(name="interpMethod",value='linear',
-                         description="interp method",unit=1,free=False)
-        
-        self._eval(**kwargs)   
-        self._compute2DCoordGrid(force=True)
-        
-      
-    def _compute2DCoordGrid(self,force=False):
-        dim=self.params["dim"].value
-        pixSize=self.params["pixSize"].value 
-        
-        #recompute grid only if pixSize or dim have changed
-        
-        if (dim!=self._dim or pixSize!=self._pixSize ):
-           self.xx=np.tile((np.arange(dim)-dim/2)*pixSize,(dim,1))
-           self.yy=np.transpose(self.xx)
-           self._dim=dim
-           self._pixSize=pixSize        
-
-    def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
-        
-        self._compute2DCoordGrid()        
-        image= self._imageFunction(self.xx,self.yy,wl,t)
-        s=np.shape(image) 
-        
-        fft2D=np.fft.fftshift(np.fft.fft2(np.fft.fftshift(image),
-                                s=[s[0],s[1]]))
-
-        pixSize=self.params["pixSize"]()*self.params["pixSize"].unit.to(units.rad)
-        
-        freqVectX=np.fft.fftshift(np.fft.fftfreq(s[0],pixSize))
-        freqVectY=np.fft.fftshift(np.fft.fftfreq(s[1],pixSize))
-        
-        grid=(freqVectX,freqVectY)
-        coord=np.transpose([ucoord,vcoord])
-               
-        real=interpolate.interpn(grid,np.real(fft2D),coord,method=self.params["interpMethod"].value,bounds_error=False,fill_value=0)
-        imag=interpolate.interpn(grid,np.imag(fft2D),coord,method=self.params["interpMethod"].value,bounds_error=False,fill_value=0)
-        
-        #real=interpolate.RegularGridInterpolator(grid,np.real(fft2D),method=self.params["interpMethod"].value)(coord)
-        #imag=interpolate.RegularGridInterpolator(grid,np.imag(fft2D),method=self.params["interpMethod"].value)(coord)
-        
-        vc=real+imag*np.complex(0,1)
-        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
-                                                     self.params["f"](wl,t)
-       
-    def _imageFunction(self,xx,yy,wl,t):
-        dim=self.params["dim"].value
-        return np.zeros([dim,dim])
-
-
-    def _directTranslate(self,x,y,wl,t):
-         x=x-self.params["x"](wl,t)
-         y=y-self.params["y"](wl,t)
-         return x,y
-
-    def getImage(self,dim,pixSize,wl=None,t=None):  
-           x=np.tile((np.arange(dim)-dim/2)*pixSize,(dim,1))
-           y=np.transpose(x)
-           x,y=self._directTranslate(x,y,wl,t)
-           
-           image = self._imageFunction(x,y,wl,t)
-           tot=np.sum(image)
-           if tot!=0:  
-               image = image / np.sum(image,axis=(0,1))*self.params["f"](wl,t)    
-
-           return image
-                                 
-    def getInternalImage(self,wl=None,t=None):  
-           self._compute2DCoordGrid()        
-           image= self._imageFunction(self.xx,self.yy,wl,t)
-           tot=np.sum(image)
-           if tot!=0:  
-               image = image / np.sum(image,axis=(0,1))*self.params["f"](wl,t)    
-
-           return image
-                                                
-###############################################################################
-    
-
-class oimComponentChromaticCube(oimComponent):    
-    """
-    Base class for components define in 3D : x,y (regular) and wl (non-regular) 
-    in Image plan.
-    """
-    def __init__(self,**kwargs): 
-        super().__init__(**kwargs)
-        self.params["pixSize"]=oimParam(**_standardParameters["pixSize"])
-        self.image=None
-        self.dim=0
-        self.wl_vector=None
-        self._eval(**kwargs)      
-      
-    def setImage(self,image,wl):
-        self.image=image
-        s=np.shape(image)
-        
-        self.dim=s[-1]
-        self.wl_vector=wl
-        self.nwl=s[0]
-      
-    def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
-              
-        fft2D=np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.image,axes=[2,1]),
-                                s=[self.dim,self.dim]),axes=(2,1))
-
-        pixSize=self.params["pixSize"]()*self.params["pixSize"].unit.to(units.rad)
-        freqVect=np.fft.fftshift(np.fft.fftfreq(self.dim,pixSize))
-        
-        grid=(self.wl_vector,freqVect,freqVect)
-        coord=np.transpose([wl,ucoord,vcoord])
-               
-        real=interpolate.interpn(grid,np.real(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
-        imag=interpolate.interpn(grid,np.imag(fft2D),coord,method='linear',bounds_error=False,fill_value=None)
-        
-        
-        vc=real+imag*np.complex(0,1)
-        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
-                                                     self.params["f"](wl,t)
-    
-        
-
-###############################################################################
-    
-
-class oimComponentRadialProfile(oimComponent):    
-    """
-    Base class for components define by a non-regular radial profile in Image plan.
-    """
-    def __init__(self,**kwargs): 
-        super().__init__(**kwargs)
-        self.hankel=self._trapeze     
-        self._eval(**kwargs)      
-      
-
-    @staticmethod
-    def _trapeze(Ir,r,sfreq):
-        res = np.zeros_like(sfreq)    
-        for i, sf in enumerate(sfreq):       
-            res[i] = integrate.trapezoid(2.*np.pi*r*Ir*j0(2.*np.pi*r*sf), r)     
-            
-        flux = integrate.trapezoid(2.*np.pi*r*Ir, r)
-        res = res/flux
-        return res
-    
-    
-    def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
-             
-        spf=np.sqrt(ucoord**2+vcoord**2)
-        radius,intensity=self._radialProfileFunction()
-        vc=self.hankel(intensity, radius,spf)
-        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
-                                                     self.params["f"](wl,t)
-    
-    def _radialProfileFunction(self):
-        return 0,0
-
-
-
-###############################################################################
+#
 
 
 class oimComponentFourier(oimComponent):
@@ -675,27 +509,7 @@ class oimComponentFourier(oimComponent):
         y=y-self.params["y"](wl,t)
         return x,y
     
-    
-    """
-    def getImage(self,dim,pixSize,wl=None,t=None):  
-        x=np.tile((np.arange(dim)-dim/2)*pixSize,(dim,1))
-        y=np.transpose(x)
-        x,y=self._directTranslate(x,y,wl,t)
-        
-        if self.elliptic:
-            pa_rad=(self.params["pa"](wl)+90)* \
-                               self.params["pa"].unit.to(units.rad)
-            xp=x*np.cos(pa_rad)-y*np.sin(pa_rad)
-            yp=x*np.sin(pa_rad)+y*np.cos(pa_rad)
-            x=xp
-            y=yp*self.params["elong"].value
-        image = self._imageFunction(x,y,wl,t)
-        tot=np.sum(image)
-        if tot!=0:  
-            image = image / np.sum(image,axis=(0,1))*self.params["f"](wl,t)    
 
-        return image
-    """
     def getImage(self,dim,pixSize,wl=None,t=None):  
 
         
