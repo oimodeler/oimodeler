@@ -14,6 +14,10 @@ from .oimSimulator import *
 from .oimUtils import *
 from .oimDataFilter import *
 from .oimPlots import *
+from .oimOptions import *
+from .oimOptions import oimOptions
+from .oimFTBackends import *
+from .oimComponentImage import *
 
 from os.path import join, dirname, split
 import inspect
