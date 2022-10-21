@@ -55,8 +55,7 @@ try:
                 return True
             else:
                 return False
-    
-        
+
         def prepare(im,pix,wlin,tin,ucoord,vcoord,wl,t):
             
             nwl=wlin.size

@@ -1011,6 +1011,14 @@ class oimModel(object):
              astropy.io.fits hdu.imagehdu if fits=True.
              The image of the component with given size in pixels and mas or rasd
         """
+        
+        #TODO : maybe we should change all None to zero as default values
+        if wl is None:
+            wl=0
+        if t is None:
+            t=0
+         
+        
         t=np.array(t).flatten()
         nt=t.size
         wl=np.array(wl).flatten()
@@ -1100,7 +1108,7 @@ class oimModel(object):
 
 
     def showModel(self,dim,pixSize,wl=None,t=None, 
-        fromFT=False,axe=None,normPow=0.5,figsize=(3,3),savefig=None,
+        fromFT=False,axe=None,normPow=0.5,figsize=(3.5,2.5),savefig=None,
         colorbar=True,legend=False,swapAxes=False,kwargs_legend={},**kwargs):
         """
         
@@ -1190,14 +1198,14 @@ class oimModel(object):
                     if swapAxes==False:
 
                         if wl[0]!=None:
-                            txt+="wl={}$\mu$m\n".format(wli*1e6)
+                            txt+="wl={:.4f}$\mu$m\n".format(wli*1e6)
                         if t[0]!=None:
                             txt+="Time={}".format(ti)
                         if not('color' in kwargs_legend):
                             kwargs_legend['color']="w"
                     else: 
                         if t[0]!=None:
-                            txt+="wl={}$\mu$m\n".format(ti*1e6)
+                            txt+="wl={:.4f}$\mu$m\n".format(ti*1e6)
                         if wl[0]!=None:
                             txt+="Time={}".format(wli)
                         if not('color' in kwargs_legend):

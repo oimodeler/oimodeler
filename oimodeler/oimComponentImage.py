@@ -13,9 +13,6 @@ from oimodeler import oimParam,oimComponent,_standardParameters
 from datetime import datetime
 
 
-
-
-
 class oimComponentImage(oimComponent):    
     """
     Base class for components define in 2D : x,y (regular grid) in the image plan.
@@ -46,10 +43,15 @@ class oimComponentImage(oimComponent):
     
     def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
         
+        if wl is None:
+            wl=ucoord*0
+        if t is None:
+            t=ucoord*0
+        
         im0=self.getInternalImage()
         im=self._padImage(im0)
         pix=self._pixSize
-        t0 = datetime.now()
+
         if self._allowExternalRotation==True:   
             pa_rad=(self.params["pa"](wl,t)+90)* \
                         self.params["pa"].unit.to(units.rad)      
@@ -73,13 +75,21 @@ class oimComponentImage(oimComponent):
     
     
     def getImage(self,dim,pixSize,wl=None,t=None):
-            
+  
+        
+
+        if wl is None:
+            wl=0
+        if t is None:
+            t=0
+         
+        
         t=np.array(t).flatten()
         nt=t.size
         wl=np.array(wl).flatten()
         nwl=wl.size       
         dims=(nt,nwl,dim,dim)
-             
+
         v=np.linspace(-0.5,0.5,dim)       
         vx,vy=np.meshgrid(v,v)
         
@@ -109,9 +119,11 @@ class oimComponentImage(oimComponent):
         grid=self._getInternalGrid()
         
         coord=np.transpose(np.array([t_arr,wl_arr,x_arr,y_arr]))
-        
+
         im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=0)
-        
+        f0=np.sum(im0)
+        f=np.sum(im)
+        im=im/f*f0
         return im.reshape(dims)
     
     def getInternalImage(self):
