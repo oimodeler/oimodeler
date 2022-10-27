@@ -69,13 +69,15 @@ for i,m in enumerate(models):
 ax[2,0].set_ylabel("Vis. (East-West)")         
 ax[3,0].set_ylabel("Vis. (North-South)")  
 
+#%%
+
 dim=256   #Number of pixels for the image
 pix=0.1  #size of the pixel in the image in mas
-wls=[3e-6,4e-6] #wavelengths array for the images
+wls2=[3e-6,4e-6] #wavelengths array for the images
 
 for i,m in enumerate(models):    
-    im=m.getImage(dim,pix,wls,fromFT=True)
-    for iwl,wli in enumerate(wls):     
+    im=m.getImage(dim,pix,wls2,fromFT=True)
+    for iwl,wli in enumerate(wls2):     
         imi=im[iwl,:,:]
         imi/=np.max(imi)
         imshow=ax[iwl,i].imshow(imi,extent=[dim/2*pix,-dim/2*pix,-dim/2*pix,dim/2*pix],
@@ -98,3 +100,13 @@ fig.colorbar(sc, ax=ax[2:,:].ravel().tolist(),label="$\\lambda$ ($\\mu$m)")
 
 filename=os.path.join(path,os.pardir,"images","createModelChromatic.png")
 fig.savefig(filename)
+
+#%%
+fig,ax=plt.subplots(1,1)
+cf2=np.abs(models[-2].getComplexCoherentFlux(spf0,spf,wls)).reshape(len(wl),len(B))
+ 
+for iwl,wli in enumerate(wl):
+    ax.plot(B/wli*mas2rad,cf2[iwl,:]/cf2[iwl,0],color=plt.cm.plasma(iwl/nwl),alpha=0.9)
+    
+filename=os.path.join(path,os.pardir,"images","imageForLogo.png")
+fig.savefig(filename,dpi=140)

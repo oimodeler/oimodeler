@@ -3,39 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-oimodeler 
-=========
+The oimodeler project aims at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at an early stage of development. 
 
-The oimodeler project aims at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at a very early stage of development. 
-
-It will allow to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting (using mcmc or other fitters), and plot results easily. It will allow many model components including gray or chromatic analytical models defined in Fourier or image plan, imported radial profile, images, image-cubes (with chromaticity), or the use of precomputed grids of models providing that the output is in fits image format. As the software is modular and object oriented, it is easy to expand it by creating new components by deriving abstract classes. 
-
-
-Modules
---------
-
-- **oimModel** : Create models with various components as bricks 
-- **oimData** :  Handle interferometric, spectroscopic and photometric data
-- **oimDataFilter** : Filtering and modifying data (wavelength-range cut, smoothing, removing flags...)  
-- **oimSimulator** : Main class holding evertyhing together and producing final results :plots, tables...
-- **oimFitter** : Define and perform model-fitting   
-- **oimPlot** : Plotting tools
-- **oimUtils** : Various utility for optical-interferometry
-
+It allows to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting (using mcmc or other fitters), and plot results easily. Components can be defined in the image or Fourier plan using analytcal formula or precomputed images. They can include chromaticity and time dependence. As the software is modular and object oriented, it is easy to expand it by creating new components by deriving abstract classes. 
 
 .. warning::
 
-    The software is in very early development. Current implementation:  
+    The software is in early development. Current implementation:  
     
-    - oimModel: Gray and chromatic models defined in Fourier plan, early implementation of Image-plan based models
-    - oimData class: interferometric data only (with basic filtering) 
-    - oimDataFilter: wavelength range, array (OI_VIS2, OI_VIS...), data type (VIS2DATA, VISAMP...)    
-    - oimSimulator: Simulated data and chi2 computation 
-    - oimFitter : Implementation of a basic emcee-based fitter with plots for results
-    - oimPlot: Basics plots of oifits data and uv-plan plot    
-    - oimUtils: Spatial frequencies, baseline name, length and PA, create oifits arrays,    
+    - Models : Gray and chromatic models defined in Fourier and image plan.
+    - Data : interferometric data only (with basic filtering) no photometric or spectroscopic data.
+    - Data Filters : Filtering wavelength range, and data type (VIS2DATA, VISAMP...)    
+    - Fitters : Implementation of a basic emcee-based fitter with plots for results
+    - Plots : Basics plots of oifits data and uv-plan plot
+    - Utils : miscs utilities for oifits data (creating and modifying array, getting info..)   
 
-    No module is complete and have been fully verified up to now
+    No module is complete and have been fully verified up to now!
 
 A Few examples
 --------------
@@ -67,8 +50,6 @@ Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script sh
   :alt: Alternative text
 
 
-
-
 .. toctree::
     overview
     installation
@@ -77,10 +58,6 @@ Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script sh
     api
     :maxdepth: 2
    
-
-
-
-
 Indices and tables
 ==================
 
