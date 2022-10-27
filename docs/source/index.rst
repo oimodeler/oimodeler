@@ -40,7 +40,7 @@ Modules
 A Few examples
 --------------
 
-Here are some plots for the :ref:`createModelChromatic.py <createModelChromatic>` example showing various chromatic-geometric models and the corresponding simulated Visibilities.
+Here are some plots for the `createModelChromatic.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/createModelChromatic.py>`_ example showing various chromatic-geometric models and the corresponding simulated Visibilities.
 
 .. image:: ../../images/createModelChromatic.png
   :alt: Alternative text

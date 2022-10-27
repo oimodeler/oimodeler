@@ -203,11 +203,197 @@ Let's finish this example by plotting the visibility of such models for a set of
     
 Of course, only the third model is chromatic.
 
-Creating new Image Components
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Creating new Image Components : Fast Rotator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. warning::
-    Example will be added when te oimComponentImage will be fully implemented
+In the `createCustomComponentImageFastRotator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomComponentImageFastRotator.py>`_ example we will create a new component derived from the oimImageComponent using an external function that return a chromatic image cube.
+
+The model is a simple implementation of a far rotating star flattened by rotation (Roche Model) and including gravity darkening (:math:`T_{eff}\propto g_{eff}^\beta`). The emission is a simple blackbody. The model is defined in the `fastRotator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/fastRotator.py>`_ script.
+
+First let's import a few packages used in this example:
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as colors
+    import matplotlib.cm as cm
+    from astropy import units as units
+    import oimodeler as oim
+    from fastRotator import fastRotator
+    
+
+Now we will define the new class for the FastRotator model. It will derived from the oimComponentImage as the model is defined in the image plane. We first write the __init__ method of the new class. It needs to includes all the model parameters. 
+
+
+
+.. code-block:: python
+
+    class oimFastRotator(oim.oimComponentImage):
+        name="Fast Rotator"
+        shortname="FRot"
+        def __init__(self,**kwargs):
+            super(). __init__(**kwargs)
+            
+            self.params["incl"]=oim.oimParam(name="incl",value=0,description="Inclination angle",unit=units.deg)
+            self.params["rot"]=oim.oimParam(name="rot",value=0,description="Rotation Rate",unit=units.one)     
+            self.params["Tpole"]=oim.oimParam(name="Tpole",value=20000,description="Polar Temperature",unit=units.K)
+            self.params["dpole"]=oim.oimParam(name="dplot",value=1,description="Polar diameter",unit=units.mas)
+            self.params["beta"]=oim.oimParam(name="beta",value=0.25,description="Gravity Darkening Exponent",unit=units.one)
+           
+            self._t = np.array([0]) 
+            self._wl = np.linspace(0.5e-6,15e-6,num=10)  
+            
+            self._eval(**kwargs)
+            
+Unlike for models defined in the Fourier plan, you need to define the internal wavelength ``self._wl`` and time ``self._t`` grids. Here we set the time to a fixed value so that the model will be time independent. The wavelength dependence of the model is set to a vector of 10 reference walvenegth between 0.5 and 15 microns. This will be used to compute reference images and linear interpolation in wavelength will be used on the Fourier Trasnforms of the images. 
+
+Together with the parameter ``dim`` (dimension of the image in x and y) ``self._wl`` and ``self._t`` set the length dimensions of the internal image hypercube (4-dimensional : x, y, wl, and t). 
+
+Now we can implement the call to the fastRotator function. As it is an external function that computes its own spatial and spectral grid we need to implement it in the ``_internalImage`` method. 
+
+
+.. code-block:: python
+
+    def _internalImage(self):        
+        dim=self.params["dim"].value
+        incl=self.params["incl"].value        
+        rot=self.params["rot"].value
+        Tpole=self.params["Tpole"].value
+        dpole=self.params["dpole"].value
+        beta=self.params["beta"].value  
+       
+        im=fastRotator(dim,1.5,incl,rot,Tpole,self._wl,beta=beta)
+        im=np.tile(np.moveaxis(im,-1,0)[None,:,:,:],(1,1,1,1))
+       
+        self._pixSize=1.5*dpole/dim*units.mas.to(units.rad)
+        
+        return im
+        
+
+Here we need to reshape the result of the ``fastRotator`` function to the proper shape for an internal image of the oimImageComponent class. FastRotator return a 3D image-cube (x,y,wl). We move axis and reshape it to a 4D image-hypercube (t,wl,x,y). 
+
+Finally we need to set the pixel size (in radians) using the ``self._pixSize`` member variable. For our example, we compute a fastRotator on a grid of 1.5 polar diameter (because the equatorial diameter goes up to 1.5 polar diameter for a critically rotating star). The pixel size formula depends on ``dpole`` and ``dim`` parameters. 
+
+Let's building our first model with this brand new component.
+
+.. code-block:: python
+
+    c=oimFastRotator(dpole=5,dim=128,incl=-70,rot=0.99,Tpole=20000,beta=0.25)
+    m=oim.oimModel(c)
+    
+We can now plot the model images at various wavelengths as for any other oimModel. 
+
+.. code-block:: python
+
+    m.showModel(512,0.025,wl=[1e-6,10e-6 ],legend=True, normalize=True)
+    
+
+.. image:: ../../images/customCompImageFastRotator.png
+  :alt: Alternative text       
+ 
+Let's create a some spatial frequencies, with some chromaticity. We create baselines in the East-West and North-South orientations.
+
+.. code-block:: python
+
+    nB=1000
+    nwl=20
+    wl=np.linspace(1e-6,2e-6,num=nwl)
+
+
+    B=np.linspace(0,100,num=nB//2)
+    Bx=np.append(B,B*0) # East-West 
+    By=np.append(B*0,B) # North-South 
+
+    Bx_arr=np.tile(Bx[None,:], (nwl, 1)).flatten()
+    By_arr=np.tile(By[None,:], (nwl,  1)).flatten()
+    wl_arr=np.tile(wl[:,None], (1, nB)).flatten()
+
+    spfx_arr=Bx_arr/wl_arr
+    spfy_arr=By_arr/wl_arr
+
+We compute the complex coherent flux and then extract the visiblity for it. Note that the model is already normalized to one so that we don't need to divide the CCF by the zero frquency.
+
+.. code-block:: python
+
+    vc=m.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr)
+    v=np.abs(vc.reshape(nwl,nB))
+
+Finally we plot the East-West and North-South visibliity with a colorscale for the wavelength.
+
+.. code-block:: python
+
+    fig,ax=plt.subplots(1,2,figsize=(15,5))
+    titles=["East-West Baselines","North-South Baselines"]
+    for iwl in range(nwl):
+        cwl=iwl/(nwl-1)
+        ax[0].plot(B/wl[iwl]/units.rad.to(units.mas),v[iwl,:nB//2],
+                color=plt.cm.plasma(cwl))
+        ax[1].plot(B/wl[iwl]/units.rad.to(units.mas),v[iwl,nB//2:],
+               color=plt.cm.plasma(cwl))  
+
+    for i in range(2):
+        ax[i].set_title(titles[i])
+        ax[i].set_xlabel("B/$\lambda$ (cycles/rad)")
+    ax[0].set_ylabel("Visibility")    
+    ax[1].get_yaxis().set_visible(False)   
+
+    norm = colors.Normalize(vmin=np.min(wl)*1e6,vmax=np.max(wl)*1e6)
+    sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
+    fig.colorbar(sm, ax=ax,label="$\\lambda$ ($\\mu$m)")
+ 
+
+.. image:: ../../images/customCompImageFastRotatorVis.png
+  :alt: Alternative text      
+  
+  
+The new ``oimfastRotator component can be rotated and used with other ``oimComponent`` to build more complex models. 
+
+Here we add a uniform disk component ``oimUD``
+   
+.. code-block:: python
+
+    c.params['f'].value=0.9
+    c.params['pa'].value=45
+    ud=oim.oimUD(d=1,f=0.1,y=10)
+    m2=oim.oimModel(c,ud)
+    
+And finally, we produce the same plots as before for this new complex model.
+
+.. code-block:: python
+
+    m2.showModel(512,0.06,wl=[1e-6,10e-6],legend=True, normalize=True,normPow=1)
+
+    vc=m2.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr)
+    v=np.abs(vc.reshape(nwl,nB))
+
+    fig,ax=plt.subplots(1,2,figsize=(15,5))
+    titles=["East-West Baselines","North-South Baselines"]
+    for iwl in range(nwl):
+        cwl=iwl/(nwl-1)
+        ax[0].plot(B/wl[iwl]/units.rad.to(units.mas),v[iwl,:nB//2],
+                color=plt.cm.plasma(cwl))
+        ax[1].plot(B/wl[iwl]/units.rad.to(units.mas),v[iwl,nB//2:],
+               color=plt.cm.plasma(cwl))  
+
+    for i in range(2):
+        ax[i].set_title(titles[i])
+        ax[i].set_xlabel("B/$\lambda$ (cycles/rad)")
+    ax[0].set_ylabel("Visibility")    
+    ax[1].get_yaxis().set_visible(False)   
+
+    norm = colors.Normalize(vmin=np.min(wl)*1e6,vmax=np.max(wl)*1e6)
+    sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
+    fig.colorbar(sm, ax=ax,label="$\\lambda$ ($\\mu$m)")
+    
+.. image:: ../../images/customCompImageFastRotator2.png
+  :alt: Alternative text   
+  
+.. image:: ../../images/customCompImageFastRotatorVis.png
+  :alt: Alternative text   
+  
+Creating new Image Components : Spiral
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Creating new Radial profile Components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

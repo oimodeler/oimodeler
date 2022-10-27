@@ -39,4 +39,4 @@ These packages are automatically installed if missing when installing oimodeler 
 Checking installation
 ---------------------
 
-The check that oimodeler is properly installed you can run one of the :ref:`examples`
+The check that oimodeler is properly installed you can run :ref:`getting_started` or other :ref:`examples` scripts
