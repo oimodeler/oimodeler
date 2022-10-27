@@ -3,25 +3,30 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. image:: ../../images/logo.png
+  :alt: Alternative text
+
+oimodeler
+=========
+
 The oimodeler project aims at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at an early stage of development. 
 
 It allows to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting (using mcmc or other fitters), and plot results easily. Components can be defined in the image or Fourier plan using analytcal formula or precomputed images. They can include chromaticity and time dependence. As the software is modular and object oriented, it is easy to expand it by creating new components by deriving abstract classes. 
 
 .. warning::
 
-    The software is in early development. Current implementation:  
-    
-    - Models : Gray and chromatic models defined in Fourier and image plan.
-    - Data : interferometric data only (with basic filtering) no photometric or spectroscopic data.
-    - Data Filters : Filtering wavelength range, and data type (VIS2DATA, VISAMP...)    
-    - Fitters : Implementation of a basic emcee-based fitter with plots for results
-    - Plots : Basics plots of oifits data and uv-plan plot
-    - Utils : miscs utilities for oifits data (creating and modifying array, getting info..)   
+    The software is in early development:  
+        - Models : models defined in Fourier and Image plans with chromaticity and time dependence
+        - Data : interferometric data only. No photometric or spectroscopic data.
+        - Data Filters : Filtering wavelength range, and data type (VIS2DATA, VISAMP...)    
+        - Fitters : Implementation of a basic emcee-based fitter with plots for results
+        - Plots : Basics plots of oifits data and uv-plan plot
+        - Utils : miscs utilities for oifits data (creating and modifying array, getting info..)   
 
     No module is complete and have been fully verified up to now!
 
 A Few examples
---------------
+==============
 
 Here are some plots for the `createModelChromatic.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/createModelChromatic.py>`_ example showing various chromatic-geometric models and the corresponding simulated Visibilities.
 
@@ -33,7 +38,6 @@ Here is an example from the :ref:`createSimulator.py <createSimulator>` script s
 
 .. image:: ../../images/oimodel_Create_simulator_data.png
   :alt: Alternative text
-
 
 
 Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script showing :
