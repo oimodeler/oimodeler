@@ -16,7 +16,7 @@ It allows to manipulate data in the oifits format, build complex models from var
 .. warning::
 
     The software is in early development:  
-        - Models : models defined in Fourier and Image plans with chromaticity and time dependence
+        - Models : in Fourier and Image plans with chromaticity and time dependence
         - Data : interferometric data only. No photometric or spectroscopic data.
         - Data Filters : Filtering wavelength range, and data type (VIS2DATA, VISAMP...)    
         - Fitters : Implementation of a basic emcee-based fitter with plots for results
