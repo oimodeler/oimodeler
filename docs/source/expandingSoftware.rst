@@ -300,7 +300,6 @@ Let's create a some spatial frequencies, with some chromaticity. We create basel
     nwl=20
     wl=np.linspace(1e-6,2e-6,num=nwl)
 
-
     B=np.linspace(0,100,num=nB//2)
     Bx=np.append(B,B*0) # East-West 
     By=np.append(B*0,B) # North-South 
@@ -389,7 +388,7 @@ And finally, we produce the same plots as before for this new complex model.
 .. image:: ../../images/customCompImageFastRotator2.png
   :alt: Alternative text   
   
-.. image:: ../../images/customCompImageFastRotatorVis.png
+.. image:: ../../images/customCompImageFastRotatorVis2.png
   :alt: Alternative text   
   
 Creating new Image Components : Spiral
