@@ -79,6 +79,10 @@ class oimSimulator(object):
             
         if model!=None:        
             self.setModel(model)
+        
+        
+        if model!=None and not(data is  None):
+            self.compute(computeChi2=True,computeSimulatedData=True)
     
     def setModel(self,model):
         self.model=model
