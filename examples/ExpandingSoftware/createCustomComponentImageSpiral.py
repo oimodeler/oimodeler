@@ -100,7 +100,7 @@ label=["East-West Baselines",]
 ax.plot(B/wl/units.rad.to(units.mas),v[:nB//2],color="r",label="East-West Baselines")
 ax.plot(B/wl/units.rad.to(units.mas),v[nB//2:],color="b",label="North-South Baselines")  
 
-ax.set_xlabel("B/$\lambda$ (cycles/rad)")
+ax.set_xlabel("B/$\lambda$ (cycles/mas)")
 ax.set_ylabel("Visibility")    
 ax.legend()
 
