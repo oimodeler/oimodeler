@@ -144,5 +144,4 @@ ax[1].get_yaxis().set_visible(False)
 norm = colors.Normalize(vmin=np.min(wl)*1e6,vmax=np.max(wl)*1e6)
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax,label="$\\lambda$ ($\\mu$m)")
-fig.savefig(os.path.join(path,os.pardir,"images","customCompImageFastRotatorVis.png"))
-
+fig.savefig(os.path.join(path,os.pardir,"images","customCompImageFastRotatorVis2.png"))
