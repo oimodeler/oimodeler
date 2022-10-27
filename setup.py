@@ -20,4 +20,5 @@ setup(name='oimodeler',
                         'astropy',
                         'astroquery'
                         ,'emcee',
-                        'corner'])
+                        'corner',
+                        'tqdm'])
