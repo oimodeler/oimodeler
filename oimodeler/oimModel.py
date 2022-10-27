@@ -482,13 +482,13 @@ class oimComponentFourier(oimComponent):
     def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
         
         if self.elliptic==True:   
-            pa_rad=(self.params["pa"](wl,t)+90)* \
+            pa_rad=(self.params["pa"](wl,t))* \
                         self.params["pa"].unit.to(units.rad)      
             co=np.cos(pa_rad)
             si=np.sin(pa_rad)
             fxp=ucoord*co-vcoord*si
             fyp=ucoord*si+vcoord*co
-            rho=np.sqrt(fxp**2+fyp**2/self.params["elong"](wl,t)**2) 
+            rho=np.sqrt(fxp**2/self.params["elong"](wl,t)**2+fyp**2) 
         else:
             fxp=ucoord
             fyp=vcoord
@@ -538,14 +538,14 @@ class oimComponentFourier(oimComponent):
         
         if self.elliptic:
        
-            pa_rad=(self.params["pa"](wl_arr,t_arr)+90)* \
+            pa_rad=(self.params["pa"](wl_arr,t_arr))* \
                                self.params["pa"].unit.to(units.rad)
                                
             xp=x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
             yp=x_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
             
-            x_arr=xp
-            y_arr=yp*self.params["elong"](wl_arr,t_arr)
+            x_arr=xp*self.params["elong"](wl_arr,t_arr)
+            y_arr=yp
             
         image = self._imageFunction(x_arr.reshape(dims),y_arr.reshape(dims),
                                     wl_arr.reshape(dims),t_arr.reshape(dims))
@@ -977,7 +977,7 @@ class oimModel(object):
         
 
     def getImage(self,dim,pixSize,wl=None,t=None,fits=False, 
-                 fromFT=False,squeeze=True):
+                 fromFT=False,squeeze=True,normalize=False):
         """
         Compute and return an image or and image cube (if wavelength and time 
         are given). The returned image as the x,y dimension dim in pixel with
@@ -1046,10 +1046,14 @@ class oimModel(object):
            
         
         else:
-            image=np.ndarray(dims)
+            image=np.zeros(dims)
             for c in self.components:
                 image+=c.getImage(dim,pixSize,wl,t)
-          
+                
+        if normalize==True:
+            for it in range(nt):
+                for iwl in range(nwl):
+                    image[it,iwl,:,:]/=np.max(image[it,iwl,:,:])
             
         if squeeze==True:
             image= np.squeeze(image)
@@ -1109,7 +1113,8 @@ class oimModel(object):
 
     def showModel(self,dim,pixSize,wl=None,t=None, 
         fromFT=False,axe=None,normPow=0.5,figsize=(3.5,2.5),savefig=None,
-        colorbar=True,legend=False,swapAxes=False,kwargs_legend={},**kwargs):
+        colorbar=True,legend=False,swapAxes=True,kwargs_legend={},
+        normalize=False,**kwargs):
         """
         
         Show the mode Image or image-Cube
@@ -1155,7 +1160,7 @@ class oimModel(object):
 
         """
 
-        im=self.getImage(dim,pixSize,wl,t,fromFT=fromFT,squeeze=False)
+        im=self.getImage(dim,pixSize,wl,t,fromFT=fromFT,squeeze=False,normalize=normalize)
               
         t=np.array(t).flatten()      
         wl=np.array(wl).flatten()
@@ -1166,27 +1171,38 @@ class oimModel(object):
         nt=t.size    
         nwl=wl.size
     
-        if axe==None:
+        if axe is None:
             fig,axe=plt.subplots(nwl,nt,figsize=(figsize[0]*nt,figsize[1]*nwl)
                 ,sharex=True,sharey=True,subplot_kw=dict(projection='oimAxes'))    
         else:
-            fig=axe.get_figure()
+            try:
+                fig=axe.get_figure()
+            except:
+                fig=axe.flatten()[0].get_figure()
          
 
         axe=np.array(axe).flatten().reshape((nwl,nt))
+        
+        
+        if not('norm' in kwargs):
+            kwargs['norm']=colors.PowerNorm(gamma=normPow)
+            
         
         for iwl,wli in enumerate(wl):
             for it,ti in enumerate(t):
                 if swapAxes==False:
                     cb=axe[iwl,it].imshow(im[it,iwl,:,:],
-                        extent=[dim/2*pixSize,-dim/2*pixSize,
+                        extent=[-dim/2*pixSize,dim/2*pixSize,
                                 -dim/2*pixSize,dim/2*pixSize],
-                        norm=colors.PowerNorm(gamma=normPow),**kwargs)
+                        origin='lower',**kwargs)
                 else:
                     cb=axe[iwl,it].imshow(im[iwl,it,:,:],
-                        extent=[dim/2*pixSize,-dim/2*pixSize,
+                        extent=[-dim/2*pixSize,dim/2*pixSize,
                                 -dim/2*pixSize,dim/2*pixSize],
-                        norm=colors.PowerNorm(gamma=normPow),**kwargs)
+                        origin='lower',**kwargs)
+                
+                axe[iwl,it].set_xlim(dim/2*pixSize,-dim/2*pixSize)
+                
                 
                 if iwl==nwl-1:
                     axe[iwl,it].set_xlabel("$\\alpha$(mas)")
