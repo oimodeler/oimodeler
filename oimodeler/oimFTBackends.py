@@ -21,12 +21,12 @@ class numpyFFTBackend():
         
         dim=im.shape[3]
         fft2D=np.fft.fftshift(np.fft.fft2(np.fft.fftshift(im,axes=[-2,-1]),axes=[-2,-1]),axes=[-2,-1])
-        
+
         freqVectX=np.fft.fftshift(np.fft.fftfreq(dim,pix))
-        freqVectY=np.fft.fftshift(np.fft.fftfreq(dim,pix))
-        grid=(tin,wlin,freqVectX,freqVectY)  
+        #freqVectY=np.fft.fftshift(np.fft.fftfreq(dim,pix))
+        grid=(tin,wlin,freqVectX,freqVectX)  
         
-        coord=np.transpose([t,wl,ucoord,vcoord])  
+        coord=np.transpose([t,wl,vcoord,ucoord])  
         real=interpolate.interpn(grid,np.real(fft2D),coord,bounds_error=False,fill_value=None)
         imag=interpolate.interpn(grid,np.imag(fft2D),coord,bounds_error=False,fill_value=None)
         vc=real+imag*1j
@@ -79,9 +79,9 @@ try:
             fft2D=np.fft.fftshift(fft_out,axes=[-2,-1])
             
             freqVectX=np.fft.fftshift(np.fft.fftfreq(dim,pix))
-            freqVectY=np.fft.fftshift(np.fft.fftfreq(dim,pix))
-            grid=(tin,wlin,freqVectX,freqVectY)  
-            coord=np.transpose([t,wl,ucoord,vcoord])
+            #freqVectY=np.fft.fftshift(np.fft.fftfreq(dim,pix))
+            grid=(tin,wlin,freqVectX,freqVectX)  
+            coord=np.transpose([t,wl,vcoord,ucoord])
             
             real=interpolate.interpn(grid,np.real(fft2D),coord,bounds_error=False,fill_value=None)
             imag=interpolate.interpn(grid,np.imag(fft2D),coord,bounds_error=False,fill_value=None)
