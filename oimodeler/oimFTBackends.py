@@ -65,7 +65,7 @@ try:
             fft_out = pyfftw.empty_aligned((nt,nwl,dim, dim), dtype='complex128')
             fft_object = pyfftw.FFTW(fft_in, fft_out, axes=(2,3))
             
-            return fft_in,fft_out,fft_object,dim,nwl,nt
+            return fft_in,fft_out,fft_object,dim, nt, nwl
         
         def compute(backendPreparation,im,pix,wlin,tin,ucoord,vcoord,wl,t):
             
