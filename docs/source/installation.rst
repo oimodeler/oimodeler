@@ -30,6 +30,7 @@ oimodeler python library depends only on the following packages:
 - `astroquery <https://astroquery.readthedocs.io/en/latest/>`_
 - `emcee <https://emcee.readthedocs.io/en/stable/>`_
 - `corner <https://corner.readthedocs.io/en/latest/>`_
+- `tqdm <https://tqdm.github.io/>`_
 
     
 These packages are automatically installed if missing when installing oimodeler with the pip command but manual installation are required when cloning the repository.
