@@ -394,6 +394,118 @@ And finally, we produce the same plots as before for this new complex model.
 Creating new Image Components : Spiral
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+In the `createCustomComponentImageSpiral.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomComponentImageSpiral>`_ example we will create a new component derived from the oimImageComponent which describe a logarithmic spiral. Unlike with the previous example, we will write the equation defining the intensity distribution of such model in the oimImageComponent derived class.
+
+But first let's import a few packages used in this example:
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as colors
+    import matplotlib.cm as cm
+    import oimodeler as oim
+    from astropy import units as units
+
+Now we will define the new class for the spiral model. Again will derived from the oimComponentImage as the model is defined in the image plane. We first write the __init__ method of the new class. It needs to includes all the model parameters. 
+
+.. code-block:: python
+
+    class oimSpiral(oim.oimComponentImage):      
+        name="Spiral component"
+        shorname="Sp"      
+        elliptic=True
+        
+        def __init__(self,**kwargs):
+            super(). __init__(**kwargs)
+                    
+            self.params["fwhm"]=oim.oimParam(**oim._standardParameters["fwhm"])
+            self.params["P"]=oim.oimParam(name="P",value=1,description="Period in mas",unit=units.mas)
+            self.params["width"]=oim.oimParam(name="width",value=0.01,description="Width as filling factor",unit=units.one)
+           
+            self._pixSize=0.05*units.mas.to(units.rad)
+            
+            self._t = np.array([0]) # constant value <=> static model
+            self._wl = np.array([0])  # constant value <=> achromatic model
+            
+            self._eval(**kwargs)
+
+Here we chose to fix the pixel size in the __init__ method. As we don't intent to have chromaticity, we fixed the internal time and wavelength arrays.
+
+Unlike in the previous example, as we don't use externally computed image, we can implement the ``_imageFunction`` of the class instead of the ``_internaImage`` one. The main difference is that the ``_imageFunction`` directly provide the 4D-grid in time, walnvegth and x and y.
+
+.. code-block:: python
+
+    def _imageFunction(self,xx,yy,wl,t):
+        
+        r=np.sqrt(xx**2+yy**2)  
+        phi=np.arctan2(yy,xx)
+        
+        p=self.params["P"](wl,t)
+        sig=self.params["fwhm"](wl,t)/2.35
+        w=self.params["width"](wl,t)
+        
+        im=1 + np.cos(-phi-2*np.pi*np.log(r/p+1))
+        im=(im<2*w)*np.exp(-r**2/(2*sig**2))
+        return im
+        
+.. note::
+    As xx and yy are transformed coordinates, r and phi takes into account the ellipticity and orientation using the ``pa`` and ``elong`` keywords
+    
+We create a model consisting of two components: the newly defined oimSpiral class and a uniform disk (oimUD).
+
+.. code-block:: python
+
+    ud=oim.oimUD(d=2,f=0.2)
+    c=oimSpiral(dim=256,fwhm=5,P=0.1,width=0.2,pa=30,elong=2,x=10,f=0.8)
+    m=oim.oimModel(c,ud)
+    
+Then we plot the image of the model (using the direct image formula and going back and forth to the Fourier plan).
+
+.. code-block:: python
+
+    fig,ax=plt.subplots(1,2,figsize=(10,5))
+    m.showModel(256,0.1,swapAxes=True,fromFT=False,normPow=1,axe=ax[0],colorbar=False)
+    m.showModel(256,0.1,swapAxes=True,fromFT=True,normPow=1,axe=ax[1],colorbar=False)
+    ax[1].get_yaxis().set_visible(False)
+    ax[0].set_title("Direct Image")
+    ax[1].set_title("From FFT")
+
+.. image:: ../../images/customCompImageSpiral.png
+  :alt: Alternative text  
+
+And finally the visibility from the models for a fixed walvength and a series of baselines in two perpendicular orientations.
+
+.. code-block:: python
+
+    nB=5000
+    nwl=1
+    wl=0.5e-6
+
+    B=np.linspace(0,100,num=nB//2)
+    Bx=np.append(B,B*0)
+    By=np.append(B*0,B)
+
+    spfx=Bx/wl
+    spfy=By/wl
+
+    vc=m.getComplexCoherentFlux(spfx,spfy)
+    v=np.abs(vc/vc[0])
+
+    fig,ax=plt.subplots(1,1)
+    label=["East-West Baselines",]
+
+    ax.plot(B/wl/units.rad.to(units.mas),v[:nB//2],color="r",label="East-West Baselines")
+    ax.plot(B/wl/units.rad.to(units.mas),v[nB//2:],color="b",label="North-South Baselines")  
+
+    ax.set_xlabel("B/$\lambda$ (cycles/rad)")
+    ax.set_ylabel("Visibility")    
+    ax.legend()
+
+.. image:: ../../images/customCompImageSpiralVis.png
+  :alt: Alternative text  
+
+
 Creating new Radial profile Components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. warning::

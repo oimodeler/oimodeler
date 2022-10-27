@@ -11,7 +11,6 @@ import matplotlib.cm as cm
 from astropy import units as units
 import oimodeler as oim
 from fastRotator import fastRotator
-
 import os
 
 path = os.path.dirname(oim.__file__)
