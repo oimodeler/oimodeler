@@ -49,7 +49,7 @@ fig0,ax0= sim.plot(["VIS2DATA","T3PHI"],
 
 #%%
 
-fit=oim.oimFitterEmcee(files,model,nwalkers=10)
+fit=oim.oimFitterEmcee(files,model,nwalkers=20)
 fit.prepare(init="random")
 print(fit.initialParams)
 fit.run(nsteps=2000,progress=True)
