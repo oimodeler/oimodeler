@@ -37,12 +37,14 @@ print(freeParams)
  
 
 #%%   
-im = mUDPt.getImage(512,0.2)
-plt.imshow(im**0.1)
+
+im = mUDPt.getImage(512,0.1)
+plt.figure()
+plt.imshow(im**0.2)
 plt.savefig(os.path.join(path,os.pardir,"images","basicModel_imshow.png"))
 
 #%%
-figImg,axImg=mUDPt.showModel(512,0.1,normPow=0.2, figsize=(5,4),
+figImg,axImg,Img=mUDPt.showModel(512,0.1,normPow=0.2, figsize=(5,4),
     savefig=os.path.join(path,os.pardir,"images","basicModel_showModel.png"))
 
 #%%
@@ -62,6 +64,7 @@ ccf = mUDPt.getComplexCoherentFlux(spf,spf*0) # East-West baselines
 
 v = np.abs(ccf)
 v=v/v.max()
+plt.figure()
 plt.plot(spf , v)
 plt.xlabel("spatial frequency (cycles/rad)")
 plt.ylabel("Visbility")
