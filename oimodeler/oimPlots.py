@@ -5,11 +5,8 @@ Created on Fri Sep  9 11:21:49 2022
 @author: Ame
 """
 import matplotlib.pyplot as plt
-import matplotlib.projections as proj
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerLineCollection
-
-''
 import numpy as np
 import os
 from astropy.io import fits
