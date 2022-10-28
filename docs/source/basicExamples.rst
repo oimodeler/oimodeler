@@ -218,7 +218,9 @@ The oiModel can return an image of the model using the getImage method. It takes
 
 .. code-block:: python
     
-    im=mUDPt.getImage(512,1)
+    
+    im=mUDPt.getImage(512,0.1)
+    plt.figure()
     plt.imshow(im**0.2)
 
 .. image:: ../../images/basicModel_imshow.png
@@ -231,7 +233,7 @@ Alternatively we can use the method showModel which take the same argument as th
 
 .. code-block:: python
 
-    figImg,axImg=mUDPt.showModel(512,0.2,normPow=0.1)
+    figImg,axImg=mUDPt.showModel(512,0.1,normPow=0.2)
 
 
 .. image:: ../../images/basicModel_showModel.png
@@ -265,6 +267,7 @@ We can now plot the visibility from the CCF as the function of the spatial frequ
     
     v = np.abs(ccf)
     v=v/v.max()
+    plt.figure()
     plt.plot(spf , v)
     plt.xlabel("spatial frequency (cycles/rad)")
     plt.ylabel("Visbility")

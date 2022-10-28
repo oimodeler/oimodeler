@@ -112,7 +112,7 @@ Now let's create a similar model but with elongated components. We will replace 
     el=oim.oimEllipse(d=0.5,f=oim.oimInterpWl([3e-6,4e-6],[2,0.1]),elong=2, pa=90)
 
     m3=oim.oimModel([el,eg])
-    fig3im,ax3im,im3 = m3.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(3.5,2.5),normPow=0.2)
+    fig3im,ax3im,im3 = m3.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(3.5,2.5),normPow=0.5)
 
 .. image:: ../../images/complexModel_Elong.png
   :alt: Alternative text
@@ -203,7 +203,7 @@ Let's create a new model which include a elongated ring perpendicular to the Gau
 
     m4= oim.oimModel([el, eg,er])
 
-    fig4im,ax4im,im4 = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.2,figsize=(3.5,2.5))
+    fig4im,ax4im,im4 = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.5,figsize=(3.5,2.5))
        
  
 .. image:: ../../images/complexModel_link.png
@@ -216,7 +216,7 @@ Although quite complex this models only have 9 free parameters. If we change the
     el.params['d'].value = 4
     el.params['pa'].value = 45
         
-    m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.2,figsize=(3.5,2.5))    
+    m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.5,figsize=(3.5,2.5))    
       
 .. image:: ../../images/complexModel_linkRotScale.png
   :alt: Alternative text  
