@@ -64,8 +64,6 @@ Acknowledgment
 
 The oimodeler package is developed with support from the `VLTI/MATISSE <https://www.matisse.oca.eu/fr/accueil-matisse>`_ consortium and the ANR project `MASSIF <https://www.anr-massif.fr>`_ .
 
-
-
 Table of Contents
 =================
 
