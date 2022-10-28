@@ -353,7 +353,7 @@ Here we add a uniform disk component ``oimUD``
 .. code-block:: python
 
     c.params['f'].value=0.9
-    c.params['pa'].value=45
+    c.params['pa'].value=30
     ud=oim.oimUD(d=1,f=0.1,y=10)
     m2=oim.oimModel(c,ud)
     

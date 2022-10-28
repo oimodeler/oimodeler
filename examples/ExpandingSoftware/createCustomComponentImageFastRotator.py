@@ -66,7 +66,7 @@ m=oim.oimModel(c)
 #%% Plotting the model image
 
 m.showModel(512,0.025,wl=[1e-6,10e-6 ],legend=True,normalize=True,
-        savefig=os.path.join(path,os.pardir,"images","customCompImageFastRotator.png")))
+        savefig=os.path.join(path,os.pardir,"images","customCompImageFastRotator.png"))
 
 #%% Computing and plotting visibilities for various baselines and walvelengths
 
@@ -111,7 +111,7 @@ fig.savefig(os.path.join(path,os.pardir,"images","customCompImageFastRotatorVis.
 
 #%% Modifying the fast rotator parameters and  creating a new model with UD component
 c.params['f'].value=0.9
-c.params['pa'].value=45
+c.params['pa'].value=30
 ud=oim.oimUD(d=1,f=0.1,y=10)
 m2=oim.oimModel(c,ud)
 
@@ -144,3 +144,33 @@ norm = colors.Normalize(vmin=np.min(wl)*1e6,vmax=np.max(wl)*1e6)
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax,label="$\\lambda$ ($\\mu$m)")
 fig.savefig(os.path.join(path,os.pardir,"images","customCompImageFastRotatorVis2.png"))
+
+
+
+#%%  Plot an image and the visibility side by side ( for main page of documentation)
+
+fig,ax=plt.subplots(1,3,figsize=(15,3.5))
+m2.showModel(512,0.06,wl=[1e-6,2e-6],legend=True, normalize=True,normPow=1,axe=ax[:2],colorbar=False,cmap=plt.cm.plasma)
+
+labels=["East-West Baselines","North-South Baselines"]
+for iwl in range(nwl):
+    cwl=iwl/(nwl-1)
+    ax[2].plot(B/wl[iwl]/units.rad.to(units.mas),v[iwl,:nB//2],
+            color=plt.cm.plasma(cwl),label=labels[1])
+    ax[2].plot(B/wl[iwl]/units.rad.to(units.mas),v[iwl,nB//2:],
+           color=plt.cm.plasma(cwl),alpha=0.1,label=labels[1])  
+    labels=[None,None]
+
+ax[2].set_xlabel("B/$\lambda$ (cycles/rad)")
+ax[2].set_ylabel("Visibility")    
+ax[2].legend()
+
+plt.subplots_adjust(left=0.05,bottom=0.15,right=0.95,top=0.95,wspace=0.25,hspace=0.05)
+
+norm = colors.Normalize(vmin=np.min(wl)*1e6,vmax=np.max(wl)*1e6)
+sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
+fig.colorbar(sm, ax=ax,label="$\\lambda$ ($\\mu$m)")
+fig.savefig(os.path.join(path,os.pardir,"images","customCompImageFastRotatorImageAndVis.png"))
+
+
+

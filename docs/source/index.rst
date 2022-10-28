@@ -39,7 +39,6 @@ Here is an example from the :ref:`createSimulator.py <createSimulator>` script s
 .. image:: ../../images/oimodel_Create_simulator_data.png
   :alt: Alternative text
 
-
 Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script showing :
 
 - the parameters values (and corresponding chi2 as a colorscale) for walkers from a emcee run on a binary model
@@ -52,7 +51,6 @@ Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script sh
   
 .. image:: ../../images/SimpleFitCorner.png
   :alt: Alternative text
-
 
 .. toctree::
     overview
