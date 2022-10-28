@@ -4,9 +4,13 @@ Created on Tue Nov 23 15:26:42 2021
 
 @author: Ame
 """
-
+from .oimOptions import *
+from .oimOptions import oimOptions
+from .oimFTBackends import *
+from .oimParam import *
+from .oimParam import _standardParameters
 from .oimModel import *
-from .oimModel import _standardParameters
+from .oimComponentImage import *
 from .oimData import *
 from .oimData import _oimDataType, _oimDataTypeErr, _oimDataTypeArr
 from .oimFitter import *
@@ -14,10 +18,10 @@ from .oimSimulator import *
 from .oimUtils import *
 from .oimDataFilter import *
 from .oimPlots import *
-from .oimOptions import *
-from .oimOptions import oimOptions
-from .oimFTBackends import *
-from .oimComponentImage import *
+
+
+import numpy as np
+np.seterr(invalid='ignore')
 
 from os.path import join, dirname, split
 import inspect

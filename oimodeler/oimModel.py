@@ -8,14 +8,12 @@ Created on Tue Nov 23 15:26:42 2021
 import numpy as np
 from astropy import units as units
 from scipy.special import j0,j1,jv
-from scipy import integrate
-import numbers
-from scipy import interpolate
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import oimodeler as oim
+from oimodeler import oimParam,_standardParameters,oimInterpWl,oimParamInterpWl,oimInterpTime,oimParamInterpTime,oimParamLinker
 
-np.seterr(invalid='ignore')
+
 ###############################################################################
 """
 Useful definitions.
@@ -44,292 +42,6 @@ def getFourierComponents():
         except:
             pass
     return res
-            
-###############################################################################
-
-class oimParam(object):
-    """
-    Class of model parameters
-    """
-    def __init__(self,name=None,value=None,mini=-1*np.inf,maxi=np.inf,
-                 description="",unit=1,free=True,error=0):
-        """
-        Create and initiliaze a new instance of the oimParam class
-        Parameters
-        ----------
-        name : string, optional
-            name of the Parameter. The default is None.
-        value : float, optional
-            value of the parameter. The default is None.
-        mini : float, optional
-            mininum value allowed for the parameter. The default is -1*np.inf.
-        maxi : float, optional
-            maximum value allowed for the parameter. The default is np.inf.
-        description : string, optional
-            A description of the parameter. The default is "".
-        unit : 1 or astropy.unit, optional
-            unit of the parameter. The default is 1.
-
-        Returns
-        -------
-        None.
-
-        """
-        self.name=name
-        self.value=value 
-        self.error=error
-        self.min=mini
-        self.max=maxi
-        self.free=free              
-        self.description=description
-        self.unit=unit
-
-    def set(self,**kwargs):
-        for key, value in kwargs.items(): 
-            try:
-                self.__dict__[key]=value
-            except  NameError:
-                print("Note valid parameter : {}".format(value))
-                
-    
-    def __call__(self,wl=None,t=None):
-        """ The call function will be useful for wavelength or time dependent
-        parameters. In a simple oimParam it only return the parameter value
-        """
-        return self.value
-    
-    
-    def __str__(self):
-        try :
-            return "oimParam {} = {} \xB1 {} {} range=[{},{}] {} ".format(self.name,
-                self.value,self.error,self.unit.to_string(),self.min,self.max,'free' if self.free else 'fixed')
-        except:
-            return "oimParam is {}".format(type(self))
-
-    def __repr__(self):
-        try:
-            return "oimParam at {} : {}={} \xB1 {} {} range=[{},{}] free={} ".format(hex(id(self)),self.name,
-                self.value,self.error,self.unit.to_string(),self.min,self.max,self.free)
-        except:
-            return "oimParam at {} is  {}".format(hex(id(self)),type(self))
-
-
-
-###############################################################################
-
-class oimInterpWl(object):
-    """
-    Structure for creating oimParamInterpWl directly in oimParam defintion
-    """
-    def __init__(self,wl=[],value=None):
-        self.wl=wl
-        self.value=value
-
-###############################################################################
-        
-class oimParamInterpWl(oimParam):
-    def __init__(self,param,interpWl):
-        
-        self.name=param.name
-        self.description=param.description
-        self.unit=param.unit
-        
-        value= interpWl.value
-        wl=interpWl.wl
-        nwl=len(wl)
-      
-        if value==None:
-            value=[self.value]*nwl
-        elif isinstance(value,numbers.Number):
-            value=[value]*nwl
-        else:
-            if len(value)!=nwl:
-                raise TypeError("wl and val should have the same length :"  
-                            "len(x)={}, len(y)={}".format(len(wl), len(value)))
-                
-        self.params=[]
-        self._wl=wl
-        self._nwl=nwl
-        
-        for i in range(nwl):
-           
-            pi=oimParam(name=param.name,value=value[i],mini=param.min,
-                        maxi=param.max,description=param.description,
-                        unit=param.unit,free=param.free,error=param.error)
-            self.params.append(pi)
-            
-
-
-        self.value=self.params            
-
-    def __call__(self,wl=None,t=None):
-        values=np.array([pi.value for pi in self.params])
-        return np.interp(wl,self.wl,values,left=values[0], right=values[-1])
-  
-             
-        
-    @property
-    def wl(self):
-        return self._wl
-    
-    @wl.setter
-    def wl(self,_wl):
-        nwl=len(_wl)
-        if nwl== self._nwl:
-            self._wl=np.array(_wl)
-        else:
-             raise TypeError("Can't modify number of key wls in oimParamInterpWl "
-                             "after creation. Consider creating a new parameter")    
-###############################################################################
-
-class oimInterpTime(object):
-    """
-    Structure for creating oimParamInterpTime directly in oimParam defintion
-    """
-    def __init__(self,t=[],value=None):
-        self.t=t
-        self.value=value
-###############################################################################
-        
-class oimParamInterpTime(oimParam):
-    def __init__(self,param,interpTime):
-        
-        self.name=param.name
-        self.description=param.description
-        self.unit=param.unit
-        
-        value= interpTime.value
-        t=interpTime.t
-        nt=len(t)
-      
-        if value==None:
-            value=[self.value]*nt
-        elif isinstance(value,numbers.Number):
-            value=[value]*nt
-        else:
-            if len(value)!=nt:
-                raise TypeError("nt and val should have the same length :"  
-                            "len(x)={}, len(y)={}".format(len(nt), len(value)))
-                
-        self.params=[]
-        self._t=t
-        self._nt=nt
-        
-        for i in range(nt):
-           
-            pi=oimParam(name=param.name,value=value[i],mini=param.min,
-                        maxi=param.max,description=param.description,
-                        unit=param.unit,free=param.free,error=param.error)
-            self.params.append(pi)
-            
-
-
-        self.value=self.params            
-
-    def __call__(self,wl=None,t=None):
-        values=np.array([pi.value for pi in self.params])
-        return np.interp(t,self.t,values,left=values[0], right=values[-1])
-  
-             
-        
-    @property
-    def t(self):
-        return self._t
-    
-    @t.setter
-    def t(self,_t):
-        nt=len(_t)
-        if nt== self._nt:
-            self._t=np.array(_t)
-        else:
-             raise TypeError("Can't modify number of key wls in oimParamInterpTime "
-                             "after creation. Consider creating a new parameter")    
-
-
-
-###############################################################################
-class oimParamLinker(object):
-    def __init__(self,param,operator="add",fact=0):
-        self.param=param    
-        self.fact=fact        
-        
-        self.op=None
-        self._setOperator(operator)
-        self.free=False
-       
-          
-    @property
-    def unit(self):
-        return self.param.unit
-    
-       
-
-    def _setOperator(self,operator):
-         if operator=="add":
-             self.op=self._add
-         elif operator=="mult":
-             self.op=self._mult            
-             
-    def _add(self,val):
-        return val+ self.fact
-    
-    def _mult(self,val):
-        return val* self.fact
-       
-        
-    def __call__(self,wl=None,t=None):  
-        return self.op(self.param.__call__(wl,t))
-        
-###############################################################################
-class oimParamNorm(object):
-    def __init__(self,params,norm=1):
-        
-        if type(params)==list:
-            self.params=params    
-        else:
-            self.params=[params] 
-        
-        
-        
-        
-        self.norm=norm        
-        
-        self.free=False
-       
-          
-    @property
-    def unit(self):
-        return self.param.unit
-        
-    def __call__(self,wl=None,t=None):  
-
-        return self.norm - np.sum([p.__call__(wl,t) for p in self.params])
-
-     
-
-###############################################################################
-
-
-    
-#Here is a list of standard parameters to be used when defining new components
-_standardParameters={
-    "x":{"name":"x","value":0,"description":"x position","unit":units.mas,"free":False},
-    "y":{"name":"y","value":0,"description":"y position","unit":units.mas,"free":False},
-    "f":{"name":"f","value":1,"description":"flux","unit":units.one},
-    "fwhm":{"name":"fwhm","value":0,"description":"FWHM","unit":units.mas},
-    "d":{"name":"d","value":0,"description":"Diameter","unit":units.mas},
-    "din":{"name":"din","value":0,"description":"Inner Diameter","unit":units.mas},
-    "dout":{"name":"dout","value":0,"description":"Outer Diameter","unit":units.mas},    
-    "elong":{"name":"elong","value":1,"description":"Elongation Ratio","unit":units.one},
-    "pa":{"name":"pa","value":0,"description":"Major-axis Position angle","unit":units.deg},
-    "skw":{"name":"skw","value":0,"description":"Skewedness","unit":units.one},
-    "skwPa":{"name":"skwPa","value":0,"description":"Skewedness Position angle","unit":units.deg},
-    "pixSize":{"name":"pixSize","value":0.1,"description":"Pixel Size","unit":units.mas},
-    "dim":{"name":"dim","value":128,"description":"Dimension in pixel","unit":units.one},
-    "wl":{"name":"wl","value":0,"description":"Wavelength","unit":units.m, "mini":0},
-    "mjd":{"name":"mjd","value":0,"description":"MJD","unit":units.day} 
-    }
-    
 
 ###############################################################################
 
@@ -710,11 +422,8 @@ class oimRing(oimComponentFourier):
           
     
     def _imageFunction(self,xx,yy,wl,t):
-        #TODO Fix the elong pb!
-        if self.elliptic==True:
-            r2=(xx**2+yy**2*self.params["elong"](wl,t)**2) 
-        else:
-            r2=(xx**2+yy**2)
+
+        r2=(xx**2+yy**2)
         return ((r2<=(self.params["dout"](wl,t)/2)**2) & 
                 (r2>=(self.params["din"](wl,t)/2)**2)).astype(float)
 
@@ -1082,7 +791,9 @@ class oimModel(object):
         for i,c in enumerate(self.components):
             for name,param in c.params.items():
                 if not(param in params.values()):
-                    if isinstance(param,oimParamInterpWl) or isinstance(param,oimParamInterpTime):
+                    if     isinstance(param,oimParamInterpWl) \
+                        or isinstance(param,oimParamInterpTime) \
+                        or isinstance(param,oim.oimParamInterpolator):
                         for iparam,parami in enumerate(param.params):
                             if not(parami in params.values()):
                                 if (parami.free==True or free==False):
