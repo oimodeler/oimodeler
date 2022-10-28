@@ -183,7 +183,7 @@ The initial parameters are stored in the ``initialParams`` member variable of th
     >>17%|█        | 349/2000 [00:10<00:48, 34.29it/s]
 
 
-Let's plot the parameters of the 10 walkers as a function of the steps of the mcmc run.
+Let's plot the parameters of the 20 walkers as a function of the steps of the mcmc run.
 
 .. code-block:: python
 
