@@ -11,7 +11,7 @@ oimodeler
 
 The oimodeler project aims at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at an early stage of development. 
 
-It allows to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting (using mcmc or other fitters), and plot results easily. Components can be defined in the image or Fourier plan using analytcal formula or precomputed images. They can include chromaticity and time dependence. As the software is modular and object oriented, it is easy to expand it by creating new components by deriving abstract classes. 
+It allows to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting (using mcmc or other fitters), and plot results easily. Components can be defined in the image or Fourier plan using analytical formulas or precomputed images. Components or model parameters can be chromatic and/or time dependent. As the software is modular and object oriented, it is easy to expand it creating new components from abstract classes. 
 
 .. warning::
 
@@ -24,8 +24,6 @@ It allows to manipulate data in the oifits format, build complex models from var
         - Utils : miscs utilities for oifits data (creating and modifying array, getting info..)   
 
     No module is complete and have been fully verified up to now!
-
-
 
 A Few examples
 ==============
@@ -67,6 +65,10 @@ Acknowledgment
 The oimodeler package is developed with support from the `VLTI/MATISSE <https://www.matisse.oca.eu/fr/accueil-matisse>`_ consortium and the ANR project `MASSIF <https://www.anr-massif.fr>`_ .
 
 
+
+Table of Contents
+=================
+
 .. toctree::
     overview
     installation
@@ -74,10 +76,8 @@ The oimodeler package is developed with support from the `VLTI/MATISSE <https://
     examples
     api
     :maxdepth: 2
-   
-Indices and tables
-==================
+
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
+
