@@ -149,8 +149,12 @@ fig.savefig(os.path.join(path,os.pardir,"images","customCompImageFastRotatorVis2
 
 #%%  Plot an image and the visibility side by side ( for main page of documentation)
 
-fig,ax=plt.subplots(1,3,figsize=(15,3.5))
-m2.showModel(512,0.06,wl=[1e-6,2e-6],legend=True, normalize=True,normPow=1,axe=ax[:2],colorbar=False,cmap=plt.cm.plasma)
+fig, ax = plt.subplot_mosaic([['upper left', 'upper right'],
+                              ['lower','lower']],figsize=(8, 9))
+ax=np.array(list(ax.values()))
+
+m2.showModel(512,0.06,wl=[1e-6,2e-6],legend=True, normalize=True,
+             normPow=1,axe=ax[:2],colorbar=False,cmap=plt.cm.plasma)
 
 labels=["East-West Baselines","North-South Baselines"]
 for iwl in range(nwl):
@@ -165,11 +169,11 @@ ax[2].set_xlabel("B/$\lambda$ (cycles/rad)")
 ax[2].set_ylabel("Visibility")    
 ax[2].legend()
 
-plt.subplots_adjust(left=0.05,bottom=0.15,right=0.95,top=0.95,wspace=0.25,hspace=0.05)
+plt.subplots_adjust(left=0.10,bottom=0.15,right=0.95,top=0.95,wspace=0.25,hspace=0.25)
 
 norm = colors.Normalize(vmin=np.min(wl)*1e6,vmax=np.max(wl)*1e6)
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
-fig.colorbar(sm, ax=ax,label="$\\lambda$ ($\\mu$m)")
+fig.colorbar(sm, ax=ax[2],label="$\\lambda$ ($\\mu$m)")
 fig.savefig(os.path.join(path,os.pardir,"images","customCompImageFastRotatorImageAndVis.png"))
 
 
