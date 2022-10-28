@@ -19,11 +19,12 @@ Modules:
 
 
 >:warning: In early development. Partially implemented:     
->* oimModel: Working with gray and chromatic models defined in Fourier plane   
->* oimData class: No filtering, no optimization of data      
->* oimSimulator: Simulated data and chi2 computation (no filtering no flagging yet)    
+>* oimModel: Fourier and image plans components. Chromaticity and time dependence of components and parameters. 
+>* oimData: only interferometric data   
+>*oimDataFilter: Wavlengths range cut, datatype selection
+>* oimSimulator: Simulated data and chi2 computation with filtering
 >* oimPlot: Basics plots of oifits data (see example below)    
->* oimUtils: Spatial frequencies, baseline name, length and PA    
+>* oimUtils: mainly helpers for oifits format (get information, create new tables...)
 
 
 
@@ -38,4 +39,6 @@ It plots data of a partly resolved binary created with:
 - oimodeler using a shifted uniform disk + unresolved component
 ![boo](./images/oimodel_Create_simulator_data.png)
 
+Here is a plot showing a model consisting of a fast rotating star plus a uniform disk. Chromatic images of fast rotator are computed with an external function encapsulated into a oimodeler component. The uniform disk is a simple Fourier-based component. The code is in the createCustomComponentImageFastRotator.py
 
+![boo](./images/customCompImageFastRotatorImageAndVis.png)
