@@ -52,6 +52,13 @@ Here is an example from the :ref:`simpleFitEmcee.py <createSimulator>` script sh
 .. image:: ../../images/SimpleFitCorner.png
   :alt: Alternative text
 
+
+Here is a plot showing a model consisting of a fast rotating star plus a uniform disk. Chromatic images of fast rotator are computed with an external function encapsulated into a oimodeler component. The uniform disk is a simple Fourier-based component. The code is in the createCustomComponentImageFastRotator.py
+
+.. image:: ../../images/customCompImageFastRotatorImageAndVis.png
+  :alt: Alternative text
+
+
 .. toctree::
     overview
     installation
