@@ -132,7 +132,7 @@ class oimFitterEmcee(oimFitter):
     def _run(self,**kwargs):
         self.sampler.run_mcmc(self.initialParams,**kwargs)
         
-        self.getResult()
+        self.getResults()
         
         return kwargs  
     
