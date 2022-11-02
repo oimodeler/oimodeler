@@ -303,7 +303,7 @@ class oimBackground(oimComponentFourier):
     name="Background"
     shortname = "Bckg"     
     def __init__(self,**kwargs):        
-         super().__init__(self,**kwargs)
+         super().__init__(**kwargs)
          self._eval(**kwargs)
 
     def _visFunction(self,ucoord,vcoord,rho,wl,t):
