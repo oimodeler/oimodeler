@@ -272,7 +272,8 @@ class oimParamInterpolator(oimParam):
         self.unit = param.unit
 
         self._init(param, **kwargs)
-        self.value = self.params
+        #self.value = self.params
+        self.param0 = param
 
     def _init(self, param, **kwargs):
         pass
@@ -405,7 +406,7 @@ class oimParamCosineTime(oimParamInterpolator):
 
 class oimParamGaussian(oimParamInterpolator):
 
-    def _init(self, param, dependence="wl", offset=0, height=0, x0=0, fwhm=0, **kwargs):
+    def _init(self, param, dependence="wl", val0=0, value=0, x0=0, fwhm=0, **kwargs):
 
         self.dependence = dependence
 
@@ -418,16 +419,15 @@ class oimParamGaussian(oimParamInterpolator):
         self.fwhm.description = "fwhm"
         self.fwhm.value = fwhm
 
-        self.offset = oimParam(name=param.name, value=offset, mini=param.min,
+        self.val0 = oimParam(name=param.name, value=val0, mini=param.min,
                                maxi=param.max, description=param.description,
                                unit=param.unit, free=param.free, error=param.error)
 
-        self.height = oimParam(name=param.name, value=height, mini=param.min,
+        self.value = oimParam(name=param.name, value=value, mini=param.min,
                                maxi=param.max, description=param.description,
                                unit=param.unit, free=param.free, error=param.error)
 
-        self.params.extend([self.x0, self.fwhm, self.offset, self.height])
-
+    
     def _interpFunction(self, wl, t):
 
         if self.dependence == "wl":
@@ -435,30 +435,29 @@ class oimParamGaussian(oimParamInterpolator):
         else:
             var = t
 
-        return self.offset.value+self.height.value *\
-            np.exp(-2.77*(var-self.x0())**2/self.fwhm()**2)
+        return self.val0()+self.value() *np.exp(-2.77*(var-self.x0())**2/self.fwhm()**2)
             
     def _getParams(self):
-        return [self.x0, self.fwhm, self.offset, self.height]
+        return [self.x0, self.fwhm, self.val0, self.value]
 
 ###############################################################################
 
 
 class oimParamMultipleGaussian(oimParamInterpolator):
 
-    def _init(self, param, dependence="wl", offset=0, height=[], x0=[], fwhm=[], **kwargs):
+    def _init(self, param, dependence="wl", val0=0, values=[], x0=[], fwhm=[], **kwargs):
 
         try:
-            if len(height) != len(x0) and len(height) != len(fwhm):
+            if len(values) != len(x0) and len(values) != len(fwhm):
                 raise TypeError(
-                    "height, x0 and fwhm should have the same length")
+                    "values, x0 and fwhm should have the same length")
         except:
-            print("height, x0 and fwhm should have the same length")
+            print("values, x0 and fwhm should have the same length")
 
-        n = len(height)
+        n = len(values)
         self.x0 = []
         self.fwhm = []
-        self.height = []
+        self.values = []
         for i in range(n):
             self.x0.append(oimParam(**_standardParameters[dependence]))
             self.x0[-1].name = "x0"
@@ -468,20 +467,16 @@ class oimParamMultipleGaussian(oimParamInterpolator):
             self.fwhm[-1].name = "fwhm"
             self.fwhm[-1].description = "fwhm"
             self.fwhm[-1].value = fwhm[i]
-            self.height.append(oimParam(name=param.name, value=height[i], mini=param.min,
+            self.values.append(oimParam(name=param.name, value=values[i], mini=param.min,
                                         maxi=param.max, description=param.description,
                                         unit=param.unit, free=param.free, error=param.error))
 
         self.dependence = dependence
 
-        self.offset = oimParam(name=param.name, value=offset, mini=param.min,
+        self.val0 = oimParam(name=param.name, value=val0, mini=param.min,
                                maxi=param.max, description=param.description,
                                unit=param.unit, free=param.free, error=param.error)
 
-        self.params.append(self.offset)
-        self.params.extend(self.x0)
-        self.params.extend(self.fwhm)
-        self.params.extend(self.height)
 
     def _interpFunction(self, wl, t):
 
@@ -489,32 +484,32 @@ class oimParamMultipleGaussian(oimParamInterpolator):
             var = wl
         else:
             var = t
-        val=self.offset.value
+        val=self.val0()
         for i in range(len(self.x0)):
-            val+=self.height[i]() *np.exp(-2.77*(var-self.x0[i]())**2/self.fwhm[i]()**2)
+            val+=self.values[i]() *np.exp(-2.77*(var-self.x0[i]())**2/self.fwhm[i]()**2)
         return val
     
     def _getParams(self):
         params=[]
-        params.append(self.offset)
+        params.append(self.val0)
         params.extend(self.x0)
         params.extend(self.fwhm)
-        params.extend(self.height)
+        params.extend(self.values)
         return params
     
 ###############################################################################
 
 
 class oimParamGaussianWl(oimParamGaussian):
-    def _init(self, param, offset=0, height=0, x0=0, fwhm=0, **kwargs):
-        super()._init(param, dependence="wl", offset=offset, height=height, x0=x0, fwhm=fwhm)
+    def _init(self, param, val0=0, values=0, x0=0, fwhm=0, **kwargs):
+        super()._init(param, dependence="wl", val0=val0, values=values, x0=x0, fwhm=fwhm)
 
 ###############################################################################
 
 
 class oimParamGaussianTime(oimParamGaussian):
-    def _init(self, param, mjd=[], values=[], **kwargs):
-        super()._init(param, dependence="mjd", keyframes=mjd, keyvalues=values)
+    def _init(self, param, val0=0, values=0, x0=0, fwhm=0, **kwargs):
+        super()._init(param, dependence="mjd", val0=val0, values=values, x0=x0, fwhm=fwhm)
 
 
 ###############################################################################
