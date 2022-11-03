@@ -139,23 +139,24 @@ class oimSimulator(object):
                     quantities=[]
                     val=[]
                     
-                    #print("Arr {} idx={}".format(arrType,arrNum))
+                    #Computing all observables from complex Coherent Flux
+                    
                     if arrType=="OI_VIS2":  
                         val.append(corrFlux2Vis2(vcompli))
                         quantities.append("VIS2DATA")
                           
-                    #Computing observables from complex Coherent Flux
+                    
                     elif arrType=="OI_VIS":
                         if dataType&oim.oimDataType.VISAMP_ABS:
                             val.append(corrFlux2VisAmpAbs(vcompli))
                             quantities.append("VISAMP")
                         elif dataType&oim.oimDataType.VISAMP_DIF:
                             val.append(corrFlux2VisAmpDif(vcompli))
-                            
                             quantities.append("VISAMP")
                         elif dataType&oim.oimDataType.VISAMP_COR:
                             val.append(corrFlux2VisAmpCor(vcompli))
                             quantities.append("VISAMP")       
+                            
                         if dataType&oim.oimDataType.VISPHI_ABS:
                             val.append(corrFlux2VisPhiAbs(vcompli))
                             quantities.append("VISPHI")                        
@@ -170,6 +171,7 @@ class oimSimulator(object):
                         if  dataType&oim.oimDataType.T3PHI:
                             val.append(corrFlux2T3Phi(vcompli))
                             quantities.append("T3PHI")                         
+                            
                     elif arrType=="OI_FLUX":
                         val.append(corrFlux2Flux(vcompli))
                         quantities.append("FLUXDATA")
@@ -182,6 +184,8 @@ class oimSimulator(object):
                     #Computing the chi2
                     if computeChi2==True:
                         for ival in range(len(val)):
+                            
+                            #For phase quantities go to the complex plan
                             if quantities[ival] in ["VISPHI","T3PHI"]:
                                 dphi= np.rad2deg(np.angle(np.exp(1j*np.deg2rad(dataVal[ival]))
                                                           *np.exp(-1j*np.deg2rad((val[ival])))))
