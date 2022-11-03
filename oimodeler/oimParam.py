@@ -298,10 +298,11 @@ class oimParamInterpolator(oimParam):
 class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
     def _init(self, param, dependence="wl", keyframes=[], keyvalues=[],
-              kind="linear", **kwargs):
+              kind="linear", extrapolate=True,**kwargs):
 
         self.dependence = dependence
         self.kind=kind
+        self.extrapolate = extrapolate
 
         self.keyframes = []
         self.keyvalues = []
@@ -327,9 +328,16 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
             var = t
         values = np.array([pi() for pi in self.keyvalues])
         keyframes = np.array([pi() for pi in self.keyframes])
+        
+        if self.extrapolate==True:
+            fill_value="extrapolate"
+            bounds_error=None
+        else:
+            fill_value = (values[0],values[-1])
+            bounds_error=False
         #return np.interp(var, keyframes, values, left=values[0], right=values[-1])
-        return interp1d( keyframes, values, fill_value="extrapolate",
-                        kind=self.kind)(var)
+        return interp1d( keyframes, values, fill_value=fill_value,
+                        kind=self.kind,bounds_error=bounds_error)(var)
     
     
 
