@@ -12,10 +12,7 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 import os
 
-
 path = os.path.dirname(oim.__file__)
-
-
 
 
 #%%
