@@ -298,7 +298,7 @@ class oimParamInterpolator(oimParam):
 class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
     def _init(self, param, dependence="wl", keyframes=[], keyvalues=[],
-              kind="linear", extrapolate=True,**kwargs):
+              kind="linear", extrapolate=False,**kwargs):
 
         self.dependence = dependence
         self.kind=kind
