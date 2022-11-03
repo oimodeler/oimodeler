@@ -69,7 +69,7 @@ try:
         
         def compute(backendPreparation,im,pix,wlin,tin,ucoord,vcoord,wl,t):
             
-            fft_in,fft_out,fft_object,dim,nt,nwl=backendPreparation
+            fft_in,fft_out,fft_object,dim,nwl,nt=backendPreparation
             
             
             fft_in[:]=np.fft.fftshift(im,axes=[-2,-1])
