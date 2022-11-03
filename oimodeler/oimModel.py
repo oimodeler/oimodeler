@@ -7,11 +7,14 @@ Created on Tue Nov 23 15:26:42 2021
 
 import numpy as np
 from astropy import units as units
+from astropy.io import fits
 from scipy.special import j0,j1,jv
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import oimodeler as oim
-from oimodeler import oimParam,_standardParameters,oimInterpWl,oimParamInterpWl,oimInterpTime,oimParamInterpTime,oimParamLinker
+from oimodeler import oimParam,_standardParameters,oimInterpWl, \
+                oimParamInterpWl,oimInterpTime,oimParamInterpTime, \
+                oimParamLinker,oimParamInterpolator,oimInterp
 
 
 ###############################################################################
@@ -91,8 +94,12 @@ class oimComponent(object):
                     if not(isinstance(self.params[key],oimParamInterpWl)):
                        self.params[key]=oimParamInterpWl(self.params[key],value)
                 elif isinstance(value,oimInterpTime):
-                     if not(isinstance(self.params[key],oimParamInterpTime)):
-                        self.params[key]=oimParamInterpTime(self.params[key],value)       
+                    if not(isinstance(self.params[key],oimParamInterpTime)):
+                        self.params[key]=oimParamInterpTime(self.params[key],value)  
+                elif isinstance(value,oimInterp):
+
+                    if not(isinstance(self.params[key],oimParamInterpolator)):
+                        self.params[key]=value.type(self.params[key],**value.kwargs)
                 else:
                     self.params[key].value=value
    
@@ -685,7 +692,7 @@ class oimModel(object):
         return res
         
 
-    def getImage(self,dim,pixSize,wl=None,t=None,fits=False, 
+    def getImage(self,dim,pixSize,wl=None,t=None,toFits=False, 
                  fromFT=False,squeeze=True,normalize=False):
         """
         Compute and return an image or and image cube (if wavelength and time 
@@ -764,9 +771,59 @@ class oimModel(object):
                 for iwl in range(nwl):
                     image[it,iwl,:,:]/=np.max(image[it,iwl,:,:])
             
-        if squeeze==True:
+        #Always squeeze dim which are equal to one if exported to fits format
+        if squeeze==True or toFits==True:
             image= np.squeeze(image)
-        return image
+            
+
+        if toFits==True:
+            
+            hdu = fits.PrimaryHDU(image)
+            hdu.header['CDELT1']=pixSize*mas2rad
+            hdu.header['CDELT2']=pixSize*mas2rad
+            hdu.header['CRVAL1']=0
+            hdu.header['CRVAL2']=0
+            hdu.header['CRPIX1']=dim/2
+            hdu.header['CRPIX2']=dim/2
+            hdu.header['CUNIT1']="rad"
+            hdu.header['CUNIT2']="rad"
+            hdu.header['CROTA1']=-0
+            hdu.header['CROTA2']=-0 
+            
+            naxis=3
+            if nwl!=1:
+                dwl=(np.roll(wl,-1)-wl)[:-1]
+            
+                if np.all(np.abs(dwl-dwl[0])<1e-12):
+                    dwl=dwl[0]
+                    
+                    hdu.header['CDELT{}'.format(naxis)]=dwl
+                    hdu.header['CRPIX{}'.format(naxis)]=0
+                    hdu.header['CRVAL{}'.format(naxis)]=wl[0]
+                    hdu.header['CUNIT{}'.format(naxis)]="m" 
+                    naxis+=1
+                    
+                else:
+                    raise TypeError("Wavelength vector is not regular. Fit image" \
+                                    " with irregular grid not yet implemented")
+            
+            if nt!=1:
+                dt=(np.roll(t,-1)-t)[:-1]
+            
+                if np.all(np.abs(dt-dt[0])<1e-12):
+                    dt=dt[0]
+                    
+                    hdu.header['CDELT{}'.format(naxis)]=dt
+                    hdu.header['CRPIX{}'.format(naxis)]=0
+                    hdu.header['CRVAL{}'.format(naxis)]=t[0]
+                    hdu.header['CUNIT{}'.format(naxis)]="day"   
+                    
+                else:
+                    raise TypeError("Time vector is not regular. Fit image" \
+                                    " with irregular grid not yet implemented")  
+            return hdu
+        else:
+            return image
 
     def getParameters(self,free=False): 
         """
@@ -785,15 +842,14 @@ class oimModel(object):
             a Dictionnary of the model parameters (or free parameters).
 
         """
-        
-   
+
         params={}
         for i,c in enumerate(self.components):
             for name,param in c.params.items():
                 if not(param in params.values()):
                     if     isinstance(param,oimParamInterpWl) \
                         or isinstance(param,oimParamInterpTime) \
-                        or isinstance(param,oim.oimParamInterpolator):
+                        or isinstance(param,oimParamInterpolator):
                         for iparam,parami in enumerate(param.params):
                             if not(parami in params.values()):
                                 if (parami.free==True or free==False):
