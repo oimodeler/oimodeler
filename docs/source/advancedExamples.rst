@@ -6,7 +6,7 @@ Advanced Examples
 Building Complex models
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-In the example `complexModel.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/complexModels.py>`_ we create and play with more complex Fourier-based models with includes:
+In the example `complexModel.py <https://github.com/oimodeler/oimodeler/blob/main/examples/AdvancedExamples/complexModels.py>`_ we create and play with more complex Fourier-based models with includes:
 
 - flatenning of some components
 - linked parameters between components
