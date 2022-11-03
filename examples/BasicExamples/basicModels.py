@@ -44,8 +44,18 @@ plt.imshow(im**0.2)
 plt.savefig(os.path.join(path,os.pardir,"images","basicModel_imshow.png"))
 
 #%%
+im=mUDPt.getImage(256,0.1,toFits=True)
+print(im)
+print(im.header)
+print(im.data)
+im=mUDPt.saveImage("modelImage.fits",256,0.1)
+
+
+#%%
 figImg,axImg,Img=mUDPt.showModel(512,0.1,normPow=0.2, figsize=(5,4),
     savefig=os.path.join(path,os.pardir,"images","basicModel_showModel.png"))
+
+
 
 #%%
 #Create some spatial frequencies (Baselines from 0 to 300m at 2.1 microns)

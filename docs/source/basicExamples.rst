@@ -229,6 +229,49 @@ The oiModel can return an image of the model using the getImage method. It takes
 
 We plot the image with a 0.2 power-law to make the uniform disk components visible: both components have the same total flux but the UD is spread on much more pixels.
 
+The image can also be returned not a a simple numpy array but as a astropy hdu object using the option ``toFits==True``. The image will then contained a header with the proper fits image keywords (NAXIS, CDELT, CRVAL...). 
+
+.. code-block:: python
+    
+    im = mUDPt.getImage(256,0.1,toFits=True)
+    print(im)
+    print(im.header)
+    print(im.data.shape)
+    
+    
+.. code-block::  
+  
+    <astropy.io.fits.hdu.image.PrimaryHDU object at 0x000002610B8C22E0>
+    
+    SIMPLE  =                    T / conforms to FITS standard                      
+    BITPIX  =                  -64 / array data type                                
+    NAXIS   =                    2 / number of array dimensions                     
+    NAXIS1  =                  256                                                  
+    NAXIS2  =                  256                                                  
+    EXTEND  =                    T                                                  
+    CDELT1  = 4.84813681109536E-10                                                  
+    CDELT2  = 4.84813681109536E-10                                                  
+    CRVAL1  =                    0                                                  
+    CRVAL2  =                    0                                                  
+    CRPIX1  =                128.0                                                  
+    CRPIX2  =                128.0                                                  
+    CUNIT1  = 'rad     '                                                            
+    CUNIT2  = 'rad     '                                                            
+    CROTA1  =                    0                                                  
+    CROTA2  =                    0                                                 
+    
+    (256, 256)
+    
+    
+Using the method ``saveImage`` from the **oimModel** class will also return image in the fits format and also save it in a specified fits file. 
+
+.. code-block:: python
+   
+    im = mUDPt.saveImage("modelImage.fits",256,0.1)
+
+.. note:
+    The return image in fits format will be 2D if no time or $\lambda$ are specified or if they are numbers, 3D if one of them is an array, and 4D if both are arrays.
+
 Alternatively we can use the method showModel which take the same argument as the getImage, but directly create a plot with proper axes and colorbar.
 
 .. code-block:: python
