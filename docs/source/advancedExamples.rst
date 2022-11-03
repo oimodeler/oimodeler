@@ -242,3 +242,301 @@ Here we create a two-components model with a time dependent Gaussian fwhm and a 
   :alt: Alternative text  
 
 
+Parameters Interpolators
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the previous example we have introduction parameters interpolators that allow to create chromatic and/or time-dependent models. Here we present in more details these interpolators. This example can be found in the  `paramInterpolators.py <https://github.com/oimodeler/oimodeler/blob/main/examples/AdvancedExamples/paramInterpolators.py>`_ script.
+
+
+The following table summarize the available interpolators and their parameters. Most of them will be presented in this example.
+
++----------------------------+---------------+-----------------------+---------------------------+
+|class name                  |oimInterp macro|Description            | parameters                |
++============================+===============+=======================+===========================+
+|oimParamInterpolatorWl      |"wl"           |Interp between key wl  |wl, values                 |
++----------------------------+---------------+-----------------------+---------------------------+
+|oimParamInterpolatorTime    |"time"         |Interp between key time|mjd, values                |
++----------------------------+---------------+-----------------------+---------------------------+
+|oimParamGaussianWl          |"GaussWl"      |Gaussian in wl         |val0, value, x0, fwhm      |
++----------------------------+---------------+-----------------------+---------------------------+
+|oimParamGaussianTime        |"GaussTime"    |Gaussian in time       |val0, value, x0, fwhm      |
++----------------------------+---------------+-----------------------+---------------------------+
+|oimParamMultipleGaussianWl  |"mGaussWl"     |Multiple Gauss. in wl  |val0 and value, x0, fwhm   |
++----------------------------+---------------+-----------------------+---------------------------+
+|oimParamMultipleGaussianTime|"mGaussTime"   |Multiple Gauss. in time|val0 and value, x0, fwhm   |
++----------------------------+---------------+-----------------------+---------------------------+
+|oimParamCosineTime          |"cosTime"      |Asym. Cosine in Time   |T0, P, values (optional x0)|
++----------------------------+---------------+-----------------------+---------------------------+
+|oimParamPolynomialWl        |"polyWl"       |Polynomial in wl       |coeffs                     |
++----------------------------+---------------+-----------------------+---------------------------+
+|oimParamPolynomialTime      |"polyTime"     |Polynomial in time     |coeffs                     |
++----------------------------+---------------+-----------------------+---------------------------+
+
+
+We start by importing the standard packages.
+
+.. code-block:: python
+
+    import oimodeler as oim
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as colors
+    import matplotlib.cm as cm
+    import os
+
+In order to simplify plotting the various interpolators we define a plotting function that can works for either a chromatic or a time-dependent model. With some baseline length, wavelength, time vectors passed and some model and interpolated parameter, the function will plot the interpolated parameters as a function of the wavelength or time, and the corresponding visilities.
+
+.. code-block:: python
+
+    nB=B.size
+    
+    if t is None:
+        n=wl.size
+        x=wl*1e6
+        y=param(wl,0)
+        xlabel="$\lambda$ ($\mu$m)"
+    else:
+        n=t.size
+        x=t-60000
+        y=param(0,t)
+        xlabel="MJD - 60000 (days)"
+
+    Bx_arr=np.tile(B[None,:], (n, 1)).flatten()
+    By_arr=Bx_arr*0
+    
+    if t is None:
+        t_arr=None
+        wl_arr=np.tile(wl[:,None], (1, nB)).flatten()
+        spfx_arr=Bx_arr/wl_arr
+        spfy_arr=By_arr/wl_arr
+    else:
+        t_arr=np.tile(t[:,None], (1, nB)).flatten()
+        spfx_arr=Bx_arr/wl
+        spfy_arr=By_arr/wl
+        wl_arr=None
+    
+    v=np.abs(model.getComplexCoherentFlux(spfx_arr,spfy_arr,wl=wl_arr,t=t_arr).reshape(n,nB))
+    
+    if ax is None:
+        fig,ax=plt.subplots(2,1)
+    else:
+        fig=ax.flatten()[0].get_figure()
+ 
+    ax[0].plot(x,y,color="r")
+    
+    
+    ax[0].set_ylabel("{} (mas)".format(param.name))
+    ax[0].get_xaxis().set_visible(False)
+    
+    for iB in range(1,nB):
+        ax[1].plot(x,v[:,iB]/v[:,0],color=plt.cm.plasma(iB/(nB-1)))
+       
+    ax[1].set_xlabel(xlabel)   
+    ax[1].set_ylabel("Visibility")
+    
+    if colorbar==True:
+        norm = colors.Normalize(vmin=np.min(B[1:]),vmax=np.max(B))
+        sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
+        fig.colorbar(sm, ax=ax,label="Baseline Length (m)")
+    
+    return fig,ax,v
+        
+We will need a baseline length vector (here 200 baselines between 0 and 60m) and we will buid for each model either a 1000 wavelengths or time vector.
+
+.. code-block:: python
+
+    nB=200
+    B=np.linspace(0,60,num=nB)
+
+    nwl=1000
+    nt=1000
+
+
+Now let's start with our first interpolator: a Gaussian in wavelength (also available for time). It can be used to model spectral features like atomic lines or molecular band in emission or absorption. 
+
+It has 4 parameters :
+
+- a central wavelength ``x0``
+- a value outside the Gaussian (or offset) : ``val0``
+- a value at the maximum of the Gaussian : ``value``
+- a full width at half maximum : ``fwhm``
+
+To create such an interpolator, we use the class **oimInterp** class and specify ``GaussWl`` as the type of interpolator. In our example below we create a  Uniform Disk model with a diameter interpolated between 2 mas (outside the Gaussian range) and 4 mas at the top of the Gaussian. The central wavelength is set to 2.1656 microns (Brackett Gamma hydrogen line) and the fwhm to 10nm.
+
+.. code-block:: python
+
+    c1 = oim.oimUD(d=oim.oimInterp('GaussWl',val0=2,value=4,x0=2.1656e-6,fwhm=1e-8))
+    m1   = oim.oimModel(c1)
+    
+Finally we can define the wavelength range and use our custom plotting function.
+
+.. code-block:: python
+
+    wl=np.linspace(2.1e-6,2.3e-6,num=nwl)
+    fig,ax,im=plotParamAndVis(B,wl,None,m1,c1.params['d'])
+    fig.suptitle("Gaussian interpolator in $\lambda$ on a uniform disk diameter",fontsize=10) 
+
+.. image:: ../../images/interp1.png
+  :alt: Alternative text  
+
+
+
+The parameters of the interpolator can be accessed using the params member variable of the oimParamInterpolator:
+
+.. code-block:: python
+
+    print(c1.params['d'].params)
+
+.. code-block::
+
+    [oimParam at 0x2610e25e220 : x0=2.1656e-06 ± 0 m range=[0,inf] free=True ,
+     oimParam at 0x2610e25e250 : fwhm=1e-08 ± 0 m range=[0,inf] free=True , 
+     oimParam at 0x2610e25e280 : d=2 ± 0 mas range=[-inf,inf] free=True , 
+     oimParam at 0x2610e25e2b0 : d=4 ± 0 mas range=[-inf,inf] free=True ]
+
+Each one can also be accessed using their name as a member variable:
+
+.. code-block:: python
+
+    print(c1.params['d'].x0)  
+
+.. code-block::
+
+    oimParam x0 = 2.1656e-06 ± 0 m range=[0,inf] free 
+    
+These parameters will behave like normal free or fixed parameters when performing model fitting. We can get the full list of parameters from our model using the ``getParameter`` method.
+
+.. code-block:: python
+
+    print(m1.getParameters())
+
+.. code-block::
+
+    {'c1_UD_x': oimParam at 0x2610e25e100 : x=0 ± 0 mas range=[-inf,inf] free=False ,
+    'c1_UD_y': oimParam at 0x2610e25e130 : y=0 ± 0 mas range=[-inf,inf] free=False ,
+    'c1_UD_f': oimParam at 0x2610e25e160 : f=1 ± 0  range=[-inf,inf] free=True ,
+    'c1_UD_d_interp1': oimParam at 0x2610e25e220 : x0=2.1656e-06 ± 0 m range=[0,inf] free=True ,
+    'c1_UD_d_interp2': oimParam at 0x2610e25e250 : fwhm=1e-08 ± 0 m range=[0,inf] free=True ,
+    'c1_UD_d_interp3': oimParam at 0x2610e25e280 : d=2 ± 0 mas range=[-inf,inf] free=True ,
+    'c1_UD_d_interp4': oimParam at 0x2610e25e2b0 : d=4 ± 0 mas range=[-inf,inf] free=True }
+
+In the dictionary returned by the getParameters method, the four interpolator parameters are called c1_UD_d_interpX.
+
+
+The second interpolator presented here is the multiple Gaussian in wavelength (also available for time). It is a generalisation of the first interpolator but with multiple values for ``x0``, ``fwhm`` and ``values``.
+
+.. code-block:: python 
+
+    c2 = oim.oimUD(f=0.5,d=oim.oimInterp("mGaussWl",val0=2,values=[4,0,0],
+                                                x0=[2.05e-6,2.1656e-6,2.3e-6],
+                                                fwhm=[2e-8,2e-8,1e-7]))
+    pt=oim.oimPt(f=0.5)
+    m2   = oim.oimModel(c2,pt)
+
+    c2.params['d'].values[1]=oim.oimParamLinker(c2.params['d'].values[0],"mult",3)
+    c2.params['d'].values[2]=oim.oimParamLinker(c2.params['d'].values[0],"add",-1)
+
+    wl=np.linspace(1.9e-6,2.4e-6,num=nwl)
+
+    fig,ax,im=plotParamAndVis(B,wl,None,m2,c2.params['d'])
+    fig.suptitle("Multiple Gaussian interpolator in $\lambda$ on a uniform disk diameter",fontsize=10)
+
+.. image:: ../../images/interp2.png
+  :alt: Alternative text    
+  
+Here to reduce the number of free parameters of the model with have linked the second and third ``values`` of the interpolator to the first one.
+ 
+ 
+Let's look at our third interpolator : an asymmetric cosine interpolator in time. As it is cyclic it might be used to simulated a cyclic variation, for example a pulsating star. 
+
+It has 5 parameters :
+
+- the Epoch (mjd) of the minimum value: ``T0``
+- the period of the variation in days ``P``
+- the mini and maximum values of the parameter as a two-elements array : ``value``
+- Optionally, the asymmetry : ``x0``  (x0=0.5 means no assymetry, x0=0 or 1 maximum asymmetry)
+
+
+.. code-block:: python
+
+    c3 = oim.oimGauss(fwhm=oim.oimInterp("cosTime",T0=60000,P=1,values=[1,3],x0=0.8))
+    m3   = oim.oimModel(c3)
+
+    t=np.linspace(60000,60006,num=nt)
+    wl=2.2e-6
+
+    fig,ax,im=plotParamAndVis(B,wl,t,m3,c3.params['fwhm'])
+    fig.suptitle("Assym. Cosine interpolator in Time on a Gaussian fwhm",fontsize=10)
+  
+.. image:: ../../images/interp3.png
+  :alt: Alternative text    
+  
+  
+Now let's have a look at the classic wavelength interpolator (also available for time). It has two parameters:
+
+- a list of reference wavelengths : ``wl``
+- a list of values at the reference wavelengths : ``values``
+
+Values will be interpolated in the range, using either linear (default), quadratic, or cubic interpolation set by the keyword ``kind``. Outside the range of defined wavlvengths the values will be either fixed (default)  or extrapolated depending on the value of the ``extrapolate`` keyword.
+
+Here we present examples with the three kind of interpolation and with or without extrapolation.
+
+.. code-block:: python
+
+    c4= oim.oimIRing(d=oim.oimInterp("wl",wl=[2e-6,2.4e-6,2.7e-6,3e-6],values=[2,6,5,6],
+                                     kind="linear",extrapolate=True))
+    m4=oim.oimModel(c4)
+
+    wl=np.linspace(1.8e-6,3.2e-6,num=nwl)
+
+    fig,ax=plt.subplots(2,6,figsize=(18,4.8),sharex=True,sharey="row")
+
+    plotParamAndVis(B,wl,None,m4,c4.params['d'],ax=ax[:,0],colorbar=False)
+    c4.params['d'].extrapolate=False
+    plotParamAndVis(B,wl,None,m4,c4.params['d'],ax=ax[:,1],colorbar=False)
+
+    c4.params['d'].extrapolate=True
+    c4.params['d'].kind="quadratic"
+    plotParamAndVis(B,wl,None,m4,c4.params['d'],ax=ax[:,2],colorbar=False)
+    c4.params['d'].extrapolate=False
+    plotParamAndVis(B,wl,None,m4,c4.params['d'],ax=ax[:,3],colorbar=False)
+
+    c4.params['d'].extrapolate=True
+    c4.params['d'].kind="cubic"
+    plotParamAndVis(B,wl,None,m4,c4.params['d'],ax=ax[:,4],colorbar=False)
+    c4.params['d'].extrapolate=False
+    plotParamAndVis(B,wl,None,m4,c4.params['d'],ax=ax[:,5],colorbar=False)
+
+    plt.subplots_adjust(left=0.03,bottom=0.1,right=0.99,top=0.9,
+                    wspace=0.05,hspace=0.05)
+                    
+    for i in range(1,6):
+        ax[0,i].get_yaxis().set_visible(False)
+        ax[1,i].get_yaxis().set_visible(False)
+
+    fig.suptitle("Linear, Quadratic and Cubic interpolators (with extrapolation"\
+             " or fixed values outside the range) in $\lambda$ on a uniform"\
+                 " disk diameter",fontsize=18)
+                     
+.. image:: ../../images/interp4.png
+  :alt: Alternative text    
+  
+Finally, xe also can use a polynominal interpolator in time (also available for wavelength). Its free parameters are the coefficients of the polynomial. The parameter ``x0`` allows to shift the reference time (in mjd) from 0 to an arbitrary date.
+
+.. code-block:: python
+
+    c5 = oim.oimUD(d=oim.oimInterp('polyTime',coeffs=[1,3.5,-0.5],x0=60000))
+    m5   = oim.oimModel(c5)
+
+    wl=2.2e-6
+    t=np.linspace(60000,60006,num=nt)
+
+    fig,ax,im=plotParamAndVis(B,wl,t,m5,c5.params['d'])
+    fig.suptitle("Polynomial interpolator in Time on a uniform disk diameter",fontsize=10)
+    plt.savefig(os.path.join(path, os.pardir, "images","interp5.png"))
+
+.. image:: ../../images/interp5.png
+  :alt: Alternative text   
+  
+  
+As for other part of the oimodeler software, **oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage. See the (NOT YET IMPLEMETED) example.

@@ -262,6 +262,8 @@ The image can also be returned not a a simple numpy array but as a astropy hdu o
     
     (256, 256)
     
+.. note::
+    Currently only regular grid in wavelength and time are allowed when exporting to fits image format. If specified the wl and t vectors need to be regularily sampled. The easiest way is to used the ``numpy.linspace`` function. If their sampling is irregular an error will be raised.
     
 Using the method ``saveImage`` from the **oimModel** class will also return image in the fits format and also save it in a specified fits file. 
 
@@ -269,8 +271,8 @@ Using the method ``saveImage`` from the **oimModel** class will also return imag
    
     im = mUDPt.saveImage("modelImage.fits",256,0.1)
 
-.. note:
-    The return image in fits format will be 2D if no time or $\lambda$ are specified or if they are numbers, 3D if one of them is an array, and 4D if both are arrays.
+.. note::
+    The returned image in fits format will be 2D if  time and wavelength are not specified or if they are numbers, 3D if one of them is an array, and 4D if both are arrays.
 
 Alternatively we can use the method showModel which take the same argument as the getImage, but directly create a plot with proper axes and colorbar.
 
