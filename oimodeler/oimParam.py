@@ -589,7 +589,7 @@ _interpolator={"wl":oimParamInterpolatorWl,
                 "mGaussTime":oimParamMultipleGaussianTime,
                 "cosTime":oimParamCosineTime,
                 "polyWl":oimParamPolynomialWl,
-                "polyTime":oimParamPolynomialTime,}
+                "polyTime":oimParamPolynomialTime}
 
 
 ###############################################################################
