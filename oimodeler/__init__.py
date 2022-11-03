@@ -8,7 +8,7 @@ from .oimOptions import *
 from .oimOptions import oimOptions
 from .oimFTBackends import *
 from .oimParam import *
-from .oimParam import _standardParameters
+from .oimParam import _standardParameters,_interpolator
 from .oimModel import *
 from .oimComponentImage import *
 from .oimData import *
