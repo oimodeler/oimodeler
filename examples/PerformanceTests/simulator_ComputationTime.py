@@ -18,6 +18,7 @@ files0=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData
 
     
 text=["Complex Corr Flux only","Complex Corr Flux + Chi2",
+      +-
       "Complex Corr Flux + Sim. Data","Full Computation "]
 computeChi2=[False,True,False,True]
 computeSimulatedData=[False,False,True,True]
