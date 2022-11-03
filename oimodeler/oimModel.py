@@ -691,6 +691,58 @@ class oimModel(object):
    
         return res
         
+    def getParameters(self,free=False): 
+        """
+        
+        Get the Model paramters (or free parameters)
+        
+        Parameters
+        ----------
+        free : Bool, optional
+            If True retrieve the free parameters of the models only. 
+            The default is False.
+
+        Returns
+        -------
+        params : Dict of oimParam
+            a Dictionnary of the model parameters (or free parameters).
+
+        """
+
+        params={}
+        for i,c in enumerate(self.components):
+            for name,param in c.params.items():
+                if not(param in params.values()):
+                    if     isinstance(param,oimParamInterpWl) \
+                        or isinstance(param,oimParamInterpTime) \
+                        or isinstance(param,oimParamInterpolator):
+                        for iparam,parami in enumerate(param.params):
+                            if not(parami in params.values()):
+                                if (parami.free==True or free==False):
+                                    params["c{0}_{1}_{2}_interp{3}".format(
+                                        i+1, c.shortname.replace(" ", "_"), 
+                                        name, iparam+1)]=parami
+                    elif isinstance(param,oimParamLinker):
+                        pass
+                    else:
+                        if (param.free==True or free==False):
+                            
+                             params["c{0}_{1}_{2}".format(i+1, 
+                                  c.shortname.replace(" ", "_"), name)]=param                           
+        return params
+
+    def getFreeParameters(self):  
+        """
+        Get the Model free paramters 
+
+        Returns
+        -------
+        Dict of oimParam
+            A Dictionnary of the model free parameters.
+        """
+        return self.getParameters(free=True)    
+
+
 
     def getImage(self,dim,pixSize,wl=None,t=None,toFits=False, 
                  fromFT=False,squeeze=True,normalize=False):
@@ -825,58 +877,14 @@ class oimModel(object):
         else:
             return image
 
-    def getParameters(self,free=False): 
-        """
+
+    def saveImage(self,filename,dim,pixSize,wl=None,t=None,fromFT=False,normalize=False):
+        im=self.getImage(dim,pixSize,wl=wl,t=t,toFits=True,
+                         fromFT=fromFT,normalize=normalize)
         
-        Get the Model paramters (or free parameters)
-        
-        Parameters
-        ----------
-        free : Bool, optional
-            If True retrieve the free parameters of the models only. 
-            The default is False.
-
-        Returns
-        -------
-        params : Dict of oimParam
-            a Dictionnary of the model parameters (or free parameters).
-
-        """
-
-        params={}
-        for i,c in enumerate(self.components):
-            for name,param in c.params.items():
-                if not(param in params.values()):
-                    if     isinstance(param,oimParamInterpWl) \
-                        or isinstance(param,oimParamInterpTime) \
-                        or isinstance(param,oimParamInterpolator):
-                        for iparam,parami in enumerate(param.params):
-                            if not(parami in params.values()):
-                                if (parami.free==True or free==False):
-                                    params["c{0}_{1}_{2}_interp{3}".format(
-                                        i+1, c.shortname.replace(" ", "_"), 
-                                        name, iparam+1)]=parami
-                    elif isinstance(param,oimParamLinker):
-                        pass
-                    else:
-                        if (param.free==True or free==False):
-                            
-                             params["c{0}_{1}_{2}".format(i+1, 
-                                  c.shortname.replace(" ", "_"), name)]=param                           
-        return params
-
-    def getFreeParameters(self):  
-        """
-        Get the Model free paramters 
-
-        Returns
-        -------
-        Dict of oimParam
-            A Dictionnary of the model free parameters.
-        """
-        return self.getParameters(free=True)    
-
-
+        im.writeto(filename,overwrite=True)
+        return im
+    
 
     def showModel(self,dim,pixSize,wl=None,t=None, 
         fromFT=False,axe=None,normPow=0.5,figsize=(3.5,2.5),savefig=None,
