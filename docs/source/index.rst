@@ -73,7 +73,7 @@ Table of Contents
     getting_started
     examples
     api
-    :maxdepth: 3
+    :maxdepth: 4
 
 
 * :ref:`genindex`
