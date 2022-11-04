@@ -13,10 +13,9 @@ import oimodeler as oim
 from scipy.interpolate import interp1d
 
 import os
+np.random.seed(1)
 
 path = os.path.dirname(oim.__file__)
-
-
 
 #%%
 class oimParamLinearRangeWl(oim.oimParamInterpolator):
@@ -30,13 +29,13 @@ class oimParamLinearRangeWl(oim.oimParamInterpolator):
         self.wl0.name="wl0"
         self.wl0.description="Initial wl of the range"
         self.wl0.value=wl0
-        
+        self.wl0.free=False
         
         self.dwl = (oim.oimParam(**oim._standardParameters["wl"]))
         self.dwl.name="dwl"
         self.dwl.description="wl step in range"
         self.dwl.value=dwl
-        
+        self.dwl.free=False
 
         self.values = []
         
@@ -57,9 +56,10 @@ class oimParamLinearRangeWl(oim.oimParamInterpolator):
 
     
     def _getParams(self):
-        params=[self.wl0]
-        params.append(self.dwl)
+        params=[]
         params.extend(self.values)
+        params.append(self.wl0)
+        params.append(self.dwl)
         return params
 
 
@@ -81,28 +81,38 @@ spfy_arr=By_arr/wl_arr
 
 
 #%%
-c = oim.oimUD(d=oim.oimInterp('rangeWl',wl0=2e-6,
-                               dwl=2.5e-8,values=np.random.rand(20)*3+2,
-                               kind="cubic"))
+
+nref=10
+
+c = oim.oimUD(d=oim.oimInterp('rangeWl',wl0=2e-6,kind="cubic",
+                               dwl=5e-8,values=np.random.rand(nref)*3+4))
 m   = oim.oimModel(c)
 
 
-v=np.abs(m.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr).reshape(nwl,nB))
 
+print(m.getParameters())
+print(m.getFreeParameters())
+#%%
+
+
+fig,ax=plt.subplots(2,1)
+ax[0].plot(wl*1e6,c.params['d'](wl,0),color="r",label="interpolated param")
+
+
+v=np.abs(m.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr).reshape(nwl,nB))
 wl0=wl0=np.linspace(c.params['d'].wl0.value,
-                    c.params['d'].wl0.value+c.params['d'].dwl.value*20,num=20)
+                    c.params['d'].wl0.value+c.params['d'].dwl.value*nref,num=nref)
 
 vals=np.array([vi.value for vi in c.params['d'].values])
 
-fig,ax=plt.subplots(2,1,figsize=(7,8))
-ax[0].plot(wl,c.params['d'](wl,0),color="r",label="interpolated param")
-ax[0].scatter(wl0,vals,marker=".",color="k",label="reference param")
+ax[0].scatter(wl0*1e6,vals,marker=".",color="k",label="reference values")
+
 ax[0].set_ylabel("UD (mas)")
 ax[0].get_xaxis().set_visible(False)
 ax[0].legend()
 
 for iB in range(1,nB):
-    ax[1].plot(wl,v[:,iB]/v[:,0],color=plt.cm.plasma(iB/(nB-1)))
+    ax[1].plot(wl*1e6,v[:,iB]/v[:,0],color=plt.cm.plasma(iB/(nB-1)))
     
    
 ax[1].set_xlabel("$\lambda$ ($\mu$m)")   
@@ -114,5 +124,5 @@ sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax,label="Baseline Length (m)")
 
 
-#plt.savefig(os.path.join(path, os.pardir, "images","interp1.png"))
+plt.savefig(os.path.join(path, os.pardir, "images","createInterp1.png"))
 

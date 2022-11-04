@@ -5,8 +5,11 @@ Expanding the Software
 
 In this section we present examples that show how to expand the functionalities of the oimodeler sofwate by creating customs objects : oimComponents, oimFilterComponents, oimFitters, and custom plotting function or utils.
 
-Creating new Fourier Components
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Creating New Components
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Box (Fourier plan formula)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the `createCustomComponentFourier.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomComponentFourier.py>`_ example we show how to implement a new model component using a formula in the Fourier plan. The component will inherit from the  **oimComponentFourier** class. The Fourier formula should be implemented in  ``_visFunction`` and optionally the formula in the image plan can be implemented using  ``_imageFunction``. 
 
@@ -152,8 +155,6 @@ We could also create a chromatic box component using the oimInterpWl class or li
 
 Let's finish this example by plotting the visibility of such models for a set of East-West and North-South baselines and wavelengths in the K band.
 
-
-
 .. code-block:: python
      
     nB = 200  # number of baselines
@@ -203,8 +204,8 @@ Let's finish this example by plotting the visibility of such models for a set of
     
 Of course, only the third model is chromatic.
 
-Creating new Image Components : Fast Rotator
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fast Rotator (External image)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the `createCustomComponentImageFastRotator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomComponentImageFastRotator.py>`_ example we will create a new component derived from the oimImageComponent using an external function that return a chromatic image cube.
 
@@ -391,8 +392,8 @@ And finally, we produce the same plots as before for this new complex model.
 .. image:: ../../images/customCompImageFastRotatorVis2.png
   :alt: Alternative text   
   
-Creating new Image Components : Spiral
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Spiral (Image plan formula)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the `createCustomComponentImageSpiral.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomComponentImageSpiral>`_ example we will create a new component derived from the oimImageComponent which describe a logarithmic spiral. Unlike with the previous example, we will write the equation defining the intensity distribution of such model in the oimImageComponent derived class.
 
@@ -506,7 +507,223 @@ And finally the visibility from the models for a fixed walvength and a series of
   :alt: Alternative text  
 
 
-Creating new Radial profile Components
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exp. Ring (Radial profile)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. warning::
     Example will be added when te oimComponentRadialProfile will be fully implemented
+    
+  
+Creating New Interpolators
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In the `createCustomParamInterpolator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomParamInterpolator.py>`_ example we will create a new parameter interpolator derived from the **oimParaminterpolator** class. The new class will allow chromatic interpolation with a vector of evenly spaced values in a range of wavelengths.
+
+First we load some useful package and we also set a random seed to a fixed value as we will use it to initalize our vector.
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as colors
+    import matplotlib.cm as cm
+    import oimodeler as oim
+    from scipy.interpolate import interp1d
+
+    np.random.seed(1)
+
+
+As for the components, we derive our interpolator from a base class, this time oimParamInterpolator. We need to implement the **_init** method that will be called by the **__init__** method of the base class. This method should contains information on the interpolator parameters.
+
+
+
+.. code-block:: python
+    
+    class oimParamLinearRangeWl(oim.oimParamInterpolator):
+
+        def _init(self, param, wl0=2e-6, dwl=1e-9,values=[], kind="linear",**kwargs):
+           
+            self.kind=kind
+
+            n = len(values)
+            self.wl0 = (oim.oimParam(**oim._standardParameters["wl"]))
+            self.wl0.name="wl0"
+            self.wl0.description="Initial wl of the range"
+            self.wl0.value=wl0
+            self.wl0.free=False
+            
+            self.dwl = (oim.oimParam(**oim._standardParameters["wl"]))
+            self.dwl.name="dwl"
+            self.dwl.description="wl step in range"
+            self.dwl.value=dwl
+            self.dwl.free=False
+
+            self.values = []
+            
+            for i in range(n):
+                self.values.append(oim.oimParam(name=param.name, value=values[i],
+                                            mini=param.min,maxi=param.max,
+                                            description=param.description,
+                                            unit=param.unit, free=param.free,
+                                            error=param.error))
+                                        
+The first argument of the class, ``param`` is the **oimParameter** on which the new interpolator we will built. It will be any oimParam from a 
+component, diameter, flux, x and y position...
+
+The next arguments are the interpolator parameters, here :
+
+- the initial wavelength of the range ``wl0``
+- the wavelength step in the range of interpolation : ``dwl``
+- the values at the reference wavelength : ``values``
+- the method for interpolation (from scipy interp1d) ``kind``
+
+The ``**kwargs`` is added for retro/post compatibility.
+
+The parameters ``wl0``, ``dwl`` are created from the ``_standardParameters["wl"]`` for wavelength. Their name, descriptions, and value are updated, and they are set as fixed parameter by default (free=False). 
+
+The values vector of parameters is created from the input parameter ``param``. For each parameter in the vector the value is set to the proper one given as input parameter.
+
+
+The second method to implement is ``_interpFunction`` which is the core function of the interpolation. It has two input parameters: the wavelength ``wl`` and time ``t`` for which the parameter shoud be interpolated. As our interoplator is not time dependent, here we ignore ``t``. 
+
+.. code-block:: python
+
+  def _interpFunction(self, wl, t):
+
+        vals=np.array([vi.value for vi in self.values])
+        nwl=vals.size   
+        wl0=np.linspace(self.wl0.value,self.wl0.value+self.dwl.value*nwl,num=nwl)
+        
+        return interp1d (wl0,vals,kind=self.kind,fill_value="extrapolate")(wl)
+        
+In this method we:
+
+- create a numpy array from the values of the ``self.values`` oimParam vector,
+- a second numpy array for the regular grid of walvengths  from the ``self.wl0`` and ``self.dwl`` parameters
+- interpolate the values at ``wl`` using the scipy interp1d function
+- return the resulting interpolated values of the parameter
+
+
+For model-fitting purpose, we also need to tell oimodeler what are the parameters of our interpolator. This is done by implementing the _getParams method. This method is called by a property ``params`` of the base class **oimParamInterpolator**
+
+.. code-block:: python
+
+    def _getParams(self):
+        params=[]
+        params.extend(self.values)
+        params.append(self.wl0)
+        params.append(self.dwl)
+        return params
+
+The method simply returns the list of the interpolator parameters. Here the lis of the reference values ``self.values``, the initial wavelength ``self.wl0`` and the wavelength step ``self.dwl``. We omit the ``kind`` parameter as we consider it more as an option than a real parameter.
+
+Finally, if we want to use our interpolator using the oimInterp macro, we need to reference it in the oim._interpolator dictionary.
+
+.. code-block:: python
+
+    oim._interpolator["rangeWl"]=oimParamLinearRangeWl
+
+
+Now we can use our new interpolator to build a component and a model. Let's build a chromatic uniform disk with 10 reference wavelengths between 2 and 2.5 microns. For the example, we will fill the ``values`` vector with random diameters from 4 to 7 mas. 
+
+.. code-block:: python
+
+    nref=10
+    c = oim.oimUD(d=oim.oimInterp('rangeWl',wl0=2e-6,kind="cubic",
+                               dwl=5e-8,values=np.random.rand(nref)*3+4))
+    m   = oim.oimModel(c)
+
+We can print the parameters of our model :
+
+.. code-block:: python
+
+    print(m.getParameters())
+    
+.. code-block:: 
+
+    {'c1_UD_x': oimParam at 0x17829999e80 : x=0 ± 0 mas range=[-inf,inf] free=False ,
+     'c1_UD_y': oimParam at 0x17829999fd0 : y=0 ± 0 mas range=[-inf,inf] free=False ,
+     'c1_UD_f': oimParam at 0x17829999f40 : f=1 ± 0  range=[-inf,inf] free=True ,
+     'c1_UD_d_interp1': oimParam at 0x178253c9250 : d=5.251066014107722 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp2': oimParam at 0x178253c9280 : d=6.160973480326474 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp3': oimParam at 0x178253c92b0 : d=4.000343124452034 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp4': oimParam at 0x178253c92e0 : d=4.9069977178955195 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp5': oimParam at 0x178253c9310 : d=4.4402676724513395 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp6': oimParam at 0x178253c9340 : d=4.277015784306394 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp7': oimParam at 0x178253c9370 : d=4.558780634133012 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp8': oimParam at 0x178253c93a0 : d=5.036682181129143 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp9': oimParam at 0x178253c93d0 : d=5.19030242269201 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp10': oimParam at 0x178253c9400 : d=5.616450202010071 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp11': oimParam at 0x178253c9220 : wl0=2e-06 ± 0 m range=[0,inf] free=False ,
+     'c1_UD_d_interp12': oimParam at 0x178253b5df0 : dwl=5e-08 ± 0 m range=[0,inf] free=False }
+
+The interpolator replaced the single oimParam for the diameter c1_UD_d by 12 **oimParam** :  10 for the reference values of the diameter (filled by random in our initialization), one for the initial wavelength ``wl0`` and another for the wavèlength step ``dwl``
+
+
+We can also get the free parameters :
+
+.. code-block:: python
+
+    print(m.getFreeParameters())
+    
+.. code-block:: 
+
+    {'c1_UD_f': oimParam at 0x17829999f40 : f=1 ± 0  range=[-inf,inf] free=True ,
+     'c1_UD_d_interp1': oimParam at 0x178253c9250 : d=5.251066014107722 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp2': oimParam at 0x178253c9280 : d=6.160973480326474 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp3': oimParam at 0x178253c92b0 : d=4.000343124452034 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp4': oimParam at 0x178253c92e0 : d=4.9069977178955195 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp5': oimParam at 0x178253c9310 : d=4.4402676724513395 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp6': oimParam at 0x178253c9340 : d=4.277015784306394 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp7': oimParam at 0x178253c9370 : d=4.558780634133012 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp8': oimParam at 0x178253c93a0 : d=5.036682181129143 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp9': oimParam at 0x178253c93d0 : d=5.19030242269201 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_d_interp10': oimParam at 0x178253c9400 : d=5.616450202010071 ± 0 mas range=[-inf,inf] free=True }
+
+Here the ``x`` and ``y`` parameters are removed as they are fixed by default, as well as ``wl0`` and ``dwl``.
+
+
+Let's plot the interpolated values of the parameters in the 2-2.5 micron range with 1000 values as well as the corresponding visibility for 200 East-West baselines ranging from 0 to 60m.
+
+
+First we create the wavelength vector and the spatial frequencies and wavelength arrays
+
+.. code-block:: python
+
+    nB=200
+    B=np.linspace(0,60,num=nB)
+    nwl=1000
+    wl=np.linspace(2.0e-6,2.5e-6,num=nwl)
+    Bx_arr=np.tile(B[None,:], (nwl, 1)).flatten()
+    wl_arr=np.tile(wl[:,None], (1, nB)).flatten()
+    spfx_arr=Bx_arr/wl_arr
+    spfy_arr=spfx_arr*0
+    
+Finally, we compute the visibilty using the getComplexCoherentFlux method and plot everythin together.
+
+.. code-block:: python
+ 
+    v=np.abs(m.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr).reshape(nwl,nB))
+
+    fig,ax=plt.subplots(2,1)
+    ax[0].plot(wl*1e6,c.params['d'](wl,0),color="r",label="interpolated param")
+    ax[0].scatter(wl0*1e6,vals,marker=".",color="k",label="reference values")
+
+    ax[0].set_ylabel("UD (mas)")
+    ax[0].get_xaxis().set_visible(False)
+    ax[0].legend()
+
+    for iB in range(1,nB):
+        ax[1].plot(wl*1e6,v[:,iB]/v[:,0],color=plt.cm.plasma(iB/(nB-1)))
+        
+       
+    ax[1].set_xlabel("$\lambda$ ($\mu$m)")   
+    ax[1].set_ylabel("Visibility")
+
+
+    norm = colors.Normalize(vmin=np.min(B[1:]),vmax=np.max(B))
+    sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
+    fig.colorbar(sm, ax=ax,label="Baseline Length (m)")
+
+.. image:: ../../images/createInterp1.png
+  :alt: Alternative text  
+
