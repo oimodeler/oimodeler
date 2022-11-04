@@ -12,7 +12,8 @@ from  astropy.coordinates import Angle
 
 ###############################################################################
 
-def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False):
+def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False,
+                    extver=None,squeeze=True):
     """
     Return the baseline names, i.e. telescopes names 
     separated by minus sign, in an extension of a oifits file. 
@@ -36,53 +37,111 @@ def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False):
     name :  python list of str
         The array containing the baseline names (or triplet) and optionally 
         the baseline length and orientation.
+
     """
-    stanames=oifits['OI_ARRAY'].data['STA_NAME']
-    staindexes=oifits['OI_ARRAY'].data['STA_INDEX']
+    
+    
+    if type(oifits)==type(""):
+        data=fits.open(oifits)
+    else:
+        data=oifits
+        
+    extnames=np.array([di.name for di in data])
+    
+    idx_arr=np.where(extnames=="OI_ARRAY")[0]
+    arrnames=np.array([data[i].header['ARRNAME'] for i in idx_arr])
+    
+    if extver!=None:
+        data_arrnames= [data[hduname,extver].header['ARRNAME']]
+    else:
+        idx=np.where(extnames==hduname)[0]
+        data_arrnames=[data[i].header['ARRNAME'] for i in idx]
 
-    staidx=oifits[hduname].data['STA_INDEX']
-
-    shape=np.shape(staidx)
     name=[]
-    if length or angle and hduname!="OI_T3":
-        u=oifits[hduname].data['UCOORD']
-        v=oifits[hduname].data['VCOORD']
-        B=np.sqrt(u**2+v**2)
-        PA=np.rad2deg(np.arctan2(u,v))
-    for i in range(shape[0]):
-        namei=""
-        for j in range(shape[1]):
-            namei+=stanames[np.where(staindexes==staidx[i,j])[0]][0]
-            if j<shape[1]-1:
-                namei+="-"
-        if hduname!="OI_T3":
-            if length:
-                namei+=" {0:.0f}m".format(B[i])
-            if angle:
-                namei+=" {0:.0f}$^o$".format(PA[i])
+    
+    
+    for idata,data_arrname in enumerate(data_arrnames):
+        
+        iarr=idx_arr[np.where(arrnames==data_arrname)[0][0]]
+        
+        stanames=data[iarr].data['STA_NAME']
+        staindexes=data[iarr].data['STA_INDEX']
+        
+
+        staidx=data[idx[idata]].data['STA_INDEX']
+        shape=np.shape(staidx)
+        namei=[]
+        if length or angle and hduname!="OI_T3":
+            u=data[idx[idata]].data['UCOORD']
+            v=data[idx[idata]].data['VCOORD']
+            B=np.sqrt(u**2+v**2)
+            PA=np.rad2deg(np.arctan2(u,v))
+        for i in range(shape[0]):
+            namej=""
+            for j in range(shape[1]):
+                namej+=stanames[np.where(staindexes==staidx[i,j])[0]][0]
+                if j<shape[1]-1:
+                    namej+="-"
+            if hduname!="OI_T3":
+                if length:
+                    namej+=" {0:.0f}m".format(B[i])
+                if angle:
+                    namej+=" {0:.0f}$^o$".format(PA[i])
+            namei.append(namej)
+            
         name.append(namei)
-
+        
+    if squeeze==True and len(name)==1:
+        name=name[0]        
     return name
 
 ###############################################################################
 
-def getConfigName(oifits,hduname="OI_VIS2"):
-    stanames=oifits['OI_ARRAY'].data['STA_NAME']
-    staindexes=oifits['OI_ARRAY'].data['STA_INDEX']
-    staidx=np.unique(oifits[hduname].data['STA_INDEX'].flatten())
-    s=staidx.size
-    name=""
-    for i in range(s):
-        name+=stanames[np.where(staindexes==staidx[i])[0]][0]
-        if i<s-1:
-            name+="-"
+def getConfigName(oifits,hduname="OI_VIS2",extver=None,squeeze=True):
+    
+    #TODO : add support for multiple extensions
+    if type(oifits)==type(""):
+        data=fits.open(oifits)
+    else:
+        data=oifits
+        
+    extnames=np.array([di.name for di in data])
+    
+    idx_arr=np.where(extnames=="OI_ARRAY")[0]
+    arrnames=np.array([data[i].header['ARRNAME'] for i in idx_arr])
+    
+    if extver!=None:
+        data_arrnames= [data[hduname,extver].header['ARRNAME']]
+    else:
+        idx=np.where(extnames==hduname)[0]
+        data_arrnames=[data[i].header['ARRNAME'] for i in idx]
+
+    name=[]
+    for idata,data_arrname in enumerate(data_arrnames):
+
+        iarr=idx_arr[np.where(arrnames==data_arrname)[0][0]]
+
+        stanames=data[iarr].data['STA_NAME']
+        staindexes=data[iarr].data['STA_INDEX']
+        
+        staidx=np.unique(data[idx[idata]].data['STA_INDEX'].flatten())
+        s=staidx.size
+        namei=""
+        for i in range(s):
+            namei+=stanames[np.where(staindexes==staidx[i])[0]][0]
+            if i<s-1:
+                namei+="-"
+        name.append(namei)
+        
+    if squeeze==True and len(name)==1:
+        name=name[0]
     return name
     
     
 
 ###############################################################################
 
-def getBaselineLengthAndPA(oifits,arr="OI_VIS2"):
+def getBaselineLengthAndPA(oifits,arr="OI_VIS2",extver=None,squeeze=True):
     """
     
     Return a tuple (B, PA) of the baseline lengths and orientation
@@ -109,17 +168,48 @@ def getBaselineLengthAndPA(oifits,arr="OI_VIS2"):
         data=fits.open(oifits)
     else:
         data=oifits
-    u=data[arr].data["UCOORD"]
-    v=data[arr].data["VCOORD"]
-    B=np.sqrt(u**2+v**2)
-    PA=np.rad2deg(np.arctan2(u,v))
+        
+    if extver!=None:
+        data=[data[arr,extver]]
+    else:
+        extnames=np.array([di.name for di in data])
+        idx=np.where(extnames==arr)[0]
+        data=[data[i] for i in idx]
+    
+    B=[]
+    PA=[]
+    for idata,datai in enumerate(data):
+    
+        if arr!="OI_T3":
+            u=datai.data["UCOORD"]
+            v=datai.data["VCOORD"]
+            
+            B.append(np.sqrt(u**2+v**2))
+            PA.append(np.rad2deg(np.arctan2(u,v)))
+        else:
+            u1=datai.data["U1COORD"]
+            v1=datai.data["V1COORD"]
+            u2=datai.data["U2COORD"]
+            v2=datai.data["V2COORD"]
+            u3=u1+u2
+            v3=v1+v2
+            B1=np.sqrt(u1**2+v1**2)
+            B2=np.sqrt(u2**2+v2**2)
+            B3=np.sqrt(u3**2+v3**2)
+            B.append(np.array([B1,B2,B3]))
+            PA1=np.rad2deg(np.arctan2(u1,v1))
+            PA2=np.rad2deg(np.arctan2(u2,v2))
+            PA3=np.rad2deg(np.arctan2(u3,v3))
+            PA.append(np.array([PA1,PA2,PA3]))
 
-    # TODO OI_T3
+    if squeeze==True and len(B)==1:
+        B=B[0]
+        PA=PA[0]
     return B,PA
 
 ###############################################################################
 
-def getSpaFreq(oifits,arr="OI_VIS2",unit=None):
+def getSpaFreq(oifits,arr="OI_VIS2",unit=None,extver=None,squeeze=True):
     """
     
 
@@ -143,26 +233,26 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None):
     else:
         data=oifits
 
+    B,_=getBaselineLengthAndPA(data,arr,extver,squeeze=False)
 
-    if arr!="OI_T3":
-        B,PA=getBaselineLengthAndPA(data,arr)
+    if arr=="OI_T3":
+        B=[np.max(Bi,axis=0) for Bi in B]
 
+    extnames=np.array([di.name for di in data])
+    
+    if extver!=None:
+        arrays=[data[arr,extver]]
+        insnames=np.array([arrays.header['INSNAME']])
     else:
-        u1=data[arr].data["U1COORD"]
-        v1=data[arr].data["V1COORD"]
-        u2=data[arr].data["U2COORD"]
-        v2=data[arr].data["V2COORD"]
-        u3=u1+u2
-        v3=v1+v2
-        B1=np.sqrt(u1**2+v1**2)
-        B2=np.sqrt(u2**2+v2**2)
-        B3=np.sqrt(u3**2+v3**2)
-        Bs=[B1,B2,B3]
-        B=np.max(Bs,axis=0)
+        idx=np.where(extnames==arr)[0]
+        insnames=[data[i].header['INSNAME'] for i in idx]
+        arrays=[data[i] for i in idx]
+        
 
-    lam=data["OI_WAVELENGTH"].data["EFF_WAVE"]
-    nlam=np.size(lam)
-    nB=np.size(B)
+    idx_wlarr=np.where(extnames=="OI_WAVELENGTH")[0]
+    wl_insnames=np.array([data[i].header['INSNAME'] for i in idx_wlarr])
+    
+
     if unit=="cycles/mas":
         mult=units.mas.to(units.rad)
     elif unit=="cycles/arcsec":
@@ -171,17 +261,32 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None):
         mult = 1/(1e6)
     else:
         mult=1
+        
+    spaFreq=[]
+        
+    for iarr, arri in enumerate(arrays):
+        
+        iwlarr=idx_wlarr[np.where(wl_insnames==insnames[iarr])[0][0]]
+        
+        lam=data[iwlarr].data["EFF_WAVE"]
+        nlam=np.size(lam)
+        nB=np.size(B[iarr])
+        
+    
+        spaFreqi=np.ndarray([nB,nlam])
+        for iB in range(nB):
+            spaFreqi[iB,:]=B[iarr][iB]/lam*mult
+            
+        spaFreq.append(spaFreqi)
+     
 
-    spaFreq=np.ndarray([nB,nlam])
-    for iB in range(nB):
-        spaFreq[iB,:]=B[iB]/lam*mult
-
+    if squeeze==True and len(spaFreq)==1:
+        spaFreq=spaFreq[0]
+            
     return spaFreq
 
 
 ###############################################################################
-
-
 
 def hdulistDeepCopy(hdulist):
     
@@ -192,8 +297,7 @@ def hdulistDeepCopy(hdulist):
     
     
     return res
-    
-    
+
 ###############################################################################
 
 _cutArr=['EFF_WAVE','EFF_BAND','VIS2DATA','VIS2ERR','FLAG','VISAMP','VISAMPERR',

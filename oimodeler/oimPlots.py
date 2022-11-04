@@ -12,8 +12,6 @@ import os
 from astropy.io import fits
 import oimodeler as oim
 
-
-
 ###############################################################################
 def _errorplot(axe,X,Y,dY,smooth=1, **kwargs ):
     Ys=Y
@@ -33,8 +31,7 @@ def _errorplot(axe,X,Y,dY,smooth=1, **kwargs ):
       
 ###############################################################################
         
-def _colorPlot(axe,x,y,z,**kwargs):
-
+def _colorPlot(axe,x,y,z,setlim=False,**kwargs):
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
     
@@ -52,6 +49,7 @@ def _colorPlot(axe,x,y,z,**kwargs):
 
     maxi=np.max(maxi)
     mini=np.min(mini)
+
     
     if not("norm" in kwargs):
         norm=plt.Normalize(mini,maxi)
@@ -66,42 +64,12 @@ def _colorPlot(axe,x,y,z,**kwargs):
     for ci in axe.collections:
         ci.set_norm(norm)
     
-    xmax=[]
-    ymax=[]
-    xmin=[]
-    ymin=[]    
-    for ci in axe.collections:
-        xy=np.array(ci.get_segments(),dtype=object)
-        
-        if len(np.shape(xy))==3:  
-            xx=xy[:,:,0]  
-            yy=xy[:,:,1]
-            
-            xmax.append(np.max(xx))
-            ymax.append(np.max(yy))
-            
-            xmin.append(np.min(xx))
-            ymin.append(np.min(yy))
-            
-    xmax=np.max(xmax)
-    xmin=np.min(xmin)    
-    ymax=np.max(ymax)
-    ymin=np.min(ymin)           
-    
-    if xmin!=xmax:
-        axe.set_xlim(xmin,xmax)
-    if ymin!=ymax:
-        axe.set_ylim(ymin,ymax)
-    
-    
-    
+
+    if setlim==True:
+        axe.autoscale_view()
     
     return line
         
-        
-        
-
-
 ###############################################################################
 
 
@@ -191,48 +159,67 @@ def getColorIndices(oifitsList,color,yarr,yname):
     idx=[]
     names=[]
     for idata,datai in enumerate(oifitsList):
-        val=datai[yarr].data[yname]
-        nB=val.shape[0]
-        if color=="byFile":
-            idx.append(np.zeros(nB,dtype=int)+idata)
-            fname=datai.filename()
-            if fname==None:
-                fname="File {}".format(idata)
-            else:
-                fname=os.path.basename(fname)
-            names.append(fname)
-        elif color=="byArrname":
-            array=datai[yarr].header['ARRNAME']
-            if array in names:
-                iarr = names.index(array)
-            else:
-                iarr=len(names)
-                names.append(array)
-            idx.append(np.zeros(nB,dtype=int)+iarr)    
-        elif color=="byBaseline":
-                bnames=oim.getBaselineName(datai,yarr)
-                idxi=[]
-                for bname in bnames:
-                    if bname in names:
-                        iB = names.index(bname)
-                    else:
-                        iB=len(names)
-                        names.append(bname)   
-                    idxi.append(iB)  
-                idx.append(idxi)
-        elif color=="byConfiguration":
-                conf=oim.getConfigName(datai,yarr)
-                if conf in names:
-                    iconf = names.index(conf)
+        extnames=np.array([dj.name for dj in datai])
+        idx_yext=np.where(extnames==yarr)[0]
+        idxi=[]
+        for j,jdata in enumerate(idx_yext):
+            val=datai[jdata].data[yname]
+            nB=val.shape[0]
+            
+            if color=="byFile":
+                fname=datai.filename()
+                if fname==None:
+                    fname="File {}".format(idata)
                 else:
-                    iconf=len(names)
-                    names.append(conf)
-                idx.append(np.zeros(nB,dtype=int)+iconf)
-        else:
-            idx.append(np.zeros(nB,dtype=int))
-            names.append("")
+                    fname=os.path.basename(fname)
+                    
+                if fname in names:
+                    ifname = names.index(fname)
+                else:
+                    ifname=len(names)
+                    names.append(fname)
+                    
+                idxi.append(np.zeros(nB,dtype=int)+ifname)
+
+                
+            elif color=="byArrname":
+                array=datai[jdata].header['ARRNAME']
+                if array in names:
+                    iarr = names.index(array)
+                else:
+                    iarr=len(names)
+                    names.append(array)
+                idxi.append(np.zeros(nB,dtype=int)+iarr)    
+                
+                
+            elif color=="byBaseline":
+                    bnames=oim.getBaselineName(datai,yarr,squeeze=False)[j]
+                    idxj=[]
+                    for bname in bnames:
+                        if bname in names:
+                            iB = names.index(bname)
+                        else:
+                            iB=len(names)
+                            names.append(bname)   
+                        idxj.append(iB)  
+                    idxi.append(idxj)
+                    
+       
+            elif color=="byConfiguration":
+                    conf=oim.getConfigName(datai,yarr,squeeze=False)[j]
+                    if conf in names:
+                        iconf = names.index(conf)
+                    else:
+                        iconf=len(names)
+                        names.append(conf)
+                    idxi.append(np.zeros(nB,dtype=int)+iconf)
+
+            else:
+                idxi.append(np.zeros(nB,dtype=int))
+                names.append("")
+        idx.append(idxi)
     return idx,names
-        
+###############################################################################
 
 def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             yunit=None,yunitmultiplier=1,cname=None,cunit=None,cunitmultiplier=1,
@@ -305,7 +292,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     if type(oifitsList)!=type([]):
         oifitsList=[oifitsList]
          
-    ndata=len(oifitsList)
+    ndata0=len(oifitsList)
  
     idxX=np.where(oimPlotParamName == xname)[0][0]
     idxY=np.where(oimPlotParamName == yname)[0][0]
@@ -341,86 +328,16 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
         
 
     xIsUVcoord=oimPlotParamIsUVcoord[idxX]
-    yIsUVcoord=oimPlotParamIsUVcoord[idxY] 
+    yIsUVcoord=oimPlotParamIsUVcoord[idxY]
+    
+    if xIsUVcoord==False and xname!="EFF_WAVE":
+        raise TypeError("X should be LENGTH, SPAFREQ, PA or EFF_WAVE")
   
-    if not(xIsUVcoord):
-        xdata=[d[xarr].data[xname] for d in oifitsList]
-    elif xname=="SPAFREQ":
-        xdata=[oim.getSpaFreq(d,arr=yarr,unit=xunit) for d in oifitsList]
-    elif xname=="UCOORD" and yname!="VCOORD":
-        pass
-        #TODO
-    elif xname=="LENGTH":
-        xdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[0],
-                (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
-        
-    elif xname=="PA":
-        xdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[1],
-                (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
-         
-
-    if not(yIsUVcoord):
-        ydata=[d[yarr].data[yname] for d in oifitsList]
-        ydataerr=[d[yarr].data[yerrname] for d in oifitsList]
-    elif yname=="SPAFREQ":
-        ydata=[oim.getSpaFreq(d,arr=yarr,unit=yunit) for d in oifitsList]
-    elif yname=="VCOORD" and yname!="UCOORD":
-        uvPlot(oifitsList, **kwargs)
-        return
-        #TODO
-    elif yname=="LENGTH":
-        ydata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[0],
-                (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
-        
-    elif yname=="PA":
-        ydata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[1],
-                (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
-
-
-    if cname!=None:
-        
-
-        idxC=np.where(oimPlotParamName == cname)[0][0]
-        cIsUVcoord=oimPlotParamIsUVcoord[idxC] 
+    if yIsUVcoord==True:
+        raise TypeError("Y shouldn't be UCOORD,VCOORD, SPAFREQ, or PA")
         
         
-        if cunit:
-            cunit0=cunit
-        else:
-            cunit0=oimPlotParamUnit0[idxC]
-        #TODO : Better than this simple implementation
-        if cname=="MJD":
-            carr=yarr
-            cdata=[d[carr].data[cname] for d in oifitsList]
-        else:
-            if not(cIsUVcoord):
-                try:
-                    idxC=np.where(oimPlotParamName == cname)[0][0]
-                    carr=oimPlotParamArr[idxC]
-                    cdata=[d[carr].data[cname] for d in oifitsList]
-                except:
-                    idxC=np.where(oimPlotParamError == cname)[0][0]
-                    carr=oimPlotParamArr[idxC]
-                    cdata=[d[carr].data[cname] for d in oifitsList]   
-                
-            elif cname=="SPAFREQ":
-                cdata=[oim.getSpaFreq(d,arr=yarr,unit=yunit) for d in oifitsList]
-            elif yname=="VCOORD" and yname!="UCOORD":
-                pass
-                #TODO
-            elif cname=="B":
-                cdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[0],
-                        (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
-                
-            elif cname=="PA":
-                cdata=[np.transpose(np.tile(oim.getBaselineLengthAndPA(d,arr=yarr)[1],
-                        (np.shape(d[yarr].data[yname])[1],1))) for d in oifitsList]
-        
-        
-                
-        
-
-        
+    
     if colorTab==None:
         colorTab=oimPlotParamColorCycle
     
@@ -440,94 +357,193 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     else:
         label=""
     if not(axe):axe=plt.axes()
-       
     
-    #looping through oifits files
-    for idata in range(ndata):
-              
-        shapex=np.shape(xdata[idata])
-        shapey=np.shape(ydata[idata])
         
-        #Dealing with the xy data dimensions
-        if (np.size(shapex)==np.size(shapey)):
-            if np.size(shapex)==1: # if 1 baseline only just change array dim
-                nlam=np.size(xdata)
-                xdata=np.reshape((1,nlam))
-                ydata=np.reshape((1,nlam))    
-        elif (np.size(shapex))==1:# if x=1D and y=2D
-            xdata[idata]=np.outer(np.ones(shapey[0]),xdata[idata])
-            
-        elif (np.size(shapey))==1:# if x=2D and y=1D
-            ydata[idata]=np.outer(np.ones(shapex[0]),ydata[idata])
-
-        shapex=np.shape(xdata[idata])
-        shapey=np.shape(ydata[idata])
+    for ifile,data in enumerate(oifitsList):
+        # yname can be anything but  UCOORD, VCOORD, LENGTH, SPAFREQ, PA or EFF_WAVE
+        extnames=np.array([di.name for di in data])
+        
+        idx_yext=np.where(extnames==yarr)[0]
+        yinsname=np.array([data[i].header['INSNAME'] for i in idx_yext])
+        ydata=[data[i].data[yname] for i in idx_yext]
+        ydataerr=[data[i].data[yerrname] for i in idx_yext]
+        yflag=[data[i].data["FLAG"] for i in idx_yext] 
+        # xname can be LENGTH, SPAFREQ, PA or EFF_WAVE
+        if xname=="EFF_WAVE":
+            idx_xext=np.where(extnames==xarr)[0]
+            xinsname=np.array([data[i].header['INSNAME'] for i in idx_xext])
+            xdata=[]
+            for idata in range(len(idx_yext)):
+                iwlarr=idx_xext[np.where(xinsname==yinsname[idata])[0][0]]
+                wl=data[iwlarr].data["EFF_WAVE"]
+                nB=ydata[idata].shape[0]
+                xdata.append(np.tile(wl[None,:], (nB,1)))
                 
+        elif xname=="SPAFREQ":
+            xdata=oim.getSpaFreq(data,arr=yarr,unit=xunit,squeeze=False) 
+            
+        elif xname=="LENGTH":
+            B=oim.getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[0]
+            xdata=[]
+            for idata in range(len(idx_yext)):
+                xdata.append(np.transpose(
+                    np.tile(B[idata],(np.shape(data[idata].data[yname])[1],1))))
+
+        elif xname=="PA":
+            PA=oim.getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[1]
+            xdata=[]
+            for idata in range(len(idx_yext)):
+                xdata.append(np.transpose(
+                    np.tile(PA[idata],(np.shape(data[idata].data[yname])[1],1))))
+         
+
         if cname!=None:
-            shapec=np.shape(cdata[idata])
-            if (np.size(shapec)==1):
-                if shapec[0]==shapex[0]:
-                    cdata[idata]=np.outer(cdata[idata],np.ones(shapex[1]))
-                else:
-                    cdata[idata]=np.outer(np.ones(shapex[0]),cdata[idata])
-                shapec=np.shape(cdata[idata])
-        # separate multiples baselines
-        nB=shapex[0]
-        for iB in range(nB):
-            if showFlagged==False: 
-                flags=oifitsList[idata][yarr].data["FLAG"][iB,:]
-                nflags=len(flags)
-                flag0=True
-                ilam0=0
-                for ilam,flagi in enumerate(flags):
-                    doPlot=False
-                    if np.isnan(ydata[idata][iB,ilam]):
-                        flagi=True
-                    if flag0!=flagi:
-                        if flagi==False:
-                            ilam0=ilam
-                        else:
-                            doPlot=True
-                        flag0=flagi 
-                    elif ilam==(nflags-1) and flagi==False:
-                            doPlot=True
-                    
-                    if doPlot==True: 
-                        labeli=label+ColorNames[colorIdx[idata][iB]]
-                        if cname==None:
-                           
-                            axe.plot(xdata[idata][iB,ilam0:ilam]*
-                                 xunitmultiplier,ydata[idata][iB,ilam0:ilam],
-                                 color=colorTab[colorIdx[idata][iB]%ncol],label=labeli,**kwargs)
-                            if errorbar==True:
-                                
-                                if not('color' in kwargs_error):
-                                    kwargs_errori=kwargs_error.copy()
-                                    kwargs_errori['color']=colorTab[colorIdx[idata][iB]%ncol] 
-                                    
-                                   
-                                _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
-                                            ydata[idata][iB,ilam0:ilam],
-                                            ydataerr[idata][iB,ilam0:ilam],
-                                            **kwargs_errori)
-                                
-                        else:
-                            res=_colorPlot(axe, xdata[idata][iB,ilam0:ilam]*
-                                 xunitmultiplier, ydata[idata][iB,ilam0:ilam], cdata[idata][iB,ilam0:ilam]*cunitmultiplier,
-                                 label=labeli,**kwargs)
-                            
-                            if errorbar==True:
-                                _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
-                                            ydata[idata][iB,ilam0:ilam],
-                                            ydataerr[idata][iB,ilam0:ilam],
-                                            **kwargs_error)
-                        
+            
+            idxC=np.where(oimPlotParamName == cname)[0][0]
+            cIsUVcoord=oimPlotParamIsUVcoord[idxC] 
+            
+            if cunit:
+                cunit0=cunit
             else:
-                axe.plot(xdata[idata][iB,:]*xunitmultiplier,
-                         ydata[idata][iB,:],color=colorTab[colorIdx[idata][iB]%ncol])
-                if errorbar==True:
-                    _errorplot(axe,xdata[idata][iB,:]*xunitmultiplier,ydata[idata][iB,:],
-                               ydataerr[idata][iB,:],color=colorTab[colorIdx[idata][iB]%ncol],**kwargs_error)
+                cunit0=oimPlotParamUnit0[idxC]
+            
+            if cname=="MJD":
+                carr=yarr
+                cdata=[data[i].data[cname] for i in idx_yext]
+                
+            elif cname=="EFF_WAVE":
+                carr="OI_WAVELENGTH"
+                idx_cext=np.where(extnames==carr)[0]
+                cinsname=np.array([data[i].header['INSNAME'] for i in idx_cext])
+                cdata=[]
+                for idata in range(len(idx_yext)):
+                    iwlarr=idx_cext[np.where(cinsname==yinsname[idata])[0][0]]
+                    wl=data[iwlarr].data["EFF_WAVE"]
+                    nB=ydata[idata].shape[0]
+                    cdata.append(np.tile(wl[None,:], (nB,1)))
+
+            elif not(cIsUVcoord):
+                try:
+                    idxC=np.where(oimPlotParamName == cname)[0][0]
+                    carr=oimPlotParamArr[idxC]
+                    cdata=[data[i].data[cname] for i in idx_yext]
+                except:
+                    idxC=np.where(oimPlotParamError == cname)[0][0]
+                    carr=oimPlotParamArr[idxC]
+                    cdata=[data[i].data[cname] for i in idx_yext]   
+                
+            elif cname=="SPAFREQ":
+                cdata=oim.getSpaFreq(data,arr=yarr,unit=cunit,squeez=False) 
+                
+            elif cname=="LENGTH":
+                B=oim.getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[0]
+                cdata=[]
+                for idata in range(len(idx_yext)):
+                    cdata.append(np.transpose(
+                        np.tile(B[idata],(np.shape(data[idata].data[yname])[1],1))))
+    
+            elif cname=="PA":
+                PA=oim.getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[1]
+                cdata=[]
+                for idata in range(len(idx_yext)):
+                    cdata.append(np.transpose(
+                        np.tile(PA[idata],(np.shape(data[idata].data[yname])[1],1))))
+        
+        #looping through oifits files
+        
+        ndata=len(ydata)
+        for idata in range(ndata):
+
+            shapex=np.shape(xdata[idata])
+            shapey=np.shape(ydata[idata])
+            
+            #Dealing with the xy data dimensions
+            if (np.size(shapex)==np.size(shapey)):
+                if np.size(shapex)==1: # if 1 baseline only just change array dim
+                    nlam=np.size(xdata)
+                    xdata=np.reshape((1,nlam))
+                    ydata=np.reshape((1,nlam))    
+            elif (np.size(shapex))==1:# if x=1D and y=2D
+                xdata[idata]=np.outer(np.ones(shapey[0]),xdata[idata])
+                
+            elif (np.size(shapey))==1:# if x=2D and y=1D
+                ydata[idata]=np.outer(np.ones(shapex[0]),ydata[idata])
+    
+            shapex=np.shape(xdata[idata])
+            shapey=np.shape(ydata[idata])
+                    
+            if cname!=None:
+                shapec=np.shape(cdata[idata])
+                if (np.size(shapec)==1):
+                    if shapec[0]==shapex[0]:
+                        cdata[idata]=np.outer(cdata[idata],np.ones(shapex[1]))
+                    else:
+                        cdata[idata]=np.outer(np.ones(shapex[0]),cdata[idata])
+                    shapec=np.shape(cdata[idata])
+            # separate multiples baselines
+            nB=shapex[0]
+            for iB in range(nB):
+                if showFlagged==False: 
+                    flags=yflag[idata][iB,:]
+                    nflags=len(flags)
+                    flag0=True
+                    ilam0=0
+                    for ilam,flagi in enumerate(flags):
+                        doPlot=False
+                        if np.isnan(ydata[idata][iB,ilam]):
+                            flagi=True
+                        if flag0!=flagi:
+                            if flagi==False:
+                                ilam0=ilam
+                            else:
+                                doPlot=True
+                            flag0=flagi 
+                        elif ilam==(nflags-1) and flagi==False:
+                                doPlot=True
+                        
+                        if doPlot==True: 
+                            labeli=label+ColorNames[colorIdx[ifile][idata][iB]]
+                            if cname==None:
+                               
+                                axe.plot(xdata[idata][iB,ilam0:ilam]*
+                                     xunitmultiplier,ydata[idata][iB,ilam0:ilam],
+                                     color=colorTab[colorIdx[ifile][idata][iB]%ncol],label=labeli,**kwargs)
+                                if errorbar==True:
+                                    
+                                    if not('color' in kwargs_error):
+                                        kwargs_errori=kwargs_error.copy()
+                                        kwargs_errori['color']=colorTab[colorIdx[ifile][idata][iB]%ncol] 
+                                        
+                                       
+                                    _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
+                                                ydata[idata][iB,ilam0:ilam],
+                                                ydataerr[idata][iB,ilam0:ilam],
+                                                **kwargs_errori)
+                                    
+                            else:
+                                
+                                #dummy plot with alpha=0 as _colorPLot works with collections
+                                #thus not updating the xlim and ylim automatically
+                                axe.plot(xdata[idata][iB,ilam0:ilam]*
+                                     xunitmultiplier,ydata[idata][iB,ilam0:ilam],
+                                     color="k",alpha=0)
+                                
+                                res=_colorPlot(axe, xdata[idata][iB,ilam0:ilam]*
+                                     xunitmultiplier, ydata[idata][iB,ilam0:ilam], cdata[idata][iB,ilam0:ilam]*cunitmultiplier,
+                                     label=labeli,setlim=False,**kwargs)
+                                
+                                if errorbar==True:
+                                    _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
+                                                ydata[idata][iB,ilam0:ilam],
+                                                ydataerr[idata][iB,ilam0:ilam],
+                                                **kwargs_error)
+                            
+                else:
+                    axe.plot(xdata[idata][iB,:]*xunitmultiplier,
+                             ydata[idata][iB,:],color=colorTab[colorIdx[ifile][idata][iB]%ncol])
+                    if errorbar==True:
+                        _errorplot(axe,xdata[idata][iB,:]*xunitmultiplier,ydata[idata][iB,:],
+                                   ydataerr[idata][iB,:],color=colorTab[colorIdx[ifile][idata][iB]%ncol],**kwargs_error)
                      
 
        
@@ -536,13 +552,18 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
 
     if xscale!=None:        
         axe.set_xscale(xscale)
-    
-    axe.set_xlim(xlim)
-    axe.set_ylim(ylim)
+        
+    if not(xlim is None):
+        axe.set_xlim(xlim)
+    if not(ylim is None):
+        axe.set_ylim(ylim)
+        
     axe.set_xlabel(xlabel)
     axe.set_ylabel(ylabel)
     
+    
     return res
+
 ###############################################################################
 class _HandlerColorLineCollection(HandlerLineCollection):
     def create_artists(self, legend, artist ,xdescent, ydescent,
@@ -605,8 +626,16 @@ class oimAxes(plt.Axes):
         
         #use to remove duplicate legend
         lh = dict(zip(l, h))
-        super().legend(lh.values(),lh.keys(),handler_map=hmap,**kwargs)            
+        super().legend(lh.values(),lh.keys(),handler_map=hmap,**kwargs)   
 
+
+    def set_yscale(self,value,**kwargs):
+        super().set_yscale(value,**kwargs)
+        self.autoscale_view()
+
+    def set_xscale(self,value,**kwargs):
+        super().set_xscale(value,**kwargs)
+        self.autoscale_view()
 ###############################################################################
 
 
