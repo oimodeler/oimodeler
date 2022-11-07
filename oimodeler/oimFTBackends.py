@@ -20,7 +20,7 @@ class numpyFFTBackend():
     def compute(backendPreparation,im,pix,wlin,tin,ucoord,vcoord,wl,t):
         
         dim=im.shape[3]
-        fft2D=np.fft.fftshift(np.fft.fft2(np.fft.fftshift(im,axes=[-2,-1]),axes=[-2,-1]),axes=[-2,-1])
+        fft2D=np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(im,axes=[-2,-1]),axes=[-2,-1]),axes=[-2,-1])
 
         freqVectYX=np.fft.fftshift(np.fft.fftfreq(dim,pix))
         grid=(tin,wlin,freqVectYX,freqVectYX)  
@@ -75,7 +75,7 @@ try:
             fft_in[:]=np.fft.fftshift(im,axes=[-2,-1])
             fft_object()
             
-            fft2D=np.fft.fftshift(fft_out,axes=[-2,-1])
+            fft2D=np.fft.ifftshift(fft_out,axes=[-2,-1])
             
             freqVectYX=np.fft.fftshift(np.fft.fftfreq(dim,pix))
             grid=(tin,wlin,freqVectYX,freqVectYX)  
