@@ -179,7 +179,10 @@ class oimSimulator(object):
                     #Filling the simulatedData astropy array with the computed values
                     if computeSimulatedData==True:
                         for ival in range(len(val)):
-                            self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=val[ival]
+                            try:
+                                self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=val[ival]
+                            except:
+                                self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=np.squeeze(val[ival])
                             
                     #Computing the chi2
                     if computeChi2==True:
