@@ -164,7 +164,11 @@ class oimComponent(object):
         y=self.params["y"](wl,t)*self.params["y"].unit.to(units.rad)
         return np.exp(-2*I*np.pi*(ucoord*x+vcoord*y))
     
-
+    def _directTranslate(self,x,y,wl,t):
+        x=x-self.params["x"](wl,t)
+        y=y-self.params["y"](wl,t)
+        return x,y
+    
     
     def __str__(self):
         txt=self.name
@@ -218,20 +222,12 @@ class oimComponentFourier(oimComponent):
         return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
                                                      self.params["f"](wl,t)
     
-
           
     def _visFunction(self,ucoord,vcoord,rho,wl,t):
         return ucoord*0
     
-    def _directTranslate(self,x,y,wl,t):
-        x=x-self.params["x"](wl,t)
-        y=y-self.params["y"](wl,t)
-        return x,y
-    
-
     def getImage(self,dim,pixSize,wl=None,t=None):  
 
-        
         t=np.array(t).flatten()
         nt=t.size
         wl=np.array(wl).flatten()
@@ -795,7 +791,7 @@ class oimModel(object):
         
         if fromFT==True:
 
-            v=np.linspace(-0.5,0.5,dim) 
+            v=np.linspace(-0.5,0.5,dim)
             vx,vy=np.meshgrid(v,v)
             
             vx_arr=np.tile(vx[None,None,:,:], (nt,nwl, 1, 1))
@@ -812,7 +808,6 @@ class oimModel(object):
             
             image=np.abs(np.fft.fftshift(np.fft.ifft2(ft,axes=[-2,-1]),axes=[-2,-1]))
            
-        
         else:
             image=np.zeros(dims)
             for c in self.components:
