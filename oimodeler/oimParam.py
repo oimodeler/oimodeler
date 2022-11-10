@@ -579,6 +579,53 @@ class oimParamPolynomialWl(oimParamPolynomial):
 class oimParamPolynomialTime(oimParamPolynomial):
     def _init(self, param, order=2,coeffs=None,x0=None):
         super()._init(param, dependence="mjd", order=order,coeffs=coeffs,x0=x0)
+        
+###############################################################################        
+class oimParamLinearRangeWl(oimParamInterpolator):
+
+    def _init(self, param, wlmin=2e-6, wlmax=3e-6,values=[], kind="linear",**kwargs):
+
+        self.kind=kind
+
+        n = len(values)
+        self.wlmin = (oimParam(**_standardParameters["wl"]))
+        self.wlmin.name="wlmin"
+        self.wlmin.description="Min of wl range"
+        self.wlmin.value=wlmin
+        self.wlmin.free=False
+
+        self.wlmax = (oimParam(**_standardParameters["wl"]))
+        self.wlmax.name="wlmax"
+        self.wlmax.description="Max of the wl range"
+        self.wlmax.value=wlmax
+        self.wlmax.free=False
+
+
+        self.values = []
+
+        for i in range(n):
+            self.values.append(oimParam(name=param.name, value=values[i],
+                                        mini=param.min,maxi=param.max,
+                                        description=param.description,
+                                        unit=param.unit, free=param.free,
+                                        error=param.error))
+
+    def _interpFunction(self, wl, t):
+    
+          vals=np.array([vi.value for vi in self.values])
+          nwl=vals.size
+          wl0=np.linspace(self.wlmin.value,self.wlmax.value,num=nwl)
+          print(wl0)
+          return interp1d (wl0,vals,kind=self.kind,fill_value="extrapolate")(wl)
+      
+    def _getParams(self):
+        params=[]
+        params.extend(self.values)
+        params.append(self.wlmin)
+        params.append(self.wlmax)
+        return params    
+            
+
 ###############################################################################
 # List of interpolators defined in oimodels
 _interpolator={"wl":oimParamInterpolatorWl,
@@ -589,7 +636,8 @@ _interpolator={"wl":oimParamInterpolatorWl,
                 "mGaussTime":oimParamMultipleGaussianTime,
                 "cosTime":oimParamCosineTime,
                 "polyWl":oimParamPolynomialWl,
-                "polyTime":oimParamPolynomialTime}
+                "polyTime":oimParamPolynomialTime,
+                "rangeWl":oimParamLinearRangeWl}
 
 
 ###############################################################################
