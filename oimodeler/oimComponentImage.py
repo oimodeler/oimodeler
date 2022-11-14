@@ -358,7 +358,7 @@ class oimComponentRadialProfile(oimComponent):
         
         
         Ir=self.getInternalRadialProfile(wl0,t0)
-        
+
         vc=self.hankel(Ir, self._r*units.mas.to(units.rad),wl0,t0,spf,wl,t)
         return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
                                                      self.params["f"](wl,t)
@@ -383,7 +383,7 @@ class oimComponentRadialProfile(oimComponent):
         return res
     
     def _getInternalGrid(self,simple=True,flatten=False,wl=None,t=None):
-     
+        
         if self._wl is None:
             wl0=np.sort(np.unique(wl))
         else:
