@@ -258,8 +258,11 @@ class oimParamNorm(object):
         return self.param.unit
 
     def __call__(self, wl=None, t=None):
-
-        return self.norm - np.sum([p.__call__(wl, t) for p in self.params])
+        
+        res = self.norm
+        for p in self.params:
+            res -= p(wl, t)
+        return res
 
 
 ###############################################################################
