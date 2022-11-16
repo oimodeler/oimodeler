@@ -301,9 +301,10 @@ class oimParamInterpolator(oimParam):
 class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
     def _init(self, param, dependence="wl", keyframes=[], keyvalues=[],
-              kind="linear", extrapolate=False,**kwargs):
+              kind="linear",fixedRef=True, extrapolate=False,**kwargs):
 
         self.dependence = dependence
+        self.fixedRef = fixedRef
         self.kind=kind
         self.extrapolate = extrapolate
 
@@ -319,9 +320,7 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
                           maxi=param.max, description=param.description,
                           unit=param.unit, free=param.free, error=param.error)
             self.keyvalues.append(pi)
-
-        self.params.extend(self.keyframes)
-        self.params.extend(self.keyvalues)
+        
 
     def _interpFunction(self, wl, t):
 
@@ -346,7 +345,8 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
     def _getParams(self):
         params=[]
-        params.extend(self.keyframes)
+        if self.fixedRef==False:
+            params.extend(self.keyframes)
         params.extend(self.keyvalues)
         return params
 
