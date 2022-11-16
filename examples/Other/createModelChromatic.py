@@ -102,11 +102,28 @@ filename=os.path.join(path,os.pardir,"images","createModelChromatic.png")
 fig.savefig(filename)
 
 #%%
+
+nB=200 #number of baselines 
+nwl=200 #number of walvengths
+
+#Create some spatial frequencies
+wl=np.linspace(3e-6,4e-6,num=nwl)
+B=np.linspace(1,400,num=nB)
+Bs=np.tile(B,(nwl,1)).flatten()
+wls=np.transpose(np.tile(wl,(nB,1))).flatten()
+spf=Bs/wls
+spf0=spf*0
+
+
+
 fig,ax=plt.subplots(1,1)
 cf2=np.abs(models[-2].getComplexCoherentFlux(spf0,spf,wls)).reshape(len(wl),len(B))
  
 for iwl,wli in enumerate(wl):
-    ax.plot(B/wli*mas2rad,cf2[iwl,:]/cf2[iwl,0],color=plt.cm.plasma(iwl/nwl),alpha=0.9)
+    ax.plot(B/wli*mas2rad,cf2[iwl,:]/cf2[iwl,0],color=plt.cm.plasma(iwl/nwl),alpha=0.5,lw=1)
     
+#ax.get_xaxis().set_visible(False)
+#ax.get_yaxis().set_visible(False)    
+ax.axis('off')
 filename=os.path.join(path,os.pardir,"images","imageForLogo.png")
-fig.savefig(filename,dpi=140)
+fig.savefig(filename,dpi=240, transparent=True)
