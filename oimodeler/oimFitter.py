@@ -218,7 +218,7 @@ class oimFitterEmcee(oimFitter):
         
         return fig,fig.axes
 
-    def walkersPlot(self,savefig=None,chi2limfact=20,**kwargs):
+    def walkersPlot(self,savefig=None,chi2limfact=20,labelsize=10,**kwargs):
         
         
         fig, ax = plt.subplots(self.nfree, figsize=(10, 7), sharex=True)
@@ -249,11 +249,17 @@ class oimFitterEmcee(oimFitter):
             ax[i].set_xlim(0, np.max(xf))
             
             txt=pnames[i]
+            
+            unit_txt=""
             if punits[i].to_string()!="":
-                txt+=" ("+punits[i].to_string()+")"
+                unit_txt+=" ("+punits[i].to_string()+")"
             
             
-            ax[i].set_ylabel(txt)
+            ax[i].set_ylabel(unit_txt)
+
+            c=(np.max(samples[:,i])+np.min(samples[:,i]))/2
+            ax[i].text(0.02*np.max(xf),c,txt,va="center",ha="left",fontsize=labelsize,
+                       backgroundcolor=(1,1,1, 0.5))
             ax[i].yaxis.set_label_coords(-0.1, 0.5)
 
         fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\chi^2_r$ ")
