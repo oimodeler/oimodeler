@@ -218,7 +218,7 @@ class oimComponentFourier(oimComponent):
             rho=np.sqrt(fxp**2+fyp**2)            
                
         vc=self._visFunction(fxp,fyp,rho,wl,t)
-               
+              
         return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
                                                      self.params["f"](wl,t)
     
@@ -409,7 +409,7 @@ class oimRing(oimComponentFourier):
     def __init__(self,**kwargs):        
         super().__init__(**kwargs)
         self.params["din"]=oimParam(**_standardParameters["din"]) 
-        self.params["dout"]=oimParam(**_standardParameters["din"])           
+        self.params["dout"]=oimParam(**_standardParameters["dout"])           
         self._eval(**kwargs)
 
     def _visFunction(self,xp,yp,rho,wl,t):     
@@ -459,7 +459,7 @@ class oimESKIRing(oimComponentFourier):
         phi=  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
             self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp);
        
-        return j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t)
+        return np.nan_to_num(np.j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t),nan=1)
           
     def _imageFunction(self,xx,yy,wl,t):
         r2=(xx**2+yy**2)  
@@ -482,7 +482,7 @@ class oimESKRing(oimComponentFourier):
     def __init__(self,**kwargs): 
         super().__init__(**kwargs)
         self.params["din"]=oimParam(**_standardParameters["din"]) 
-        self.params["dout"]=oimParam(**_standardParameters["din"])    
+        self.params["dout"]=oimParam(**_standardParameters["dout"])    
         self.params["skw"]=oimParam(**_standardParameters["skw"])    
         self.params["skwPa"]=oimParam(**_standardParameters["skwPa"])      
         self._eval(**kwargs)
@@ -496,25 +496,26 @@ class oimESKRing(oimComponentFourier):
                          self.params["dout"].unit.to(units.rad)*rho
     
         xx=(xxin+xxout)/2
-        
         xx2=(xxout-xxin)/2
         
+        phi =  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
+            self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp)
+            
+
+        res=(j0(xx)-1j*np.sin(phi)*j1(xx)*self.params["skw"](wl,t))  \
+                *np.nan_to_num(np.divide(2*j1(xx2),xx2),nan=1)
+     
+        return res
         
-        phi=  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
-            self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp);
-       
-        return (j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t))  \
-                 *np.divide(2*j1(xx2),xx2)
-          
         
           
     def _imageFunction(self,xx,yy,wl,t):
         r2=(xx**2+yy**2)  
-        # dr=np.sqrt(np.abs(np.roll(r2,(-1,-1),(0,1))-np.roll(r2,(1,1),(0,1))))
-        phi=np.arctan2(yy,xx)  +  self.params["skwPa"](wl,t)* \
-                                  self.params["skwPa"].unit.to(units.rad)
 
-        F=1+self.params["skw"](wl,t)*np.cos(phi)     
+        phi =  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
+                  self.params["skwPa"].unit.to(units.rad) + np.arctan2(yy,xx) 
+
+        F=(1+self.params["skw"](wl,t)*np.sin(phi)  )/(1+self.params["skw"](wl,t))   
         
         return  ((r2<=(self.params["dout"](wl,t)/2)**2) & 
                  (r2>=(self.params["din"](wl,t)/2)**2)).astype(float)*F
@@ -622,13 +623,12 @@ class oimConvolutor(oimComponentFourier):
 
     def _visFunction(self,xp,yp,rho,wl,t):     
     
-        return  self.component1.getComplexCoherentFlux(xp,yp,wl,t)*self.component2._visFunction(xp,yp,rho,wl,t)
+        return  self.component1.getComplexCoherentFlux(xp,yp,wl,t)* \
+                self.component2._visFunction(xp,yp,rho,wl,t)
      
     def _imageFunction(self,xx,yy,wl,t):
-        r2=(xx**2+yy**2)   
-        dx=np.max([np.abs(1.*(xx[0,1]-xx[0,0])),np.abs(1.*(yy[1,0]-yy[0,0]))])
-        return ((r2<=(self.params["d"](wl,t)/2+dx)**2) & 
-                (r2>=(self.params["d"](wl,t)/2)**2)).astype(float)
+        return self.component1._imageFunction(xx,yy,wl,t)* \
+               self.component2._imageFunction(xx,yy,wl,t)
 
 
 
@@ -845,7 +845,7 @@ class oimModel(object):
                     dwl=dwl[0]
                     
                     hdu.header['CDELT{}'.format(naxis)]=dwl
-                    hdu.header['CRPIX{}'.format(naxis)]=0
+                    hdu.header['CRPIX{}'.format(naxis)]=1
                     hdu.header['CRVAL{}'.format(naxis)]=wl[0]
                     hdu.header['CUNIT{}'.format(naxis)]="m" 
                     naxis+=1
@@ -861,7 +861,7 @@ class oimModel(object):
                     dt=dt[0]
                     
                     hdu.header['CDELT{}'.format(naxis)]=dt
-                    hdu.header['CRPIX{}'.format(naxis)]=0
+                    hdu.header['CRPIX{}'.format(naxis)]=1
                     hdu.header['CRVAL{}'.format(naxis)]=t[0]
                     hdu.header['CUNIT{}'.format(naxis)]="day"   
                     
