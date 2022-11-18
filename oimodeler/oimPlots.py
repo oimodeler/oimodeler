@@ -32,8 +32,6 @@ def _errorplot(axe,X,Y,dY,smooth=1, **kwargs ):
 ###############################################################################
         
 def _colorPlot(axe,x,y,z,setlim=False,**kwargs):
-    points = np.array([x, y]).T.reshape(-1, 1, 2)
-    segments = np.concatenate([points[:-1], points[1:]], axis=1)
     
     if not("cmap" in kwargs):
         kwargs['cmap']='plasma'
@@ -55,20 +53,34 @@ def _colorPlot(axe,x,y,z,setlim=False,**kwargs):
         norm=plt.Normalize(mini,maxi)
     else:
         norm=kwargs["norm"]
+    
+    if x.size>1:
+    
+        points = np.array([x, y]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
         
-    
-    lc = LineCollection(segments, **kwargs)
-    lc.set_array(z) 
-    line = axe.add_collection(lc)
-    
+        
+        
+
+        if "marker" in kwargs:
+            kwargs.pop("marker")
+        
+        lc = LineCollection(segments, **kwargs)
+        lc.set_array(z) 
+        res = axe.add_collection(lc)
+        
+        
+    if x.size==1:
+        res =axe.scatter(x,y,c=z,**kwargs)
+
     for ci in axe.collections:
         ci.set_norm(norm)
-    
+        
 
     if setlim==True:
         axe.autoscale_view()
     
-    return line
+    return res
         
 ###############################################################################
 
@@ -456,7 +468,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
 
             shapex=np.shape(xdata[idata])
             shapey=np.shape(ydata[idata])
-            
+
             #Dealing with the xy data dimensions
             if (np.size(shapex)==np.size(shapey)):
                 if np.size(shapex)==1: # if 1 baseline only just change array dim
@@ -464,10 +476,20 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     xdata=np.reshape((1,nlam))
                     ydata=np.reshape((1,nlam))    
             elif (np.size(shapex))==1:# if x=1D and y=2D
-                xdata[idata]=np.outer(np.ones(shapey[0]),xdata[idata])
+                if shapex[0]==shapey[0]:
+                    xdata[idata]=np.outer(xdata[idata],np.ones(shapey[1]))
+                else:
+                    xdata[idata]=np.outer(np.ones(shapey[0]),xdata[idata])
                 
             elif (np.size(shapey))==1:# if x=2D and y=1D
-                ydata[idata]=np.outer(np.ones(shapex[0]),ydata[idata])
+                if shapex[0]==shapey[0]:
+                    ydata[idata]=np.outer(ydata[idata],np.ones(shapex[1]))
+                    ydataerr[idata]=np.outer(ydataerr[idata],np.ones(shapex[1]))
+                    
+                else:
+                    ydata[idata]=np.outer(np.ones(shapex[0]),ydata[idata])
+                    ydataerr[idata]=np.outer(ydataerr[idata],np.ones(shapex[1]))
+                    
     
             shapex=np.shape(xdata[idata])
             shapey=np.shape(ydata[idata])
@@ -482,9 +504,11 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     shapec=np.shape(cdata[idata])
             # separate multiples baselines
             nB=shapex[0]
+            
+
             for iB in range(nB):
                 if showFlagged==False: 
-                    flags=yflag[idata][iB,:]
+                    flags=np.reshape(yflag[idata],shapey)[iB,:]
                     nflags=len(flags)
                     flag0=True
                     ilam0=0
@@ -498,46 +522,56 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                             else:
                                 doPlot=True
                             flag0=flagi 
-                        elif ilam==(nflags-1) and flagi==False:
+                        if ilam==(nflags-1) and flagi==False:
                                 doPlot=True
-                        
+     
                         if doPlot==True: 
                             labeli=label+ColorNames[colorIdx[ifile][idata][iB]]
+                            
                             if cname==None:
-                               
-                                axe.plot(xdata[idata][iB,ilam0:ilam]*
-                                     xunitmultiplier,ydata[idata][iB,ilam0:ilam],
-                                     color=colorTab[colorIdx[ifile][idata][iB]%ncol],label=labeli,**kwargs)
-                                if errorbar==True:
-                                    
-                                    if not('color' in kwargs_error):
-                                        kwargs_errori=kwargs_error.copy()
-                                        kwargs_errori['color']=colorTab[colorIdx[ifile][idata][iB]%ncol] 
+                                if (xdata[idata][iB,ilam0:ilam+1]).size==1:
+                                    axe.scatter(xdata[idata][iB,ilam0:ilam+1]*
+                                         xunitmultiplier, ydata[idata][iB,ilam0:ilam+1],
+                                         color=colorTab[colorIdx[ifile][idata][iB]%ncol],
+                                         label=labeli,**kwargs)
+                                else: 
+                                
+                                    axe.plot(xdata[idata][iB,ilam0:ilam+1]*
+                                         xunitmultiplier,ydata[idata][iB,ilam0:ilam+1],
+                                         color=colorTab[colorIdx[ifile][idata][iB]%ncol],
+                                         label=labeli,**kwargs)
+                                    if errorbar==True:
                                         
-                                       
-                                    _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
-                                                ydata[idata][iB,ilam0:ilam],
-                                                ydataerr[idata][iB,ilam0:ilam],
-                                                **kwargs_errori)
+                                        if not('color' in kwargs_error):
+                                            kwargs_errori=kwargs_error.copy()
+                                            kwargs_errori['color']=colorTab[colorIdx[ifile][idata][iB]%ncol] 
+                                            
+                                           
+                                        _errorplot(axe,xdata[idata][iB,ilam0:ilam+1]*xunitmultiplier,
+                                                    ydata[idata][iB,ilam0:ilam+1],
+                                                    ydataerr[idata][iB,ilam0:ilam+1],
+                                                    **kwargs_errori)
                                     
                             else:
-                                
+                               
+                               
                                 #dummy plot with alpha=0 as _colorPLot works with collections
                                 #thus not updating the xlim and ylim automatically
-                                axe.plot(xdata[idata][iB,ilam0:ilam]*
-                                     xunitmultiplier,ydata[idata][iB,ilam0:ilam],
+                                axe.plot(xdata[idata][iB,ilam0:ilam+1]*
+                                     xunitmultiplier,ydata[idata][iB,ilam0:ilam+1],
                                      color="k",alpha=0)
                                 
-                                res=_colorPlot(axe, xdata[idata][iB,ilam0:ilam]*
-                                     xunitmultiplier, ydata[idata][iB,ilam0:ilam], cdata[idata][iB,ilam0:ilam]*cunitmultiplier,
+                                res=_colorPlot(axe, xdata[idata][iB,ilam0:ilam+1]*
+                                     xunitmultiplier, ydata[idata][iB,ilam0:ilam+1],
+                                     cdata[idata][iB,ilam0:ilam+1]*cunitmultiplier,
                                      label=labeli,setlim=False,**kwargs)
                                 
                                 if errorbar==True:
-                                    _errorplot(axe,xdata[idata][iB,ilam0:ilam]*xunitmultiplier,
-                                                ydata[idata][iB,ilam0:ilam],
-                                                ydataerr[idata][iB,ilam0:ilam],
+                                    _errorplot(axe,xdata[idata][iB,ilam0:ilam+1]*xunitmultiplier,
+                                                ydata[idata][iB,ilam0:ilam+1],
+                                                ydataerr[idata][iB,ilam0:ilam+1],
                                                 **kwargs_error)
-                            
+                        
                 else:
                     axe.plot(xdata[idata][iB,:]*xunitmultiplier,
                              ydata[idata][iB,:],color=colorTab[colorIdx[ifile][idata][iB]%ncol])

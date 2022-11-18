@@ -514,7 +514,7 @@ Exp. Ring (Radial profile)
     
   
 Creating New Interpolators
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the `createCustomParamInterpolator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomParamInterpolator.py>`_ example we will create a new parameter interpolator derived from the **oimParaminterpolator** class. The new class will allow chromatic interpolation with a vector of evenly spaced values in a range of wavelengths.
 

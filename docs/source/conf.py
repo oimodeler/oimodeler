@@ -74,6 +74,8 @@ html_theme_options = {
     'display_version': True,
     'style_nav_header_background':'#eeeeee',
     'collapse_navigation': False,
+    'sticky_navigation': True,
+    'navigation_depth': 4,
 }
 html_css_files = ["custom.css"]
 

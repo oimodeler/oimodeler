@@ -99,7 +99,7 @@ class oimSimulator(object):
     def compute(self,computeChi2=False,computeSimulatedData=False,checkSimulatedData=True):
         self.vcompl=self.model.getComplexCoherentFlux(self.data.vect_u,
                         self.data.vect_v,self.data.vect_wl,self.data.vect_mjd)
-       
+        
         nelChi2=0
         chi2=0
         chi2List=[]
@@ -179,7 +179,10 @@ class oimSimulator(object):
                     #Filling the simulatedData astropy array with the computed values
                     if computeSimulatedData==True:
                         for ival in range(len(val)):
-                            self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=val[ival]
+                            try:
+                                self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=val[ival]
+                            except:
+                                self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=np.squeeze(val[ival])
                             
                     #Computing the chi2
                     if computeChi2==True:
@@ -193,9 +196,10 @@ class oimSimulator(object):
                                 
                             else:
                                 chi2i=((dataVal[ival]-val[ival])*np.logical_not(flag[ival])/dataErr[ival])**2
+                                
                             
-                            nelChi2+=np.sum(np.logical_not(flag[ival]))
-                            chi2+=np.sum(chi2i)
+                            nelChi2+=np.sum((dataErr[ival]!=0)*np.logical_not(flag[ival]))
+                            chi2+=np.sum(np.nan_to_num(chi2i,nan=0))
                             chi2List.append(chi2i)
     
        

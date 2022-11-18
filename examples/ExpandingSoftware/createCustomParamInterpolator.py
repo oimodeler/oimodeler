@@ -62,26 +62,9 @@ class oimParamLinearRangeWl(oim.oimParamInterpolator):
         params.append(self.dwl)
         return params
 
-
-
 oim._interpolator["rangeWl"]=oimParamLinearRangeWl
 
-
-
 #%%
-nB=200
-B=np.linspace(0,60,num=nB)
-nwl=1000
-wl=np.linspace(2.0e-6,2.5e-6,num=nwl)
-Bx_arr=np.tile(B[None,:], (nwl, 1)).flatten()
-By_arr=Bx_arr*0
-wl_arr=np.tile(wl[:,None], (1, nB)).flatten()
-spfx_arr=Bx_arr/wl_arr
-spfy_arr=By_arr/wl_arr
-
-
-#%%
-
 nref=10
 
 c = oim.oimUD(d=oim.oimInterp('rangeWl',wl0=2e-6,kind="cubic",
@@ -92,19 +75,31 @@ m   = oim.oimModel(c)
 
 print(m.getParameters())
 print(m.getFreeParameters())
+
+
+#%%
+nB=200
+B=np.linspace(0,60,num=nB)
+nwl=1000
+wl=np.linspace(2.0e-6,2.5e-6,num=nwl)
+Bx_arr=np.tile(B[None,:], (nwl, 1)).flatten()
+wl_arr=np.tile(wl[:,None], (1, nB)).flatten()
+spfx_arr=Bx_arr/wl_arr
+spfy_arr=spfx_arr*0
+
 #%%
 
 
-fig,ax=plt.subplots(2,1)
-ax[0].plot(wl*1e6,c.params['d'](wl,0),color="r",label="interpolated param")
-
-
-v=np.abs(m.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr).reshape(nwl,nB))
 wl0=wl0=np.linspace(c.params['d'].wl0.value,
                     c.params['d'].wl0.value+c.params['d'].dwl.value*nref,num=nref)
 
 vals=np.array([vi.value for vi in c.params['d'].values])
 
+
+v=np.abs(m.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr).reshape(nwl,nB))
+
+fig,ax=plt.subplots(2,1)
+ax[0].plot(wl*1e6,c.params['d'](wl,0),color="r",label="interpolated param")
 ax[0].scatter(wl0*1e6,vals,marker=".",color="k",label="reference values")
 
 ax[0].set_ylabel("UD (mas)")
