@@ -291,9 +291,10 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None,extver=None,squeeze=True):
 def hdulistDeepCopy(hdulist):
     
     res=hdulist.copy()
-    
+    res._file=hdulist._file
     for iext,exti in enumerate(res):
-        res[iext]=res[iext].copy()
+        res[iext]=exti.copy()
+        res[iext].header=exti.header.copy()
     
     
     return res
