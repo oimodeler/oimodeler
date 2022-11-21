@@ -459,7 +459,7 @@ class oimESKIRing(oimComponentFourier):
         phi=  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
             self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp);
        
-        return np.nan_to_num(np.j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t),nan=1)
+        return np.nan_to_num(j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t),nan=1)
           
     def _imageFunction(self,xx,yy,wl,t):
         r2=(xx**2+yy**2)  
