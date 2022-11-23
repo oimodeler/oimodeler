@@ -512,6 +512,7 @@ Exp. Ring (Radial profile)
 .. warning::
     Example will be added when te oimComponentRadialProfile will be fully implemented
     
+..  _create_interp:
   
 Creating New Interpolators
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
