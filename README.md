@@ -19,9 +19,9 @@ Modules:
 
 
 >:warning: In early development. Partially implemented:     
->* oimModel: Fourier and image plans components. Chromaticity and time dependence of components and parameters. 
+>* oimModel: Fourier & image plans components. Chromaticity and time dependence of components and parameters. 
 >* oimData: only interferometric data   
->*oimDataFilter: Wavlengths range cut, datatype selection
+>* oimDataFilter: Wavlengths range cut, datatype selection
 >* oimSimulator: Simulated data and chi2 computation with filtering
 >* oimPlot: Basics plots of oifits data (see example below)    
 >* oimUtils: mainly helpers for oifits format (get information, create new tables...)
