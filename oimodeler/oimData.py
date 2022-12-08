@@ -43,7 +43,6 @@ class oimDataType(IntFlag):
     T3PHI       = 128
     FLUXDATA    = 256
 
-
 ###############################################################################
 
 def oimGetDataValErrAndTypeFlag(arr):
