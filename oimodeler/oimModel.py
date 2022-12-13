@@ -316,7 +316,7 @@ class oimBackground(oimComponentFourier):
             vc[idx]=1
         return vc
 
-    def _imageFunction(self,xx,yy,wl):
+    def _imageFunction(self,xx,yy,wl,t):
         return xx*0+1
     
 ###############################################################################
@@ -429,7 +429,38 @@ class oimRing(oimComponentFourier):
         r2=(xx**2+yy**2)
         return ((r2<=(self.params["dout"](wl,t)/2)**2) & 
                 (r2>=(self.params["din"](wl,t)/2)**2)).astype(float)
+    
+###############################################################################
 
+class oimRing2(oimComponentFourier):
+    name="Ring2"
+    shortname = "R2"
+    def __init__(self,**kwargs):        
+        super().__init__(**kwargs)
+        self.params["d"]=oimParam(**_standardParameters["d"]) 
+        self.params["w"]=oimParam(**_standardParameters["d"])           
+        self.params["w"].name="w"
+        self.params["w"].description="width of the ring"
+        self._eval(**kwargs)
+
+    def _visFunction(self,xp,yp,rho,wl,t):
+        
+        d=self.params["d"](wl,t)* self.params["d"].unit.to(units.rad)
+        w=self.params["w"](wl,t)* self.params["w"].unit.to(units.rad)
+        
+        
+        xx=np.pi*(d+w/2)*rho
+        dxx=np.pi*w*rho
+    
+        return j0(xx)*np.nan_to_num(np.divide(2*j1(dxx),dxx),nan=1)
+
+    
+    def _imageFunction(self,xx,yy,wl,t):
+
+        r2=(xx**2+yy**2)
+        return ((r2<=(self.params["d"](wl,t)/2+self.params["w"](wl,t)/2)**2 & 
+                (r2>=(self.params["d"](wl,t)/2-self.params["w"](wl,t)/2)**2))).astype(float)
+    
 ###############################################################################   
 class oimERing(oimRing):
     name="Ellitical  Ring"
@@ -438,6 +469,16 @@ class oimERing(oimRing):
     def __init__(self,**kwargs):        
          super().__init__(**kwargs)
          self._eval(**kwargs)
+         
+###############################################################################   
+class oimERing2(oimRing2):
+    name="Ellitical  Ring2"
+    shortname = "ER2"
+    elliptic=True
+    def __init__(self,**kwargs):        
+         super().__init__(**kwargs)
+         self._eval(**kwargs)
+
                   
 ###############################################################################
           
@@ -459,7 +500,7 @@ class oimESKIRing(oimComponentFourier):
         phi=  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
             self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp);
        
-        return np.nan_to_num(np.j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t),nan=1)
+        return np.nan_to_num(j0(xx)-I*np.sin(phi)*j1(xx)*self.params["skw"](wl,t),nan=1)
           
     def _imageFunction(self,xx,yy,wl,t):
         r2=(xx**2+yy**2)  
@@ -618,7 +659,13 @@ class oimConvolutor(oimComponentFourier):
         self.component2=component2
         self.name="Convonlution Component"
         self.shortname = "Conv"
-          
+         
+        for key in component2.params:
+            self.params["c2_"+key]=component2.params[key]
+            
+        for key in component1.params:
+               self.params["c1_"+key]=component1.params[key]
+         
         self._eval(**kwargs)
 
     def _visFunction(self,xp,yp,rho,wl,t):     
@@ -806,7 +853,7 @@ class oimModel(object):
 
             ft=self.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr,t_arr).reshape(dims)
             
-            image=np.abs(np.fft.fftshift(np.fft.ifft2(ft,axes=[-2,-1]),axes=[-2,-1]))
+            image=np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(ft,axes=[-2,-1]),axes=[-2,-1]),axes=[-2,-1]))
            
         else:
             image=np.zeros(dims)
@@ -834,8 +881,8 @@ class oimModel(object):
             hdu.header['CRPIX2']=dim/2
             hdu.header['CUNIT1']="rad"
             hdu.header['CUNIT2']="rad"
-            hdu.header['CROTA1']=-0
-            hdu.header['CROTA2']=-0 
+            hdu.header['CROTA1']=0
+            hdu.header['CROTA2']=0 
             
             naxis=3
             if nwl!=1:

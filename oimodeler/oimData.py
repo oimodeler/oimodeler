@@ -43,7 +43,6 @@ class oimDataType(IntFlag):
     T3PHI       = 128
     FLUXDATA    = 256
 
-
 ###############################################################################
 
 def oimGetDataValErrAndTypeFlag(arr):
@@ -397,6 +396,27 @@ class oimData(object):
                     self.struct_flag[-1].append(flag) 
         self._prepared = True
         
+    
+        
+    def writeto(self,filename=None,overwrite=False,directory=None):
+        ndata=len(self.data)
+        for idata,datai in enumerate(self.data):
+            if filename!= None:
+                if ndata==1:
+                    filenamei=filename
+                else:
+                    filenamei="{}_{}.fits".format(os.path.splitext(filename)[0],idata)
+            elif directory!=None and datai.filename()!=None:
+                filenamei=os.path.join(directory,os.path.basename(datai.filename()))
+            elif datai.filename()!=None:
+                filenamei=datai.filename()
+            else:
+                raise TypeError("Can't save the data 1")
+            try:
+                datai.writeto(filenamei,overwrite=overwrite)
+            except:
+                raise TypeError("Can't save the data")
+
         
     def __str__(self):
        nfiles=np.size(self.data)

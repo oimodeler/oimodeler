@@ -96,7 +96,9 @@ class oimFitterEmcee(oimFitter):
             self.initialParams=self._initRandom()
         elif init=="fixed":
             self.initialParams=self._initFixed()
-            
+        elif init=="gaussian":
+             self.initialParams=self._initGaussian()
+             
         moves=[(emcee.moves.DEMove(), 0.8), 
                (emcee.moves.DESnookerMove(), 0.2)]
        
@@ -104,7 +106,18 @@ class oimFitterEmcee(oimFitter):
         self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value, 
                         self.nfree,self._logProbability,moves=moves,**kwargs)
         return kwargs   
-            
+   
+        
+    def _initGaussian(self):
+        nw=self.params['nwalkers'].value
+        initialParams=np.ndarray([nw,self.nfree])
+        
+        for iparam,parami in enumerate(self.freeParams.values()):
+            initialParams[:,iparam]=np.random.normal(parami.value,
+                                  parami.error,self.params['nwalkers'].value)
+        return initialParams
+
+         
     def _initRandom(self):
         
         nw=self.params['nwalkers'].value

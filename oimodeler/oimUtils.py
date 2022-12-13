@@ -201,7 +201,6 @@ def getBaselineLengthAndPA(oifits,arr="OI_VIS2",extver=None,squeeze=True):
             PA2=np.rad2deg(np.arctan2(u2,v2))
             PA3=np.rad2deg(np.arctan2(u3,v3))
             PA.append(np.array([PA1,PA2,PA3]))
-
     if squeeze==True and len(B)==1:
         B=B[0]
         PA=PA[0]
@@ -291,9 +290,10 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None,extver=None,squeeze=True):
 def hdulistDeepCopy(hdulist):
     
     res=hdulist.copy()
-    
+    res._file=hdulist._file
     for iext,exti in enumerate(res):
-        res[iext]=res[iext].copy()
+        res[iext]=exti.copy()
+        res[iext].header=exti.header.copy()
     
     
     return res
@@ -562,7 +562,7 @@ def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
     v2dim=len(v2shape)
     
     if (v2dim==2):
-        nlam=v2dim[1]
+        nlam=v2shape[1]
     elif (v2dim==1):
         if v2shape[0]==nb:
             nlam=1
@@ -578,7 +578,7 @@ def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
     ucoord=fits.Column(name="UCOORD",format="1D",array=np.array(ucoord),unit="m")
     vcoord=fits.Column(name="VCOORD",format="1D",array=np.array(vcoord),unit="m")
     sta_index=fits.Column(name="STA_INDEX",format="2I",array=np.array(sta_index))
-    flag=fits.Column(name="FLAG",format="L",array=np.array(flag))
+    flag=fits.Column(name="FLAG",format="{0}L".format(nlam),array=np.array(flag))
     
     cols=[target_id,time,mjd,int_time,vis2data,vis2err,ucoord,vcoord,sta_index,flag]
       
@@ -591,6 +591,54 @@ def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
     oivis2.header['ARRNAME']=arrname
 
     return oivis2
+
+###############################################################################
+
+def createOiVis(arrname,insname,target_id,time,mjd,int_time,visamp,visamperr,visphi,visphierr,
+                 ucoord,vcoord,sta_index,flag,dateobs,amptyp="absolute",phityp="absolute"):
+
+
+    nb=len(target_id)
+    
+    vshape=np.shape(visamp)
+    vdim=len(vshape)
+    
+    if (vdim==2):
+        nlam=vshape[1]
+    elif (vdim==1):
+        if vshape[0]==nb:
+            nlam=1
+        else:
+            nlam=vshape[0]
+
+    target_id=fits.Column(name="TARGET_ID",format="I",array=np.array(target_id))
+    time=fits.Column(name="TIME",format="D",array=np.array(time),unit="sec")
+    mjd=fits.Column(name="MJD",format="D",array=np.array(mjd),unit="day")
+    int_time=fits.Column(name="INT_TIME",format="D",array=np.array(int_time),unit="sec")
+    visamp=fits.Column(name="VISAMP",format="{0}D".format(nlam),array=np.array(visamp))
+    visamperr=fits.Column(name="VISAMPERR",format="{0}D".format(nlam),array=np.array(visamperr))
+    visphi=fits.Column(name="VISPHI",format="{0}D".format(nlam),array=np.array(visphi))
+    visphierr=fits.Column(name="VISPHIERR",format="{0}D".format(nlam),array=np.array(visphierr))
+    ucoord=fits.Column(name="UCOORD",format="1D",array=np.array(ucoord),unit="m")
+    vcoord=fits.Column(name="VCOORD",format="1D",array=np.array(vcoord),unit="m")
+    sta_index=fits.Column(name="STA_INDEX",format="2I",array=np.array(sta_index))
+    flag=fits.Column(name="FLAG",format="{0}L".format(nlam),array=np.array(flag))
+    
+    cols=[target_id,time,mjd,int_time,visamp,visamperr,visphi,visphierr,ucoord,vcoord,sta_index,flag]
+      
+    oivis=fits.BinTableHDU.from_columns(cols)
+    oivis.header['EXTNAME']='OI_VIS'
+    oivis.header['EXTVER']=(1,'ID number of this OI_VIS')
+    oivis.header['OI_REVN']=(1,'Revision number of the table definition')
+    oivis.header['INSNAME']=(insname,'Identifies corresponding OI_WAVELENGTH')
+    oivis.header['DATE-OBS']=dateobs
+    oivis.header['ARRNAME']=arrname
+    oivis.header['AMPTYP']=amptyp
+    oivis.header['PHITYP']=phityp
+
+    return oivis
+
+
 
 
 

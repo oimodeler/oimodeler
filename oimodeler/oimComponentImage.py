@@ -12,7 +12,6 @@ from scipy.special import j0
 import oimodeler as oim
 from oimodeler import oimParam,oimComponent,_standardParameters
 
-
 class oimComponentImage(oimComponent):    
     """
     Base class for components define in 2D : x,y (regular grid) in the image plan.
@@ -316,10 +315,11 @@ class oimComponentRadialProfile(oimComponent):
         grid=(tin,wlin,sfreq0)  
         
         coord=np.transpose([t,wl,sfreq])  
+       
         real=interpolate.interpn(grid,np.real(res0),coord,bounds_error=False,fill_value=None)
         imag=interpolate.interpn(grid,np.imag(res0),coord,bounds_error=False,fill_value=None)
         vc=real+imag*1j
-        
+        print(real.shape)
         #print("interp {:.2f}ms".format((time.time() - s0)*1000))    
          
         

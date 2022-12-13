@@ -110,7 +110,6 @@ class oimDataTypeFilter(oimDataFilterComponent):
     """
     
     """
-    
     name = "Filtering by datatype"
     shortname = "DataType Filter"
     description = "Filtering by datatype : VIS2DATA, VISAMP..."    
@@ -140,8 +139,7 @@ class oimDataTypeFilter(oimDataFilterComponent):
             
         
 
-
-
+###############################################################################
 
 class oimDataFilter(object):
     """
