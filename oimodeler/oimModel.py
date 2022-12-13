@@ -316,7 +316,7 @@ class oimBackground(oimComponentFourier):
             vc[idx]=1
         return vc
 
-    def _imageFunction(self,xx,yy,wl):
+    def _imageFunction(self,xx,yy,wl,t):
         return xx*0+1
     
 ###############################################################################
