@@ -4,6 +4,9 @@ Early Development](https://img.shields.io/badge/lifecycle-EarlyDevelopment-orang
 ![version](https://img.shields.io/badge/version-0.0.1-blue)
 # oimodeler
 
+![boo](./images/logo.png)
+ 
+
 #### A modular modelling tool for optical interferometry
 
 See full documentation [here](https://oimodeler.readthedocs.io/en/latest/)
