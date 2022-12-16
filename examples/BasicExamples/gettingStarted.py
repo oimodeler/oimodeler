@@ -4,7 +4,6 @@ Created on Wed Sep 21 10:59:15 2022
 
 @author: Ame
 """
-
 import oimodeler as oim
 
 #%%
@@ -29,7 +28,7 @@ ud.params['f'].set(min=0.,max=10.)
 pt.params['f'].free=False
 
 #%%
-model=oim.oimModel([ud,pt])
+model=oim.oimModel(ud,pt)
 
 #%%
 
