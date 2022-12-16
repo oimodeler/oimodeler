@@ -35,14 +35,18 @@ First we import the useful packages and create a set of spatial frequencies and 
     
 Unlike in the previous example with the grey data, we create a 2D-array for the spatial frequencies of ``nB`` baselines by ``nwl`` wavelengths. The wavlength vector is tiled itself to have the same length as the spatial frequency vector. Finally, we flatten the vector to be passed to the getComplexCoherentFlux method.
 
-Let's create our first chromatic components. Chromaticity can added to grey Fourier-based model by using the oimInterpWl when creating a new component.
+Let's create our first chromatic components. Linearly chromatic parameter can added to grey Fourier-based model by using the oimInterp macro with the parameter "wl" when creating a new component. 
 
 .. code-block:: python
 
-    g=oim.oimGauss(fwhm=oim.oimInterpWl([3e-6,4e-6],[2,8]))
+    g=oim.oimGauss(fwhm=oim.oimInterp("wl" wl=[3e-6,4e-6],values=[2,8]))
     
 We have created a Gaussian component with a fwhm growing from 2 mas at 3 microns to 8 mas at 4 microns.
-We can access to the interpolated value of the parameters using the call operator ().
+
+.. Note::
+    Parameter interpolators are described in details in the :ref:`following example <paramInterpolatorExample>`
+
+We can access to the interpolated value of the parameters using the call operator ()
 
 
 .. code-block:: python
@@ -80,7 +84,7 @@ Now let's add a second component: a uniform disk with a chromatic flux.
 
 .. code-block:: python
     
-    ud=oim.oimUD(d=0.5,f=oim.oimInterpWl([3e-6,4e-6],[2,0.2]))
+    ud=oim.oimUD(d=0.5,f=oim.oimInterp("wl", wl=[3e-6,4e-6],values=[2,0.2]))
     m2=oim.oimModel([ud,g])
 
     fig2im,ax2im,im2 = m2.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(3.5,2.5))
@@ -108,8 +112,8 @@ Now let's create a similar model but with elongated components. We will replace 
 
 .. code-block:: python
 
-    eg=oim.oimEGauss(fwhm=oim.oimInterpWl([3e-6,4e-6],[2,8]),elong=2,pa=90)
-    el=oim.oimEllipse(d=0.5,f=oim.oimInterpWl([3e-6,4e-6],[2,0.1]),elong=2, pa=90)
+    eg=oim.oimEGauss(fwhm=oim.oimInterp("wl",wl=[3e-6,4e-6],values=[2,8]),elong=2,pa=90)
+    el=oim.oimEllipse(d=0.5,f=oim.oimInterp("wl",wl=[3e-6,4e-6],values=[2,0.1]),elong=2, pa=90)
 
     m3=oim.oimModel([el,eg])
     fig3im,ax3im,im3 = m3.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(3.5,2.5),normPow=0.5)
@@ -228,8 +232,8 @@ Here we create a two-components model with a time dependent Gaussian fwhm and a 
 
 .. code-block:: python
 
-    gd1=oim.oimGauss(fwhm=oim.oimInterpTime(t=[0,1,3],value=[1,4,1]))
-    ud1=oim.oimUD(d=oim.oimInterpWl(wl=[1e-6,3e-6],value=[0.5,2]),x=-4,y=0,f=0.1)
+    gd1=oim.oimGauss(fwhm=oim.oimInterp('time',mjd=[0,1,3],values=[1,4,1]))
+    ud1=oim.oimUD(d=oim.oimInterp("wl",wl=[1e-6,3e-6],values=[0.5,2]),x=-4,y=0,f=0.1)
 
     m5=oim.oimModel(gd1,ud1)
 
@@ -241,6 +245,7 @@ Here we create a two-components model with a time dependent Gaussian fwhm and a 
 .. image:: ../../images/complexModel_time.png
   :alt: Alternative text  
 
+.. _paramInterpolatorExample:
 
 Parameters Interpolators
 ^^^^^^^^^^^^^^^^^^^^^^^^
