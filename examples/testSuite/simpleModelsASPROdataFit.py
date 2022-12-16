@@ -135,7 +135,7 @@ class matissePtAndEIRing(baseTest):
     name="MATISSE PT + EIRING"
     truth=np.array([0.3,1.5,50,15])
     nwalker=10
-    nstep=2000
+    nstep=4000
     fdata="ASPRO_MATISSE_0.3PT_0.7ER15_apl1.5_pa=50.fits"
     def setModel(self):
         c1=oim.oimPt()
@@ -152,7 +152,8 @@ class matissePtAndERing(baseTest):
     name="MATISSE PT + ERING"
     truth=np.array([0.3,1.5,50,15,0])
     nwalker=20
-    nstep=2000
+    nstep=4000
+    chi2r0=1.17
     fdata="ASPRO_MATISSE_0.3PT_0.7ER15_apl1.5_pa=50.fits"
     def setModel(self):
         c1=oim.oimPt()
