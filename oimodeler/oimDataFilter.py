@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Sep  8 13:21:23 2022
+"""data filtering/modifying
 
-@author: Ame
 """
 
 import numpy as np
@@ -68,7 +66,6 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
     name = "Remove array by type Filter"
     shortname = "Remove Arr"
     description = "Remove array by type Filter"    
-    
     
     def __init__(self,**kwargs):
         super().__init__(**kwargs)

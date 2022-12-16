@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Oct 28 11:21:58 2022
-
-@author: Ame
+model parameter and parameter interpolators
 """
 
 import numpy as np
 from astropy import units as units
-import numbers
 from scipy.interpolate import interp1d
 
-#import oimodeler as oim
-
 ###############################################################################
-
 
 class oimParam(object):
     """
@@ -80,133 +74,6 @@ class oimParam(object):
         except:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
 
-
-###############################################################################
-
-class oimInterpWl(object):
-    """
-    Structure for creating oimParamInterpWl directly in oimParam defintion
-    """
-
-    def __init__(self, wl=[], value=None):
-        self.wl = wl
-        self.value = value
-
-###############################################################################
-
-
-class oimParamInterpWl(oimParam):
-    def __init__(self, param, interpWl):
-
-        self.name = param.name
-        self.description = param.description
-        self.unit = param.unit
-
-        value = interpWl.value
-        wl = interpWl.wl
-        nwl = len(wl)
-
-        if value == None:
-            value = [self.value]*nwl
-        elif isinstance(value, numbers.Number):
-            value = [value]*nwl
-        else:
-            if len(value) != nwl:
-                raise TypeError("wl and val should have the same length :"
-                                "len(x)={}, len(y)={}".format(len(wl), len(value)))
-
-        self.params = []
-        self._wl = wl
-        self._nwl = nwl
-
-        for i in range(nwl):
-
-            pi = oimParam(name=param.name, value=value[i], mini=param.min,
-                          maxi=param.max, description=param.description,
-                          unit=param.unit, free=param.free, error=param.error)
-            self.params.append(pi)
-
-        self.value = self.params
-
-    def __call__(self, wl=None, t=None):
-        values = np.array([pi.value for pi in self.params])
-        return np.interp(wl, self.wl, values, left=values[0], right=values[-1])
-
-    @property
-    def wl(self):
-        return self._wl
-
-    @wl.setter
-    def wl(self, _wl):
-        nwl = len(_wl)
-        if nwl == self._nwl:
-            self._wl = np.array(_wl)
-        else:
-            raise TypeError("Can't modify number of key wls in oimParamInterpWl "
-                            "after creation. Consider creating a new parameter")
-###############################################################################
-
-
-class oimInterpTime(object):
-    """
-    Structure for creating oimParamInterpTime directly in oimParam defintion
-    """
-
-    def __init__(self, t=[], value=None):
-        self.t = t
-        self.value = value
-###############################################################################
-
-
-class oimParamInterpTime(oimParam):
-    def __init__(self, param, interpTime):
-
-        self.name = param.name
-        self.description = param.description
-        self.unit = param.unit
-
-        value = interpTime.value
-        t = interpTime.t
-        nt = len(t)
-
-        if value == None:
-            value = [self.value]*nt
-        elif isinstance(value, numbers.Number):
-            value = [value]*nt
-        else:
-            if len(value) != nt:
-                raise TypeError("nt and val should have the same length :"
-                                "len(x)={}, len(y)={}".format(len(nt), len(value)))
-
-        self.params = []
-        self._t = t
-        self._nt = nt
-
-        for i in range(nt):
-
-            pi = oimParam(name=param.name, value=value[i], mini=param.min,
-                          maxi=param.max, description=param.description,
-                          unit=param.unit, free=param.free, error=param.error)
-            self.params.append(pi)
-
-        self.value = self.params
-
-    def __call__(self, wl=None, t=None):
-        values = np.array([pi.value for pi in self.params])
-        return np.interp(t, self.t, values, left=values[0], right=values[-1])
-
-    @property
-    def t(self):
-        return self._t
-
-    @t.setter
-    def t(self, _t):
-        nt = len(_t)
-        if nt == self._nt:
-            self._t = np.array(_t)
-        else:
-            raise TypeError("Can't modify number of key wls in oimParamInterpTime "
-                            "after creation. Consider creating a new parameter")
 
 
 ###############################################################################
@@ -338,6 +205,7 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
             fill_value = (values[0],values[-1])
             bounds_error=False
         #return np.interp(var, keyframes, values, left=values[0], right=values[-1])
+        
         return interp1d( keyframes, values, fill_value=fill_value,
                         kind=self.kind,bounds_error=bounds_error)(var)
     
@@ -631,7 +499,7 @@ class oimParamLinearRangeWl(oimParamInterpolator):
 
 ###############################################################################
 # List of interpolators defined in oimodels
-_interpolator={"wl":oimParamInterpolatorWl,
+oimParamInterpolatorList={"wl":oimParamInterpolatorWl,
                 "time":oimParamInterpolatorTime,
                 "GaussWl":oimParamGaussianWl,
                 "GaussTime":oimParamGaussianTime,
@@ -641,14 +509,32 @@ _interpolator={"wl":oimParamInterpolatorWl,
                 "polyWl":oimParamPolynomialWl,
                 "polyTime":oimParamPolynomialTime,
                 "rangeWl":oimParamLinearRangeWl}
-
-
+"""
+dictionary of available interpolators
+"""
 ###############################################################################
 
 class oimInterp(object):
+    """
+    Macro to directly create oimParamInterpolator-derived class in a 
+    oimComponent object.
+
+    Parameters
+    ----------
+    name : str
+        keyname for the interpolators registered in the _interpolator variable
+    **kwargs : dictionary
+        parameters from the create oimParamInterpolator-derived class
+
+    Returns
+    -------
+    None.
+
+    """
     def __init__(self,name, **kwargs):
+
         self.kwargs=kwargs
-        self.type=_interpolator[name]
+        self.type=oimParamInterpolatorList[name]
 
 ###############################################################################
 # Here is a list of standard parameters to be used when defining new components

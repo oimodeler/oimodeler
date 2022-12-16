@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Sep  9 11:21:49 2022
-
-@author: Ame
+various plotting function and classes
 """
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
