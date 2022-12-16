@@ -4,20 +4,22 @@ Created on Tue Nov 23 15:26:42 2021
 
 @author: Ame
 """
-from .oimOptions import *
-from .oimOptions import oimOptions
-from .oimFTBackends import *
-from .oimParam import *
-from .oimParam import _standardParameters,_interpolator
-from .oimModel import *
-from .oimComponentImage import *
-from .oimData import *
-from .oimData import _oimDataType, _oimDataTypeErr, _oimDataTypeArr
-from .oimFitter import *
-from .oimSimulator import *
-from .oimUtils import *
-from .oimDataFilter import *
-from .oimPlots import *
+#from oimOptions import *
+from oimOptions import oimOptions
+from oimFTBackends import *
+from oimParam import *
+from oimParam import _standardParameters
+from oimModel import *
+from oimComponent import *
+from oimBasicFourierComponents import *
+import oimCustomComponents as oimCustomComponents
+from oimData import *
+from oimData import _oimDataType, _oimDataTypeErr, _oimDataTypeArr
+from oimFitter import *
+from oimSimulator import *
+from oimUtils import *
+from oimDataFilter import *
+from oimPlots import *
 
 
 import numpy as np
