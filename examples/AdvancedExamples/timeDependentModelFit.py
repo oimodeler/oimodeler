@@ -28,20 +28,26 @@ fit.data.setFilter(oim.oimDataFilter([f1]))
 fit.run(nsteps=300,progress=True)
 
 #%%
-figWalkers,axeWalkers=fit.walkersPlot(cmap="plasma_r")
-figCorner,axeCorner=fit.cornerPlot(discard=100)
+figWalkers,axeWalkers=fit.walkersPlot(cmap="plasma_r",
+     savefig=os.path.join(path, os.pardir, "images", 
+                          "complexModel_timeDependentWalkers.png"))    
+figCorner,axeCorner=fit.cornerPlot(discard=100,
+     savefig=os.path.join(path, os.pardir, "images", 
+                          "complexModel_timeDependentCorner.png"))   
 
 #%%
 median,err_l,err_u,err=fit.getResults(mode='median',discard=100)
 
 #%%
 fig, ax = plt.subplots(1,1, subplot_kw=dict(projection='oimAxes'),figsize=(8,8))
-timecol=ax.oiplot(fit.simulator.data,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas",label="Data",cname="MJD",lw=4)
-ax.oiplot(fit.simulator.simulatedData,"SPAFREQ","VIS2DATA" ,xunit="cycles/mas", color="k",ls=":",label="Model")
+timecol=ax.oiplot(fit.simulator.data,"SPAFREQ","VIS2DATA" ,
+                  xunit="cycles/mas",label="Data",cname="MJD",lw=4)
+ax.oiplot(fit.simulator.simulatedData,"SPAFREQ","VIS2DATA" ,
+          xunit="cycles/mas", color="k",ls=":",label="Model")
 fig.colorbar(timecol, ax=ax,label="MJD (days)")
 ax.legend()
-#ax.set_yscale('log')
-#ax.set_ylim(1e-5,1)
+plt.savefig(os.path.join(path, os.pardir, "images",
+            "complexModel_timeDependentFit.png"))
 
 #%%
 fig, ax = plt.subplots(1,1,figsize=(8,4))
@@ -54,10 +60,13 @@ diam_Obs=ud.params['d'](0,mjd_Obs)
 mjd=np.linspace(60076,60080,num=100)
 diam=ud.params['d'](0,mjd)
 ax.plot(mjd,diam,color="k",lw=2,label="interpolated parameter")
-ax.scatter(mjd_ref,diam_ref,marker="o",s=100,color="r",zorder=10,label="Ref values for model fitting")
-ax.scatter(mjd_Obs,diam_Obs,marker="X",s=100,c=mjd_Obs,zorder=10,label="Observations")
+ax.scatter(mjd_ref,diam_ref,marker="o",s=100,color="r",zorder=10,
+           label="Ref values for model fitting")
+ax.scatter(mjd_Obs,diam_Obs,marker="X",s=100,c=mjd_Obs,zorder=10,
+           label="Observations")
 ax.set_xlabel("Time (MJD)")
 ax.set_ylabel("Diameter (mas)")
 ax.legend()
 
-
+plt.savefig(os.path.join(path, os.pardir, "images",
+            "complexModel_timeDependentParameter.png"))
