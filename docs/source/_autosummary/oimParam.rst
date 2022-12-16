@@ -1,7 +1,7 @@
-﻿oimUtils
+﻿oimParam
 ========
 
-.. automodule:: oimUtils
+.. automodule:: oimParam
     :members:
     :undoc-members:
     :private-members:

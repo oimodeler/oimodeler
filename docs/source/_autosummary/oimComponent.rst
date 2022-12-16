@@ -1,7 +1,7 @@
-﻿oimSimulator
+﻿oimComponent
 ============
 
-.. automodule:: oimSimulator
+.. automodule:: oimComponent
     :members:
     :undoc-members:
     :private-members:

@@ -1,7 +1,7 @@
-﻿oimUtils
-========
+﻿oimOptions
+==========
 
-.. automodule:: oimUtils
+.. automodule:: oimOptions
     :members:
     :undoc-members:
     :private-members:
