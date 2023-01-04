@@ -9,8 +9,10 @@ oimodeler can be installed directly using the pip install command.
     $ pip install git+https://github.com/oimodeler/oimodeler
 
 
+.. note::
+    The examples including  dedicated data won't be instaled when using pip. They are available on the `Github  <https://github.com/oimodeler/oimodeler/tree/main/examples/>`_ archive.
 
-However if you intend to expand oimodeler, you should clone the oimodeler git repository.
+Alternatively, you can install the complete oimodeler package including examples and data by cloning the git repository.
 
 .. code-block:: console
 
@@ -19,7 +21,6 @@ However if you intend to expand oimodeler, you should clone the oimodeler git re
     
 Dependancies
 ------------
-
 
 oimodeler python library depends only on the following packages:
 
@@ -31,9 +32,10 @@ oimodeler python library depends only on the following packages:
 - `emcee <https://emcee.readthedocs.io/en/stable/>`_
 - `corner <https://corner.readthedocs.io/en/latest/>`_
 - `tqdm <https://tqdm.github.io/>`_
+- `pyFFTW <https://pypi.org/project/pyFFTW/>`_ (optional)
 
     
-These packages are automatically installed if missing when installing oimodeler with the pip command but manual installation are required when cloning the repository.
+These packages (except the optional ones) are automatically installed if missing when installing oimodeler with the pip command but manual installation are required when cloning the repository.
 
 
 Checking installation

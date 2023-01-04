@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct 19 12:19:06 2022
+based components defined in Fourier or image plan
 
-@author: Ame
 """
 
 import numpy as np
@@ -10,7 +9,265 @@ from astropy import units as units
 from scipy import interpolate,integrate
 from scipy.special import j0
 import oimodeler as oim
-from oimodeler import oimParam,oimComponent,_standardParameters
+from oimodeler import oimParam,_standardParameters,oimParamInterpolator,oimInterp
+
+###############################################################################
+#TODO move somewhere else
+def getFourierComponents():
+    """
+    
+    A function to get the list of all available components deriving from the 
+    oimComponentFourier class.
+    
+    Returns
+    -------
+    res : list
+        list of all available components deriving from the oimComponentFourier class.
+        
+    :meta private:
+    """
+    fnames=dir(oim)
+    res=[]
+    for f in fnames:
+        try:
+            if issubclass(oim.__dict__[f], oim.oimComponentFourier):
+                res.append(f)
+        except:
+            pass
+    return res
+
+###############################################################################
+
+class oimComponent(object):
+    """
+    The OImComponent class is the parent abstract class for all types of 
+    components that can be added to a OImModel. It has a similar interface than
+    the oimModel and allow to compute images (or image cubes fore wavelength 
+    dependent models or time dependent models) and complex coherentFluxes for a
+    vector of u,v,wl, and t coordinates. 
+    
+    Variables:
+    ----------
+        name: the name of the component
+        shortname: a short name for the component
+        description: a detail description of the component
+        params: the dictionary of the component parameters
+        
+    """  
+    
+  
+    name = "Generic component"
+    shortname = "Gen comp"
+    description = "This is the class from which all components derived"
+    
+    def __init__(self,**kwargs):
+        """
+        Create and initiliaze a new instance of the oimComponent class
+        All components have at least three parameters the position 
+        x and y and their flux f.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.params={}
+        self.params["x"]=oimParam(**_standardParameters["x"])
+        self.params["y"]=oimParam(**_standardParameters["y"])
+        self.params["f"]=oimParam(**_standardParameters["f"])
+       
+        self._eval(**kwargs)
+       
+    def _eval(self,**kwargs):
+        for key, value in kwargs.items():
+            if key in self.params.keys():
+                if isinstance(value,oimInterp):
+
+                    if not(isinstance(self.params[key],oimParamInterpolator)):
+                        self.params[key]=value.type(self.params[key],**value.kwargs)
+                else:
+                    self.params[key].value=value
+   
+                            
+    def getComplexCoherentFlux(self,u,v,wl=None,t=None):
+        """
+        Compute and return the complex coherent flux for an array of u,v 
+        (and optionally wavelength and time ) coordinates.
+
+        Parameters
+        ----------
+        u : list or numpy array
+            spatial coordinate u (in cycles/rad) 
+        v : list or numpy array
+            spatial coordinate vu (in cycles/rad) .
+        wl : list or numpy array, optional
+            wavelength(s) in meter. The default is None.
+        t :  list or numpy array, optional
+            time in s (mjd). The default is None.
+
+        Returns
+        -------
+        A numpy array of  the same size as u & v
+            The complex coherent flux.
+
+        """
+        return np.array(u)*0;
+    
+    def getImage(self,dim,pixSize,wl=None,t=None):
+        """
+        Compute and return an image or and image cube (if wavelength and time 
+        are given). The returned image as the x,y dimension dim in pixel with
+        an angular pixel size pixSize in rad. Image is returned as a numpy 
+        array unless the keyword fits is set to True. In that case the image is
+        returned as an astropy.io.fits hdu.
+
+        Parameters
+        ----------
+        dim : integer
+            image x & y dimension in pixels.
+        pixSize : float
+            pixel angular size.in rad
+        wl : integer, list or numpy array, optional
+             wavelength(s) in meter. The default is None.
+        t :  integer, list or numpy array, optional
+            time in s (mjd). The default is None.
+        fits : bool, optional
+            if True returns result as a fits hdu. The default is False.
+
+        Returns
+        -------
+        a numpy 2D array (or 3 or 4D array if wl, t or both are given) or an
+        astropy.io.fits hdu. image hdu if fits=True.
+            The image of the component with given size in pixels and rad.
+
+        """          
+        return np.zeros(dim,dim);    
+
+        
+    def _ftTranslateFactor(self,ucoord,vcoord,wl,t): 
+        x=self.params["x"](wl,t)*self.params["x"].unit.to(units.rad)
+        y=self.params["y"](wl,t)*self.params["y"].unit.to(units.rad)
+        return np.exp(-2*1j*np.pi*(ucoord*x+vcoord*y))
+    
+    def _directTranslate(self,x,y,wl,t):
+        x=x-self.params["x"](wl,t)
+        y=y-self.params["y"](wl,t)
+        return x,y
+    
+    
+    def __str__(self):
+        txt=self.name
+        for name,param in self.params.items():  
+            txt+=" {0}={1:.2f}".format(param.name,param.value)
+        return txt
+    
+###############################################################################
+
+
+class oimComponentFourier(oimComponent):
+    """
+    Class  for all component analytically defined in the Fourier plan.
+    Inherit from the oimComponent.
+    Implements translation in direct and Fourier space, getImage from the
+    Fourier definition of the object, ellipticity (i.e. flatening)
+    Children classes should only implement the _visFunction and _imageFunction
+    functions. 
+    """
+    elliptic=False
+    def __init__(self,**kwargs):      
+
+        super().__init__(**kwargs)
+        
+        #Add ellipticity if either elong or pa is specified in kwargs
+        if ("elong" in kwargs) or ("pa" in kwargs) or self.elliptic==True:
+            self.params["elong"]=oimParam(**_standardParameters["elong"])
+            self.params["pa"]=oimParam(**_standardParameters["pa"])
+            self.elliptic=True
+        
+        self._eval(**kwargs)
+
+        
+    def getComplexCoherentFlux(self,ucoord,vcoord,wl=None,t=None):
+        
+        if self.elliptic==True:   
+            pa_rad=(self.params["pa"](wl,t))* \
+                        self.params["pa"].unit.to(units.rad)      
+            co=np.cos(pa_rad)
+            si=np.sin(pa_rad)
+            fxp=ucoord*co-vcoord*si
+            fyp=ucoord*si+vcoord*co
+            rho=np.sqrt(fxp**2/self.params["elong"](wl,t)**2+fyp**2) 
+        else:
+            fxp=ucoord
+            fyp=vcoord
+            rho=np.sqrt(fxp**2+fyp**2)            
+               
+        vc=self._visFunction(fxp,fyp,rho,wl,t)
+              
+        return vc*self._ftTranslateFactor(ucoord,vcoord,wl,t)* \
+                                                     self.params["f"](wl,t)
+    
+          
+    def _visFunction(self,ucoord,vcoord,rho,wl,t):
+        return ucoord*0
+    
+    def getImage(self,dim,pixSize,wl=None,t=None):  
+
+        t=np.array(t).flatten()
+        nt=t.size
+        wl=np.array(wl).flatten()
+        nwl=wl.size
+        
+        dims=(nt,nwl,dim,dim)
+             
+        v=np.linspace(-0.5,0.5,dim)
+        
+        vx,vy=np.meshgrid(v,v)
+        
+        vx_arr=np.tile(vx[None,None,:,:], (nt,nwl, 1, 1))
+        vy_arr=np.tile(vy[None,None,:,:], (nt,nwl, 1, 1))
+        wl_arr=np.tile(wl[None,:,None,None], (nt,1, dim, dim))
+        t_arr=np.tile(t[:,None,None,None], (1,nwl, dim, dim))
+        
+        x_arr=(vx_arr*pixSize*dim).flatten()   
+        y_arr=(vy_arr*pixSize*dim).flatten()   
+        wl_arr=wl_arr.flatten()
+        t_arr=t_arr.flatten()
+        
+        x_arr,y_arr=self._directTranslate(x_arr,y_arr,wl_arr,t_arr)
+        
+        if self.elliptic:
+       
+            pa_rad=(self.params["pa"](wl_arr,t_arr))* \
+                               self.params["pa"].unit.to(units.rad)
+                               
+            xp=x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
+            yp=x_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
+            
+            x_arr=xp*self.params["elong"](wl_arr,t_arr)
+            y_arr=yp
+            
+        image = self._imageFunction(x_arr.reshape(dims),y_arr.reshape(dims),
+                                    wl_arr.reshape(dims),t_arr.reshape(dims))
+        
+        tot=np.sum(image,axis=(2,3))
+        
+        #TODO no loop for normalization
+        for it,ti in enumerate(t):
+            for iwl,wli in enumerate(wl):
+                if tot[it,iwl]!=0:  
+                    image[it,iwl,:,:] = image[it,iwl,:,:]  \
+                              / tot[it,iwl]*self.params["f"](wli,ti)    
+
+        return image    
+    
+    
+    def _imageFunction(self,xx,yy,wl,t):
+        image=xx*0+1
+        return image
+    
+    
+###############################################################################
 
 class oimComponentImage(oimComponent):    
     """
@@ -471,4 +728,10 @@ class oimComponentRadialProfile(oimComponent):
                                   / tot[it,iwl]*self.params["f"](wli,ti)    
 
         return im
+
+
+
+
+
+
 

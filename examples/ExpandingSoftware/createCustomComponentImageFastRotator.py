@@ -160,7 +160,7 @@ labels=["East-West Baselines","North-South Baselines"]
 for iwl in range(nwl):
     cwl=iwl/(nwl-1)
     ax[2].plot(B/wl[iwl]/units.rad.to(units.mas),v[iwl,:nB//2],
-            color=plt.cm.plasma(cwl),label=labels[1])
+            color=plt.cm.plasma(cwl),label=labels[0])
     ax[2].plot(B/wl[iwl]/units.rad.to(units.mas),v[iwl,nB//2:],
            color=plt.cm.plasma(cwl),alpha=0.1,label=labels[1])  
     labels=[None,None]

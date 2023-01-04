@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct 19 12:26:57 2022
-
-@author: Ame
+set global options of the oimodeler sotfware
 """
 
+#The dictionary oimOption contains all the customizable option of oimodeler
 oimOptions={}
 
 oimOptions['FTpaddingFactor']=8
+
+

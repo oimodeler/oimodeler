@@ -56,7 +56,9 @@ class baseTest:
         self.best,_,_,self.err=self.fit.getResults(mode='best',discard=discard)
         self.chi2r=self.fit.simulator.chi2r
         
-        resTest=(np.all(self.best-self.truth/self.err<1)) 
+        resTest1=(self.best-self.truth)/self.err<1
+        resTest2=(self.best-self.truth)/self.best<0.01
+        resTest=np.all(resTest1 | resTest2)
         chi2Test=((self.chi2r-self.chi2r0)/self.chi2r0<0.1)
 
         dt=( datetime.now()-t0).total_seconds()

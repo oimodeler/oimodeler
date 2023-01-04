@@ -63,6 +63,7 @@ For instance this create single vectors fgor the data coordinate : ``data.vect_u
      2.72063039e-06 2.68776785e-06]
     (5376,)
     
+..  _basicModel:
     
 Basic models
 ^^^^^^^^^^^^
@@ -100,9 +101,13 @@ A model is a collection of components. All components derived from the oimCompon
 +---------------+-------------------------------------+-----------------------------------+
 | oimEIRing     | Ellitical infinitesimal ring        | x,y,f,d,pa,elong                  |
 +---------------+-------------------------------------+-----------------------------------+
-| oimRing       | Ring                                | x,y,f,din,dout                    |
+| oimRing       | Ring defined with din and dout      | x,y,f,din,dout                    |
 +---------------+-------------------------------------+-----------------------------------+
-| oimERing      | Ellitical  ring                     | x,y,f,din,dout,pa,elong           |
+| oimERing      | Ellitical ring with din and dout    | x,y,f,din,dout,pa,elong           |
++---------------+-------------------------------------+-----------------------------------+
+| oimRing2      | Ring defined with d and dr          | x,y,f,d,dr                        |
++---------------+-------------------------------------+-----------------------------------+
+| oimERing2     | Ellitical Ring  with d and dr       | x,y,f,d,dr,pa,elong               |
 +---------------+-------------------------------------+-----------------------------------+
 | ESKIRing      | Skewed infinitesimal Ellitical ring | x,y,f,d,skw,skwPa,pa,elong        |
 +---------------+-------------------------------------+-----------------------------------+

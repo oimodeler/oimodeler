@@ -24,6 +24,7 @@ import sys
 sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.join(pathlib.Path(__file__).parents[2].resolve().as_posix(),"oimodeler"))
+sys.path.insert(0, os.path.join(pathlib.Path(__file__).parents[2].resolve().as_posix(),"oimodeler","oimCustomComponents"))
 
 # -- Project information -----------------------------------------------------
 
@@ -78,9 +79,8 @@ html_theme_options = {
     'navigation_depth': 4,
 }
 html_css_files = ["custom.css"]
-
+autodoc_member_order = 'bysource'
 #numpydoc_class_members_toctree = False
-
 """
 autodoc_default_options = {
     'members': 'var1, var2',

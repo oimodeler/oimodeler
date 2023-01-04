@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Sep  9 08:37:23 2022
-
-@author: Ame
+various utilities for optical interferometry
 """
 import numpy as np
 from astropy.io import fits

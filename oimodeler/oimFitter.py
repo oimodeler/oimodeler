@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Sep 19 14:32:59 2022
+model fitting
 
-@author: Ame
 """
 
 import numpy as np
-from oimodeler.oimModel import oimParam
+from oimodeler import oimParam
 import oimodeler as oim
 import emcee
 import matplotlib.pyplot as plt

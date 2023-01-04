@@ -11,7 +11,7 @@ oimodeler
 
 The oimodeler project aims at developping a modular and easily expandable python-based modelling software for optical interferometry. The project started end of 2021, and the software is currently at an early stage of development. 
 
-It allows to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, computed chi2, perform model fitting (using mcmc or other fitters), and plot results easily. Components can be defined in the image or Fourier plan using analytical formulas or precomputed images. Components or model parameters can be chromatic and/or time dependent. As the software is modular and object oriented, it is easy to expand it creating new components from abstract classes. 
+It allows to manipulate data in the oifits format, build complex models from various components, simulate data from the model at the spatial frequencies of your observations, compute chi2, perform model fitting (using mcmc or other fitters), and plot results easily. Components can be defined in the image or Fourier plan using analytical formulas or precomputed images. Components or model parameters can be chromatic and/or time dependent. The software is modular and object oriented, in order to make it easy to expand it by creating new model components or other features from abstract classes. 
 
 .. warning::
 
@@ -59,10 +59,27 @@ Here is a plot showing a model consisting of a fast rotating star plus a uniform
   :alt: Alternative text
 
 
+License 
+=======
+
+Copyright 2021-2022 Anthony Meilland and `contributors <https://github.com/oimodeler/oimodeler/graphs/contributors>`_.
+
+oimodeler is a free software distributed under GNU General Public License. 
+
+For details see the `LICENSE <https://github.com/oimodeler/oimodeler/blob/main/LICENSE>`_.
+
 Acknowledgment
 ==============
 
 The oimodeler package is developed with support from the `VLTI/MATISSE <https://www.matisse.oca.eu/fr/accueil-matisse>`_ consortium and the ANR project `MASSIF <https://www.anr-massif.fr>`_ .
+
+
+Contact
+=======
+
+If you have any question or comments contact `Anthony Meilland <mailto://ame@oca.eu>`_.
+
+You can use `Github <https://github.com/oimodeler/oimodeler/issues>`_ interface for bug reports.
 
 Table of Contents
 =================

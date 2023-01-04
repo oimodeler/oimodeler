@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct 19 12:22:56 2022
-
-@author: Ame
+Backends for Fourier Transform computation
 """
 
 import numpy as np
