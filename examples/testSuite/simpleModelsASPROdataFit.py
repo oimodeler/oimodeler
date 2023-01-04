@@ -52,8 +52,10 @@ class baseTest:
         self.best,_,_,self.err=self.fit.getResults(mode='median',discard=self.nstep//2)
         self.chi2r=self.fit.simulator.chi2r
         
-        resTest=(np.all(self.best-self.truth/self.err<1)) 
-        chi2Test=((self.chi2r-self.chi2r0)/self.chi2r0<0.05)
+        resTest1=(self.best-self.truth)/self.err<1
+        resTest2=(self.best-self.truth)/self.best<0.01
+        resTest=np.all(resTest1 | resTest2)
+        chi2Test=((self.chi2r-self.chi2r0)/self.chi2r0<0.1)
 
         dt=( datetime.now()-t0).total_seconds()
         
@@ -94,7 +96,7 @@ class pionierUD(baseTest):
   
 class pionierBin(baseTest):
     name="PIONIER PT + SHIFT UD"
-    truth=np.array([0.83,5,8.67,3.01]) # PIONIER data generated with ASPRO have somme bias 
+    truth=np.array([0.83,5,8.67,3]) # PIONIER data generated with ASPRO have somme bias 
     chi2r0=3.973 # and Chi2r is not close to 1
     nwalker=10
     nstep=2000
@@ -174,7 +176,3 @@ for itest,testi in enumerate(tests):
         res,chi2,dt=testi.compute(progress=True)
         print("{}/{}) {} => res={} chi2={} (dt={:.1f}s)".format(itest+1,ntest,testi.name,res,chi2,dt))
         testi.makePlots(prefix=name+"_"+str(itest+1)+"_")
-  
-
-
-

@@ -66,7 +66,7 @@ fit.run(nsteps=3000,progress=True)
 figWalkers,axeWalkers=fit.walkersPlot(
     savefig=os.path.join(path,os.pardir,"images","chromaticModelFitWalkers.png"))
 #%%
-figCorner,axeCorner=fit.cornerPlot(discard=1500,chi2limfact=20,
+figCorner,axeCorner=fit.cornerPlot(discard=2500,chi2limfact=3,
      savefig=os.path.join(path,os.pardir,"images","chromaticModelFitCorner.png"))
 
 #%%
