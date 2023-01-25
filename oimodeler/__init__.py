@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 25 11:22:38 2023
-
-@author: Ame
-"""
-
-# -*- coding: utf-8 -*-
-"""
 Created on Tue Nov 23 15:26:42 2021
 
 @author: Ame
