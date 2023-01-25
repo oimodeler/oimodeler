@@ -158,7 +158,12 @@ class oimComponent(object):
     def __str__(self):
         txt=self.name
         for name,param in self.params.items():  
-            txt+=" {0}={1:.2f}".format(param.name,param.value)
+            if isinstance(param,oimParam):
+                if 'value' in param.__dict__:
+                    txt+=" {0}={1:.2f}".format(param.name,param.value)
+                elif isinstance(param,oimParamInterpolator):
+                    txt+=" {0}={1}".format(param.name,param.__class__.__name__)
+                
         return txt
     
 ###############################################################################
