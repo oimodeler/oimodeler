@@ -312,7 +312,7 @@ class oimRing2(oimComponentFourier):
     def _imageFunction(self,xx,yy,wl,t):
 
         r2=(xx**2+yy**2)
-        return ((r2<=(self.params["d"](wl,t)/2+self.params["w"](wl,t)/2)**2 & 
+        return (((r2<=(self.params["d"](wl,t)/2+self.params["w"](wl,t)/2)**2)  &
                 (r2>=(self.params["d"](wl,t)/2-self.params["w"](wl,t)/2)**2))).astype(float)
     
 ###############################################################################   
