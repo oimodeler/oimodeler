@@ -5,6 +5,7 @@ Created on Wed Sep 21 10:59:15 2022
 @author: Ame
 """
 import oimodeler as oim
+from pprint import pprint as print
 
 #%%
 import os
