@@ -551,7 +551,8 @@ _standardParameters = {
     "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": units.one,"mini":0,"maxi":1},
     "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": units.deg,"mini":-180,"maxi":180},
     "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": units.mas,"mini":0},
-    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixel", "unit": units.one, "free": False,"mini":1},
+    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": units.one, "free": False,"mini":1},
     "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": units.m, "mini": 0},
-    "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": units.day}
+    "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": units.day},
+    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": units.one}
 }
