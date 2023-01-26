@@ -361,6 +361,20 @@ def cutWavelengthRange(oifits,wlRange = None,addCut=[]):
                     data[idata]=hdu
     return data
 
+###############################################################################
+
+def getWlFromFitsImageCube(header):
+       dwl=header['CDELT3']
+       nwl=header['NAXIS3']
+       wl0=header['CRVAL3']
+       try:
+           x0=header['CRPIX3']
+       except:
+           x0=0
+       
+       wl= wl0+(np.arange(nwl)+1-x0)*dwl
+       return wl
+
     
 ###############################################################################
 
