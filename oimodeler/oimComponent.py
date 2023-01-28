@@ -412,7 +412,7 @@ class oimComponentImage(oimComponent):
             grid=self._getInternalGrid()
             coord=np.transpose(np.array([t_arr,wl_arr,x_arr,y_arr]))
 
-            im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=0)
+            im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=False)
             f0=np.sum(im0)
             f=np.sum(im)
             im=im/f*f0
@@ -798,7 +798,7 @@ class oimComponentFitsImage(oimComponentImage):
         if pixX!=pixY:
             raise TypeError("Current version only works with the same pixels"
                             " scale in x and y dimension")
-        self._pixSize=pixX 
+        self._pixSize0=pixX 
         
           
         if dims==3:
@@ -811,5 +811,6 @@ class oimComponentFitsImage(oimComponentImage):
     
     def _internalImage(self):
         self.params["dim"].value=self._dim
+        self._pixSize=self._pixSize0*self.params["scale"].value
         return self._image
 
