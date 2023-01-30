@@ -171,7 +171,7 @@ def getColorIndices(oifitsList, color, yarr, yname):
 
             if color == "byFile":
                 fname = datai.filename()
-                if fname == None:
+                if fname is None:
                     fname = "File {}".format(idata)
                 else:
                     fname = os.path.basename(fname)
@@ -229,7 +229,6 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
             kwargs_error={}, **kwargs):
     """
 
-
     Parameters
     ----------
     oifitsList : TYPE
@@ -281,15 +280,13 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
     -------
     res : TYPE
         DESCRIPTION.
-
     """
-
     res = None
 
     if isinstance(oifitsList, oim.oimData):
         oifitsList = oifitsList.data
 
-    if type(oifitsList) != type([]):
+    if not isinstance(oifitsList, list):
         oifitsList = [oifitsList]
 
     ndata0 = len(oifitsList)
@@ -303,7 +300,7 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
     xarr = oimPlotParamArr[idxX]
     yarr = oimPlotParamArr[idxY]
 
-    if not(shortLabel):
+    if not shortLabel:
         xlabel = oimPlotParamLabel[idxX]
         ylabel = oimPlotParamLabel[idxY]
     else:
@@ -321,38 +318,37 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
     else:
         yunit0 = oimPlotParamUnit0[idxY]
 
-    if xunit0 != "":
+    if xunit0:
         xlabel += " ("+xunit0+")"
-    if yunit0 != "":
+    if yunit0:
         ylabel += " ("+yunit0+")"
 
     xIsUVcoord = oimPlotParamIsUVcoord[idxX]
     yIsUVcoord = oimPlotParamIsUVcoord[idxY]
 
-    if xIsUVcoord == False and xname != "EFF_WAVE":
+    if not xIsUVcoord and xname != "EFF_WAVE":
         raise TypeError("X should be LENGTH, SPAFREQ, PA or EFF_WAVE")
 
-    if yIsUVcoord == True:
+    if yIsUVcoord:
         raise TypeError("Y shouldn't be UCOORD,VCOORD, SPAFREQ, or PA")
 
-    if colorTab == None:
+    if colorTab is None:
         colorTab = oimPlotParamColorCycle
 
     try:
-        if not("by" in color):
+        if not ("by" in color):
             colorTab = [color]
     except:
         pass
 
     ncol = len(colorTab)
-
     colorIdx, ColorNames = getColorIndices(oifitsList, color, yarr, yname)
 
     if 'label' in kwargs:
         label = kwargs.pop('label')
     else:
         label = ""
-    if not(axe):
+    if not axe:
         axe = plt.axes()
 
     for ifile, data in enumerate(oifitsList):
@@ -392,8 +388,7 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                 xdata.append(np.transpose(
                     np.tile(PA[idata], (np.shape(data[idata].data[yname])[1], 1))))
 
-        if cname != None:
-
+        if cname is not None:
             idxC = np.where(oimPlotParamName == cname)[0][0]
             cIsUVcoord = oimPlotParamIsUVcoord[idxC]
 
@@ -419,7 +414,7 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                     nB = ydata[idata].shape[0]
                     cdata.append(np.tile(wl[None, :], (nB, 1)))
 
-            elif not(cIsUVcoord):
+            elif not cIsUVcoord :
                 try:
                     idxC = np.where(oimPlotParamName == cname)[0][0]
                     carr = oimPlotParamArr[idxC]
@@ -450,10 +445,8 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                         np.tile(PA[idata], (np.shape(data[idata].data[yname])[1], 1))))
 
         # looping through oifits files
-
         ndata = len(ydata)
         for idata in range(ndata):
-
             shapex = np.shape(xdata[idata])
             shapey = np.shape(ydata[idata])
 
@@ -483,7 +476,7 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
             shapex = np.shape(xdata[idata])
             shapey = np.shape(ydata[idata])
 
-            if cname != None:
+            if cname is not None:
                 shapec = np.shape(cdata[idata])
                 if (np.size(shapec) == 1):
                     if shapec[0] == shapex[0]:
@@ -497,7 +490,7 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
             nB = shapex[0]
 
             for iB in range(nB):
-                if showFlagged == False:
+                if not showFlagged:
                     flags = np.reshape(yflag[idata], shapey)[iB, :]
                     nflags = len(flags)
                     flag0 = True
@@ -507,7 +500,7 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                         if np.isnan(ydata[idata][iB, ilam]):
                             flagi = True
                         if flag0 != flagi:
-                            if flagi == False:
+                            if not flagi:
                                 ilam0 = ilam
                             else:
                                 doPlot = True
@@ -515,11 +508,11 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                         if ilam == (nflags-1) and flagi == False:
                             doPlot = True
 
-                        if doPlot == True:
+                        if doPlot:
                             labeli = label + \
                                 ColorNames[colorIdx[ifile][idata][iB]]
 
-                            if cname == None:
+                            if cname is None:
                                 if (xdata[idata][iB, ilam0:ilam+1]).size == 1:
                                     axe.scatter(xdata[idata][iB, ilam0:ilam+1] *
                                                 xunitmultiplier, ydata[idata][iB,
@@ -535,9 +528,8 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                                              color=colorTab[colorIdx[ifile]
                                                             [idata][iB] % ncol],
                                              label=labeli, **kwargs)
-                                    if errorbar == True:
-
-                                        if not('color' in kwargs_error):
+                                    if errorbar:
+                                        if not ('color' in kwargs_error):
                                             kwargs_errori = kwargs_error.copy()
                                             kwargs_errori['color'] = colorTab[colorIdx[ifile]
                                                                               [idata][iB] % ncol]
@@ -565,7 +557,7 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                                                  cunitmultiplier,
                                                  label=labeli, setlim=False, **kwargs)
 
-                                if errorbar == True:
+                                if errorbar:
                                     _errorplot(axe, xdata[idata][iB, ilam0:ilam+1]*xunitmultiplier,
                                                ydata[idata][iB, ilam0:ilam+1],
                                                ydataerr[idata][iB,
@@ -575,19 +567,19 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                 else:
                     axe.plot(xdata[idata][iB, :]*xunitmultiplier,
                              ydata[idata][iB, :], color=colorTab[colorIdx[ifile][idata][iB] % ncol])
-                    if errorbar == True:
+                    if errorbar:
                         _errorplot(axe, xdata[idata][iB, :]*xunitmultiplier, ydata[idata][iB, :],
                                    ydataerr[idata][iB, :], color=colorTab[colorIdx[ifile][idata][iB] % ncol], **kwargs_error)
 
-    if yscale != None:
+    if yscale is None:
         axe.set_yscale(yscale)
 
-    if xscale != None:
+    if xscale is None:
         axe.set_xscale(xscale)
 
-    if not(xlim is None):
+    if not (xlim is None):
         axe.set_xlim(xlim)
-    if not(ylim is None):
+    if not (ylim is None):
         axe.set_ylim(ylim)
 
     axe.set_xlabel(xlabel)

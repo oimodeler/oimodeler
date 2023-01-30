@@ -1,11 +1,12 @@
-import oimodeler as oim
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+import oimodeler as oim
 
 path = os.path.dirname(oim.__file__)
 
-fromFT=False
+fromFT = False
 nB = 500  # number of baselines
 nwl = 100  # number of walvengths
 
@@ -19,15 +20,15 @@ spf0 = spf*0
 
 
 # %%
-g = oim.oimGauss(fwhm=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 8]))
+g = oim.oimGauss(fwhm=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 8]))
 print(g.params['fwhm']([3e-6, 3.5e-6, 4e-6, 4.5e-6]))
 
 # %%
 mg = oim.oimModel([g])
 
-figGim, axGim,im = mg.showModel(256, 0.1, wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6],
-        swapAxes=True, figsize=(3.5, 2.5),fromFT=fromFT,normalize=True,
-        savefig=os.path.join(path, os.pardir, "images", "complexModel_chromaticGaussian.png"))
+figGim, axGim, im = mg.showModel(256, 0.1, wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6],
+                                 swapAxes=True, figsize=(3.5, 2.5), fromFT=fromFT, normalize=True,
+                                 savefig=os.path.join(path, os.pardir, "images", "complexModel_chromaticGaussian.png"))
 
 
 # %%
@@ -48,12 +49,12 @@ plt.savefig(os.path.join(path, os.pardir, "images",
 
 # %%
 
-ud = oim.oimUD(d=0.5, f=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 0.2]))
+ud = oim.oimUD(d=0.5, f=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 0.2]))
 
 m2 = oim.oimModel([ud, g])
-fig2im, ax2im,im2 = m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
-        swapAxes=True, normPow=0.2, figsize=(3.5, 2.5),fromFT=fromFT,normalize=True,
-        savefig=os.path.join(path, os.pardir, "images", "complexModel_UDAndGauss.png"))
+fig2im, ax2im, im2 = m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
+                                  swapAxes=True, normPow=0.2, figsize=(3.5, 2.5), fromFT=fromFT, normalize=True,
+                                  savefig=os.path.join(path, os.pardir, "images", "complexModel_UDAndGauss.png"))
 
 vis = np.abs(m2.getComplexCoherentFlux(
     spf, spf*0, wls)).reshape(len(wl), len(B))
@@ -70,13 +71,15 @@ plt.savefig(os.path.join(path, os.pardir, "images",
             "complexModel_UDAndGaussVis.png"))
 
 # %%
-eg = oim.oimEGauss(fwhm=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 8]), elong=2, pa=90)
-el = oim.oimEllipse(d=0.5, f=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 0.2]), elong=2, pa=90)
+eg = oim.oimEGauss(fwhm=oim.oimInterp(
+    "wl", wl=[3e-6, 4e-6], values=[2, 8]), elong=2, pa=90)
+el = oim.oimEllipse(d=0.5, f=oim.oimInterp(
+    "wl", wl=[3e-6, 4e-6], values=[2, 0.2]), elong=2, pa=90)
 
 m3 = oim.oimModel([el, eg])
-fig3im, ax3im,im3 = m3.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
-        figsize=(3.5, 2.5), normPow=0.5,fromFT=fromFT,normalize=True,
-        savefig=os.path.join(path, os.pardir, "images", "complexModel_Elong.png"))
+fig3im, ax3im, im3 = m3.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
+                                  figsize=(3.5, 2.5), normPow=0.5, fromFT=fromFT, normalize=True,
+                                  savefig=os.path.join(path, os.pardir, "images", "complexModel_Elong.png"))
 
 
 # %%
@@ -103,64 +106,60 @@ ax3v[1].set_xlabel("B/$\\lambda$ (cycles/rad)")
 fig3v.colorbar(sc, ax=ax3v.ravel().tolist(), label="$\\lambda$ ($\\mu$m)")
 
 
-
-    
 plt.savefig(os.path.join(path, os.pardir,
             "images", "complexModel_ElongVis.png"))
 
 
-#%%
+# %%
 
 print(m3.getFreeParameters())
 
-#%%
+# %%
 
-eg.params['elong']=el.params['elong']
-eg.params['pa']=el.params['pa']
+eg.params['elong'] = el.params['elong']
+eg.params['pa'] = el.params['pa']
 
 print(m3.getFreeParameters())
 
 
-#%%
-    
+# %%
+
 er = oim.oimERing()
 
-er.params['elong']=eg.params['elong']
-er.params['pa']=oim.oimParamLinker(eg.params["pa"],"add",90)
-er.params['din']=oim.oimParamLinker(el.params["d"],"mult",2)
-er.params['dout']=oim.oimParamLinker(el.params["d"],"mult",4)
+er.params['elong'] = eg.params['elong']
+er.params['pa'] = oim.oimParamLinker(eg.params["pa"], "add", 90)
+er.params['din'] = oim.oimParamLinker(el.params["d"], "mult", 2)
+er.params['dout'] = oim.oimParamLinker(el.params["d"], "mult", 4)
 
-m4= oim.oimModel([el, eg,er])
+m4 = oim.oimModel([el, eg, er])
 
-fig4im, ax4im,im4 = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
-      figsize=(3.5, 2.5), normPow=0.5,fromFT=fromFT,normalize=True,
-      savefig=os.path.join(path, os.pardir, "images", "complexModel_link.png"))    
-    
+fig4im, ax4im, im4 = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
+                                  figsize=(3.5, 2.5), normPow=0.5, fromFT=fromFT, normalize=True,
+                                  savefig=os.path.join(path, os.pardir, "images", "complexModel_link.png"))
+
 
 print(m4.getFreeParameters())
 
-#%%
-el.params['d'].value=4
-el.params['pa'].value=45
-    
-fig5im, ax5im,im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],  
-       figsize=(3.5, 2.5), normPow=0.5,fromFT=fromFT,normalize=True,
-       savefig=os.path.join(path, os.pardir, "images", "complexModel_linkRotScale.png"))    
-     
+# %%
+el.params['d'].value = 4
+el.params['pa'].value = 45
+
+fig5im, ax5im, im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
+                                 figsize=(3.5, 2.5), normPow=0.5, fromFT=fromFT, normalize=True,
+                                 savefig=os.path.join(path, os.pardir, "images", "complexModel_linkRotScale.png"))
 
 
-#%%
+# %%
 
-gd1=oim.oimGauss(fwhm=oim.oimInterp("time",mjd=[0,1,3],values=[1,4,1]))
-ud1=oim.oimUD(d=oim.oimInterp("wl",wl=[1e-6,3e-6],values=[0.5,2]),x=-4,y=0,f=0.1)
+gd1 = oim.oimGauss(fwhm=oim.oimInterp("time", mjd=[0, 1, 3], values=[1, 4, 1]))
+ud1 = oim.oimUD(d=oim.oimInterp(
+    "wl", wl=[1e-6, 3e-6], values=[0.5, 2]), x=-4, y=0, f=0.1)
 
-m5=oim.oimModel(gd1,ud1)
+m5 = oim.oimModel(gd1, ud1)
 
-wls=np.array([1,2,3])*1e-6
-times=[0,1,2,3,4]
+wls = np.array([1, 2, 3])*1e-6
+times = [0, 1, 2, 3, 4]
 
-fig5im,ax5im,im5= m5.showModel(256,0.04,wl=wls,t=times,legend=True,
-            figsize=(2.5,2),fromFT=True,normalize=True,
-            savefig=os.path.join(path, os.pardir, "images", "complexModel_time.png"))
-
-  
+fig5im, ax5im, im5 = m5.showModel(256, 0.04, wl=wls, t=times, legend=True,
+                                  figsize=(2.5, 2), fromFT=True, normalize=True,
+                                  savefig=os.path.join(path, os.pardir, "images", "complexModel_time.png"))

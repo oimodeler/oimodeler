@@ -31,8 +31,7 @@ class oimModel(object):
         -------
         None.
         """
-
-        if len(components) == 1 and type(components[0]) == list:
+        if len(components) == 1 and isinstance(components[0], list):
             self.components = components[0]
         else:
             self.components = components
@@ -94,9 +93,7 @@ class oimModel(object):
                         pass
                     else:
                         if (param.free or not free):
-
-                            params["c{0}_{1}_{2}".format(i+1,
-                                                         c.shortname.replace(" ", "_"), name)] = param
+                            params["c{0}_{1}_{2}".format(i+1, c.shortname.replace(" ", "_"), name)] = param
         return params
 
     def getFreeParameters(self):
@@ -338,7 +335,7 @@ class oimModel(object):
 
                 if legend:
                     txt = ""
-                    if swapAxes:
+                    if not swapAxes:
 
                         if wl[0] is not None:
                             txt += "wl={:.4f}$\mu$m\n".format(wli*1e6)

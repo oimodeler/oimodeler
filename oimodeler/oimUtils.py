@@ -168,7 +168,6 @@ def getBaselineLengthAndPA(oifits, arr="OI_VIS2", extver=None, squeeze=True):
     B = []
     PA = []
     for idata, datai in enumerate(data):
-
         if arr != "OI_T3":
             u = datai.data["UCOORD"]
             v = datai.data["VCOORD"]
@@ -290,8 +289,7 @@ _cutArr = ['EFF_WAVE', 'EFF_BAND', 'VIS2DATA', 'VIS2ERR', 'FLAG', 'VISAMP', 'VIS
 
 
 def cutWavelengthRange(oifits, wlRange=None, addCut=[]):
-
-    if type(oifits) == type(""):
+    if isinstance(oifits, str):
         data = fits.open(oifits)
     else:
         data = oifits
@@ -424,7 +422,7 @@ def createOiTargetFromSimbad(names):
     customSimbad = Simbad()
     customSimbad.add_votable_fields(
             'plx', 'plx_error', 'propermotions', 'sptype', 'velocity')
-    if type(names) == type(""):
+    if isinstance(names, str):
         names = [names]
     data = customSimbad.query_objects(names)
 

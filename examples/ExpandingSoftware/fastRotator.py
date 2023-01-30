@@ -5,6 +5,7 @@ Created on Tue Apr  2 15:45:17 2019
 @author: ame
 """
 from datetime import datetime
+
 import numpy as np
 
 
@@ -13,7 +14,7 @@ def fastRotator  (dim0,size,incl,rot,Tpole,lam,beta=0.25):
     h=6.63e-34
     c=3e8
     kb=1.38e-23
-    
+
     a=2./3*(rot)**0.4+1e-9
     K=np.sin(1./3.)*np.pi
 
@@ -42,14 +43,14 @@ def fastRotator  (dim0,size,incl,rot,Tpole,lam,beta=0.25):
 
 
     theta=np.arccos(zp/r)
-    
+
     x0=(1.5*a)**1.5*np.sin(1e-99)
-    r0=a*np.sin(1/3.)*np.arcsin(x0)/(1.0/3.*x0)    
-    
+    r0=a*np.sin(1/3.)*np.arcsin(x0)/(1.0/3.*x0)
+
     x2=(1.5*a)**1.5*np.sin(theta)
     rin=a*np.sin(1/3.)*np.arcsin(x2)/(1.0/3.*x2)
-    
-    
+
+
     rhoin=rin*np.sin(theta)/a/K
 
     dr=(rin/r0-r)>=0

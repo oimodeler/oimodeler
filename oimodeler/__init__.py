@@ -12,7 +12,7 @@ from .oimParam import _standardParameters
 from .oimModel import *
 from .oimComponent import *
 from .oimBasicFourierComponents import *
-from .oimCustomComponents import *
+# from .oimCustomComponents import *
 from .oimData import *
 from .oimData import _oimDataType, _oimDataTypeErr, _oimDataTypeArr
 from .oimFitter import *
@@ -38,4 +38,3 @@ if split(__pkg_dir__)[-1] == "":
     __git_dir__ = dirname(split(__pkg_dir__)[0])
 else:
     __git_dir__ = split(__pkg_dir__)[0]
-

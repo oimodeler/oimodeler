@@ -32,7 +32,6 @@ class oimFitter(object):
         self._eval(**kwargs)
 
     def _eval(self, **kwargs):
-
         for key in self.params.keys():
             if key in kwargs.keys():
                 self.params[key].value = kwargs.pop(key)
@@ -80,7 +79,6 @@ class oimFitterEmcee(oimFitter):
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
-
         if not ('init' in kwargs):
             init = 'random'
         else:

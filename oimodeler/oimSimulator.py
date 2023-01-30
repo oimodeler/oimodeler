@@ -19,9 +19,8 @@ def corrFlux2VisAmpAbs(vcompl):
     norm = np.outer(np.ones(nB-1), vcompl[0, :])
     return np.abs(vcompl[1:, :]/norm)
 
+
 # TODO : not real formula for diff Vis
-
-
 def corrFlux2VisAmpDif(vcompl):
     nlam = vcompl.shape[1]
     norm = np.outer(np.mean(vcompl[1:, :], axis=1), np.ones(nlam))
@@ -35,18 +34,16 @@ def corrFlux2VisAmpCor(vcompl):
 def corrFlux2VisPhiAbs(vcompl):
     return np.rad2deg(np.angle(vcompl[1:, :]))
 
+
 # TODO : not real formula for diff phase
-
-
 def corrFlux2VisPhiDif(vcompl):
     nlam = vcompl.shape[1]
     norm = np.outer(np.mean(vcompl[1:, :], axis=1), np.ones(nlam))
     phi = np.rad2deg(np.angle(vcompl[1:, :]*np.conjugate(norm)))
     return phi
 
+
 # TODO special function doing T3Amp and T3Phi simultaneously
-
-
 def corrFlux2T3Amp(vcompl):
     nB = vcompl.shape[0]
     nCP = (nB-1)//3
@@ -141,7 +138,6 @@ class oimSimulator(object):
                     val = []
 
                     # Computing all observables from complex Coherent Flux
-
                     if arrType == "OI_VIS2":
                         val.append(corrFlux2Vis2(vcompli))
                         quantities.append("VIS2DATA")
@@ -213,7 +209,6 @@ class oimSimulator(object):
 
     def plot(self, arr, simulated=True, savefig=None, visLog=False, **kwargs):
         # plotting  data and simulatiedData
-
         if not isinstance(arr, list):
             arr = [arr]
 

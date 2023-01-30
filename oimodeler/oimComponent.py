@@ -84,8 +84,7 @@ class oimComponent(object):
         for key, value in kwargs.items():
             if key in self.params.keys():
                 if isinstance(value, oimInterp):
-
-                    if not(isinstance(self.params[key], oimParamInterpolator)):
+                    if not (isinstance(self.params[key], oimParamInterpolator)):
                         self.params[key] = value.type(
                             self.params[key], **value.kwargs)
                 else:
@@ -164,7 +163,6 @@ class oimComponent(object):
                 elif isinstance(param, oimParamInterpolator):
                     txt += " {0}={1}".format(param.name,
                                              param.__class__.__name__)
-
         return txt
 
 ###############################################################################
@@ -186,7 +184,7 @@ class oimComponentFourier(oimComponent):
         super().__init__(**kwargs)
 
         # Add ellipticity if either elong or pa is specified in kwargs
-        if ("elong" in kwargs) or ("pa" in kwargs) or self.elliptic == True:
+        if ("elong" in kwargs) or ("pa" in kwargs) or self.elliptic:
             self.params["elong"] = oimParam(**_standardParameters["elong"])
             self.params["pa"] = oimParam(**_standardParameters["pa"])
             self.elliptic = True
@@ -195,7 +193,7 @@ class oimComponentFourier(oimComponent):
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
 
-        if self.elliptic == True:
+        if self.elliptic:
             pa_rad = (self.params["pa"](wl, t)) * \
                 self.params["pa"].unit.to(units.rad)
             co = np.cos(pa_rad)
@@ -242,7 +240,6 @@ class oimComponentFourier(oimComponent):
         x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
 
         if self.elliptic:
-
             pa_rad = (self.params["pa"](wl_arr, t_arr)) * \
                 self.params["pa"].unit.to(units.rad)
 
@@ -298,7 +295,7 @@ class oimComponentImage(oimComponent):
         self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # Add ellipticity
-        if self.elliptic == True:
+        if self.elliptic:
             self.params["elong"] = oimParam(**_standardParameters["elong"])
 
         if 'FTBackend' in kwargs:
@@ -311,7 +308,6 @@ class oimComponentImage(oimComponent):
         self._eval(**kwargs)
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-
         if wl is None:
             wl = ucoord*0
         if t is None:
@@ -324,7 +320,7 @@ class oimComponentImage(oimComponent):
         tr = self._ftTranslateFactor(
             ucoord, vcoord, wl, t)*self.params["f"](wl, t)
 
-        if self._allowExternalRotation == True:
+        if self._allowExternalRotation:
             pa_rad = (self.params["pa"](wl, t)) * \
                 self.params["pa"].unit.to(units.rad)
             co = np.cos(pa_rad)
@@ -332,7 +328,7 @@ class oimComponentImage(oimComponent):
             fxp = ucoord*co-vcoord*si
             fyp = ucoord*si+vcoord*co
             vcoord = fyp
-            if self.elliptic == True:
+            if self.elliptic:
                 ucoord = fxp/self.params["elong"](wl, t)
             else:
                 ucoord = fxp
@@ -347,9 +343,8 @@ class oimComponentImage(oimComponent):
         else:
             t0 = self._t
 
-        if self.FTBackend.check(self.FTBackendData, im, pix, wl0,
-                                t0, ucoord, vcoord, wl, t) == False:
-
+        if not self.FTBackend.check(self.FTBackendData, im, pix, wl0,
+                                    t0, ucoord, vcoord, wl, t):
             self.FTBackendData = self.FTBackend.prepare(im, pix, wl0,
                                                         t0, ucoord, vcoord, wl, t)
 
@@ -359,7 +354,6 @@ class oimComponentImage(oimComponent):
         return vc*tr*self.params["f"](wl, t)
 
     def getImage(self, dim, pixSize, wl=None, t=None):
-
         if wl is None:
             wl = 0
         if t is None:
@@ -386,7 +380,7 @@ class oimComponentImage(oimComponent):
 
         x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
 
-        if self._allowExternalRotation == True:
+        if self._allowExternalRotation:
             pa_rad = (self.params["pa"](wl_arr, t_arr)) * \
                 self.params["pa"].unit.to(units.rad)
 
@@ -394,7 +388,7 @@ class oimComponentImage(oimComponent):
             yp = x_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
             y_arr = yp
 
-            if self.elliptic == True:
+            if self.elliptic:
                 x_arr = xp*self.params["elong"](wl_arr, t_arr)
             else:
                 x_arr = xp
@@ -416,7 +410,7 @@ class oimComponentImage(oimComponent):
 
         im = im.reshape(dims)
 
-        if self.normalizeImage == True:
+        if self.normalizeImage:
             # TODO no loop for normalization
             tot = np.sum(im, axis=(2, 3))
             for it, ti in enumerate(t):
@@ -473,7 +467,6 @@ class oimComponentImage(oimComponent):
         return image
 
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
-
         if self._wl is None:
             wl0 = np.sort(np.unique(wl))
         else:
@@ -488,7 +481,7 @@ class oimComponentImage(oimComponent):
         v = np.linspace(-0.5, 0.5, self.params["dim"].value)
         xy = v*pix*self.params["dim"].value
 
-        if simple == True:
+        if simple:
             return t0, wl0, xy, xy
 
         else:
@@ -505,7 +498,7 @@ class oimComponentImage(oimComponent):
             t_arr = np.tile(t[:, None, None, None], (1, nwl,
                                                      self.params["dim"].value, self.params["dim"].value))
 
-            if flatten == True:
+            if flatten:
                 return t_arr.flatten(), wl_arr.flatten(), \
                     x_arr.flatten(), y_arr.flatten()
             else:
@@ -532,7 +525,7 @@ class oimComponentRadialProfile(oimComponent):
         self._r = None
 
         # Add ellipticity
-        if self.elliptic == True:
+        if self.elliptic:
             self.params["pa"] = oimParam(**_standardParameters["pa"])
             self.params["elong"] = oimParam(**_standardParameters["elong"])
 
@@ -574,18 +567,17 @@ class oimComponentRadialProfile(oimComponent):
             res0), coord, bounds_error=False, fill_value=None)
         vc = real+imag*1j
         print(real.shape)
-        #print("interp {:.2f}ms".format((time.time() - s0)*1000))
+        # print("interp {:.2f}ms".format((time.time() - s0)*1000))
 
         return vc
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-
         if wl is None:
             wl = ucoord*0
         if t is None:
             t = ucoord*0
 
-        if self.elliptic == True:
+        if self.elliptic:
             pa_rad = (self.params["pa"](wl, t)) * \
                 self.params["pa"].unit.to(units.rad)
             co = np.cos(pa_rad)
@@ -632,7 +624,6 @@ class oimComponentRadialProfile(oimComponent):
         return res
 
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
-
         if self._wl is None:
             wl0 = np.sort(np.unique(wl))
         else:
@@ -650,7 +641,7 @@ class oimComponentRadialProfile(oimComponent):
         else:
             r = self._r
 
-        if simple == True:
+        if simple:
             return r, wl, t
         else:
             nt = np.array(t0).flatten().size
@@ -661,7 +652,7 @@ class oimComponentRadialProfile(oimComponent):
             wl_arr = np.tile(wl[None, :, None], (nt, 1, nr))
             t_arr = np.tile(t[:, None, None],  (1, nwl, nr))
 
-            if flatten == True:
+            if flatten:
                 return t_arr.flatten(), wl_arr.flatten(), r_arr.flatten()
             else:
                 return t_arr, wl_arr, r_arr
@@ -670,7 +661,6 @@ class oimComponentRadialProfile(oimComponent):
         return None
 
     def getImage(self, dim, pixSize, wl=None, t=None):
-
         if wl is None:
             wl = 0
         if t is None:
@@ -697,7 +687,7 @@ class oimComponentRadialProfile(oimComponent):
 
         x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
 
-        if self.elliptic == True:
+        if self.elliptic:
             pa_rad = (self.params["pa"](wl_arr, t_arr)) * \
                 self.params["pa"].unit.to(units.rad)
 
@@ -711,7 +701,7 @@ class oimComponentRadialProfile(oimComponent):
 
         im = im.reshape(dims)
 
-        if self.normalizeImage == True:
+        if self.normalizeImage:
             # TODO no loop for normalization
             tot = np.sum(im, axis=(2, 3))
             for it, ti in enumerate(t):

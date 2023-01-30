@@ -24,12 +24,13 @@ def oimDataGetWl(data, arr, dwl=True):
     insname = arr.header['INSNAME']
     oiWlArr = [arri for arri in data if (arri.name == "OI_WAVELENGTH"
                                          and arri.header['INSNAME'] == insname)][0]
-    if dwl:
+    if not dwl:
         return oiWlArr.data["EFF_WAVE"]
     else:
         return oiWlArr.data["EFF_WAVE"], oiWlArr.data["EFF_BAND"]
 
 ###############################################################################
+
 
 # TODO: Should be dataclass
 class oimDataType(IntFlag):
@@ -142,7 +143,6 @@ def oimDataCheckData(arr):
 
 
 def oimDataGetVectCoord(data, arr):
-
     wl, dwl = oimDataGetWl(data, arr)
     nwl = np.size(wl)
 
@@ -235,7 +235,7 @@ class oimData(object):
         if not self._useFilter or self._filter is None:
             return self._data
         else:
-            if self._filteredDataReady:
+            if not self._filteredDataReady:
                 self.applyFilter()
             return self._filteredData
 
@@ -285,7 +285,7 @@ class oimData(object):
     def useFilter(self, val):
         self._useFilter = val
         if val:
-            if self._filteredDataReady:
+            if not self._filteredDataReady:
                 self.applyFilter()
 
     def _analyzeOIFitFile(self, data):
@@ -351,14 +351,11 @@ class oimData(object):
             self.struct_flag.append([])
             for iarr, arri in enumerate(datai):
                 if arri.name in _oimDataTypeArr:
-
                     # print("arr {} : type={}".format(iarr,arri.name))
-                    dataTypeFlag, val, err, flag = oimGetDataValErrAndTypeFlag(
-                        arri)
+                    dataTypeFlag, val, err, flag = oimGetDataValErrAndTypeFlag(arri)
 
                     if dataTypeFlag != oimDataType.NONE:
-                        u, v, wl, dwl, mjd, nB, nwl = oimDataGetVectCoord(
-                            datai, arri)
+                        u, v, wl, dwl, mjd, nB, nwl = oimDataGetVectCoord(datai, arri)
 
                         # print(np.shape(u))
                         self.vect_u = np.concatenate((self.vect_u, u))
