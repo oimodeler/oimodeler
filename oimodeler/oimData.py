@@ -244,7 +244,7 @@ class oimData(object):
             for el in dataOrFilename:
                 self.addData(el)
         else:
-            if type(dataOrFilename) == str:
+            if isinstance(dataOrFilename, str):
                 self._data.append(fits.open(dataOrFilename))
             else:
                 self._data.append(dataOrFilename)
