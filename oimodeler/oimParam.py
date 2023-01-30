@@ -2,22 +2,20 @@
 """
 model parameter and parameter interpolators
 """
-
 import numpy as np
 from astropy import units as units
 from scipy.interpolate import interp1d
 
-###############################################################################
 
+###############################################################################
 class oimParam(object):
     """
     Class of model parameters
     """
 
     def __init__(self, name=None, value=None, mini=-1*np.inf, maxi=np.inf,
-                 description="", unit=1, free=True, error=0):
-        """
-        Create and initiliaze a new instance of the oimParam class
+                 description="", unit=1, free=True, error=0) -> None:
+        """Create and initiliaze a new instance of the oimParam class
         Parameters
         ----------
         name : string, optional
@@ -32,11 +30,6 @@ class oimParam(object):
             A description of the parameter. The default is "".
         unit : 1 or astropy.unit, optional
             unit of the parameter. The default is 1.
-
-        Returns
-        -------
-        None.
-
         """
         self.name = name
         self.value = value
@@ -73,7 +66,6 @@ class oimParam(object):
                                                                                      self.value, self.error, self.unit.to_string(), self.min, self.max, self.free)
         except:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
-
 
 
 ###############################################################################
@@ -125,7 +117,7 @@ class oimParamNorm(object):
         return self.param.unit
 
     def __call__(self, wl=None, t=None):
-        
+
         res = self.norm
         for p in self.params:
             res -= p(wl, t)
@@ -153,26 +145,25 @@ class oimParamInterpolator(oimParam):
 
     @property
     def params(self):
-        params0=self._getParams()
-        
-        params=[]
+        params0 = self._getParams()
+
+        params = []
         for pi in params0:
             if not(pi in params) and not(isinstance(pi, oimParamLinker)):
                 params.append(pi)
         return params
-        
-       
+
 
 ###############################################################################
 
 class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
     def _init(self, param, dependence="wl", keyframes=[], keyvalues=[],
-              kind="linear",fixedRef=True, extrapolate=False,**kwargs):
+              kind="linear", fixedRef=True, extrapolate=False, **kwargs):
 
         self.dependence = dependence
         self.fixedRef = fixedRef
-        self.kind=kind
+        self.kind = kind
         self.extrapolate = extrapolate
 
         self.keyframes = []
@@ -187,7 +178,6 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
                           maxi=param.max, description=param.description,
                           unit=param.unit, free=param.free, error=param.error)
             self.keyvalues.append(pi)
-        
 
     def _interpFunction(self, wl, t):
 
@@ -197,23 +187,21 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
             var = t
         values = np.array([pi() for pi in self.keyvalues])
         keyframes = np.array([pi() for pi in self.keyframes])
-        
-        if self.extrapolate==True:
-            fill_value="extrapolate"
-            bounds_error=None
+
+        if self.extrapolate == True:
+            fill_value = "extrapolate"
+            bounds_error = None
         else:
-            fill_value = (values[0],values[-1])
-            bounds_error=False
-        #return np.interp(var, keyframes, values, left=values[0], right=values[-1])
-        
-        return interp1d( keyframes, values, fill_value=fill_value,
-                        kind=self.kind,bounds_error=bounds_error)(var)
-    
-    
+            fill_value = (values[0], values[-1])
+            bounds_error = False
+        # return np.interp(var, keyframes, values, left=values[0], right=values[-1])
+
+        return interp1d(keyframes, values, fill_value=fill_value,
+                        kind=self.kind, bounds_error=bounds_error)(var)
 
     def _getParams(self):
-        params=[]
-        if self.fixedRef==False:
+        params = []
+        if self.fixedRef == False:
             params.extend(self.keyframes)
         params.extend(self.keyvalues)
         return params
@@ -223,14 +211,14 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
 class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
     def _init(self, param, wl=[], values=[], **kwargs):
-        super()._init(param, dependence="wl", keyframes=wl, keyvalues=values,**kwargs)
+        super()._init(param, dependence="wl", keyframes=wl, keyvalues=values, **kwargs)
 
 ###############################################################################
 
 
 class oimParamInterpolatorTime(oimParamInterpolatorKeyframes):
     def _init(self, param, mjd=[], values=[], **kwargs):
-        super()._init(param, dependence="mjd", keyframes=mjd, keyvalues=values,**kwargs)
+        super()._init(param, dependence="mjd", keyframes=mjd, keyvalues=values, **kwargs)
 
 
 ###############################################################################
@@ -253,15 +241,15 @@ class oimParamCosineTime(oimParamInterpolator):
                           unit=param.unit, free=param.free, error=param.error)
             self.values.append(pi)
 
-        #self.params.append(self.T0)
-        #self.params.append(self.P)
+        # self.params.append(self.T0)
+        # self.params.append(self.P)
         if x0 != None:
             self.x0 = oimParam(name="x0", value=x0,
                                description="Inflection point", unit=units.one)
-            #self.params.append(self.x0)
+            # self.params.append(self.x0)
             self.assymetric = True
 
-        #self.params.extend(self.values)
+        # self.params.extend(self.values)
 
     def _interpFunction(self, wl, t):
         normt = np.divmod((t-self.T0.value)/self.P.value, 1)[1]
@@ -273,8 +261,8 @@ class oimParamCosineTime(oimParamInterpolator):
                                             self.values[1]())+(self.values[1]())
 
     def _getParams(self):
-        params=[]
-        params.extend([self.T0,self.P])
+        params = []
+        params.extend([self.T0, self.P])
         try:
             params.append(self.x0)
         except:
@@ -283,6 +271,7 @@ class oimParamCosineTime(oimParamInterpolator):
         return params
 
 ###############################################################################
+
 
 class oimParamGaussian(oimParamInterpolator):
 
@@ -298,13 +287,14 @@ class oimParamGaussian(oimParamInterpolator):
         self.fwhm.value = fwhm
 
         self.val0 = oimParam(name=param.name, value=val0, mini=param.min,
-                               maxi=param.max, description=param.description,
-                               unit=param.unit, free=param.free, error=param.error)
+                             maxi=param.max, description=param.description,
+                             unit=param.unit, free=param.free, error=param.error)
 
         self.value = oimParam(name=param.name, value=value, mini=param.min,
-                               maxi=param.max, description=param.description,
-                               unit=param.unit, free=param.free, error=param.error)
+                              maxi=param.max, description=param.description,
+                              unit=param.unit, free=param.free, error=param.error)
         self.value.value
+
     def _interpFunction(self, wl, t):
 
         if self.dependence == "wl":
@@ -313,12 +303,12 @@ class oimParamGaussian(oimParamInterpolator):
             var = t
 
         return self.val0()+(self.value()-self.val0()) \
-            *np.exp(-2.77*(var-self.x0())**2/self.fwhm()**2)
-            
+            * np.exp(-2.77*(var-self.x0())**2/self.fwhm()**2)
+
     def _getParams(self):
         return [self.x0, self.fwhm, self.val0, self.value]
 
-    
+
 ###############################################################################
 
 class oimParamGaussianWl(oimParamGaussian):
@@ -327,11 +317,13 @@ class oimParamGaussianWl(oimParamGaussian):
 
 ###############################################################################
 
+
 class oimParamGaussianTime(oimParamGaussian):
     def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
         super()._init(param, dependence="mjd", val0=val0, value=value, x0=x0, fwhm=fwhm)
 
 ###############################################################################
+
 
 class oimParamMultipleGaussian(oimParamInterpolator):
 
@@ -363,9 +355,8 @@ class oimParamMultipleGaussian(oimParamInterpolator):
         self.dependence = dependence
 
         self.val0 = oimParam(name=param.name, value=val0, mini=param.min,
-                               maxi=param.max, description=param.description,
-                               unit=param.unit, free=param.free, error=param.error)
-
+                             maxi=param.max, description=param.description,
+                             unit=param.unit, free=param.free, error=param.error)
 
     def _interpFunction(self, wl, t):
 
@@ -373,14 +364,14 @@ class oimParamMultipleGaussian(oimParamInterpolator):
             var = wl
         else:
             var = t
-        val=self.val0()
+        val = self.val0()
         for i in range(len(self.x0)):
-            val+=(self.values[i]()-self.val0()) \
-                *np.exp(-2.77*(var-self.x0[i]())**2/self.fwhm[i]()**2)
+            val += (self.values[i]()-self.val0()) \
+                * np.exp(-2.77*(var-self.x0[i]())**2/self.fwhm[i]()**2)
         return val
-    
+
     def _getParams(self):
-        params=[]
+        params = []
         params.append(self.val0)
         params.extend(self.x0)
         params.extend(self.fwhm)
@@ -388,32 +379,35 @@ class oimParamMultipleGaussian(oimParamInterpolator):
         return params
 ###############################################################################
 
+
 class oimParamMultipleGaussianWl(oimParamMultipleGaussian):
     def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
         super()._init(param, dependence="wl", val0=val0, values=values, x0=x0, fwhm=fwhm)
 
 ###############################################################################
 
+
 class oimParamMultipleGaussianTime(oimParamMultipleGaussian):
     def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
         super()._init(param, dependence="mjd", val0=val0, values=values, x0=x0, fwhm=fwhm)
-        
+
 ###############################################################################
+
 
 class oimParamPolynomial(oimParamInterpolator):
 
-    def _init(self, param, dependence="wl", order=2,coeffs=None, x0=None,**kwargs):
+    def _init(self, param, dependence="wl", order=2, coeffs=None, x0=None, **kwargs):
         self.dependence = dependence
-        
+
         if x0 is None:
-            self.x0=0
+            self.x0 = 0
         else:
-            self.x0=x0
-        
+            self.x0 = x0
+
         if coeffs is None:
             coeffs = [0]*(order+1)
-        
-        self.coeffs=[]
+
+        self.coeffs = []
         for ci in coeffs:
             pi = oimParam(name=param.name, value=ci, mini=param.min,
                           maxi=param.max, description=param.description,
@@ -430,93 +424,95 @@ class oimParamPolynomial(oimParamInterpolator):
             var = wl
         else:
             var = t
-        var=var-self.x0
-        c=np.flip([ci() for ci in self.coeffs])
+        var = var-self.x0
+        c = np.flip([ci() for ci in self.coeffs])
         return np.poly1d(c)(var)
-    
-    
 
     def _getParams(self):
         return self.coeffs
 
 ###############################################################################
 
+
 class oimParamPolynomialWl(oimParamPolynomial):
-    def _init(self, param, order=2,coeffs=None,x0=None, **kwargs):
-        super()._init(param, dependence="wl", order=order,coeffs=coeffs,x0=x0)
+    def _init(self, param, order=2, coeffs=None, x0=None, **kwargs):
+        super()._init(param, dependence="wl", order=order, coeffs=coeffs, x0=x0)
 
 ###############################################################################
 
+
 class oimParamPolynomialTime(oimParamPolynomial):
-    def _init(self, param, order=2,coeffs=None,x0=None):
-        super()._init(param, dependence="mjd", order=order,coeffs=coeffs,x0=x0)
-        
-###############################################################################        
+    def _init(self, param, order=2, coeffs=None, x0=None):
+        super()._init(param, dependence="mjd", order=order, coeffs=coeffs, x0=x0)
+
+###############################################################################
+
+
 class oimParamLinearRangeWl(oimParamInterpolator):
 
-    def _init(self, param, wlmin=2e-6, wlmax=3e-6,values=[], kind="linear",**kwargs):
+    def _init(self, param, wlmin=2e-6, wlmax=3e-6, values=[], kind="linear", **kwargs):
 
-        self.kind=kind
+        self.kind = kind
 
         n = len(values)
         self.wlmin = (oimParam(**_standardParameters["wl"]))
-        self.wlmin.name="wlmin"
-        self.wlmin.description="Min of wl range"
-        self.wlmin.value=wlmin
-        self.wlmin.free=False
+        self.wlmin.name = "wlmin"
+        self.wlmin.description = "Min of wl range"
+        self.wlmin.value = wlmin
+        self.wlmin.free = False
 
         self.wlmax = (oimParam(**_standardParameters["wl"]))
-        self.wlmax.name="wlmax"
-        self.wlmax.description="Max of the wl range"
-        self.wlmax.value=wlmax
-        self.wlmax.free=False
-
+        self.wlmax.name = "wlmax"
+        self.wlmax.description = "Max of the wl range"
+        self.wlmax.value = wlmax
+        self.wlmax.free = False
 
         self.values = []
 
         for i in range(n):
             self.values.append(oimParam(name=param.name, value=values[i],
-                                        mini=param.min,maxi=param.max,
+                                        mini=param.min, maxi=param.max,
                                         description=param.description,
                                         unit=param.unit, free=param.free,
                                         error=param.error))
 
     def _interpFunction(self, wl, t):
-    
-          vals=np.array([vi.value for vi in self.values])
-          nwl=vals.size
-          wl0=np.linspace(self.wlmin.value,self.wlmax.value,num=nwl)
-          print(wl0)
-          return interp1d (wl0,vals,kind=self.kind,fill_value="extrapolate")(wl)
-      
+
+        vals = np.array([vi.value for vi in self.values])
+        nwl = vals.size
+        wl0 = np.linspace(self.wlmin.value, self.wlmax.value, num=nwl)
+        print(wl0)
+        return interp1d(wl0, vals, kind=self.kind, fill_value="extrapolate")(wl)
+
     def _getParams(self):
-        params=[]
+        params = []
         params.extend(self.values)
         params.append(self.wlmin)
         params.append(self.wlmax)
-        return params    
-            
+        return params
+
 
 ###############################################################################
 # List of interpolators defined in oimodels
-oimParamInterpolatorList={"wl":oimParamInterpolatorWl,
-                "time":oimParamInterpolatorTime,
-                "GaussWl":oimParamGaussianWl,
-                "GaussTime":oimParamGaussianTime,
-                "mGaussWl":oimParamMultipleGaussianWl,
-                "mGaussTime":oimParamMultipleGaussianTime,
-                "cosTime":oimParamCosineTime,
-                "polyWl":oimParamPolynomialWl,
-                "polyTime":oimParamPolynomialTime,
-                "rangeWl":oimParamLinearRangeWl}
+oimParamInterpolatorList = {"wl": oimParamInterpolatorWl,
+                            "time": oimParamInterpolatorTime,
+                            "GaussWl": oimParamGaussianWl,
+                            "GaussTime": oimParamGaussianTime,
+                            "mGaussWl": oimParamMultipleGaussianWl,
+                            "mGaussTime": oimParamMultipleGaussianTime,
+                            "cosTime": oimParamCosineTime,
+                            "polyWl": oimParamPolynomialWl,
+                            "polyTime": oimParamPolynomialTime,
+                            "rangeWl": oimParamLinearRangeWl}
 """
 dictionary of available interpolators
 """
 ###############################################################################
 
+
 class oimInterp(object):
     """
-    Macro to directly create oimParamInterpolator-derived class in a 
+    Macro to directly create oimParamInterpolator-derived class in a
     oimComponent object.
 
     Parameters
@@ -525,33 +521,28 @@ class oimInterp(object):
         keyname for the interpolators registered in the _interpolator variable
     **kwargs : dictionary
         parameters from the create oimParamInterpolator-derived class
-
-    Returns
-    -------
-    None.
-
     """
-    def __init__(self,name, **kwargs):
+    def __init__(self, name, **kwargs):
+        self.kwargs = kwargs
+        self.type = oimParamInterpolatorList[name]
 
-        self.kwargs=kwargs
-        self.type=oimParamInterpolatorList[name]
 
 ###############################################################################
 # Here is a list of standard parameters to be used when defining new components
 _standardParameters = {
     "x": {"name": "x", "value": 0, "description": "x position", "unit": units.mas, "free": False},
     "y": {"name": "y", "value": 0, "description": "y position", "unit": units.mas, "free": False},
-    "f": {"name": "f", "value": 1, "description": "flux", "unit": units.one,"mini":0,"maxi":1},
-    "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": units.mas,"mini":0},
-    "d": {"name": "d", "value": 0, "description": "Diameter", "unit": units.mas,"mini":0},
-    "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": units.mas,"mini":0},
-    "dout": {"name": "dout", "value": 0, "description": "Outer Diameter", "unit": units.mas,"mini":0},
-    "elong": {"name": "elong", "value": 1, "description": "Elongation Ratio", "unit": units.one,"mini":1},
-    "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": units.deg,"mini":-180,"maxi":180},
-    "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": units.one,"mini":0,"maxi":1},
-    "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": units.deg,"mini":-180,"maxi":180},
-    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": units.mas,"mini":0},
-    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixel", "unit": units.one, "free": False,"mini":1},
+    "f": {"name": "f", "value": 1, "description": "flux", "unit": units.one, "mini": 0, "maxi": 1},
+    "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": units.mas, "mini": 0},
+    "d": {"name": "d", "value": 0, "description": "Diameter", "unit": units.mas, "mini": 0},
+    "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": units.mas, "mini": 0},
+    "dout": {"name": "dout", "value": 0, "description": "Outer Diameter", "unit": units.mas, "mini": 0},
+    "elong": {"name": "elong", "value": 1, "description": "Elongation Ratio", "unit": units.one, "mini": 1},
+    "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": units.deg, "mini": -180, "maxi": 180},
+    "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": units.one, "mini": 0, "maxi": 1},
+    "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": units.deg, "mini": -180, "maxi": 180},
+    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": units.mas, "mini": 0},
+    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixel", "unit": units.one, "free": False, "mini": 1},
     "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": units.m, "mini": 0},
     "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": units.day}
 }
