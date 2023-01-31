@@ -412,7 +412,7 @@ class oimComponentImage(oimComponent):
             grid=self._getInternalGrid()
             coord=np.transpose(np.array([t_arr,wl_arr,x_arr,y_arr]))
 
-            im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=False)
+            im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=None)
             f0=np.sum(im0)
             f=np.sum(im)
             im=im/f*f0
