@@ -96,6 +96,8 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
         return im0
 
 
+###############################################################################
+
 class oimFastRotator(oimComponentImage):
     name = "Fast Rotator"
     shortname = "FRot"
