@@ -12,15 +12,19 @@ import matplotlib.cm as cm
 import numpy as np
 import os
 from astropy.io import fits
-from datetime import datetime
+from pprint import pprint as print
 
 
-oim.oimOptions['FTpaddingFactor']=2
-oim.oimOptions['FTBackend']=oim.FFTWBackend
+#You can change FFT option, for instance reduce the standard zero-padding factor 
+#from 8 to 2 or use FFTW backend instead of the standard numpy FFT module
+#oim.oimOptions['FTpaddingFactor']=2
+#oim.oimOptions['FTBackend']=oim.FFTWBackend
 
 path = os.path.dirname(oim.__file__)
 pathData=os.path.join(path,os.pardir,"examples","BasicExamples")
 filename=os.path.join(pathData,"KinematicsBeDiskModel.fits")
+
+#%%
 
 im=fits.open(filename)
 
@@ -29,15 +33,32 @@ im=fits.open(filename)
 c=oim.oimComponentFitsImage(im) # load image from an opened astropy.io.primaryHDU
 #c=oim.oimComponentFitsImage(filename) # load image from a valid filename of fits file
 
-m=oim.oimModel(c,c2)
+m=oim.oimModel(c)
 
 #%% Plotting the model image
 wl0=2.1661e-6
-Dwl=100e-10
-nwl=7
+Dwl=60e-10
+nwl=5
 wl=np.linspace(wl0-Dwl/2,wl0+Dwl/2,num=nwl)
-m.showModel(256,0.07,wl=wl,legend=True,normalize=True,fromFT=False,normPow=0.5)
+m.showModel(256,0.04,wl=wl,legend=True,normPow=0.4,colorbar=False,
+            figsize=(2,2.5),savefig=os.path.join(path,os.pardir,"images",
+                             "FitsImageCube_BeDiskKinematicsModel_images.png"))
+
+
+#%%
+print(m.getParameters())
+
+#%% Rotating ans scaling the model and plotting the model again
+
+c.params['pa'].value=45
+c.params['scale'].value=2
+m.showModel(256,0.04,wl=wl,legend=True,normPow=0.4,colorbar=False,
+            figsize=(2,2.5),savefig=os.path.join(path,os.pardir,"images",
+            "FitsImageCube_BeDiskKinematicsModel_images_scaled_rotated.png"))
+
 #%% Computing and plotting visibilities for various baselines and walvelengths
+c.params['pa'].value=0
+c.params['scale'].value=1
 
 nB=1000
 nwl=51
@@ -60,7 +81,7 @@ vc=m.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr)
 v=np.abs(vc.reshape(nwl,nB))
 v=v/np.tile(v[:,0][:,None],(1,nB))
 
-fig,ax=plt.subplots(1,2,figsize=(15,5))
+fig,ax=plt.subplots(1,2,figsize=(8,4))
 titles=["East-West Baselines","North-South Baselines"]
 
 
@@ -81,6 +102,5 @@ norm = colors.Normalize(vmin=np.min(B),vmax=np.max(B))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax,label="B (m)")
 
-
-#fig.savefig(os.path.join(path,os.pardir,"images","customCompImageFastRotatorVis.png"))
+fig.savefig(os.path.join(path,os.pardir,"images","FitsImageCube_BeDiskKinematicsModel_visibility.png"))
 
