@@ -744,6 +744,8 @@ class oimComponentFitsImage(oimComponentImage):
     """
     
     elliptic=False
+    name="Fits Image Component"
+    shortname="Fits_Comp"
     def __init__(self,fitsImage,**kwargs): 
         super().__init__(**kwargs)
         

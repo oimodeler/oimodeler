@@ -372,7 +372,7 @@ def getWlFromFitsImageCube(header):
        except:
            x0=0
        
-       wl= wl0+(np.arange(nwl)+1-x0)*dwl
+       wl= wl0+(np.arange(nwl)-x0)*dwl
        return wl
 
     
