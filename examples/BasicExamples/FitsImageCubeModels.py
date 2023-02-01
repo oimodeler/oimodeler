@@ -24,12 +24,9 @@ path = os.path.dirname(oim.__file__)
 pathData=os.path.join(path,os.pardir,"examples","BasicExamples")
 filename=os.path.join(pathData,"KinematicsBeDiskModel.fits")
 
-#%%
-
-im=fits.open(filename)
-
 #%% creating the model
 
+im=fits.open(filename)
 c=oim.oimComponentFitsImage(im) # load image from an opened astropy.io.primaryHDU
 #c=oim.oimComponentFitsImage(filename) # load image from a valid filename of fits file
 
@@ -103,4 +100,3 @@ sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax,label="B (m)")
 
 fig.savefig(os.path.join(path,os.pardir,"images","FitsImageCube_BeDiskKinematicsModel_visibility.png"))
-
