@@ -10,6 +10,7 @@ from scipy import interpolate,integrate
 from scipy.special import j0
 import oimodeler as oim
 from oimodeler import oimParam,_standardParameters,oimParamInterpolator,oimInterp
+from astropy.io import fits
 
 ###############################################################################
 #TODO move somewhere else
@@ -162,6 +163,7 @@ class oimComponent(object):
                 if 'value' in param.__dict__:
                     txt+=" {0}={1:.2f}".format(param.name,param.value)
                 elif isinstance(param,oimParamInterpolator):
+                    #TODO have a string for each oimParamInterpolator
                     txt+=" {0}={1}".format(param.name,param.__class__.__name__)
                 
         return txt
@@ -290,11 +292,7 @@ class oimComponentImage(oimComponent):
         self._allowExternalRotation=True
         self.normalizeImage=True
                
-        self.params["dim"]=oimParam(name="dim",value=256,
-                         description="Image dimension",unit=1,free=False)
-        
-        
-        self.params["dim"]=oimParam(**_standardParameters["pixSize"])
+        self.params["dim"]=oimParam(**_standardParameters["dim"])
         
         self.params["pa"]=oimParam(**_standardParameters["pa"])
         
@@ -414,7 +412,7 @@ class oimComponentImage(oimComponent):
             grid=self._getInternalGrid()
             coord=np.transpose(np.array([t_arr,wl_arr,x_arr,y_arr]))
 
-            im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=0)
+            im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=None)
             f0=np.sum(im0)
             f=np.sum(im)
             im=im/f*f0
@@ -738,5 +736,83 @@ class oimComponentRadialProfile(oimComponent):
 
 
 
+###############################################################################
 
+class oimComponentFitsImage(oimComponentImage):    
+    """
+    Component load load images or chromatic-cubes from fits files 
+    """
+    
+    elliptic=False
+    name="Fits Image Component"
+    shortname="Fits_Comp"
+    def __init__(self,fitsImage,**kwargs): 
+        super().__init__(**kwargs)
+        
+        
+        
+        self.loadImage(fitsImage)
+        
+
+        self.params["pa"]=oimParam(**_standardParameters["pa"])
+        self.params["scale"]=oimParam(**_standardParameters["scale"])
+        
+
+        self._t = np.array([0]) # this component is static
+
+        if 'FTBackend' in kwargs:
+             self.FTBackend=kwargs['FTBackend']
+        else: 
+            self.FTBackend=oim.oimOptions['FTBackend']
+            
+        self.FTBackendData=None
+        
+        self._eval(**kwargs)   
+        
+    
+    def loadImage(self,fitsImage):
+        if isinstance(fitsImage, str):
+            try:
+                im=fits.open(fitsImage)[0]
+            except:
+                raise TypeError("Not a valid fits file")
+        elif isinstance(fitsImage,fits.hdu.hdulist.HDUList):
+              im=fitsImage[0]
+        elif isinstance(fitsImage,fits.hdu.image.PrimaryHDU):
+                 im=fitsImage
+        
+        self._header=im.header
+        
+        dims=self._header['NAXIS']
+        if dims<2:
+            raise TypeError("oimComponentFitsImage require 2D images or " 
+                            "3D chromatic-image-cubes")
+
+        dimx=self._header['NAXIS1']
+        dimy=self._header['NAXIS2'] 
+        if dimx!=dimy:
+            raise TypeError("Current version only works with square images")
+        self._dim=dimx
+        
+        
+        pixX=self._header["CDELT1"]
+        pixY=self._header["CDELT2"]
+        if pixX!=pixY:
+            raise TypeError("Current version only works with the same pixels"
+                            " scale in x and y dimension")
+        self._pixSize0=pixX 
+        
+          
+        if dims==3:
+            self._wl=oim.getWlFromFitsImageCube(self._header)
+            self._image=im.data[None,:,:,:]  #adding the time dimension (nt,nwl,ny,nx)
+        
+        else:
+            self._image=im.data[None,None,:,:] #adding the wl and time dimensions (nt,nwl,ny,nx)
+
+    
+    def _internalImage(self):
+        self.params["dim"].value=self._dim
+        self._pixSize=self._pixSize0*self.params["scale"].value
+        return self._image
 
