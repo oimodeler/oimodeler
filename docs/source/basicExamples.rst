@@ -353,17 +353,18 @@ Let's finish this example by creating a figure with the image and visibility for
 
 
 
-.. _fitsImageModel:
+.. _imageFits:
 
-Component based on a fits image
+Precomputed fits-formated image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the `FitsImageCubeModels.py.py <https://github.com/oimodeler/oimodeler/tree/main/examples/BasicExamples/FitsImageCubeModels.py>`_ script, we demonstrate the capability of building models using pre-computed images or chromatic image-cubes in the fits format.
+In the `FitsImageModel.py <https://github.com/oimodeler/oimodeler/tree/main/examples/BasicExamples/FitsImageModel.py>`_ script, we demonstrate the capability of building models using precomputed  image in fits format.
 
-In this example we will use a chromatic image-cube computed around the :math:`Br\gamma` emission line for a classical Be Star circumstellar disk. The model, detailed in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_ was taken form the `AMHRA <https://amhra.oca.eu/AMHRA/bedisk/input.htm>`_ service of the JMMC. 
+In this example we will use a semi-physical model for a classical Be star and its circumstellar disk. The model, detailed in `Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_ was taken form the `AMHRA <https://amhra.oca.eu/AMHRA/disco-gas/input.htm>`_ service of the JMMC. 
 
 .. note::
     AMHRA develops and provides various online astrophysical models dedicated to the scientific exploitation of high angular and high spectral facilities. Currently available models are : semi-physical gaseous disk of classical Be stars and dusty disk of YSO, Red-supergiant and AGB, binary spiral for WR stars, physical limb-darkening models, kinematics gaseous disks, and a grid of supergiant B[e] stars models.
+
     
 Let's start by importing oimodeler as well as useful packages.
 
@@ -371,21 +372,18 @@ Let's start by importing oimodeler as well as useful packages.
 
     import oimodeler as oim
     from matplotlib import pyplot as plt
-    import matplotlib.colors as colors
-    import matplotlib.cm as cm
     import numpy as np
     import os
     from astropy.io import fits
     
     
-The fits-formatted image-cube we will use, `KinematicsBeDiskModel.fits`, is located in the `./examples/basicExamples` directory.
+The fits-formatted image-cube we will use, ``BeDisco.fits``, is located in the ``./examples/basicExamples`` directory.
     
 .. code-block:: python
 
     path = os.path.dirname(oim.__file__)
     pathData=os.path.join(path,os.pardir,"examples","BasicExamples")
-    filename=os.path.join(pathData,"KinematicsBeDiskModel.fits")
-
+    filename=os.path.join(pathData,"BeDisco.fits")
 
 The class for loading fits-images and image-cubes is named **oimComponentFitsImage**. It derives from the **oimComponentImage**, i.e. the partially abstract class for all components defined in the image plan. **oimComponentImage** derives from the fully abstract **oimComponent**, i.e. the parent class of all oimodeler components.
 
@@ -400,13 +398,11 @@ There are two ways to load fits image into a oimComponentFitsImage object. The f
     im=fits.open(filename)
     c=oim.oimComponentFitsImage(im) 
     
-A simplier way, if the user doesn't need to access directly to the content of **im**, is to pass the filename to the oimComponentFitsImage class.
-
+A simplier way, if the user doesn’t need to access directly to the content of im, is to pass the filename to the oimComponentFitsImage class.
 
 .. code-block:: python
 
     c=oim.oimComponentFitsImage(filename)
-    
 
 Finally, we can build our model with this unique component:
 
@@ -414,22 +410,53 @@ Finally, we can build our model with this unique component:
 
     m=oim.oimModel(c)
     
-
-We can now plot images of the model through the :math:`Br\gamma` emission line (21661 :math:`\mu` m)
+We can now plot the model image. 
 
 .. code-block:: python
 
-    wl0=2.1661e-6
-    Dwl=60e-10
-    nwl=5
-    wl=np.linspace(wl0-Dwl/2,wl0+Dwl/2,num=nwl)
-    m.showModel(256,0.04,wl=wl,legend=True,normPow=0.4,colorbar=False)
+    m.showModel(512,0.05,legend=True,normalize=True,normPow=1,cmap="hot")
+                 
+.. image:: ../../images/FitsImage_Disco_image.png
+  :alt: Alternative text        
 
+.. note::       
 
+    Although image was computed for a specific wavelength (i.e. 1.5 microns) our model is achromatic as we use a single image to generate it. An example with chromatic model buit on a chromatic image-cube is available :ref:`here <imageCubeFits>`.
     
-.. image:: ../../images/FitsImageCube_BeDiskKinematicsModel_images.png
-  :alt: Alternative text 
+
+We now create spatial frequencies for thousand baselines ranging from 0 to 120m, in the North-South and East-West orientation and at an observing wavlength of 1.5microns.
+
+ .. code-block:: python
+ 
+    wl=1.5e-6
+    nB=1000
+    B=np.linspace(0,120,num=nB)
+
+    spfx=np.append(B,B*0)/wl # 1st half of B array are baseline in the East-West orientation
+    spfy=np.append(B*0,B)/wl # 2nd half are baseline in the North-South orientation
+
+We compute the complex coherent flux and then the absolute visibility
+
+ .. code-block:: python
+
+    ccf = m.getComplexCoherentFlux(spfx,spfy)
+    v = np.abs(ccf)
+    v=v/v.max()
+
+and finally we can plot our results:
+ 
+.. code-block:: python
   
+    plt.figure()
+    plt.plot(B , v[0:nB],label="East-West")
+    plt.plot(B , v[nB:],label="North-South")
+    plt.xlabel("B (m)")
+    plt.ylabel("Visbility")
+    plt.legend()
+    plt.margins(0)
+
+.. image:: ../../images/FitsImage_Disco_visibility.png
+  :alt: Alternative text
   
 Let's now have a look at the model parameters:
     
@@ -455,85 +482,53 @@ In addition to the ``x``, ``y``, and ``f`` parameters, common to all components,
 
 ``pa`` and ``scale`` are both free parameters as default and can be used for model fitting.
 
-Let's try to rotate and scale our model and plot the images again
+Let's try to rotate and scale our model and plot the image again
 
 .. code-block:: python
 
     c.params['pa'].value=45
     c.params['scale'].value=2
-        m.showModel(256,0.04,wl=wl,legend=True,normPow=0.4,colorbar=False)
+    m.showModel(256,0.04,legend=True,normPow=0.4,colorbar=False)
     
-
-
-.. image:: ../../images/FitsImageCube_BeDiskKinematicsModel_images_scaled_rotated.png
+.. image:: ../../images/FitsImage_Disco_image2.png
   :alt: Alternative text 
- 
-
-Before finishing this example, let's put back the default scale and position angle of the component.
-
-.. code-block:: python
- 
-    c.params['pa'].value=0
-    c.params['scale'].value=1
   
   
-We now compute the visibility for a series of North-South and East-West baselines ranging between 0 and 100m and with the wavelength ranging through the emission line. 
+The the **oimComponentFitsImage** can be combined with any kind of other component. Let's add a companion (i.e. uniform disk) for our Be star model.  
 
 
 .. code-block:: python
 
-    nB=1000
-    nwl=51
-    wl=np.linspace(wl0-Dwl/2,wl0+Dwl/2,num=nwl)
-
-
-    B=np.linspace(0,100,num=nB//2)
-    Bx=np.append(B,B*0) # 1st half of B array are baseline in the East-West orientation
-    By=np.append(B*0,B) # 2nd half are baseline in the North-South orientation
-
-    Bx_arr=np.tile(Bx[None,:], (nwl, 1)).flatten()
-    By_arr=np.tile(By[None,:], (nwl,  1)).flatten()
-    wl_arr=np.tile(wl[:,None], (1, nB)).flatten()
-
-    spfx_arr=Bx_arr/wl_arr
-    spfy_arr=By_arr/wl_arr
-
-    vc=m.getComplexCoherentFlux(spfx_arr,spfy_arr,wl_arr)
-
-    v=np.abs(vc.reshape(nwl,nB))
-    v=v/np.tile(v[:,0][:,None],(1,nB))
-
-Finally we plot the results as a function of the wavelength and with the baseline length as a colorscale. 
+    c2=oim.oimUD(x=20,d=1,f=0.03)
+    m2=oim.oimModel(c,c2)
+    
+We add a 1 mas companion located at 20 mas West of the central object and with a flux of 0.03. We can now plot the image of our new model.
 
 .. code-block:: python
 
-    fig,ax=plt.subplots(1,2,figsize=(8,4))
-    titles=["East-West Baselines","North-South Baselines"]
-
-
-    for iB in range(nB):
-        cB=(iB % (nB//2))/(nB//2-1)
-        ax[2*iB//nB].plot(wl*1e9,v[:,iB],
-                color=plt.cm.plasma(cB))
-        
-
-    for i in range(2):
-        ax[i].set_title(titles[i])
-        ax[i].set_xlabel("$\lambda$ (nm)")
-    ax[0].set_ylabel("Visibility")    
-    ax[1].get_yaxis().set_visible(False)   
-
-            
-    norm = colors.Normalize(vmin=np.min(B),vmax=np.max(B))
-    sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
-    fig.colorbar(sm, ax=ax,label="B (m)")
-
-.. image:: ../../images/FitsImageCube_BeDiskKinematicsModel_visibility.png
+    m2.showModel(256,0.2,legend=True,normalize=True,fromFT=True,normPow=1,cmap="hot")
+ 
+.. image:: ../../images/FitsImage_Disco_image3.png
   :alt: Alternative text 
+    
+To finish this example let's plot the visibility along North-South and East-West baseline for our binary Be-star model.  
+  
+.. code-block:: python
 
+    ccf = m2.getComplexCoherentFlux(spfx,spfy)
+    v = np.abs(ccf)
+    v=v/v.max()
 
-As expected for a rotating disk (see `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_ for more details) , the visibility for the baselines along the major-axis show a W-shaped profile through the line whereas the visibliity along the minor-axis of the disk show a V-shaped profile.
-
+    plt.figure()
+    plt.plot(B , v[0:nB],label="East-West")
+    plt.plot(B , v[nB:],label="North-South")
+    plt.xlabel("B (m)")
+    plt.ylabel("Visbility")
+    plt.legend()
+    plt.margins(0)  
+    
+.. image:: ../../images/FitsImage_Disco_visibility2.png
+  :alt: Alternative text 
 
 .. _createSimulator:
 
