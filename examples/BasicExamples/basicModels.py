@@ -102,5 +102,3 @@ for i, m in enumerate(models):
     
 
 fig.savefig(os.path.join(path,os.pardir,"images","basicModel_all.png"))   
-#%%
-

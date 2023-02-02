@@ -11,7 +11,6 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 import numpy as np
 import os
-from astropy.io import fits
 from pprint import pprint as print
 
 
@@ -26,10 +25,7 @@ filename=os.path.join(pathData,"KinematicsBeDiskModel.fits")
 
 #%% creating the model
 
-im=fits.open(filename)
-c=oim.oimComponentFitsImage(im) # load image from an opened astropy.io.primaryHDU
-#c=oim.oimComponentFitsImage(filename) # load image from a valid filename of fits file
-
+c=oim.oimComponentFitsImage(filename) 
 m=oim.oimModel(c)
 
 #%% Plotting the model image
