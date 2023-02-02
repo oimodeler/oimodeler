@@ -96,13 +96,21 @@ def oimGetDataValErrAndTypeFlag(arr):
             err.append(arr.data["T3PHIERR"])
             flag.append(arr.data["FLAG"])
             dtype|=oimDataType.T3PHI
-    if arr.name=="OI_FLUX":     
-        nflx=np.size(np.where(arr.data["FLUXDATA"]!=0))
-        if nflx!=0:
-            val.append(arr.data["FLUXDATA"]) 
-            err.append(arr.data["FLUXERR"])
-            flag.append(arr.data["FLAG"])
-            dtype|=oimDataType.FLUXDATA
+    if arr.name=="OI_FLUX":
+        try:
+            nflx=np.size(np.where(arr.data["FLUXDATA"]!=0))
+            if nflx!=0:
+                val.append(arr.data["FLUXDATA"]) 
+                err.append(arr.data["FLUXERR"])
+                flag.append(arr.data["FLAG"])
+                dtype|=oimDataType.FLUXDATA
+        except:
+            nflx=np.size(np.where(arr.data["FLUX"]!=0))
+            if nflx!=0:
+                val.append(arr.data["FLUX"]) 
+                err.append(arr.data["FLUXERR"])
+                flag.append(arr.data["FLAG"])
+                dtype|=oimDataType.FLUXDATA
     return dtype,val,err,flag
 
 ###############################################################################
@@ -128,10 +136,15 @@ def oimDataCheckData(arr):
             t3phi=np.size(np.where(arr.data["T3PHI"]!=0))
             if t3phi!=0:
                 cdata.append("T3PHI")
-        if arr.name=="OI_FLUX":     
-            nflx=np.size(np.where(arr.data["FLUXDATA"]!=0))
-            if nflx!=0:
-                cdata.append("FLUXDATA")   
+        if arr.name=="OI_FLUX": 
+            try:
+                nflx=np.size(np.where(arr.data["FLUXDATA"]!=0))
+                if nflx!=0:
+                    cdata.append("FLUXDATA")  
+            except:
+                nflx=np.size(np.where(arr.data["FLUX"]!=0))
+                if nflx!=0:
+                    cdata.append("FLUX")  
     return cdata
 
 ###############################################################################
@@ -177,9 +190,12 @@ def oimDataGetVectCoord(data,arr):
         
         
     elif arr.name=="OI_FLUX":
-        nB=np.shape(arr.data["FLUXDATA"])[0]
-        u=np.zeros(nB*nwl)
-        v=np.zeros(nB*nwl)
+            try:
+                nB=np.shape(arr.data["FLUXDATA"])[0]
+            except:
+                nB=np.shape(arr.data["FLUX"])[0]
+            u=np.zeros(nB*nwl)
+            v=np.zeros(nB*nwl)
         
     else:
         um=arr.data["UCOORD"]
@@ -306,8 +322,11 @@ class oimData(object):
                     nB=np.shape(arri.data["VISAMP"])
                 if arri.name=="OI_T3": 
                     nB=np.shape(arri.data["T3AMP"])
-                if arri.name=="OI_FLUX":     
-                    nB=np.shape(arri.data["FLUXDATA"])
+                if arri.name=="OI_FLUX": 
+                    try:
+                        nB=np.shape(arri.data["FLUXDATA"])
+                    except:
+                        nB=np.shape(arri.data["FLUX"])
                     
                 info["nB"]=nB
                 cdata=oimDataCheckData(arri)
