@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Sep  8 13:21:23 2022
+"""data filtering/modifying
 
-@author: Ame
 """
 
 import numpy as np
@@ -69,7 +67,6 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
     shortname = "Remove Arr"
     description = "Remove array by type Filter"    
     
-    
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self._eval(**kwargs)
@@ -110,7 +107,6 @@ class oimDataTypeFilter(oimDataFilterComponent):
     """
     
     """
-    
     name = "Filtering by datatype"
     shortname = "DataType Filter"
     description = "Filtering by datatype : VIS2DATA, VISAMP..."    
@@ -140,8 +136,7 @@ class oimDataTypeFilter(oimDataFilterComponent):
             
         
 
-
-
+###############################################################################
 
 class oimDataFilter(object):
     """

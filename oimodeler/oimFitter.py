@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Sep 19 14:32:59 2022
+model fitting
 
-@author: Ame
 """
 
 import numpy as np
-from oimodeler.oimModel import oimParam
+from oimodeler import oimParam
 import oimodeler as oim
 import emcee
 import matplotlib.pyplot as plt
@@ -96,7 +95,9 @@ class oimFitterEmcee(oimFitter):
             self.initialParams=self._initRandom()
         elif init=="fixed":
             self.initialParams=self._initFixed()
-            
+        elif init=="gaussian":
+             self.initialParams=self._initGaussian()
+             
         moves=[(emcee.moves.DEMove(), 0.8), 
                (emcee.moves.DESnookerMove(), 0.2)]
        
@@ -104,7 +105,18 @@ class oimFitterEmcee(oimFitter):
         self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value, 
                         self.nfree,self._logProbability,moves=moves,**kwargs)
         return kwargs   
-            
+   
+        
+    def _initGaussian(self):
+        nw=self.params['nwalkers'].value
+        initialParams=np.ndarray([nw,self.nfree])
+        
+        for iparam,parami in enumerate(self.freeParams.values()):
+            initialParams[:,iparam]=np.random.normal(parami.value,
+                                  parami.error,self.params['nwalkers'].value)
+        return initialParams
+
+         
     def _initRandom(self):
         
         nw=self.params['nwalkers'].value

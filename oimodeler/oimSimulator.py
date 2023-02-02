@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 23 15:26:42 2021
-
-@author: Ame
+data/model simulation 
 """
 
 import numpy as np
@@ -210,7 +208,7 @@ class oimSimulator(object):
              self.nelChi2=nelChi2
                 
            
-    def plot(self,arr,simulated=True,savefig=None,**kwargs):
+    def plot(self,arr,simulated=True,savefig=None,visLog=False,**kwargs):
         # plotting  data and simulatiedData
 
         if type(arr)!=type([]):
@@ -233,17 +231,21 @@ class oimSimulator(object):
             scale=axi.oiplot(self.data.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
                     cname="EFF_WAVE",cunitmultiplier=1e6,lw=2,cmap="coolwarm",
                     errorbar=True,label="data")
-
+            
             #over-plotting the simulated data as a dotted line  vs spatial frequencies
             axi.oiplot(self.simulatedData.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
                     color="k",ls=":",lw=1,label="model")
             
             if axi!=ax[-1]: axi.get_xaxis().set_visible(False)
             if axi==ax[0]:axi.legend()
-            
+                    
             #automatic ylim => 0-1 for visibilties, -180,180 for phases
+
+            if arr[iax] in ["VIS2DATA","VISAMP"] and visLog==True:
+                axi.set_yscale("log")
+                
             axi.autolim()
-         
+            
         xmin=1e99
         xmax=-1e99
         for axi in ax:

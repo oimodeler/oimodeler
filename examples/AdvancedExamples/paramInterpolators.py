@@ -15,7 +15,7 @@ import os
 path = os.path.dirname(oim.__file__)
 
 
-#%%
+#%% Function to simplify plotting of parameter an visibility
 
 def plotParamAndVis(B,wl,t,model,param,ax=None,colorbar=True):
     
@@ -72,14 +72,14 @@ def plotParamAndVis(B,wl,t,model,param,ax=None,colorbar=True):
     
     return fig,ax,v
         
-#%%
+#%% 
 nB=200
 B=np.linspace(0,60,num=nB)
 
 nwl=1000
 nt=1000
 
-#%%
+#%% 
 c1 = oim.oimUD(d=oim.oimInterp('GaussWl',val0=2,value=4,x0=2.1656e-6,fwhm=1e-8))
 m1   = oim.oimModel(c1)
 

@@ -35,14 +35,18 @@ First we import the useful packages and create a set of spatial frequencies and 
     
 Unlike in the previous example with the grey data, we create a 2D-array for the spatial frequencies of ``nB`` baselines by ``nwl`` wavelengths. The wavlength vector is tiled itself to have the same length as the spatial frequency vector. Finally, we flatten the vector to be passed to the getComplexCoherentFlux method.
 
-Let's create our first chromatic components. Chromaticity can added to grey Fourier-based model by using the oimInterpWl when creating a new component.
+Let's create our first chromatic components. Linearly chromatic parameter can added to grey Fourier-based model by using the oimInterp macro with the parameter "wl" when creating a new component. 
 
 .. code-block:: python
 
-    g=oim.oimGauss(fwhm=oim.oimInterpWl([3e-6,4e-6],[2,8]))
+    g=oim.oimGauss(fwhm=oim.oimInterp("wl" wl=[3e-6,4e-6],values=[2,8]))
     
 We have created a Gaussian component with a fwhm growing from 2 mas at 3 microns to 8 mas at 4 microns.
-We can access to the interpolated value of the parameters using the call operator ().
+
+.. Note::
+    Parameter interpolators are described in details in the :ref:`following example <paramInterpolatorExample>`
+
+We can access to the interpolated value of the parameters using the call operator ()
 
 
 .. code-block:: python
@@ -80,7 +84,7 @@ Now let's add a second component: a uniform disk with a chromatic flux.
 
 .. code-block:: python
     
-    ud=oim.oimUD(d=0.5,f=oim.oimInterpWl([3e-6,4e-6],[2,0.2]))
+    ud=oim.oimUD(d=0.5,f=oim.oimInterp("wl", wl=[3e-6,4e-6],values=[2,0.2]))
     m2=oim.oimModel([ud,g])
 
     fig2im,ax2im,im2 = m2.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(3.5,2.5))
@@ -108,8 +112,8 @@ Now let's create a similar model but with elongated components. We will replace 
 
 .. code-block:: python
 
-    eg=oim.oimEGauss(fwhm=oim.oimInterpWl([3e-6,4e-6],[2,8]),elong=2,pa=90)
-    el=oim.oimEllipse(d=0.5,f=oim.oimInterpWl([3e-6,4e-6],[2,0.1]),elong=2, pa=90)
+    eg=oim.oimEGauss(fwhm=oim.oimInterp("wl",wl=[3e-6,4e-6],values=[2,8]),elong=2,pa=90)
+    el=oim.oimEllipse(d=0.5,f=oim.oimInterp("wl",wl=[3e-6,4e-6],values=[2,0.1]),elong=2, pa=90)
 
     m3=oim.oimModel([el,eg])
     fig3im,ax3im,im3 = m3.showModel(256,0.1,wl=[3e-6,3.25e-6,3.5e-6,4e-6],figsize=(3.5,2.5),normPow=0.5)
@@ -228,8 +232,8 @@ Here we create a two-components model with a time dependent Gaussian fwhm and a 
 
 .. code-block:: python
 
-    gd1=oim.oimGauss(fwhm=oim.oimInterpTime(t=[0,1,3],value=[1,4,1]))
-    ud1=oim.oimUD(d=oim.oimInterpWl(wl=[1e-6,3e-6],value=[0.5,2]),x=-4,y=0,f=0.1)
+    gd1=oim.oimGauss(fwhm=oim.oimInterp('time',mjd=[0,1,3],values=[1,4,1]))
+    ud1=oim.oimUD(d=oim.oimInterp("wl",wl=[1e-6,3e-6],values=[0.5,2]),x=-4,y=0,f=0.1)
 
     m5=oim.oimModel(gd1,ud1)
 
@@ -241,6 +245,7 @@ Here we create a two-components model with a time dependent Gaussian fwhm and a 
 .. image:: ../../images/complexModel_time.png
   :alt: Alternative text  
 
+.. _paramInterpolatorExample:
 
 Parameters Interpolators
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -538,5 +543,137 @@ Finally, xe also can use a polynominal interpolator in time (also available for 
 .. image:: ../../images/interp5.png
   :alt: Alternative text   
   
+As for other part of the oimodeler software, **oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage. See the :ref:`create_interp` example.
+
+
+Fitting a chromatic model
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the example `chromaticModelFit.py <https://github.com/oimodeler/oimodeler/blob/main/examples/AdvancedExamples/chromaticModelFit.py>`_ we will show how to perform model-fitting with a simple chromatic model.
+
+We will use some ASPRO-simulated data that were computed using a chromatic image-cubes exported from the same oimodeler model used for model fitting. 
+
+Let's first start by importing packages and setting the path to the data directory.
+
+
+.. code-block:: python
+
+    import oimodeler as oim
+    import numpy as np
+    import os
+
+    path = os.path.dirname(oim.__file__)
+    pathData=os.path.join(os.path.join(path,os.pardir,
+           "examples","testData","ASPRO_CHROMATIC_SKWDISK"))
+
+We will build a model mimiking a star (uniform disk) and the inner rim of a dusty disk (Skewed ring). The flux ratio between the two components will depend on the wavelength as well as the outer radius of the skewed ring.
+
+.. code-block:: python
+
+    star=oim.oimUD(d=1,f=oim.oimInterp("wl",wl=[3e-6,4e-6],values=[0.5,0.1]))
+    ring=oim.oimESKRing(din=8,dout=oim.oimInterp("wl",wl=[3e-6,4e-6],values=[9,14]),elong=1.5,skw=0.8,pa=50)
+    ring.params['f']=oim.oimParamNorm(star.params['f'])
+    ring.params["skwPa"]=oim.oimParamLinker(disk.params["pa"],"add",90)
+    model=oim.oimModel(star,disk)
+
+
+We used the **oimInterp** class with the "wl" option to build a linear interpolator for the parameter `f` of the uniform disk with two reference wavlengths at 3 and 4 microns with a value of the flux of 0.5 and 0.1, respectively. We also link the flux of the skewed ring so that the total flux is normalized. The ring outer radius `dout` is also interpolated between 9 mas at 3 microns and 14 at 4 microns. Finally, we set the ring skweness position angle ``skwPa`` to be perpendicular to the ring major-axis (set with the ``pa`` parameter).
+
+We can have a look at our model at three wavelengths 3, 3.5 and 4 microns.
+
+.. code-block:: python 
+    
+    model.showModel(256,0.1,wl=np.linspace(3.,4,num=3)*1e-6,normPow=1,legend=True,normalize=True)
+
+.. image:: ../../images/chromaticModelFitImageInit.png
+  :alt: Alternative text
   
-As for other part of the oimodeler software, **oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage. See the (NOT YET IMPLEMETED) example.
+   
+The simulated data that we will use where created with fits-formated image-cube computed with this image using the **getImage** method with the ``toFits`` option. Here we simulate 50 wavelengths for the cube as ASPRO doesn't interpolate between wavelengths of imported image-cube yet.
+
+.. code-block:: python 
+ 
+    img=model.getImage(256,0.1,toFits=True,wl=np.linspace(3,4,num=50)*1e-6)
+    imgfname=os.path.join(path,os.pardir,"tempTests","skwDisk.fits")
+    img.writeto(imgfname,overwrite=True)
+
+Using this model and the ASPRO software we have simulated 3 MATISSE observations: one with each of the available standard configuration of the ATs telescopes at VLTI: SMALL, MEDUM and LARGE. The three observations were exported as a single oifits file. 
+
+Let's load it into a **oimData** object, and apply a **oimFilter** that will keep only VISDATA2 and T3PHI more the model-fitting process.
+
+.. code-block:: python 
+
+    files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData)]
+    data=oim.oimData(files)
+    f1=oim.oimRemoveArrayFilter(targets="all",arr=["OI_VIS","OI_FLUX"])         
+    f2=oim.oimDataTypeFilter(targets="all",dataType=["T3AMP"])
+    data.setFilter(oim.oimDataFilter([f1,f2]))
+
+Let's have a look at our model free parameters:
+
+.. code-block:: python 
+
+    params=model.getFreeParameters()
+    print(params)
+    
+.. code-block::
+
+    {'c1_UD_d': oimParam at 0x2a0edc241c0 : d=1 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_UD_f_interp1': oimParam at 0x2a0edc242b0 : f=0.5 ± 0  range=[-inf,inf] free=True ,
+     'c1_UD_f_interp2': oimParam at 0x2a0edc242e0 : f=0.1 ± 0  range=[-inf,inf] free=True ,
+     'c2_SKER_din': oimParam at 0x2a0edc24220 : din=8 ± 0 mas range=[-inf,inf] free=True ,
+     'c2_SKER_dout_interp1': oimParam at 0x2a0edc24e80 : dout=9 ± 0 mas range=[-inf,inf] free=True ,
+     'c2_SKER_dout_interp2': oimParam at 0x2a0edc24e50 : dout=14 ± 0 mas range=[-inf,inf] free=True ,
+     'c2_SKER_elong': oimParam at 0x2a0edc24310 : elong=1.5 ± 0  range=[-inf,inf] free=True ,
+     'c2_SKER_pa': oimParam at 0x2a0edc24400 : pa=50 ± 0 deg range=[-inf,inf] free=True ,
+     'c2_SKER_skw': oimParam at 0x2a0edc24460 : skw=0.8 ± 0  range=[-inf,inf] free=True }
+
+Here we see that the flux of the uniform disk and the outer radius of the skewed ring have both been replaced by two parameters representing thir respective values at the reference wavelengths: ``c1_UD_f_interp1`` is the flux at 3 microns and ``c1_UD_f_interp2`` the flux at 4 microns.
+
+Before running the fit we need to set the parameter space for all free parameters:
+
+.. code-block:: python 
+
+    params['c1_UD_f_interp1'].set(min=0.0,max=1)
+    params['c1_UD_f_interp2'].set(min=-0.0,max=1)
+    params['c1_UD_d'].set(min=0,max=5,free=True)
+    params['c2_SKER_pa'].set(min=0.,max=180)
+    params['c2_SKER_elong'].set(min=1,max=3)
+    params['c2_SKER_din'].set(min=5,max=20.)
+    params['c2_SKER_skw'].set(min=0,max=1.)
+    params['c2_SKER_dout_interp1'].set(min=5.,max=30.)
+    params['c2_SKER_dout_interp2'].set(min=5.,max=30.)
+    
+    
+Now we can perform the model-fitting using the emcee-based fitter with 30 walkers, 2000 steps and starting with random position with the parameter space.
+
+.. code-block:: python     
+
+    fit=oim.oimFitterEmcee(data,model,nwalkers=30)
+    fit.prepare(init="random")
+    fit.run(nsteps=2000,progress=True)
+
+Plotting the walkers and the corner plot (discarding the first half of the steps of the run).
+
+.. code-block:: python  
+
+    figWalkers,axeWalkers=fit.walkersPlot()
+    figCorner,axeCorner=fit.cornerPlot(discard=1000)
+
+.. image:: ../../images/chromaticModelFitWalkers.png
+  :alt: Alternative text
+  
+  
+.. image:: ../../images/chromaticModelFitCorner.png
+    :alt: Alternative text
+  
+
+Finally, getting the best parameters and the uncertainties and plotting the fit data.
+
+.. code-block:: python  
+
+    median,err_l,err_u,err=fit.getResults(mode='best',discard=1000)
+    fit.simulator.plot(["VIS2DATA","T3PHI"])
+  
+.. image:: ../../images/chromaticModelFitVisCP.png
+  :alt: Alternative text    

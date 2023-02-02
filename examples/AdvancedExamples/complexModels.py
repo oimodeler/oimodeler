@@ -19,7 +19,7 @@ spf0 = spf*0
 
 
 # %%
-g = oim.oimGauss(fwhm=oim.oimInterpWl([3e-6, 4e-6], [2, 8]))
+g = oim.oimGauss(fwhm=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 8]))
 print(g.params['fwhm']([3e-6, 3.5e-6, 4e-6, 4.5e-6]))
 
 # %%
@@ -48,7 +48,7 @@ plt.savefig(os.path.join(path, os.pardir, "images",
 
 # %%
 
-ud = oim.oimUD(d=0.5, f=oim.oimInterpWl([3e-6, 4e-6], [2, 0.2]))
+ud = oim.oimUD(d=0.5, f=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 0.2]))
 
 m2 = oim.oimModel([ud, g])
 fig2im, ax2im,im2 = m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
@@ -70,8 +70,8 @@ plt.savefig(os.path.join(path, os.pardir, "images",
             "complexModel_UDAndGaussVis.png"))
 
 # %%
-eg = oim.oimEGauss(fwhm=oim.oimInterpWl([3e-6, 4e-6], [2, 8]), elong=2, pa=90)
-el = oim.oimEllipse(d=0.5, f=oim.oimInterpWl([3e-6, 4e-6], [2, 0.2]), elong=2, pa=90)
+eg = oim.oimEGauss(fwhm=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 8]), elong=2, pa=90)
+el = oim.oimEllipse(d=0.5, f=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 0.2]), elong=2, pa=90)
 
 m3 = oim.oimModel([el, eg])
 fig3im, ax3im,im3 = m3.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
@@ -151,8 +151,8 @@ fig5im, ax5im,im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
 
 #%%
 
-gd1=oim.oimGauss(fwhm=oim.oimInterpTime(t=[0,1,3],value=[1,4,1]))
-ud1=oim.oimUD(d=oim.oimInterpWl(wl=[1e-6,3e-6],value=[0.5,2]),x=-4,y=0,f=0.1)
+gd1=oim.oimGauss(fwhm=oim.oimInterp("time",mjd=[0,1,3],values=[1,4,1]))
+ud1=oim.oimUD(d=oim.oimInterp("wl",wl=[1e-6,3e-6],values=[0.5,2]),x=-4,y=0,f=0.1)
 
 m5=oim.oimModel(gd1,ud1)
 
@@ -160,7 +160,7 @@ wls=np.array([1,2,3])*1e-6
 times=[0,1,2,3,4]
 
 fig5im,ax5im,im5= m5.showModel(256,0.04,wl=wls,t=times,legend=True,
-            figsize=(2.5,2),fromFT=fromFT,normalize=True,
+            figsize=(2.5,2),fromFT=True,normalize=True,
             savefig=os.path.join(path, os.pardir, "images", "complexModel_time.png"))
 
   
