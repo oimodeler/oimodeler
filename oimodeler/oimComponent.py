@@ -5,12 +5,13 @@ based components defined in Fourier or image plan
 """
 
 import numpy as np
+from astropy.io import fits
 from astropy import units as units
 from scipy import interpolate,integrate
 from scipy.special import j0
+
 import oimodeler as oim
 from oimodeler import oimParam,_standardParameters,oimParamInterpolator,oimInterp
-from astropy.io import fits
 
 ###############################################################################
 #TODO move somewhere else

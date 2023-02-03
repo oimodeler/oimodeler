@@ -16,7 +16,6 @@ directory add the import here so that all component will be available through
 
 #TODO: import crashes randomly with ModuleNotFoundError: No module named 'oimFastRotator' 
 
-
+from .oimBox import oimBox
 from .oimFastRotator import oimFastRotator
 from .oimSpiral import oimSpiral
-from .oimBox import oimBox

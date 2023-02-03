@@ -3,13 +3,13 @@
 model fitting
 
 """
-
-import numpy as np
-from oimodeler import oimParam
-import oimodeler as oim
+import corner
 import emcee
 import matplotlib.pyplot as plt
-import corner
+import numpy as np
+
+import oimodeler as oim
+from oimodeler import oimParam
 
 class oimFitter(object):
     params={}

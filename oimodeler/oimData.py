@@ -2,11 +2,12 @@
 """
 data for optical interferometry 
 """
+import os
+from enum import IntFlag
 
 import numpy as np
 from astropy.io import fits
-import os
-from enum import IntFlag
+
 import oimodeler as oim
 
 _oimDataType=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"]

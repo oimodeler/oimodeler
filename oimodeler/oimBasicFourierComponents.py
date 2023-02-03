@@ -2,7 +2,6 @@
 """
 basic model-components defined in the Fourier plan
 """
-
 import numpy as np
 from astropy import units as units
 from scipy.special import j0,j1,jv

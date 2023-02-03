@@ -4,10 +4,11 @@ Created on Tue Nov 15 11:53:04 2022
 
 @author: Ame
 """
-from pprint import pprint as print 
-import oimodeler as oim
-import numpy as np                                         
 import os
+from pprint import pprint as print 
+
+import numpy as np                                         
+import oimodeler as oim
 
 path = os.path.dirname(oim.__file__)
 pathData=os.path.join(os.path.join(path,os.pardir,"examples","testData","ASPRO_CHROMATIC_SKWDISK"))

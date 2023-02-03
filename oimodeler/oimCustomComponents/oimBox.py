@@ -1,7 +1,7 @@
+import astropy.units as u
+import numpy as np
 
 from oimodeler import oimComponentFourier,oimParam
-import numpy as np
-import astropy.units as u
 
 ##############################################################################
 

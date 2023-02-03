@@ -1,7 +1,8 @@
-import oimodeler as oim
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+import oimodeler as oim
 
 path = os.path.dirname(oim.__file__)
 

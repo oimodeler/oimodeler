@@ -2,10 +2,10 @@
 """
 data/model simulation 
 """
-
-import numpy as np
-import oimodeler as oim
 import matplotlib.pyplot as plt
+import numpy as np
+
+import oimodeler as oim
 
 
 def corrFlux2Vis2(vcompl):

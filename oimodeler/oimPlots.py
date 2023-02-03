@@ -2,12 +2,14 @@
 """
 various plotting function and classes
 """
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerLineCollection
-import numpy as np
-import os
 from astropy.io import fits
+
 import oimodeler as oim
 
 ###############################################################################

@@ -2,9 +2,9 @@
 """
 Backends for Fourier Transform computation
 """
-
 import numpy as np
 from scipy import interpolate
+
 import oimodeler as oim
 
 class numpyFFTBackend():

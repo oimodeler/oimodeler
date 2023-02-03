@@ -4,11 +4,12 @@ Created on Wed Sep 21 10:59:15 2022
 
 @author: Ame
 """
-import oimodeler as oim
+import os
 from pprint import pprint as print
 
+import oimodeler as oim
+
 #%%
-import os
 path = os.path.dirname(oim.__file__)
 pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_MATISSE2")
 files=[os.path.abspath(os.path.join(pathData,fi)) for fi in os.listdir(pathData)]

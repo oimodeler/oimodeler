@@ -4,13 +4,13 @@ Created on Fri Oct 28 12:21:51 2022
 
 @author: Ame
 """
+import os
 
-import oimodeler as oim
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
-import os
+import numpy as np
+import oimodeler as oim
 
 path = os.path.dirname(oim.__file__)
 

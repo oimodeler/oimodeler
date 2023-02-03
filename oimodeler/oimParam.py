@@ -2,7 +2,6 @@
 """
 model parameter and parameter interpolators
 """
-
 import numpy as np
 from astropy import units as units
 from scipy.interpolate import interp1d

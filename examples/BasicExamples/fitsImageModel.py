@@ -4,13 +4,13 @@ Created on Thu Jan 26 12:03:58 2023
 
 @author: Ame
 """
-
-import oimodeler as oim
-from matplotlib import pyplot as plt
-import numpy as np
 import os
-from astropy.io import fits
 from pprint import pprint as print
+
+import numpy as np
+import oimodeler as oim
+from astropy.io import fits
+from matplotlib import pyplot as plt
 
 #You can change FFT option, for instance reduce the standard zero-padding factor 
 #from 8 to 2 or use FFTW backend instead of the standard numpy FFT module

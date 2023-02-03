@@ -4,14 +4,14 @@ Created on Thu Jan 26 12:03:58 2023
 
 @author: Ame
 """
+import os
+from pprint import pprint as print
 
-import oimodeler as oim
-from matplotlib import pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 import numpy as np
-import os
-from pprint import pprint as print
+import oimodeler as oim
+from matplotlib import pyplot as plt
 
 
 #You can change FFT option, for instance reduce the standard zero-padding factor 

@@ -2,13 +2,13 @@
 """data filtering/modifying
 
 """
+import os
 
 import numpy as np
 from astropy.io import fits
-import os
+
 import oimodeler as oim
 from oimodeler import oimParam,_standardParameters
-#import numbers
 
 
 ###############################################################################
