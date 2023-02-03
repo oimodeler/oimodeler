@@ -7,7 +7,9 @@ Created on Fri Oct 21 12:27:15 2022
 import numpy as np
 from astropy import units as units
 
-from oimodeler import oimParam, oimComponentImage,_standardParameters
+from ..oimComponent import oimComponentImage
+from ..oimParam import oimParam, _standardParameters
+
 
 class oimSpiral(oimComponentImage):
     

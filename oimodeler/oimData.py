@@ -8,7 +8,8 @@ from enum import IntFlag
 import numpy as np
 from astropy.io import fits
 
-import oimodeler as oim
+from .oimUtils import hdulistDeepCopy
+
 
 _oimDataType=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"]
 _oimDataTypeErr=["VIS2ERR","VISAMPERR","VISPHIERR","T3AMPERR","T3PHIERR","FLUXERR"]
@@ -286,7 +287,7 @@ class oimData(object):
         
         self._filteredData=[]
         for data in self._data:
-            self._filteredData.append(oim.hdulistDeepCopy(data))
+            self._filteredData.append(hdulistDeepCopy(data))
             
         if self._filter!=None:
             self._filter.applyFilter(self._filteredData)

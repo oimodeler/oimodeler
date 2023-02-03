@@ -5,7 +5,8 @@ data/model simulation
 import matplotlib.pyplot as plt
 import numpy as np
 
-import oimodeler as oim
+from .oimData import oimData, oimDataType
+from .oimUtils import hdulistDeepCopy
 
 
 def corrFlux2Vis2(vcompl):
@@ -62,13 +63,13 @@ class oimSimulator(object):
     contains 
     """
     def __init__(self,data=None,model=None,fitter=None,**kwargs):
-        self.data=oim.oimData()
+        self.data=oimData()
         self.simulatedData=None
         self.model=None
     
     
         if data!=None:
-            if isinstance(data,oim.oimData):
+            if isinstance(data,oimData):
                 self.data=data
             else:
                 self.addData(data)
@@ -90,9 +91,9 @@ class oimSimulator(object):
             
     def prepareData(self):
         self.data.prepareData()
-        self.simulatedData=oim.oimData()
+        self.simulatedData=oimData()
         for datai in self.data.data:
-            self.simulatedData.addData(oim.hdulistDeepCopy(datai))
+            self.simulatedData.addData(hdulistDeepCopy(datai))
 
     def compute(self,computeChi2=False,computeSimulatedData=False,checkSimulatedData=True):
         self.vcompl=self.model.getComplexCoherentFlux(self.data.vect_u,
@@ -104,9 +105,9 @@ class oimSimulator(object):
        
         
         if computeSimulatedData==True and (checkSimulatedData==True or self.simulatedData==None):
-            self.simulatedData=oim.oimData()
+            self.simulatedData=oimData()
             for datai in self.data.data:
-                self.simulatedData.addData(oim.hdulistDeepCopy(datai))
+                self.simulatedData.addData(hdulistDeepCopy(datai))
            
         
         
@@ -145,28 +146,28 @@ class oimSimulator(object):
                           
                     
                     elif arrType=="OI_VIS":
-                        if dataType&oim.oimDataType.VISAMP_ABS:
+                        if dataType&oimDataType.VISAMP_ABS:
                             val.append(corrFlux2VisAmpAbs(vcompli))
                             quantities.append("VISAMP")
-                        elif dataType&oim.oimDataType.VISAMP_DIF:
+                        elif dataType&oimDataType.VISAMP_DIF:
                             val.append(corrFlux2VisAmpDif(vcompli))
                             quantities.append("VISAMP")
-                        elif dataType&oim.oimDataType.VISAMP_COR:
+                        elif dataType&oimDataType.VISAMP_COR:
                             val.append(corrFlux2VisAmpCor(vcompli))
                             quantities.append("VISAMP")       
                             
-                        if dataType&oim.oimDataType.VISPHI_ABS:
+                        if dataType&oimDataType.VISPHI_ABS:
                             val.append(corrFlux2VisPhiAbs(vcompli))
                             quantities.append("VISPHI")                        
-                        elif dataType&oim.oimDataType.VISPHI_DIF:
+                        elif dataType&oimDataType.VISPHI_DIF:
                             val.append(corrFlux2VisPhiDif(vcompli))
                             quantities.append("VISPHI") 
                             
                     elif arrType=="OI_T3":
-                        if dataType&oim.oimDataType.T3AMP:
+                        if dataType&oimDataType.T3AMP:
                             val.append(corrFlux2T3Amp(vcompli))
                             quantities.append("T3AMP") 
-                        if  dataType&oim.oimDataType.T3PHI:
+                        if  dataType&oimDataType.T3PHI:
                             val.append(corrFlux2T3Phi(vcompli))
                             quantities.append("T3PHI")                         
                             

@@ -8,15 +8,16 @@ import emcee
 import matplotlib.pyplot as plt
 import numpy as np
 
-import oimodeler as oim
-from oimodeler import oimParam
+from .oimParam import oimParam
+from .oimSimulator import oimSimulator
+
 
 class oimFitter(object):
     params={}
     def __init__(self,*args,**kwargs):
         nargs=len(args)
         if nargs==2:
-            self.simulator=oim.oimSimulator(args[0],args[1])
+            self.simulator=oimSimulator(args[0],args[1])
         elif nargs==1:
             self.simulator=args[0]
         else:

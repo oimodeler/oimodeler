@@ -11,20 +11,12 @@ import matplotlib.projections as proj
 import numpy as np
 
 from .oimBasicFourierComponents import *
-from .oimComponent import *
 from .oimCustomComponents import *
-from .oimData import *
-from .oimData import _oimDataType, _oimDataTypeErr, _oimDataTypeArr
-from .oimDataFilter import *
-from .oimFitter import *
-from .oimFTBackends import *
-from .oimModel import *
-from .oimOptions import oimOptions
-from .oimParam import *
-from .oimParam import _standardParameters
-from .oimPlots import *
-from .oimSimulator import *
-from .oimUtils import *
+from .oimData import oimData
+from .oimFitter import oimFitterEmcee
+from .oimModel import oimModel
+from .oimPlots import oimAxes, oimPlot
+from .oimSimulator import oimSimulator
 
 
 np.seterr(invalid='ignore')

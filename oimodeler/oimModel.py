@@ -9,7 +9,8 @@ import numpy as np
 from astropy.io import fits
 from astropy import units as units
 
-from oimodeler import oimParamLinker,oimParamInterpolator
+from .oimParam import oimParamLinker, oimParamInterpolator
+
 
 ###############################################################################    
 class oimModel(object):
