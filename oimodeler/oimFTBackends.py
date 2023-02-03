@@ -42,7 +42,7 @@ try:
         def check(backendPreparation,im,pix,wlin,tin,ucoord,vcoord,wl,t):
             try: 
                 fft_in,fft_out,fft_object,dim0,nwl0,nt0=backendPreparation
-            except:
+            except Exception:
                 return False
             
             nwl1=wlin.size

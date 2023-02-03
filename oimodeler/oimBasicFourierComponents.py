@@ -419,7 +419,7 @@ class oimESKRing(oimComponentFourier):
 
 class oimLorentz(oimComponentFourier):
     #From Lazareff 2017 A&A 599, 85
-    #TODO : Small difference between images using direct formula or inverse of vis function
+    # TODO : Small difference between images using direct formula or inverse of vis function
     name="Pseudo-Lorentzian"
     shortname = "LO"
     elliptic=True   

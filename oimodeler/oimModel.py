@@ -322,7 +322,7 @@ class oimModel(object):
         else:
             try:
                 fig=axe.get_figure()
-            except:
+            except Exception:
                 fig=axe.flatten()[0].get_figure()
          
 

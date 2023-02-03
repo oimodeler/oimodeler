@@ -243,7 +243,7 @@ class oimParamCosineTime(oimParamInterpolator):
 
         # self.params.append(self.T0)
         # self.params.append(self.P)
-        if x0 != None:
+        if x0 is not None:
             self.x0 = oimParam(name="x0", value=x0,
                                description="Inflection point", unit=units.one)
             # self.params.append(self.x0)
@@ -265,7 +265,7 @@ class oimParamCosineTime(oimParamInterpolator):
         params.extend([self.T0,self.P])
         try:
             params.append(self.x0)
-        except:
+        except Exception:
             pass
         params.extend(self.values)
         return params

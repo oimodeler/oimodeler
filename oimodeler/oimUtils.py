@@ -39,7 +39,7 @@ def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False,
     """
     
     
-    if type(oifits)==type(""):
+    if isinstance(oifits, str):
         data=fits.open(oifits)
     else:
         data=oifits
@@ -49,7 +49,7 @@ def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False,
     idx_arr=np.where(extnames=="OI_ARRAY")[0]
     arrnames=np.array([data[i].header['ARRNAME'] for i in idx_arr])
     
-    if extver!=None:
+    if extver is not None:
         data_arrnames= [data[hduname,extver].header['ARRNAME']]
     else:
         idx=np.where(extnames==hduname)[0]
@@ -89,7 +89,7 @@ def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False,
             
         name.append(namei)
         
-    if squeeze==True and len(name)==1:
+    if squeeze and len(name)==1:
         name=name[0]        
     return name
 
@@ -97,8 +97,8 @@ def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False,
 
 def getConfigName(oifits,hduname="OI_VIS2",extver=None,squeeze=True):
     
-    #TODO : add support for multiple extensions
-    if type(oifits)==type(""):
+    # TODO : add support for multiple extensions
+    if isinstance(oifits, str):
         data=fits.open(oifits)
     else:
         data=oifits
@@ -108,7 +108,7 @@ def getConfigName(oifits,hduname="OI_VIS2",extver=None,squeeze=True):
     idx_arr=np.where(extnames=="OI_ARRAY")[0]
     arrnames=np.array([data[i].header['ARRNAME'] for i in idx_arr])
     
-    if extver!=None:
+    if extver is not None:
         data_arrnames= [data[hduname,extver].header['ARRNAME']]
     else:
         idx=np.where(extnames==hduname)[0]
@@ -131,7 +131,7 @@ def getConfigName(oifits,hduname="OI_VIS2",extver=None,squeeze=True):
                 namei+="-"
         name.append(namei)
         
-    if squeeze==True and len(name)==1:
+    if squeeze and len(name)==1:
         name=name[0]
     return name
     
@@ -162,12 +162,12 @@ def getBaselineLengthAndPA(oifits,arr="OI_VIS2",extver=None,squeeze=True):
         the array containing the baselines orientation (in deg).
 
     """
-    if type(oifits)==type(""):
+    if isinstance(oifits, str):
         data=fits.open(oifits)
     else:
         data=oifits
         
-    if extver!=None:
+    if extver is not None:
         data=[data[arr,extver]]
     else:
         extnames=np.array([di.name for di in data])
@@ -199,7 +199,7 @@ def getBaselineLengthAndPA(oifits,arr="OI_VIS2",extver=None,squeeze=True):
             PA2=np.rad2deg(np.arctan2(u2,v2))
             PA3=np.rad2deg(np.arctan2(u3,v3))
             PA.append(np.array([PA1,PA2,PA3]))
-    if squeeze==True and len(B)==1:
+    if squeeze and len(B)==1:
         B=B[0]
         PA=PA[0]
     return B,PA
@@ -225,7 +225,7 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None,extver=None,squeeze=True):
         DESCRIPTION.
 
     """
-    if type(oifits)==type(""):
+    if isinstance(oifits, str):
         data=fits.open(oifits)
     else:
         data=oifits
@@ -237,7 +237,7 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None,extver=None,squeeze=True):
 
     extnames=np.array([di.name for di in data])
     
-    if extver!=None:
+    if extver is not None:
         arrays=[data[arr,extver]]
         insnames=np.array([arrays.header['INSNAME']])
     else:
@@ -277,7 +277,7 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None,extver=None,squeeze=True):
         spaFreq.append(spaFreqi)
      
 
-    if squeeze==True and len(spaFreq)==1:
+    if squeeze and len(spaFreq)==1:
         spaFreq=spaFreq[0]
             
     return spaFreq
@@ -305,7 +305,7 @@ _cutArr=['EFF_WAVE','EFF_BAND','VIS2DATA','VIS2ERR','FLAG','VISAMP','VISAMPERR',
 
 def cutWavelengthRange(oifits,wlRange = None,addCut=[]):
     
-    if type(oifits)==type(""):
+    if isinstance(oifits, str):
         data=fits.open(oifits)
     else:
         data=oifits
@@ -369,7 +369,7 @@ def getWlFromFitsImageCube(header):
        wl0=header['CRVAL3']
        try:
            x0=header['CRPIX3']
-       except:
+       except Exception:
            x0=0
        
        wl= wl0+(np.arange(nwl)-x0)*dwl
@@ -447,7 +447,7 @@ def createOiTargetFromSimbad(names):
     """
     customSimbad = Simbad()
     customSimbad.add_votable_fields('plx','plx_error','propermotions','sptype','velocity')
-    if type(names)==type(""):
+    if isinstance(names, str):
         names=[names]
     data=customSimbad.query_objects(names)
 
@@ -470,9 +470,9 @@ def createOiTargetFromSimbad(names):
     equinox=fits.Column(name="EQUINOX",format="E",array=np.repeat(2000,ntargets),unit="yr")
     ra_err=fits.Column(name="RA_ERR",format="D",array=ra_err,unit="deg")
     dec_err=fits.Column(name="DEC_ERR",format="D",array=dec_err,unit="deg")
-    sysvel=fits.Column(name="SYSVEL",format="D",array=np.zeros([ntargets]),unit="m/s")   #TODO
-    veltyp=fits.Column(name="VELTYP",format="8A",array=np.repeat("UNKNOWN",ntargets))  #TODO
-    veldef=fits.Column(name="VELDEF",format="8A",array=np.repeat("OPTICAL",ntargets)) #TODO
+    sysvel=fits.Column(name="SYSVEL",format="D",array=np.zeros([ntargets]),unit="m/s")   # TODO
+    veltyp=fits.Column(name="VELTYP",format="8A",array=np.repeat("UNKNOWN",ntargets))  # TODO
+    veldef=fits.Column(name="VELDEF",format="8A",array=np.repeat("OPTICAL",ntargets)) # TODO
     pmra=fits.Column(name="PMRA",format="D",array=pmra,unit="deg/yr")
     pmdec=fits.Column(name="PMDEC",format="D",array=pmdec,unit="deg/yr")
     pmra_err=fits.Column(name="PMRA_ERR",format="D",array=pmra_err,unit="deg/yr")

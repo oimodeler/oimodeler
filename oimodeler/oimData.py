@@ -2,12 +2,13 @@
 """
 data for optical interferometry 
 """
+import os
+from enum import IntFlag
 
 import numpy as np
 from astropy.io import fits
-import os
-from enum import IntFlag
-import oimodeler as oim
+
+from .oimUtils import hdulistDeepCopy
 
 _oimDataType=["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"]
 _oimDataTypeErr=["VIS2ERR","VISAMPERR","VISPHIERR","T3AMPERR","T3PHIERR","FLUXERR"]
@@ -22,7 +23,7 @@ def oimDataGetWl(data,arr,dwl=True):
         insname=arr.header['INSNAME']
         oiWlArr=[arri for arri in data if (arri.name=="OI_WAVELENGTH" 
                                            and arri.header['INSNAME']==insname)][0]
-        if dwl==False:
+        if not dwl:
             return oiWlArr.data["EFF_WAVE"]
         else:
             return oiWlArr.data["EFF_WAVE"],oiWlArr.data["EFF_BAND"]
@@ -69,7 +70,7 @@ def oimGetDataValErrAndTypeFlag(arr):
                     dtype|=oimDataType.VISAMP_DIF
                 else:
                     dtype|=oimDataType.VISAMP_COR
-            except:
+            except Exception:
                 dtype|=oimDataType.VISAMP_ABS
         nvphi=np.size(np.where(arr.data["VISPHI"]!=0))
         if nvphi!=0:
@@ -81,7 +82,7 @@ def oimGetDataValErrAndTypeFlag(arr):
                     dtype|=oimDataType.VISPHI_ABS
                 else:
                     dtype|=oimDataType.VISPHI_DIF
-            except:
+            except Exception:
                 dtype|=oimDataType.VISPHI_ABS           
     if arr.name=="OI_T3": 
         t3amp=np.size(np.where(arr.data["T3AMP"]!=0))
@@ -104,7 +105,7 @@ def oimGetDataValErrAndTypeFlag(arr):
                 err.append(arr.data["FLUXERR"])
                 flag.append(arr.data["FLAG"])
                 dtype|=oimDataType.FLUXDATA
-        except:
+        except Exception:
             nflx=np.size(np.where(arr.data["FLUX"]!=0))
             if nflx!=0:
                 val.append(arr.data["FLUX"]) 
@@ -141,7 +142,7 @@ def oimDataCheckData(arr):
                 nflx=np.size(np.where(arr.data["FLUXDATA"]!=0))
                 if nflx!=0:
                     cdata.append("FLUXDATA")  
-            except:
+            except Exception:
                 nflx=np.size(np.where(arr.data["FLUX"]!=0))
                 if nflx!=0:
                     cdata.append("FLUX")  
@@ -192,7 +193,7 @@ def oimDataGetVectCoord(data,arr):
     elif arr.name=="OI_FLUX":
             try:
                 nB=np.shape(arr.data["FLUXDATA"])[0]
-            except:
+            except Exception:
                 nB=np.shape(arr.data["FLUX"])[0]
             u=np.zeros(nB*nwl)
             v=np.zeros(nB*nwl)
@@ -245,20 +246,21 @@ class oimData(object):
             
     @property
     def data(self):
-        if self._useFilter == False or self._filter==None:
+        if not self._useFilter or self._filter is None:
             return self._data
         else:
-            if self._filteredDataReady == False:
+            if not self._filteredDataReady:
                 self.applyFilter()
             return self._filteredData
    
 
     def addData(self,dataOrFilename):
+        # FIXME: Changing this from type to proper isinstance yields error?
         if type(dataOrFilename)==type([]):
             for el in dataOrFilename:
                 self.addData(el)
         else:        
-            if type(dataOrFilename)==str:
+            if isinstance(dataOrFilename, str):
                 self._data.append(fits.open(dataOrFilename))
             else:
                 self._data.append(dataOrFilename)
@@ -285,9 +287,9 @@ class oimData(object):
         
         self._filteredData=[]
         for data in self._data:
-            self._filteredData.append(oim.hdulistDeepCopy(data))
+            self._filteredData.append(hdulistDeepCopy(data))
             
-        if self._filter!=None:
+        if self._filter is not None:
             self._filter.applyFilter(self._filteredData)
             
         self._filteredDataReady =True
@@ -301,8 +303,8 @@ class oimData(object):
     @useFilter.setter
     def useFilter(self,val):
         self._useFilter=val
-        if val==True:
-            if self._filteredDataReady == False:
+        if val:
+            if self._filteredDataReady:
                 self.applyFilter()
        
             
@@ -325,7 +327,7 @@ class oimData(object):
                 if arri.name=="OI_FLUX": 
                     try:
                         nB=np.shape(arri.data["FLUXDATA"])
-                    except:
+                    except Exception:
                         nB=np.shape(arri.data["FLUX"])
                     
                 info["nB"]=nB
@@ -418,14 +420,14 @@ class oimData(object):
     def writeto(self,filename=None,overwrite=False,directory=None):
         ndata=len(self.data)
         for idata,datai in enumerate(self.data):
-            if filename!= None:
+            if filename is not None:
                 if ndata==1:
                     filenamei=filename
                 else:
                     filenamei="{}_{}.fits".format(os.path.splitext(filename)[0],idata)
-            elif directory!=None and datai.filename()!=None:
+            elif directory is not None and datai.filename() is not None:
                 filenamei=os.path.join(directory,os.path.basename(datai.filename()))
-            elif datai.filename()!=None:
+            elif datai.filename() is not None:
                 filenamei=datai.filename()
             else:
                 raise TypeError("Can't save the data 1")

@@ -38,7 +38,7 @@ def corrFlux2VisPhiDif(vcompl):
     phi= np.rad2deg(np.angle(vcompl[1:,:]*np.conjugate(norm)))
     return phi
 
-#TODO special function doing T3Amp and T3Phi simultaneously
+# TODO special function doing T3Amp and T3Phi simultaneously
 def corrFlux2T3Amp(vcompl):
     nB=vcompl.shape[0]
     nCP=(nB-1)//3

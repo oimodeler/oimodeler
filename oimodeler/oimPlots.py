@@ -323,7 +323,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
         ylabel=oimPlotParamLabelShort[idxY]    
         
         
-    #TODO implement units with astropy
+    # TODO implement units with astropy
     if xunit:
         xunit0=xunit
     else:
