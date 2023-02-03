@@ -10,7 +10,6 @@ from .oimDataFilter import cutWavelengthRange
 from .oimParam import oimParam, _standardParameters
 
 
-###############################################################################
  
 class oimDataFilterComponent(object):    
     """
@@ -55,7 +54,6 @@ class oimDataFilterComponent(object):
             self._filteringFunction(datai)
 
     
-###############################################################################
      
 class oimRemoveArrayFilter(oimDataFilterComponent):
     """
@@ -77,7 +75,6 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
             while len(np.where(np.array([t.name for t in data]) == arri)[0])!=0:
                 data.pop(arri)
                     
-###############################################################################
  
 class oimWavelengthRangeFilter(oimDataFilterComponent):
     """
@@ -100,7 +97,6 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
         cutWavelengthRange(data,wlRange =  self.params["wlRange"],
                            addCut=self.params["addCut"])
 
-###############################################################################
 
 class oimDataTypeFilter(oimDataFilterComponent):
     """
@@ -135,7 +131,6 @@ class oimDataTypeFilter(oimDataFilterComponent):
             
         
 
-###############################################################################
 
 class oimDataFilter(object):
     """

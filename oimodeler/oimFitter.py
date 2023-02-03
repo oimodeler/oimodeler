@@ -73,7 +73,6 @@ class oimFitter(object):
 
 
 
-###############################################################################
   
 class oimFitterEmcee(oimFitter):
     

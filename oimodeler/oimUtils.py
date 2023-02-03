@@ -8,7 +8,6 @@ import astropy.units as units
 from astroquery.simbad import Simbad
 from  astropy.coordinates import Angle
 
-###############################################################################
 
 def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False,
                     extver=None,squeeze=True):
@@ -93,7 +92,6 @@ def getBaselineName(oifits,hduname="OI_VIS2",length=False,angle=False,
         name=name[0]        
     return name
 
-###############################################################################
 
 def getConfigName(oifits,hduname="OI_VIS2",extver=None,squeeze=True):
     
@@ -137,7 +135,6 @@ def getConfigName(oifits,hduname="OI_VIS2",extver=None,squeeze=True):
     
     
 
-###############################################################################
 
 def getBaselineLengthAndPA(oifits,arr="OI_VIS2",extver=None,squeeze=True):
     """
@@ -204,7 +201,6 @@ def getBaselineLengthAndPA(oifits,arr="OI_VIS2",extver=None,squeeze=True):
         PA=PA[0]
     return B,PA
 
-###############################################################################
 
 def getSpaFreq(oifits,arr="OI_VIS2",unit=None,extver=None,squeeze=True):
     """
@@ -283,7 +279,6 @@ def getSpaFreq(oifits,arr="OI_VIS2",unit=None,extver=None,squeeze=True):
     return spaFreq
 
 
-###############################################################################
 
 def hdulistDeepCopy(hdulist):
     
@@ -296,7 +291,6 @@ def hdulistDeepCopy(hdulist):
     
     return res
 
-###############################################################################
 
 _cutArr=['EFF_WAVE','EFF_BAND','VIS2DATA','VIS2ERR','FLAG','VISAMP','VISAMPERR',
         'VISPHI','VISPHIERR','T3AMP','T3AMPERR','T3PHI','T3PHIERR',
@@ -361,7 +355,6 @@ def cutWavelengthRange(oifits,wlRange = None,addCut=[]):
                     data[idata]=hdu
     return data
 
-###############################################################################
 
 def getWlFromFitsImageCube(header):
        dwl=header['CDELT3']
@@ -376,7 +369,6 @@ def getWlFromFitsImageCube(header):
        return wl
 
     
-###############################################################################
 
 def createOiArray(arrname,arrx,arry,arrz,sta_name,tel_name,diameter,staxyz):
     """
@@ -418,16 +410,15 @@ def createOiArray(arrname,arrx,arry,arrz,sta_name,tel_name,diameter,staxyz):
     arr=fits.BinTableHDU.from_columns(cols)
 
     arr.header['EXTVER']=(1,'ID number of this OI_ARRAY')
-    arr.header['ARRAYX']=float(arrx)#,'[m] Array center X coordinate')
-    arr.header['ARRAYY']=float(arry)#,'[m] Array center Y coordinate')
-    arr.header['ARRAYZ']=float(arrz)#,'[m] Array center Z coordinate')
+    arr.header['ARRAYX']=float(arrx) # NOTE: '[m] Array center X coordinate')
+    arr.header['ARRAYY']=float(arry) # NOTE:  '[m] Array center Y coordinate')
+    arr.header['ARRAYZ']=float(arrz) # NOTE: '[m] Array center Z coordinate')
     arr.header['FRAME']=('GEOCENTRIC','Coordinate frame')
     arr.header['EXTNAME']='OI_ARRAY'
     arr.header['OI_REVN']=(1,'Revision number of the table definition')
     arr.header['ARRNAME']=(arrname,'Array name')
 
     return arr
-###############################################################################
 
 
 def createOiTargetFromSimbad(names):
@@ -492,7 +483,6 @@ def createOiTargetFromSimbad(names):
     tar.header['EXTNAME']='OI_TARGET'
     return tar
 
-###############################################################################
 
 def createOiWavelength(insname,eff_wave,eff_band):
     """
@@ -525,7 +515,6 @@ def createOiWavelength(insname,eff_wave,eff_band):
 
     return wave
 
-###############################################################################
 
 def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
                  ucoord,vcoord,sta_index,flag,dateobs):
@@ -604,7 +593,6 @@ def createOiVis2(arrname,insname,target_id,time,mjd,int_time,vis2data,vis2err,
 
     return oivis2
 
-###############################################################################
 
 def createOiVis(arrname,insname,target_id,time,mjd,int_time,visamp,visamperr,visphi,visphierr,
                  ucoord,vcoord,sta_index,flag,dateobs,amptyp="absolute",phityp="absolute"):

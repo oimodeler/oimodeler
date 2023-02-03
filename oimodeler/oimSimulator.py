@@ -119,7 +119,7 @@ class oimSimulator(object):
             idx=0
             nfiles=len(data.struct_u)
             for ifile in range(nfiles):
-                #print("Data {}".format(ifile))
+                # print("Data {}".format(ifile))
                 narr=len(data.struct_arrType[ifile])
                 for iarr in range(narr):                    
                     arrNum=data.struct_arrNum[ifile][iarr]
@@ -138,7 +138,7 @@ class oimSimulator(object):
                     quantities=[]
                     val=[]
                     
-                    #Computing all observables from complex Coherent Flux
+                    # NOTE: Computing all observables from complex Coherent Flux
                     
                     if arrType=="OI_VIS2":  
                         val.append(corrFlux2Vis2(vcompli))
@@ -175,7 +175,7 @@ class oimSimulator(object):
                         val.append(corrFlux2Flux(vcompli))
                         quantities.append("FLUXDATA")
                       
-                    #Filling the simulatedData astropy array with the computed values
+                    # NOTE: Filling the simulatedData astropy array with the computed values
                     if computeSimulatedData:
                         for ival in range(len(val)):
                             try:
@@ -183,11 +183,11 @@ class oimSimulator(object):
                             except Exception:
                                 self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=np.squeeze(val[ival])
                             
-                    #Computing the chi2
+                    # NOTE: Computing the chi2
                     if computeChi2:
                         for ival in range(len(val)):
                             
-                            #For phase quantities go to the complex plan
+                            # NOTE: For phase quantities go to the complex plan
                             if quantities[ival] in ["VISPHI","T3PHI"]:
                                 dphi= np.rad2deg(np.angle(np.exp(1j*np.deg2rad(dataVal[ival]))
                                                           *np.exp(-1j*np.deg2rad((val[ival])))))
@@ -210,13 +210,13 @@ class oimSimulator(object):
                 
            
     def plot(self,arr,simulated=True,savefig=None,visLog=False,**kwargs):
-        # plotting  data and simulatiedData
+        """plotting  data and simulatiedData"""
 
         if not isinstance(arr, list):
            
             arr=[arr]
         
-        #Set the projection to oimAxes for all subplots to use oimodeler custom plots
+        # NOTE: Set the projection to oimAxes for all subplots to use oimodeler custom plots
         fig,ax=plt.subplots(len(arr),1,sharex=True,figsize=(8,6),
                             subplot_kw=dict(projection='oimAxes'))
 
@@ -225,22 +225,22 @@ class oimSimulator(object):
 
         plt.subplots_adjust(left=0.09,top=0.98,right=0.98,hspace=0.14)
 
-        # Ploting loop :  plotting data and simulated data for each data type in arr
+        # NOTE: Ploting loop - plotting data and simulated data for each data type in arr
         for iax,axi in enumerate(ax):
             
-            #plotting the data with wavelength colorscale + errorbars vs spatial frequencies
+            # NOTE: plotting the data with wavelength colorscale + errorbars vs spatial frequencies
             scale=axi.oiplot(self.data.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
                     cname="EFF_WAVE",cunitmultiplier=1e6,lw=2,cmap="coolwarm",
                     errorbar=True,label="data")
             
-            #over-plotting the simulated data as a dotted line  vs spatial frequencies
+            # NOTE: over-plotting the simulated data as a dotted line  vs spatial frequencies
             axi.oiplot(self.simulatedData.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
                     color="k",ls=":",lw=1,label="model")
             
             if axi!=ax[-1]: axi.get_xaxis().set_visible(False)
             if axi==ax[0]:axi.legend()
                     
-            #automatic ylim => 0-1 for visibilties, -180,180 for phases
+            # NOTE: automatic ylim => 0-1 for visibilties, -180,180 for phases
 
             if arr[iax] in ["VIS2DATA","VISAMP"] and visLog==True:
                 axi.set_yscale("log")
@@ -263,7 +263,7 @@ class oimSimulator(object):
 
          
             
-        #Create a colorbar for the data plotted with wavelength colorscale option
+        # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
         fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ ($\mu$m)")
 
         if savefig is not None:

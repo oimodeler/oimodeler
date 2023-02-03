@@ -270,7 +270,6 @@ class oimParamCosineTime(oimParamInterpolator):
         params.extend(self.values)
         return params
 
-###############################################################################
 
 class oimParamGaussian(oimParamInterpolator):
 
@@ -306,19 +305,16 @@ class oimParamGaussian(oimParamInterpolator):
         return [self.x0, self.fwhm, self.val0, self.value]
 
     
-###############################################################################
 
 class oimParamGaussianWl(oimParamGaussian):
     def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
         super()._init(param, dependence="wl", val0=val0, value=value, x0=x0, fwhm=fwhm)
 
-###############################################################################
 
 class oimParamGaussianTime(oimParamGaussian):
     def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
         super()._init(param, dependence="mjd", val0=val0, value=value, x0=x0, fwhm=fwhm)
 
-###############################################################################
 
 class oimParamMultipleGaussian(oimParamInterpolator):
 
@@ -372,19 +368,16 @@ class oimParamMultipleGaussian(oimParamInterpolator):
         params.extend(self.fwhm)
         params.extend(self.values)
         return params
-###############################################################################
 
 class oimParamMultipleGaussianWl(oimParamMultipleGaussian):
     def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
         super()._init(param, dependence="wl", val0=val0, values=values, x0=x0, fwhm=fwhm)
 
-###############################################################################
 
 class oimParamMultipleGaussianTime(oimParamMultipleGaussian):
     def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
         super()._init(param, dependence="mjd", val0=val0, values=values, x0=x0, fwhm=fwhm)
         
-###############################################################################
 
 class oimParamPolynomial(oimParamInterpolator):
 
@@ -424,19 +417,16 @@ class oimParamPolynomial(oimParamInterpolator):
     def _getParams(self):
         return self.coeffs
 
-###############################################################################
 
 class oimParamPolynomialWl(oimParamPolynomial):
     def _init(self, param, order=2,coeffs=None,x0=None, **kwargs):
         super()._init(param, dependence="wl", order=order,coeffs=coeffs,x0=x0)
 
-###############################################################################
 
 class oimParamPolynomialTime(oimParamPolynomial):
     def _init(self, param, order=2,coeffs=None,x0=None):
         super()._init(param, dependence="mjd", order=order,coeffs=coeffs,x0=x0)
         
-###############################################################################        
 class oimParamLinearRangeWl(oimParamInterpolator):
 
     def _init(self, param, wlmin=2e-6, wlmax=3e-6,values=[], kind="linear",**kwargs):
@@ -482,8 +472,7 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         return params    
             
 
-###############################################################################
-# List of interpolators defined in oimodels
+# NOTE: List of interpolators defined in oimodels
 oimParamInterpolatorList={"wl":oimParamInterpolatorWl,
                 "time":oimParamInterpolatorTime,
                 "GaussWl":oimParamGaussianWl,
@@ -497,7 +486,6 @@ oimParamInterpolatorList={"wl":oimParamInterpolatorWl,
 """
 dictionary of available interpolators
 """
-###############################################################################
 
 class oimInterp(object):
     """
@@ -521,8 +509,7 @@ class oimInterp(object):
         self.kwargs=kwargs
         self.type=oimParamInterpolatorList[name]
 
-###############################################################################
-# Here is a list of standard parameters to be used when defining new components
+# NOTE: Here is a list of standard parameters to be used when defining new components
 _standardParameters = {
     "x": {"name": "x", "value": 0, "description": "x position", "unit": units.mas, "free": False},
     "y": {"name": "y", "value": 0, "description": "y position", "unit": units.mas, "free": False},

@@ -10,7 +10,6 @@ from .oimComponent import oimComponentFourier
 from .oimParam import oimParam, _standardParameters
 
       
-###############################################################################
 class oimPt(oimComponentFourier):
     """
     Point Source component defined in the fourier space
@@ -42,7 +41,6 @@ class oimPt(oimComponentFourier):
         image[idx]=1
         return image
     
-###############################################################################
 class oimBackground(oimComponentFourier):
     """
     Background component defined in the fourier space
@@ -78,7 +76,6 @@ class oimBackground(oimComponentFourier):
     def _imageFunction(self,xx,yy,wl,t):
         return xx*0+1
     
-###############################################################################
 class oimUD(oimComponentFourier):
     """
     Uniform Disk component defined in the fourier space
@@ -118,7 +115,6 @@ class oimUD(oimComponentFourier):
     def _imageFunction(self,xx,yy,wl,t):
         return ((xx**2+yy**2)<=(self.params["d"](wl,t)/2)**2).astype(float)
     
-###############################################################################
 class oimEllipse(oimUD):
     """
     Uniform Ellipse component defined in the fourier space
@@ -152,7 +148,6 @@ class oimEllipse(oimUD):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self._eval(**kwargs)
-###############################################################################   
 
 class oimGauss(oimComponentFourier):
     """
@@ -191,7 +186,6 @@ class oimGauss(oimComponentFourier):
         return np.sqrt(4*np.log(2*self.params["fwhm"](wl,t))/np.pi)* \
                    np.exp(-4*np.log(2)*r2/self.params["fwhm"](wl,t)**2)
 
-###############################################################################   
 class oimEGauss(oimGauss):
     """
     Elliptical Gaussian component defined in the fourier space
@@ -225,7 +219,6 @@ class oimEGauss(oimGauss):
     def __init__(self,**kwargs):        
          super().__init__(**kwargs)
          self._eval(**kwargs)
-###############################################################################
 
 class oimIRing(oimComponentFourier):
     name="Infinitesimal Ring"
@@ -246,7 +239,6 @@ class oimIRing(oimComponentFourier):
         return ((r2<=(self.params["d"](wl,t)/2+dx)**2) & 
                 (r2>=(self.params["d"](wl,t)/2)**2)).astype(float)
 
-###############################################################################   
 class oimEIRing(oimIRing):
     name="Ellitical infinitesimal Ring"
     shortname = "EIR"
@@ -255,7 +247,6 @@ class oimEIRing(oimIRing):
          super().__init__(**kwargs)
          self._eval(**kwargs)
          
-###############################################################################
 
 class oimRing(oimComponentFourier):
     name="Ring"
@@ -284,7 +275,6 @@ class oimRing(oimComponentFourier):
         return ((r2<=(self.params["dout"](wl,t)/2)**2) & 
                 (r2>=(self.params["din"](wl,t)/2)**2)).astype(float)
     
-###############################################################################
 
 class oimRing2(oimComponentFourier):
     name="Ring2"
@@ -315,7 +305,6 @@ class oimRing2(oimComponentFourier):
         return (((r2<=(self.params["d"](wl,t)/2+self.params["w"](wl,t)/2)**2)  &
                 (r2>=(self.params["d"](wl,t)/2-self.params["w"](wl,t)/2)**2))).astype(float)
     
-###############################################################################   
 class oimERing(oimRing):
     name="Ellitical  Ring"
     shortname = "ER"
@@ -324,7 +313,6 @@ class oimERing(oimRing):
          super().__init__(**kwargs)
          self._eval(**kwargs)
          
-###############################################################################   
 class oimERing2(oimRing2):
     name="Ellitical  Ring2"
     shortname = "ER2"
@@ -334,7 +322,6 @@ class oimERing2(oimRing2):
          self._eval(**kwargs)
 
                   
-###############################################################################
           
 class oimESKIRing(oimComponentFourier):
     name="Skewed Ellitical Infinitesimal Ring"
@@ -363,12 +350,11 @@ class oimESKIRing(oimComponentFourier):
                                   self.params["skwPa"].unit.to(units.rad)
         dx=np.abs(1*(xx[0,0,0,1]-xx[0,0,0,0]
                     +xx[0,0,1,0]-xx[0,0,0,0])*self.params["elong"](wl,t))
-        #dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0]))*3
+        # dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0]))*3
         F=1+self.params["skw"](wl,t)*np.cos(phi)           
         return  ((r2<=(self.params["d"](wl,t)/2+dx/2)**2) & 
                  (r2>=(self.params["d"](wl,t)/2-dx/2)**2)).astype(float)*F
         
-###############################################################################
           
 class oimESKRing(oimComponentFourier):
     name="Skewed Ellitical Ring"
@@ -415,10 +401,9 @@ class oimESKRing(oimComponentFourier):
         return  ((r2<=(self.params["dout"](wl,t)/2)**2) & 
                  (r2>=(self.params["din"](wl,t)/2)**2)).astype(float)*F
     
-###############################################################################    
 
 class oimLorentz(oimComponentFourier):
-    #From Lazareff 2017 A&A 599, 85
+    # NOTE: From Lazareff 2017 A&A 599, 85
     # TODO : Small difference between images using direct formula or inverse of vis function
     name="Pseudo-Lorentzian"
     shortname = "LO"
@@ -439,7 +424,6 @@ class oimLorentz(oimComponentFourier):
         a=np.pi*self.params["fwhm"](wl,t)* self.params["fwhm"].unit.to(units.mas)
         return a/(2*np.pi*3**0.5)*(a**2/3+r2)**(-1.5)
     
-###############################################################################    
     
 class oimELorentz(oimLorentz):
     name="Ellitical  Pseudo-Lorentzian"
@@ -449,7 +433,6 @@ class oimELorentz(oimLorentz):
          super().__init__(**kwargs)
          self._eval(**kwargs)
     
-###############################################################################    
    
 class oimLinearLDD(oimComponentFourier):
     name="Linear Limb Darkened Disk "
@@ -472,10 +455,9 @@ class oimLinearLDD(oimComponentFourier):
         c2=1.5*(np.pi*2)**0.5*np.divide(jv(1.5,xx),xx**1.5)    
         return  np.nan_to_num((1-a)*c1+a*c2,nan=1)
             
-###############################################################################    
 
 class oimQuadLDD(oimComponentFourier):
-    #From Domiciano de Souza 2003 (phd thesis)
+    # NOTE: From Domiciano de Souza 2003 (phd thesis)
     name="Quadratic Limb Darkened Disk "
     shortname = "QLDD"  
     def __init__(self,**kwargs): 
@@ -503,7 +485,6 @@ class oimQuadLDD(oimComponentFourier):
         s=(6-2*a1-a2)/12
         return np.nan_to_num(((1-a1-a2)*c1+(a1+2*a2)*c2-a2*c3)/s,nan=1)
     
-###############################################################################    
 
 class oimConvolutor(oimComponentFourier):
     def __init__(self,component1, component2,**kwargs):        

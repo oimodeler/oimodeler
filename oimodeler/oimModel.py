@@ -194,7 +194,7 @@ class oimModel(object):
                 for iwl in range(nwl):
                     image[it,iwl,:,:]/=np.max(image[it,iwl,:,:])
             
-        # Always squeeze dim which are equal to one if exported to fits format
+        # NOTE: Always squeeze dim which are equal to one if exported to fits format
         if squeeze or toFits:
             image= np.squeeze(image)
             

@@ -16,15 +16,15 @@ class oimSpiral(oimComponentImage):
     name="Spiral component"
     shorname="Sp"
     
-    #Set elliptic to True to use  elong keyword for a change of variable
-    #to "flatten" objects
+    # NOTE: Set elliptic to True to use  elong keyword for a change of variable
+    # to "flatten" objects
     elliptic=True
     
     def __init__(self,**kwargs):
         super(). __init__(**kwargs)
         
-        #Component parameters. Note that as it inherits from the oimComponentImage class it already has
-        #x,y,f and dim as parameters
+        # NOTE: Component parameters. Note that as it inherits from the oimComponentImage class it already has
+        # x,y,f and dim as parameters
         self.params["fwhm"]=oimParam(**_standardParameters["fwhm"])
         self.params["P"]=oimParam(name="P",
                value=1,description="Period in mas",unit=units.mas)
@@ -33,16 +33,16 @@ class oimSpiral(oimComponentImage):
        
         self._pixSize=0.05*units.mas.to(units.rad)
         
-        self._t = np.array([0]) # constant value <=> static model
-        self._wl = np.array([0])  # constant value <=> achromatic model
+        self._t = np.array([0]) # NOTE: constant value <=> static model
+        self._wl = np.array([0])  # NOTE: constant value <=> achromatic model
         
-        #Finally evalutating paramters as for all other components
+        # NOTE: Finally evalutating paramters as for all other components
         self._eval(**kwargs)
     
     def _imageFunction(self,xx,yy,wl,t):
         
-        # As xx and yy are transformed coordinates, r and phi takes into account 
-        #the ellipticity and orientation using the pa and elong keywords
+        # NOTE: As xx and yy are transformed coordinates, r and phi takes into account 
+        # the ellipticity and orientation using the pa and elong keywords
         r=np.sqrt(xx**2+yy**2)  
         phi=np.arctan2(yy,xx)
         

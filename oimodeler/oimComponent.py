@@ -272,7 +272,6 @@ class oimComponentFourier(oimComponent):
         return image
 
 
-###############################################################################
 
 class oimComponentImage(oimComponent):
     """
@@ -286,7 +285,7 @@ class oimComponentImage(oimComponent):
 
         self._wl = None
         self._t = None
-        self._pixSize = 0  # in rad
+        self._pixSize = 0  # NOTE: in rad
 
         self._allowExternalRotation = True
         self.normalizeImage = True
@@ -295,7 +294,7 @@ class oimComponentImage(oimComponent):
 
         self.params["pa"] = oimParam(**_standardParameters["pa"])
 
-        # Add ellipticity
+        # NOTE: Add ellipticity
         if self.elliptic:
             self.params["elong"] = oimParam(**_standardParameters["elong"])
 
@@ -506,7 +505,6 @@ class oimComponentImage(oimComponent):
                 return t_arr, wl_arr, x_arr, y_arr
 
 
-###############################################################################
 
 
 class oimComponentRadialProfile(oimComponent):
@@ -525,7 +523,7 @@ class oimComponentRadialProfile(oimComponent):
         self._wl = None
         self._r = None
 
-        # Add ellipticity
+        # NOTE: Add ellipticity
         if self.elliptic:
             self.params["pa"] = oimParam(**_standardParameters["pa"])
             self.params["elong"] = oimParam(**_standardParameters["elong"])
@@ -714,7 +712,6 @@ class oimComponentRadialProfile(oimComponent):
         return im
 
 
-###############################################################################
 
 class oimComponentFitsImage(oimComponentImage):
     """
@@ -733,7 +730,7 @@ class oimComponentFitsImage(oimComponentImage):
         self.params["pa"] = oimParam(**_standardParameters["pa"])
         self.params["scale"] = oimParam(**_standardParameters["scale"])
 
-        self._t = np.array([0])  # this component is static
+        self._t = np.array([0])  # NOTE: this component is static
 
         if 'FTBackend' in kwargs:
             self.FTBackend = kwargs['FTBackend']

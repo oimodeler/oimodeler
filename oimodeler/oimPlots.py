@@ -372,7 +372,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     
         
     for ifile,data in enumerate(oifitsList):
-        # yname can be anything but  UCOORD, VCOORD, LENGTH, SPAFREQ, PA or EFF_WAVE
+        # NOTE: yname can be anything but  UCOORD, VCOORD, LENGTH, SPAFREQ, PA or EFF_WAVE
         extnames=np.array([di.name for di in data])
         
         idx_yext=np.where(extnames==yarr)[0]
@@ -380,7 +380,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
         ydata=[data[i].data[yname] for i in idx_yext]
         ydataerr=[data[i].data[yerrname] for i in idx_yext]
         yflag=[data[i].data["FLAG"] for i in idx_yext] 
-        # xname can be LENGTH, SPAFREQ, PA or EFF_WAVE
+        # NOTE: xname can be LENGTH, SPAFREQ, PA or EFF_WAVE
         if xname=="EFF_WAVE":
             idx_xext=np.where(extnames==xarr)[0]
             xinsname=np.array([data[i].header['INSNAME'] for i in idx_xext])
@@ -461,7 +461,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     cdata.append(np.transpose(
                         np.tile(PA[idata],(np.shape(data[idata].data[yname])[1],1))))
         
-        # looping through oifits files
+        # NOTE: looping through oifits files
         
         ndata=len(ydata)
         for idata in range(ndata):
@@ -469,19 +469,19 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             shapex=np.shape(xdata[idata])
             shapey=np.shape(ydata[idata])
 
-            #Dealing with the xy data dimensions
+            # NOTE: Dealing with the xy data dimensions
             if (np.size(shapex)==np.size(shapey)):
-                if np.size(shapex)==1: # if 1 baseline only just change array dim
+                if np.size(shapex)==1: # NOTE: if 1 baseline only just change array dim
                     nlam=np.size(xdata)
                     xdata=np.reshape((1,nlam))
                     ydata=np.reshape((1,nlam))    
-            elif (np.size(shapex))==1:# if x=1D and y=2D
+            elif (np.size(shapex))==1:# NOTE: if x=1D and y=2D
                 if shapex[0]==shapey[0]:
                     xdata[idata]=np.outer(xdata[idata],np.ones(shapey[1]))
                 else:
                     xdata[idata]=np.outer(np.ones(shapey[0]),xdata[idata])
                 
-            elif (np.size(shapey))==1:# if x=2D and y=1D
+            elif (np.size(shapey))==1:# NOTE: if x=2D and y=1D
                 if shapex[0]==shapey[0]:
                     ydata[idata]=np.outer(ydata[idata],np.ones(shapex[1]))
                     ydataerr[idata]=np.outer(ydataerr[idata],np.ones(shapex[1]))
@@ -502,7 +502,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     else:
                         cdata[idata]=np.outer(np.ones(shapex[0]),cdata[idata])
                     shapec=np.shape(cdata[idata])
-            # separate multiples baselines
+            # NOTE: separate multiples baselines
             nB=shapex[0]
             
 
@@ -555,8 +555,8 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                             else:
                                
                                
-                                #dummy plot with alpha=0 as _colorPLot works with collections
-                                #thus not updating the xlim and ylim automatically
+                                # NOTE: dummy plot with alpha=0 as _colorPLot works with collections
+                                # NOTE: thus not updating the xlim and ylim automatically
                                 axe.plot(xdata[idata][iB,ilam0:ilam+1]*
                                      xunitmultiplier,ydata[idata][iB,ilam0:ilam+1],
                                      color="k",alpha=0)
@@ -598,7 +598,6 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     
     return res
 
-###############################################################################
 class _HandlerColorLineCollection(HandlerLineCollection):
     def create_artists(self, legend, artist ,xdescent, ydescent,
                         width, height, fontsize,trans):
@@ -614,7 +613,6 @@ class _HandlerColorLineCollection(HandlerLineCollection):
 
 
 
-###############################################################################
 class oimAxes(plt.Axes):
     
     """
@@ -658,7 +656,7 @@ class oimAxes(plt.Axes):
             if isinstance(hi,LineCollection):
                 hmap[hi]=_HandlerColorLineCollection(numpoints=100)
         
-        #use to remove duplicate legend
+        # NOTE: use to remove duplicate legend
         lh = dict(zip(l, h))
         super().legend(lh.values(),lh.keys(),handler_map=hmap,**kwargs)   
 
@@ -670,6 +668,5 @@ class oimAxes(plt.Axes):
     def set_xscale(self,value,**kwargs):
         super().set_xscale(value,**kwargs)
         self.autoscale_view()
-###############################################################################
 
 

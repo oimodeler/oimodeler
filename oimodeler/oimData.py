@@ -15,9 +15,7 @@ _oimDataTypeErr=["VIS2ERR","VISAMPERR","VISPHIERR","T3AMPERR","T3PHIERR","FLUXER
 _oimDataTypeArr=["OI_VIS2","OI_VIS","OI_VIS","OI_T3","OI_T3","OI_FLUX"]
 
 
-###############################################################################
 
-###############################################################################    
     
 def oimDataGetWl(data,arr,dwl=True):
         insname=arr.header['INSNAME']
@@ -28,7 +26,6 @@ def oimDataGetWl(data,arr,dwl=True):
         else:
             return oiWlArr.data["EFF_WAVE"],oiWlArr.data["EFF_BAND"]
 
-###############################################################################
 
 class oimDataType(IntFlag):
     NONE        = 0
@@ -42,7 +39,6 @@ class oimDataType(IntFlag):
     T3PHI       = 128
     FLUXDATA    = 256
 
-###############################################################################
 
 def oimGetDataValErrAndTypeFlag(arr):
     
@@ -114,7 +110,6 @@ def oimGetDataValErrAndTypeFlag(arr):
                 dtype|=oimDataType.FLUXDATA
     return dtype,val,err,flag
 
-###############################################################################
 
 def oimDataCheckData(arr):
     cdata=[]
@@ -148,24 +143,23 @@ def oimDataCheckData(arr):
                     cdata.append("FLUX")  
     return cdata
 
-###############################################################################
 
 def oimDataGetVectCoord(data,arr):
 
     wl,dwl=oimDataGetWl(data,arr)
     nwl=np.size(wl)    
    
-    #TODO: Here I assume that the mjd is the same for all baselines 
-    #This is the case for all know instruments, but it is not a requirement of 
-    #the oifits format. If the mjd are different, then we should have more data
-    #passed to the simulator, i.e we need to compute the zero frequency 
-    #not only for all wl but also all mjd.
+    # TODO: Here I assume that the mjd is the same for all baselines 
+    # This is the case for all know instruments, but it is not a requirement of 
+    # the oifits format. If the mjd are different, then we should have more data
+    # passed to the simulator, i.e we need to compute the zero frequency 
+    # not only for all wl but also all mjd.
     
     mjd0=arr.data["MJD"][0]
     mjd=np.outer(mjd0,np.ones(nwl)).flatten()
    
     
-    #zero freq vector for vis normalization
+    # NOTE: zero freq vector for vis normalization
     uv0=wl*0
     
     if arr.name=="OI_T3":
@@ -216,7 +210,6 @@ def oimDataGetVectCoord(data,arr):
         
     return u,v,wl,dwl,mjd,nB,nwl
    
-###############################################################################
 
 class oimData(object):
     """
@@ -274,7 +267,7 @@ class oimData(object):
         self._prepared = False
         self._filteredDataReady = False
         self.prepareData()
-        #TODO
+        # TODO
       
         
     def setFilter(self,filt=None,useFilter=True):
@@ -360,7 +353,6 @@ class oimData(object):
         self.struct_dataType=[]
         
         for idata,datai in enumerate(self.data):
-            #print("File {}".format(idata))
             self.struct_u.append([])
             self.struct_v.append([])
             self.struct_wl.append([])
@@ -377,13 +369,11 @@ class oimData(object):
             for iarr,arri in enumerate(datai):
                 if arri.name in _oimDataTypeArr:
                     
-                    #print("arr {} : type={}".format(iarr,arri.name))
                     dataTypeFlag,val,err,flag=oimGetDataValErrAndTypeFlag(arri)
                     
                     if dataTypeFlag != oimDataType.NONE:
                         u,v,wl,dwl,mjd,nB,nwl=oimDataGetVectCoord(datai,arri)
                         
-                        #print(np.shape(u))
                         self.vect_u=np.concatenate((self.vect_u,u))
                         self.vect_v=np.concatenate((self.vect_v,v))
                         self.vect_wl=np.concatenate((self.vect_wl,wl))
@@ -456,6 +446,5 @@ class oimData(object):
        return txt
             
     
-###############################################################################    
 
 
