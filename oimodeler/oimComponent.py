@@ -10,6 +10,7 @@ from astropy import units as units
 from scipy import interpolate,integrate
 from scipy.special import j0
 
+from . import __dict__ as oimDict
 from .oimUtils import getWlFromFitsImageCube
 from .oimOptions import oimOptions
 from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParameters
@@ -30,11 +31,11 @@ def getFourierComponents():
         
     :meta private:
     """
-    fnames=dir(oim)
+    fnames=dir()
     res=[]
     for f in fnames:
         try:
-            if issubclass(oim.__dict__[f], oimComponentFourier):
+            if issubclass(oimDict[f], oimComponentFourier):
                 res.append(f)
         except:
             pass
