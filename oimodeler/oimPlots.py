@@ -2,13 +2,17 @@
 """
 various plotting function and classes
 """
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerLineCollection
-import numpy as np
-import os
 from astropy.io import fits
-import oimodeler as oim
+
+from .oimData import oimData
+from .oimUtils import getBaselineName, getBaselineLengthAndPA, getConfigName, getSpaFreq
+
 
 ###############################################################################
 def _errorplot(axe,X,Y,dY,smooth=1, **kwargs ):
@@ -88,7 +92,7 @@ def uvPlot(oifits,extension="OI_VIS2",marker="o", facecolors='red',
            title=None,gridcolor="k",grid=True,fontsize=None,**kwargs):
 
     
-    if isinstance(oifits,oim.oimData):
+    if isinstance(oifits,oimData):
         oifits=oifits.data
     
     kwargs2={}
@@ -203,7 +207,7 @@ def getColorIndices(oifitsList,color,yarr,yname):
                 
                 
             elif color=="byBaseline":
-                    bnames=oim.getBaselineName(datai,yarr,squeeze=False)[j]
+                    bnames=getBaselineName(datai,yarr,squeeze=False)[j]
                     idxj=[]
                     for bname in bnames:
                         if bname in names:
@@ -216,7 +220,7 @@ def getColorIndices(oifitsList,color,yarr,yname):
                     
        
             elif color=="byConfiguration":
-                    conf=oim.getConfigName(datai,yarr,squeeze=False)[j]
+                    conf=getConfigName(datai,yarr,squeeze=False)[j]
                     if conf in names:
                         iconf = names.index(conf)
                     else:
@@ -296,7 +300,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     res= None
 
     
-    if isinstance(oifitsList,oim.oimData):
+    if isinstance(oifitsList,oimData):
         oifitsList=oifitsList.data
     
     if type(oifitsList)!=type([]):
@@ -390,17 +394,17 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                 xdata.append(np.tile(wl[None,:], (nB,1)))
                 
         elif xname=="SPAFREQ":
-            xdata=oim.getSpaFreq(data,arr=yarr,unit=xunit,squeeze=False) 
+            xdata=getSpaFreq(data,arr=yarr,unit=xunit,squeeze=False) 
             
         elif xname=="LENGTH":
-            B=oim.getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[0]
+            B=getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[0]
             xdata=[]
             for idata in range(len(idx_yext)):
                 xdata.append(np.transpose(
                     np.tile(B[idata],(np.shape(data[idata].data[yname])[1],1))))
 
         elif xname=="PA":
-            PA=oim.getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[1]
+            PA=getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[1]
             xdata=[]
             for idata in range(len(idx_yext)):
                 xdata.append(np.transpose(
@@ -443,17 +447,17 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     cdata=[data[i].data[cname] for i in idx_yext]   
                 
             elif cname=="SPAFREQ":
-                cdata=oim.getSpaFreq(data,arr=yarr,unit=cunit,squeez=False) 
+                cdata=getSpaFreq(data,arr=yarr,unit=cunit,squeez=False) 
                 
             elif cname=="LENGTH":
-                B=oim.getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[0]
+                B=getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[0]
                 cdata=[]
                 for idata in range(len(idx_yext)):
                     cdata.append(np.transpose(
                         np.tile(B[idata],(np.shape(data[idata].data[yname])[1],1))))
     
             elif cname=="PA":
-                PA=oim.getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[1]
+                PA=getBaselineLengthAndPA(data,arr=yarr,squeeze=False)[1]
                 cdata=[]
                 for idata in range(len(idx_yext)):
                     cdata.append(np.transpose(

@@ -4,12 +4,11 @@ Created on Mon Sep 26 09:08:46 2022
 
 @author: Ame
 """
-
-
-import oimodeler as oim
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
+import oimodeler as oim
 from astropy.io import fits
 
 path = os.path.dirname(oim.__file__)

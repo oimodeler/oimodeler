@@ -1,14 +1,16 @@
-import oimodeler as oim
+import os
+
+import astropy.units as u
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 import numpy as np
-import astropy.units as u
-import os
+import oimodeler as oim
+
+
 path = os.path.dirname(oim.__file__)
 
 mas2rad=u.mas.to(u.rad)
-
 
 #Some components
 gd=oim.oimGauss(fwhm=oim.oimInterpWl(wl=[3e-6,3.5e-6,4e-6],value=[1,3,4]),

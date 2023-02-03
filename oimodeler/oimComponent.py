@@ -5,12 +5,16 @@ based components defined in Fourier or image plan
 """
 
 import numpy as np
+from astropy.io import fits
 from astropy import units as units
 from scipy import interpolate,integrate
 from scipy.special import j0
-import oimodeler as oim
-from oimodeler import oimParam,_standardParameters,oimParamInterpolator,oimInterp
-from astropy.io import fits
+
+from . import __dict__ as oimDict
+from .oimUtils import getWlFromFitsImageCube
+from .oimOptions import oimOptions
+from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParameters
+
 
 ###############################################################################
 #TODO move somewhere else
@@ -27,11 +31,11 @@ def getFourierComponents():
         
     :meta private:
     """
-    fnames=dir(oim)
+    fnames=dir()
     res=[]
     for f in fnames:
         try:
-            if issubclass(oim.__dict__[f], oim.oimComponentFourier):
+            if issubclass(oimDict[f], oimComponentFourier):
                 res.append(f)
         except:
             pass
@@ -305,7 +309,7 @@ class oimComponentImage(oimComponent):
         if 'FTBackend' in kwargs:
              self.FTBackend=kwargs['FTBackend']
         else: 
-            self.FTBackend=oim.oimOptions['FTBackend']
+            self.FTBackend=oimOptions['FTBackend']
             
         self.FTBackendData=None
         
@@ -460,8 +464,8 @@ class oimComponentImage(oimComponent):
         s0x=np.trim_zeros(im0x).size
         s0y=np.trim_zeros(im0y).size
         
-        min_sizex=s0x*oim.oimOptions["FTpaddingFactor"]
-        min_sizey=s0y*oim.oimOptions["FTpaddingFactor"]
+        min_sizex=s0x*oimOptions["FTpaddingFactor"]
+        min_sizey=s0y*oimOptions["FTpaddingFactor"]
         
         min_pow2x=2**(min_sizex - 1).bit_length()
         min_pow2y=2**(min_sizey - 1).bit_length()
@@ -548,7 +552,7 @@ class oimComponentRadialProfile(oimComponent):
     @staticmethod
     def fht(Ir,r,wlin,tin,sfreq,wl,t):
         
-        pad=oim.oimOptions['FTpaddingFactor']
+        pad=oimOptions['FTpaddingFactor']
         nr=r.size
         ntin=tin.size
         nwlin=wlin.size
@@ -763,7 +767,7 @@ class oimComponentFitsImage(oimComponentImage):
         if 'FTBackend' in kwargs:
              self.FTBackend=kwargs['FTBackend']
         else: 
-            self.FTBackend=oim.oimOptions['FTBackend']
+            self.FTBackend=oimOptions['FTBackend']
             
         self.FTBackendData=None
         
@@ -804,7 +808,7 @@ class oimComponentFitsImage(oimComponentImage):
         
           
         if dims==3:
-            self._wl=oim.getWlFromFitsImageCube(self._header)
+            self._wl=getWlFromFitsImageCube(self._header)
             self._image=im.data[None,:,:,:]  #adding the time dimension (nt,nwl,ny,nx)
         
         else:

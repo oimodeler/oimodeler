@@ -3,13 +3,14 @@
 creation of models
 
 """
-
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from astropy import units as units
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-from oimodeler import oimParamLinker,oimParamInterpolator
+
+from .oimParam import oimParamLinker, oimParamInterpolator
+
 
 ###############################################################################    
 class oimModel(object):

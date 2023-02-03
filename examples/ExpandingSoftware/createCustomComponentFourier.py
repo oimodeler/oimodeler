@@ -12,13 +12,13 @@ Complex visibility for North-South and East-West baselines between 0 and 100m
 are computed for both models and plotted as well as images.
 
 """
-
-import oimodeler as oim
-import matplotlib.pyplot as plt
-#import matplotlib.colors as colors
-import numpy as np
-import astropy.units as u
 import os
+
+import astropy.units as u
+import matplotlib.pyplot as plt
+import numpy as np
+import oimodeler as oim
+
 
 path = os.path.dirname(oim.__file__)
 

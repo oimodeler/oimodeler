@@ -1,7 +1,8 @@
-import oimodeler as oim
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
+import oimodeler as oim
 
 path = os.path.dirname(oim.__file__)
 pathData=os.path.join(path,os.pardir,"examples","testData","ASPRO_SPICA_GROWING_UD")

@@ -4,10 +4,12 @@ Created on Fri Oct 21 12:27:15 2022
 
 @author: Ame
 """
-
 import numpy as np
-from oimodeler import oimParam, oimComponentImage,_standardParameters
 from astropy import units as units
+
+from ..oimComponent import oimComponentImage
+from ..oimParam import oimParam, _standardParameters
+
 
 class oimSpiral(oimComponentImage):
     

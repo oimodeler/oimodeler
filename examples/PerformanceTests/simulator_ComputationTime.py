@@ -4,12 +4,12 @@ Created on Wed Jun 29 16:16:59 2022
 
 @author: Ame
 """
-
-import oimodeler as oim
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 from datetime import datetime
+
+import matplotlib.pyplot as plt
+import numpy as np
+import oimodeler as oim
 from tqdm import tqdm
 
 path = os.path.dirname(oim.__file__)

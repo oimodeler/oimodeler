@@ -4,14 +4,15 @@ Created on Wed Oct 19 12:30:21 2022
 
 @author: Ame
 """
-import numpy as np
-import matplotlib.pyplot as plt
+import os
+
 import matplotlib.colors as colors
 import matplotlib.cm as cm
-from astropy import units as units
+import matplotlib.pyplot as plt
+import numpy as np
 import oimodeler as oim
+from astropy import units as units
 
-import os
 
 path = os.path.dirname(oim.__file__)
 

@@ -4,15 +4,17 @@ Created on Tue Nov 15 11:53:04 2022
 
 @author: Ame
 """
-from pprint import pprint as print 
-import oimodeler as oim
-import numpy as np                                         
 import os
 from datetime import datetime
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('Agg')
+from pprint import pprint as print 
 
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np                                         
+import oimodeler as oim
+
+
+matplotlib.use('Agg')
 
 name="realData"
 

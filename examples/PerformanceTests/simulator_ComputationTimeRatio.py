@@ -4,11 +4,11 @@ Created on Wed Jun 29 16:16:59 2022
 
 @author: Ame
 """
+import os
 
-import oimodeler as oim
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+import oimodeler as oim
 from datetime import datetime
 from tqdm import tqdm
 

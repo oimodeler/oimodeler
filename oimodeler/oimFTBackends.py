@@ -2,10 +2,11 @@
 """
 Backends for Fourier Transform computation
 """
-
 import numpy as np
 from scipy import interpolate
-import oimodeler as oim
+
+from .oimOptions import oimOptions
+
 
 class numpyFFTBackend():
     
@@ -30,8 +31,8 @@ class numpyFFTBackend():
         
         return vc
     
-oim.oimOptions["FTBackend"]=numpyFFTBackend
-oim.oimOptions["AvailableFTBackends"]=[numpyFFTBackend]
+oimOptions["FTBackend"]=numpyFFTBackend
+oimOptions["AvailableFTBackends"]=[numpyFFTBackend]
 
 try:
     import pyfftw
@@ -85,7 +86,7 @@ try:
             
             return vc
         
-    oim.oimOptions["AvailableFTBackends"].append(FFTWBackend)
+    oimOptions["AvailableFTBackends"].append(FFTWBackend)
     
 except:
     pass

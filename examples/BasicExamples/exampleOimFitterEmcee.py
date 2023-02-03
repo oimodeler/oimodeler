@@ -4,9 +4,9 @@ Created on Wed Sep 21 10:59:15 2022
 
 @author: Ame
 """
+import os
 
 import oimodeler as oim
-import os
 
 path = os.path.dirname(oim.__file__)
 

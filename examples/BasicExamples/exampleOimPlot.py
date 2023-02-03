@@ -4,8 +4,9 @@ Created on Sat Sep 10 07:28:17 2022
 
 @author: Ame
 """
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
 import oimodeler as oim
 
 path = os.path.dirname(oim.__file__)
