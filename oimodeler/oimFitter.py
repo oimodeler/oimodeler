@@ -57,7 +57,7 @@ class oimFitter(object):
         
     
     def run(self,**kwargs):
-        if self.isPrepared==False:
+        if not self.isPrepared:
             raise TypeError("Fitter not initialized")
         self._run(**kwargs)
         return kwargs
@@ -226,7 +226,7 @@ class oimFitterEmcee(oimFitter):
         fig=corner.corner(c2,labels=labels,quantiles=[0.16, 0.5, 0.84],show_titles=True,bins=50
                       ,smooth=2,smooth1d=2,fontsize=8,title_kwargs={'fontsize':8},use_math_text=True)
 
-        if savefig!=None:
+        if savefig is not None:
             plt.savefig(savefig)
         
         return fig,fig.axes
@@ -279,7 +279,7 @@ class oimFitterEmcee(oimFitter):
 
         ax[-1].set_xlabel("step number");
 
-        if savefig!=None:
+        if savefig is not None:
             plt.savefig(savefig)
             
         return fig,ax

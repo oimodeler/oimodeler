@@ -2,8 +2,6 @@
 """data filtering/modifying
 
 """
-import os
-
 import numpy as np
 from astropy.io import fits
 
@@ -42,10 +40,10 @@ class oimDataFilterComponent(object):
     
     def applyFilter(self,data):
         
-        if type(self.params["targets"])!=type([]):
+        if not isinstance(self.params["targets"], list):
             self.params["targets"]= [self.params["targets"]]
         
-        if type(self.params["arr"])!=type([]):
+        if not isinstance(self.params["arr"], list):
             self.params["arr"]= [self.params["arr"]]
         
         if self.params["targets"]==["all"]:
@@ -120,7 +118,7 @@ class oimDataTypeFilter(oimDataFilterComponent):
         
     
     def _filteringFunction(self,data):
-        if type(self.params["dataType"])!=type([]):
+        if not isinstance(self.params["dataType"], list):
             self.params["dataType"]=[self.params["dataType"]]
         
         

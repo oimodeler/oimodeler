@@ -12,7 +12,6 @@ from astropy import units as units
 from .oimParam import oimParamLinker, oimParamInterpolator
 
 
-###############################################################################    
 class oimModel(object):
     """
     The oimModel class hold a model made of one or more components (derived 
@@ -33,7 +32,7 @@ class oimModel(object):
         """
         
     
-        if len(components)==1 and type(components[0])==list:
+        if len(components)==1 and isinstance(components[0], list):
             self.components=components[0]
         else:    
             self.components=components
@@ -88,18 +87,18 @@ class oimModel(object):
         params={}
         for i,c in enumerate(self.components):
             for name,param in c.params.items():
-                if not(param in params.values()):
-                    if  isinstance(param,oimParamInterpolator):
+                if not (param in params.values()):
+                    if isinstance(param,oimParamInterpolator):
                         for iparam,parami in enumerate(param.params):
-                            if not(parami in params.values()):
-                                if (parami.free==True or free==False):
+                            if not (parami in params.values()):
+                                if (parami.free or not free):
                                     params["c{0}_{1}_{2}_interp{3}".format(
                                         i+1, c.shortname.replace(" ", "_"), 
                                         name, iparam+1)]=parami
                     elif isinstance(param,oimParamLinker):
                         pass
                     else:
-                        if (param.free==True or free==False):
+                        if (param.free or not free):
                             
                              params["c{0}_{1}_{2}".format(i+1, 
                                   c.shortname.replace(" ", "_"), name)]=param                           
@@ -154,7 +153,7 @@ class oimModel(object):
              The image of the component with given size in pixels and mas or rasd
         """
         
-        #TODO : maybe we should change all None to zero as default values
+        # TODO : maybe we should change all None to zero as default values
         if wl is None:
             wl=0
         if t is None:
@@ -167,8 +166,7 @@ class oimModel(object):
         nwl=wl.size
         dims=(nt,nwl,dim,dim)
         
-        if fromFT==True:
-
+        if fromFT:
             v=np.linspace(-0.5,0.5,dim)
             vx,vy=np.meshgrid(v,v)
             
@@ -191,17 +189,17 @@ class oimModel(object):
             for c in self.components:
                 image+=c.getImage(dim,pixSize,wl,t)
                 
-        if normalize==True:
+        if normalize:
             for it in range(nt):
                 for iwl in range(nwl):
                     image[it,iwl,:,:]/=np.max(image[it,iwl,:,:])
             
-        #Always squeeze dim which are equal to one if exported to fits format
-        if squeeze==True or toFits==True:
+        # Always squeeze dim which are equal to one if exported to fits format
+        if squeeze or toFits:
             image= np.squeeze(image)
             
 
-        if toFits==True:
+        if toFits:
             
             hdu = fits.PrimaryHDU(image)
             hdu.header['CDELT1']=pixSize*units.mas.to(units.rad)
@@ -307,7 +305,6 @@ class oimModel(object):
         im  : the image(s) as a numpy array
 
         """
-
         im=self.getImage(dim,pixSize,wl,t,fromFT=fromFT,squeeze=False,normalize=normalize)
               
         t=np.array(t).flatten()      
@@ -332,13 +329,13 @@ class oimModel(object):
         axe=np.array(axe).flatten().reshape((nwl,nt))
         
         
-        if not('norm' in kwargs):
+        if not ('norm' in kwargs):
             kwargs['norm']=colors.PowerNorm(gamma=normPow)
             
         
         for iwl,wli in enumerate(wl):
             for it,ti in enumerate(t):
-                if swapAxes==False:
+                if not swapAxes:
                     cb=axe[iwl,it].imshow(im[it,iwl,:,:],
                         extent=[-dim/2*pixSize,dim/2*pixSize,
                                 -dim/2*pixSize,dim/2*pixSize],
@@ -357,32 +354,31 @@ class oimModel(object):
                 if it==0:     
                     axe[iwl,it].set_ylabel("$\\delta$(mas)")
             
-                if legend==True:
+                if legend:
                     txt=""
-                    if swapAxes==False:
-
-                        if wl[0]!=None:
+                    if not swapAxes:
+                        if wl[0] is not None:
                             txt+="wl={:.4f}$\mu$m\n".format(wli*1e6)
-                        if t[0]!=None:
+                        if t[0] is not None:
                             txt+="Time={}".format(ti)
                         if not('color' in kwargs_legend):
                             kwargs_legend['color']="w"
                     else: 
-                        if t[0]!=None:
+                        if t[0] is not None:
                             txt+="wl={:.4f}$\mu$m\n".format(ti*1e6)
-                        if wl[0]!=None:
+                        if wl[0] is not None:
                             txt+="Time={}".format(wli)
-                        if not('color' in kwargs_legend):
+                        if not ('color' in kwargs_legend):
                             kwargs_legend['color']="w"
                     axe[iwl,it].text(0,0.95*dim/2*pixSize,txt,
                             va='top',ha='center',**kwargs_legend)
                     
             
-        if colorbar!=False:
+        if colorbar:
             fig.colorbar(cb, ax=axe,label="Normalized Intensity")
             
             
-        if savefig!=None:
+        if savefig is not None:
             plt.savefig(savefig)
             
         return fig,axe,im

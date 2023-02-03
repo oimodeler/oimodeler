@@ -6,7 +6,6 @@ import numpy as np
 from astropy import units as units
 from scipy.interpolate import interp1d
 
-###############################################################################
 
 class oimParam(object):
     """
@@ -63,19 +62,17 @@ class oimParam(object):
         try:
             return "oimParam {} = {} \xB1 {} {} range=[{},{}] {} ".format(self.name,
                                                                           self.value, self.error, self.unit.to_string(), self.min, self.max, 'free' if self.free else 'fixed')
-        except:
+        except Exception:
             return "oimParam is {}".format(type(self))
 
     def __repr__(self):
         try:
             return "oimParam at {} : {}={} \xB1 {} {} range=[{},{}] free={} ".format(hex(id(self)), self.name,
                                                                                      self.value, self.error, self.unit.to_string(), self.min, self.max, self.free)
-        except:
+        except Exception:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
 
 
-
-###############################################################################
 class oimParamLinker(object):
     def __init__(self, param, operator="add", fact=0):
         self.param = param
@@ -109,8 +106,7 @@ class oimParamLinker(object):
 
 class oimParamNorm(object):
     def __init__(self, params, norm=1):
-
-        if type(params) == list:
+        if isinstance(params, list):
             self.params = params
         else:
             self.params = [params]
@@ -156,7 +152,7 @@ class oimParamInterpolator(oimParam):
         
         params=[]
         for pi in params0:
-            if not(pi in params) and not(isinstance(pi, oimParamLinker)):
+            if not (pi in params) and not isinstance(pi, oimParamLinker):
                 params.append(pi)
         return params
         
@@ -187,9 +183,7 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
                           unit=param.unit, free=param.free, error=param.error)
             self.keyvalues.append(pi)
         
-
     def _interpFunction(self, wl, t):
-
         if self.dependence == "wl":
             var = wl
         else:
@@ -197,7 +191,7 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
         values = np.array([pi() for pi in self.keyvalues])
         keyframes = np.array([pi() for pi in self.keyframes])
         
-        if self.extrapolate==True:
+        if self.extrapolate:
             fill_value="extrapolate"
             bounds_error=None
         else:
@@ -209,22 +203,17 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
                         kind=self.kind,bounds_error=bounds_error)(var)
     
     
-
     def _getParams(self):
         params=[]
-        if self.fixedRef==False:
+        if not self.fixedRef:
             params.extend(self.keyframes)
         params.extend(self.keyvalues)
         return params
-
-###############################################################################
 
 
 class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
     def _init(self, param, wl=[], values=[], **kwargs):
         super()._init(param, dependence="wl", keyframes=wl, keyvalues=values,**kwargs)
-
-###############################################################################
 
 
 class oimParamInterpolatorTime(oimParamInterpolatorKeyframes):
@@ -252,19 +241,19 @@ class oimParamCosineTime(oimParamInterpolator):
                           unit=param.unit, free=param.free, error=param.error)
             self.values.append(pi)
 
-        #self.params.append(self.T0)
-        #self.params.append(self.P)
+        # self.params.append(self.T0)
+        # self.params.append(self.P)
         if x0 != None:
             self.x0 = oimParam(name="x0", value=x0,
                                description="Inflection point", unit=units.one)
-            #self.params.append(self.x0)
+            # self.params.append(self.x0)
             self.assymetric = True
 
-        #self.params.extend(self.values)
+        # self.params.extend(self.values)
 
     def _interpFunction(self, wl, t):
         normt = np.divmod((t-self.T0.value)/self.P.value, 1)[1]
-        if self.assymetric == True:
+        if self.assymetric:
             normt = interp1d([0, self.x0(), 1], [
                              0, 0.5, 1], kind='slinear')(normt)
 
@@ -305,7 +294,6 @@ class oimParamGaussian(oimParamInterpolator):
                                unit=param.unit, free=param.free, error=param.error)
         self.value.value
     def _interpFunction(self, wl, t):
-
         if self.dependence == "wl":
             var = wl
         else:
@@ -339,7 +327,7 @@ class oimParamMultipleGaussian(oimParamInterpolator):
             if len(values) != len(x0) and len(values) != len(fwhm):
                 raise TypeError(
                     "values, x0 and fwhm should have the same length")
-        except:
+        except Exception:
             print("values, x0 and fwhm should have the same length")
 
         n = len(values)
@@ -367,7 +355,6 @@ class oimParamMultipleGaussian(oimParamInterpolator):
 
 
     def _interpFunction(self, wl, t):
-
         if self.dependence == "wl":
             var = wl
         else:
@@ -420,11 +407,10 @@ class oimParamPolynomial(oimParamInterpolator):
             self.coeffs.append(pi)
 
         self.params.extend(self.coeffs)
-        if not(x0 is None):
+        if not (x0 is None):
             self.params.append(x0)
 
     def _interpFunction(self, wl, t):
-
         if self.dependence == "wl":
             var = wl
         else:

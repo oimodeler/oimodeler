@@ -14,12 +14,11 @@ from .oimData import oimData
 from .oimUtils import getBaselineName, getBaselineLengthAndPA, getConfigName, getSpaFreq
 
 
-###############################################################################
 def _errorplot(axe,X,Y,dY,smooth=1, **kwargs ):
     Ys=Y
-    if not("alpha" in kwargs):
+    if not ("alpha" in kwargs):
         kwargs["alpha"]=0.4
-    if not("color" in kwargs):
+    if not ("color" in kwargs):
         kwargs["color"]="grey"      
     if smooth!=1:      
         ker=np.ones(smooth)/smooth
@@ -31,11 +30,10 @@ def _errorplot(axe,X,Y,dY,smooth=1, **kwargs ):
         
         
       
-###############################################################################
         
 def _colorPlot(axe,x,y,z,setlim=False,**kwargs):
     
-    if not("cmap" in kwargs):
+    if not ("cmap" in kwargs):
         kwargs['cmap']='plasma'
 
     maxi=[np.max(z)]
@@ -43,7 +41,7 @@ def _colorPlot(axe,x,y,z,setlim=False,**kwargs):
     for ci in axe.collections:
         maxii=np.max(ci.get_array())
         minii=np.min(ci.get_array())
-        if maxii!=None and minii!=None:
+        if maxii is not None and minii is not None:
             maxi.append(maxii)
             mini.append(minii)
 
@@ -51,7 +49,7 @@ def _colorPlot(axe,x,y,z,setlim=False,**kwargs):
     mini=np.min(mini)
 
     
-    if not("norm" in kwargs):
+    if not ("norm" in kwargs):
         norm=plt.Normalize(mini,maxi)
     else:
         norm=kwargs["norm"]
@@ -79,7 +77,7 @@ def _colorPlot(axe,x,y,z,setlim=False,**kwargs):
         ci.set_norm(norm)
         
 
-    if setlim==True:
+    if setlim:
         axe.autoscale_view()
     
     return res
@@ -103,17 +101,16 @@ def uvPlot(oifits,extension="OI_VIS2",marker="o", facecolors='red',
     data=[]
     u=np.array([])
     v=np.array([])
-    if type(oifits)==type(""):
+    if isinstance(oifits, str):
         data.append(fits.open(oifits))
-    elif type(oifits)==type([]):
+    elif isinstance(oifits, list):
         for item in oifits:
-            if type(item)==type(""):
+            if isinstance(item, str):
                 data.append(fits.open(item))
             else:
                 data.append(item)
     else:
         data.append(oifits)
-
 
     for datai in data:
 
@@ -124,14 +121,14 @@ def uvPlot(oifits,extension="OI_VIS2",marker="o", facecolors='red',
             v=np.append(v,datai[j].data['VCOORD'])
 
 
-    if not(axe):
+    if not axe:
         fig,axe=plt.subplots(nrows=1,ncols=1)
     axe.scatter(u,v,marker=marker,facecolors=facecolors, edgecolors=edgecolors,
                 s=size,zorder=10,lw=1,**kwargs)
 
     axe.scatter(-u,-v,marker=marker,facecolors=facecolors, edgecolors=edgecolors,
                 s=size,zorder=10,lw=1,**kwargs2)
-    if not(maxi):
+    if not maxi:
         maxi=1.1*np.max(np.abs(np.array([u,v])))
     if grid:
         axe.plot([-maxi,maxi],[0,0],linewidth=1,color=gridcolor,zorder=5)
@@ -182,7 +179,7 @@ def getColorIndices(oifitsList,color,yarr,yname):
             
             if color=="byFile":
                 fname=datai.filename()
-                if fname==None:
+                if fname is None:
                     fname="File {}".format(idata)
                 else:
                     fname=os.path.basename(fname)
@@ -303,7 +300,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     if isinstance(oifitsList,oimData):
         oifitsList=oifitsList.data
     
-    if type(oifitsList)!=type([]):
+    if not isinstance(oifitsList, list):
         oifitsList=[oifitsList]
          
     ndata0=len(oifitsList)
@@ -318,7 +315,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     xarr=oimPlotParamArr[idxX]
     yarr=oimPlotParamArr[idxY]
 
-    if not(shortLabel):
+    if not shortLabel:
         xlabel=oimPlotParamLabel[idxX]
         ylabel=oimPlotParamLabel[idxY]
     else:
@@ -344,21 +341,21 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
     xIsUVcoord=oimPlotParamIsUVcoord[idxX]
     yIsUVcoord=oimPlotParamIsUVcoord[idxY]
     
-    if xIsUVcoord==False and xname!="EFF_WAVE":
+    if not xIsUVcoord and xname!="EFF_WAVE":
         raise TypeError("X should be LENGTH, SPAFREQ, PA or EFF_WAVE")
   
-    if yIsUVcoord==True:
+    if yIsUVcoord:
         raise TypeError("Y shouldn't be UCOORD,VCOORD, SPAFREQ, or PA")
         
         
     
-    if colorTab==None:
+    if colorTab is None:
         colorTab=oimPlotParamColorCycle
     
     try :
         if not("by" in color):
             colorTab=[color]
-    except:
+    except Exception:
         pass
     
     ncol=len(colorTab)    
@@ -370,7 +367,8 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
         label=kwargs.pop('label')
     else:
         label=""
-    if not(axe):axe=plt.axes()
+    if not axe:
+        axe=plt.axes()
     
         
     for ifile,data in enumerate(oifitsList):
@@ -411,7 +409,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     np.tile(PA[idata],(np.shape(data[idata].data[yname])[1],1))))
          
 
-        if cname!=None:
+        if cname is not None:
             
             idxC=np.where(oimPlotParamName == cname)[0][0]
             cIsUVcoord=oimPlotParamIsUVcoord[idxC] 
@@ -436,12 +434,12 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     nB=ydata[idata].shape[0]
                     cdata.append(np.tile(wl[None,:], (nB,1)))
 
-            elif not(cIsUVcoord):
+            elif not cIsUVcoord:
                 try:
                     idxC=np.where(oimPlotParamName == cname)[0][0]
                     carr=oimPlotParamArr[idxC]
                     cdata=[data[i].data[cname] for i in idx_yext]
-                except:
+                except Exception:
                     idxC=np.where(oimPlotParamError == cname)[0][0]
                     carr=oimPlotParamArr[idxC]
                     cdata=[data[i].data[cname] for i in idx_yext]   
@@ -463,7 +461,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                     cdata.append(np.transpose(
                         np.tile(PA[idata],(np.shape(data[idata].data[yname])[1],1))))
         
-        #looping through oifits files
+        # looping through oifits files
         
         ndata=len(ydata)
         for idata in range(ndata):
@@ -496,7 +494,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             shapex=np.shape(xdata[idata])
             shapey=np.shape(ydata[idata])
                     
-            if cname!=None:
+            if cname is not None:
                 shapec=np.shape(cdata[idata])
                 if (np.size(shapec)==1):
                     if shapec[0]==shapex[0]:
@@ -509,7 +507,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
             
 
             for iB in range(nB):
-                if showFlagged==False: 
+                if not showFlagged: 
                     flags=np.reshape(yflag[idata],shapey)[iB,:]
                     nflags=len(flags)
                     flag0=True
@@ -519,18 +517,18 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                         if np.isnan(ydata[idata][iB,ilam]):
                             flagi=True
                         if flag0!=flagi:
-                            if flagi==False:
+                            if not flagi:
                                 ilam0=ilam
                             else:
                                 doPlot=True
                             flag0=flagi 
-                        if ilam==(nflags-1) and flagi==False:
+                        if ilam==(nflags-1) and not flagi:
                                 doPlot=True
      
-                        if doPlot==True: 
+                        if doPlot: 
                             labeli=label+ColorNames[colorIdx[ifile][idata][iB]]
                             
-                            if cname==None:
+                            if cname is None:
                                 if (xdata[idata][iB,ilam0:ilam+1]).size==1:
                                     axe.scatter(xdata[idata][iB,ilam0:ilam+1]*
                                          xunitmultiplier, ydata[idata][iB,ilam0:ilam+1],
@@ -542,7 +540,7 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                                          xunitmultiplier,ydata[idata][iB,ilam0:ilam+1],
                                          color=colorTab[colorIdx[ifile][idata][iB]%ncol],
                                          label=labeli,**kwargs)
-                                    if errorbar==True:
+                                    if errorbar:
                                         
                                         if not('color' in kwargs_error):
                                             kwargs_errori=kwargs_error.copy()
@@ -577,21 +575,21 @@ def oimPlot(oifitsList,xname,yname,axe=None,xunit=None,xunitmultiplier=1,
                 else:
                     axe.plot(xdata[idata][iB,:]*xunitmultiplier,
                              ydata[idata][iB,:],color=colorTab[colorIdx[ifile][idata][iB]%ncol])
-                    if errorbar==True:
+                    if errorbar:
                         _errorplot(axe,xdata[idata][iB,:]*xunitmultiplier,ydata[idata][iB,:],
                                    ydataerr[idata][iB,:],color=colorTab[colorIdx[ifile][idata][iB]%ncol],**kwargs_error)
                      
 
        
-    if yscale!=None:
+    if yscale is not None:
         axe.set_yscale(yscale)
 
-    if xscale!=None:        
+    if xscale is not None:        
         axe.set_xscale(xscale)
         
-    if not(xlim is None):
+    if not (xlim is None):
         axe.set_xlim(xlim)
-    if not(ylim is None):
+    if not (ylim is None):
         axe.set_ylim(ylim)
         
     axe.set_xlabel(xlabel)

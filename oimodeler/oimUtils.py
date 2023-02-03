@@ -2,11 +2,11 @@
 """
 various utilities for optical interferometry
 """
-import astropy.units as units
 import numpy as np
-from astropy.coordinates import Angle
 from astropy.io import fits
+import astropy.units as units
 from astroquery.simbad import Simbad
+from  astropy.coordinates import Angle
 
 ###############################################################################
 

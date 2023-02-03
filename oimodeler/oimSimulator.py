@@ -68,7 +68,7 @@ class oimSimulator(object):
         self.model=None
     
     
-        if data!=None:
+        if data is not None:
             if isinstance(data,oimData):
                 self.data=data
             else:
@@ -76,11 +76,11 @@ class oimSimulator(object):
             
                 
             
-        if model!=None:        
+        if model is not None:        
             self.setModel(model)
         
         
-        if model!=None and not(data is  None):
+        if model is not None and not(data is  None):
             self.compute(computeChi2=True,computeSimulatedData=True)
     
     def setModel(self,model):
@@ -104,7 +104,7 @@ class oimSimulator(object):
         chi2List=[]
        
         
-        if computeSimulatedData==True and (checkSimulatedData==True or self.simulatedData==None):
+        if computeSimulatedData and (checkSimulatedData or self.simulatedData is None):
             self.simulatedData=oimData()
             for datai in self.data.data:
                 self.simulatedData.addData(hdulistDeepCopy(datai))
@@ -114,7 +114,7 @@ class oimSimulator(object):
         data=self.data
         
         
-        if (computeChi2==True)|(computeSimulatedData==True):
+        if (computeChi2)|(computeSimulatedData):
             
             idx=0
             nfiles=len(data.struct_u)
@@ -176,15 +176,15 @@ class oimSimulator(object):
                         quantities.append("FLUXDATA")
                       
                     #Filling the simulatedData astropy array with the computed values
-                    if computeSimulatedData==True:
+                    if computeSimulatedData:
                         for ival in range(len(val)):
                             try:
                                 self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=val[ival]
-                            except:
+                            except Exception:
                                 self.simulatedData.data[ifile][arrNum].data[quantities[ival]]=np.squeeze(val[ival])
                             
                     #Computing the chi2
-                    if computeChi2==True:
+                    if computeChi2:
                         for ival in range(len(val)):
                             
                             #For phase quantities go to the complex plan
@@ -202,7 +202,7 @@ class oimSimulator(object):
                             chi2List.append(chi2i)
     
        
-        if computeChi2==True: 
+        if computeChi2: 
              self.chi2=chi2
              self.chi2r=chi2/(nelChi2-len(self.model.getFreeParameters()))
              self.chi2List=chi2List
@@ -212,7 +212,7 @@ class oimSimulator(object):
     def plot(self,arr,simulated=True,savefig=None,visLog=False,**kwargs):
         # plotting  data and simulatiedData
 
-        if type(arr)!=type([]):
+        if not isinstance(arr, list):
            
             arr=[arr]
         
@@ -266,7 +266,7 @@ class oimSimulator(object):
         #Create a colorbar for the data plotted with wavelength colorscale option
         fig.colorbar(scale, ax=ax.ravel().tolist(),label="$\\lambda$ ($\mu$m)")
 
-        if savefig!=None:
+        if savefig is not None:
             plt.savefig(savefig)
             
         return fig,ax
