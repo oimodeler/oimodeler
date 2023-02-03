@@ -2,8 +2,8 @@
 """
 basic model-components defined in the Fourier plan
 """
+import astropy.units as u
 import numpy as np
-from astropy import units as units
 from scipy.special import j0,j1,jv
 
 from .oimComponent import oimComponentFourier
@@ -12,19 +12,16 @@ from .oimParam import oimParam, _standardParameters
       
 ###############################################################################
 class oimPt(oimComponentFourier):
-    """
-    Point Source component defined in the fourier space
- 
+    """Point Source component defined in the fourier space
+
     Parameters
     ----------
-    
-    x : number or oimInterp
+    x : u.mas | oimInterp
         x pos of the component (in mas). The default is 0.
-    y : number or oimInterp
-        y pos of the component (in mas). The default is 0. 
-    f : number or oimInterp
-        flux of the component.The default is 1.
-    
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
     """
     name="Point source"
     shortname = "Pt"   
@@ -44,22 +41,16 @@ class oimPt(oimComponentFourier):
     
 ###############################################################################
 class oimBackground(oimComponentFourier):
-    """
-    Background component defined in the fourier space
-    
+    """Background component defined in the fourier space
+
     Parameters
     ----------
-    
-    x : number or oimInterp
-        x pos of the component (in mas). 
-        The default is 0.
-    y : number or oimInterp
-        y pos of the component (in mas). 
-        The default is 0. 
-    f : number or oimInterp
-        flux of the component.
-        The default is 1.
-    
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
     """
     name="Background"
     shortname = "Bckg"     
@@ -80,38 +71,28 @@ class oimBackground(oimComponentFourier):
     
 ###############################################################################
 class oimUD(oimComponentFourier):
-    """
-    Uniform Disk component defined in the fourier space
-    
+    """Uniform Disk component defined in the fourier space
+
     Parameters
     ----------
-    
-    x : number or oimInterp
-        x pos of the component (in mas).
-        The default is 0.
-    y : number or oimInterp
-        y pos of the component (in mas). 
-        The default is 0.
-    f : number or oimInterp
-        flux of the component.
-        The default is 1.
-    d : number or oimInterp
-        diameter of the disk (in mas). 
-        The default is 0.
-    
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d : u.mas | oimInterp
+        diameter of the disk (in mas). The default is 0.
     """
     name="Uniform Disk"
     shortname = "UD"
     def __init__(self,**kwargs):
-        """
-        
-        """         
         super().__init__(**kwargs)         
         self.params["d"]=oimParam(**_standardParameters["d"])
         self._eval(**kwargs)
 
     def _visFunction(self,ucoord,vcoord,rho,wl,t):
-        xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho
+        xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(u.rad)*rho
         return np.nan_to_num(np.divide(2*j1(xx),xx),nan=1)
 
     
@@ -120,31 +101,23 @@ class oimUD(oimComponentFourier):
     
 ###############################################################################
 class oimEllipse(oimUD):
-    """
-    Uniform Ellipse component defined in the fourier space
-    
+    """Uniform Ellipse component defined in the fourier space
+
     Parameters
     ----------
-    
-    x : number or oimInterp
-        x pos of the component (in mas). 
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d : u.mas | oimInterp
+        major-axis diameter of the ellipse (in mas). The default is 0.
+    pa : u.deg | oimInterp
+        position angle of the major axis of the ellipse (in deg).
         The default is 0.
-    y : number or oimInterp
-        y pos of the component (in mas). 
-        The default is 0.
-    f : number or oimInterp
-        flux of the component.
-        The default is 1.
-    d : number or oimInterp
-        major-axis diameter of the ellipse (in mas). 
-        The default is 0.
-    pa : number or oimInterp
-        position angle of the major axis of the ellipse (in deg). 
-        The default is 0.
-    elong : number or oimInterp
-        elongation of the ellipse.
-    The default is 1.
-    
+    elong : u.dimensionless_unscaled | oimInterp
+        elongation of the ellipse. The default is 1.
     """
     name="Uniform Ellipse"
     shortname = "eUD"
@@ -155,26 +128,19 @@ class oimEllipse(oimUD):
 ###############################################################################   
 
 class oimGauss(oimComponentFourier):
-    """
-    Gaussian Disk component defined in the fourier space
-    
+    """Gaussian Disk component defined in the fourier space
+
     Parameters
     ----------
-    
-    x : number or oimInterp
-        x pos of the component (in mas). 
-        The default is 0.
-    y : number or oimInterp
-        y pos of the component (in mas). 
-        The default is 0.
-    f : number or oimInterp
-        flux of the component.
-        The default is 1.
-    fwhm : number or oimInterp
-        FWHM of the Gaussian (in mas). 
-        The default is 0.
-    
-    """    
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    fwhm : u.mas | oimInterp
+        FWHM of the Gaussian (in mas). The default is 0.
+    """
     name="Gaussian Disk"
     shortname = "GD"
     def __init__(self,**kwargs):        
@@ -184,7 +150,7 @@ class oimGauss(oimComponentFourier):
 
     def _visFunction(self,xp,yp,rho,wl,t):
         return np.exp(-1*(np.pi*self.params["fwhm"](wl,t)*
-               self.params["fwhm"].unit.to(units.rad)*rho)**2/(4*np.log(2)))
+               self.params["fwhm"].unit.to(u.rad)*rho)**2/(4*np.log(2)))
     
     def _imageFunction(self,xx,yy,wl,t):        
         r2=(xx**2+yy**2)
@@ -193,32 +159,24 @@ class oimGauss(oimComponentFourier):
 
 ###############################################################################   
 class oimEGauss(oimGauss):
-    """
-    Elliptical Gaussian component defined in the fourier space
-    
+    """Elliptical Gaussian component defined in the fourier space
+
     Parameters
     ----------
-    
-    x : number or oimInterp
-        x pos of the component (in mas). 
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    fwhm : u.mas | oimInterp
+        FWHM of the Gaussian (in mas). The default is 0.
+    pa : u.deg | oimInterp
+        position angle of the major axis of the Gaussian (in deg).
         The default is 0.
-    y : number or oimInterp
-        y pos of the component (in mas). 
-        The default is 0.
-    f : number or oimInterp
-        flux of the component.
-        The default is 1.
-    fwhm : number or oimInterp
-        FWHM of the Gaussian (in mas). 
-        The default is 0.
-    pa : number or oimInterp
-        position angle of the major axis of the Elliptical Gaussian (in deg). 
-        The default is 0.
-    elong : number or oimInterp
-        elongation of the ellipse.
-        The default is 1.
-    
-    """     
+    elong : u.dimensionless_unscaled | oimInterp
+        elongation of the Gaussian. The default is 1.
+    """
     name="Gaussian Ellipse"
     shortname = "EG"
     elliptic=True
@@ -228,6 +186,19 @@ class oimEGauss(oimGauss):
 ###############################################################################
 
 class oimIRing(oimComponentFourier):
+    """Infinitesimal Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d : u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    """
     name="Infinitesimal Ring"
     shortname = "IR"
     def __init__(self,**kwargs):    
@@ -236,7 +207,7 @@ class oimIRing(oimComponentFourier):
         self._eval(**kwargs)
 
     def _visFunction(self,xp,yp,rho,wl,t):     
-        xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho
+        xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(u.rad)*rho
         return j0(xx)
     
     def _imageFunction(self,xx,yy,wl,t,minPixSize=None):
@@ -248,7 +219,25 @@ class oimIRing(oimComponentFourier):
 
 ###############################################################################   
 class oimEIRing(oimIRing):
-    name="Ellitical infinitesimal Ring"
+    """Infinitesimal Elliptical Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d : u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    pa : u.deg | oimInterp
+        position angle of the major axis of the ring (in deg).
+        The default is 0.
+    elong : u.dimensionless_unscaled | oimInterp
+        elongation of the ring. The default is 1.
+    """
+    name="Ellitical Infinitesimal Ring"
     shortname = "EIR"
     elliptic=True
     def __init__(self,**kwargs):        
@@ -258,6 +247,21 @@ class oimEIRing(oimIRing):
 ###############################################################################
 
 class oimRing(oimComponentFourier):
+    """Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    din : u.mas | oimInterp
+        inner diameter of the ring (in mas). The default is 0.
+    dout : u.mas | oimInterp
+        outer diameter of the ring (in mas). The default is 0.
+    """
     name="Ring"
     shortname = "R"
     def __init__(self,**kwargs):        
@@ -268,9 +272,9 @@ class oimRing(oimComponentFourier):
 
     def _visFunction(self,xp,yp,rho,wl,t):     
         xxin=np.pi*self.params["din"](wl,t)* \
-                         self.params["din"].unit.to(units.rad)*rho
+                         self.params["din"].unit.to(u.rad)*rho
         xxout=np.pi*self.params["dout"](wl,t)* \
-                         self.params["dout"].unit.to(units.rad)*rho
+                         self.params["dout"].unit.to(u.rad)*rho
     
         fin=(self.params["din"](wl,t))**2
         fout=(self.params["dout"](wl,t))**2
@@ -287,6 +291,21 @@ class oimRing(oimComponentFourier):
 ###############################################################################
 
 class oimRing2(oimComponentFourier):
+    """Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d: u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    width : u.mas | oimInterp
+        width of the ring (in mas). The default is 0.
+    """
     name="Ring2"
     shortname = "R2"
     def __init__(self,**kwargs):        
@@ -299,8 +318,8 @@ class oimRing2(oimComponentFourier):
 
     def _visFunction(self,xp,yp,rho,wl,t):
         
-        d=self.params["d"](wl,t)* self.params["d"].unit.to(units.rad)
-        w=self.params["w"](wl,t)* self.params["w"].unit.to(units.rad)
+        d=self.params["d"](wl,t)* self.params["d"].unit.to(u.rad)
+        w=self.params["w"](wl,t)* self.params["w"].unit.to(u.rad)
         
         
         xx=np.pi*(d+w/2)*rho
@@ -317,7 +336,27 @@ class oimRing2(oimComponentFourier):
     
 ###############################################################################   
 class oimERing(oimRing):
-    name="Ellitical  Ring"
+    """Elliptical Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d : u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    width : u.mas | oimInterp
+        width of the ring (in mas). The default is 0.
+    pa : u.deg | oimInterp
+        position angle of the major axis of the ring (in deg).
+        The default is 0.
+    elong : u.dimensionless_unscaled | oimInterp
+        elongation of the ring. The default is 1.
+    """
+    name="Elliptical Ring"
     shortname = "ER"
     elliptic=True
     def __init__(self,**kwargs):        
@@ -326,7 +365,27 @@ class oimERing(oimRing):
          
 ###############################################################################   
 class oimERing2(oimRing2):
-    name="Ellitical  Ring2"
+    """Elliptical Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d: u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    width : u.mas | oimInterp
+        width of the ring (in mas). The default is 0.
+    pa : u.deg | oimInterp
+        position angle of the major axis of the ring (in deg).
+        The default is 0.
+    elong : u.dimensionless_unscaled | oimInterp
+        elongation of the ring. The default is 1.
+    """
+    name="Elliptical Ring2"
     shortname = "ER2"
     elliptic=True
     def __init__(self,**kwargs):        
@@ -337,7 +396,24 @@ class oimERing2(oimRing2):
 ###############################################################################
           
 class oimESKIRing(oimComponentFourier):
-    name="Skewed Ellitical Infinitesimal Ring"
+    """Skewed Elliptical Infinitesimal Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d: u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    skw : u.dimensionless_unscaled | oimInterp
+        skew of the ring. The default is 0.
+    skwPa: u.deg | oimInterp
+        elongation of the ring. The default is 1.
+    """
+    name="Skewed Elliptical Infinitesimal Ring"
     shortname = "SKEIR"
     elliptic=True   
     def __init__(self,**kwargs): 
@@ -349,10 +425,10 @@ class oimESKIRing(oimComponentFourier):
     
     def _visFunction(self,xp,yp,rho,wl,t):
 
-        xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(units.rad)*rho    
+        xx=np.pi*self.params["d"](wl,t)*self.params["d"].unit.to(u.rad)*rho    
         
         phi=  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
-            self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp);
+            self.params["skwPa"].unit.to(u.rad) +  np.arctan2(yp, xp);
        
         return np.nan_to_num(j0(xx)-1j*np.sin(phi)*j1(xx)*self.params["skw"](wl,t),nan=1)
           
@@ -360,7 +436,7 @@ class oimESKIRing(oimComponentFourier):
         r2=(xx**2+yy**2)  
         # dr=np.sqrt(np.abs(np.roll(r2,(-1,-1),(0,1))-np.roll(r2,(1,1),(0,1))))
         phi=np.arctan2(yy,xx)  +  self.params["skwPa"](wl,t)* \
-                                  self.params["skwPa"].unit.to(units.rad)
+                                  self.params["skwPa"].unit.to(u.rad)
         dx=np.abs(1*(xx[0,0,0,1]-xx[0,0,0,0]
                     +xx[0,0,1,0]-xx[0,0,0,0])*self.params["elong"](wl,t))
         #dx=np.abs(1*(xx[0,1]-xx[0,0]+xx[1,0]-xx[0,0]))*3
@@ -371,7 +447,26 @@ class oimESKIRing(oimComponentFourier):
 ###############################################################################
           
 class oimESKRing(oimComponentFourier):
-    name="Skewed Ellitical Ring"
+    """Skewed Elliptical Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    din : u.mas | oimInterp
+        inner diameter of the ring (in mas). The default is 0.
+    dout : u.mas | oimInterp
+        outer diameter of the ring (in mas). The default is 0.
+    skw : u.dimensionless_unscaled | oimInterp
+        skew of the ring. The default is 0.
+    skwPa: u.deg | oimInterp
+        elongation of the ring. The default is 1.
+    """
+    name="Skewed Elliptical Ring"
     shortname = "SKER"
     elliptic=True   
     def __init__(self,**kwargs): 
@@ -386,15 +481,15 @@ class oimESKRing(oimComponentFourier):
         
         
         xxin=np.pi*self.params["din"](wl,t)* \
-                         self.params["din"].unit.to(units.rad)*rho
+                         self.params["din"].unit.to(u.rad)*rho
         xxout=np.pi*self.params["dout"](wl,t)* \
-                         self.params["dout"].unit.to(units.rad)*rho
+                         self.params["dout"].unit.to(u.rad)*rho
     
         xx=(xxin+xxout)/2
         xx2=(xxout-xxin)/2
         
         phi =  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
-            self.params["skwPa"].unit.to(units.rad) +  np.arctan2(yp, xp)
+            self.params["skwPa"].unit.to(u.rad) +  np.arctan2(yp, xp)
             
 
         res=(j0(xx)-1j*np.sin(phi)*j1(xx)*self.params["skw"](wl,t))  \
@@ -408,7 +503,7 @@ class oimESKRing(oimComponentFourier):
         r2=(xx**2+yy**2)  
 
         phi =  (self.params["skwPa"](wl,t)-self.params["pa"](wl,t))* \
-                  self.params["skwPa"].unit.to(units.rad) + np.arctan2(yy,xx) 
+                  self.params["skwPa"].unit.to(u.rad) + np.arctan2(yy,xx) 
 
         F=(1+self.params["skw"](wl,t)*np.sin(phi)  )/(1+self.params["skw"](wl,t))   
         
@@ -418,6 +513,19 @@ class oimESKRing(oimComponentFourier):
 ###############################################################################    
 
 class oimLorentz(oimComponentFourier):
+    """Pseudo-Lorentzian component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    fwhm : u.mas | oimInterp
+        FWHM of the Lorentzian (in mas). The default is 0.
+    """
     #From Lazareff 2017 A&A 599, 85
     #TODO : Small difference between images using direct formula or inverse of vis function
     name="Pseudo-Lorentzian"
@@ -430,19 +538,37 @@ class oimLorentz(oimComponentFourier):
     
     def _visFunction(self,xp,yp,rho,wl,t):
                
-        xx=np.pi*self.params["fwhm"](wl,t)* self.params["fwhm"].unit.to(units.rad)*rho
+        xx=np.pi*self.params["fwhm"](wl,t)* self.params["fwhm"].unit.to(u.rad)*rho
         return np.exp(-2*np.pi*xx/3**0.5)
             
         
     def _imageFunction(self,xx,yy,wl,t):
         r2=(xx**2+yy**2)  
-        a=np.pi*self.params["fwhm"](wl,t)* self.params["fwhm"].unit.to(units.mas)
+        a=np.pi*self.params["fwhm"](wl,t)* self.params["fwhm"].unit.to(u.mas)
         return a/(2*np.pi*3**0.5)*(a**2/3+r2)**(-1.5)
     
 ###############################################################################    
     
 class oimELorentz(oimLorentz):
-    name="Ellitical  Pseudo-Lorentzian"
+    """Elliptical-Lorentzian component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    fwhm : u.mas | oimInterp
+        FWHM of the Lorentzian (in mas). The default is 0.
+    pa : u.deg | oimInterp
+        position angle of the major axis of the Lorentzian (in deg).
+        The default is 0.
+    elong : u.dimensionless_unscaled | oimInterp
+        elongation of the Lorentzian. The default is 1.
+    """
+    name="Elliptical Pseudo-Lorentzian"
     shortname = "ELO"
     elliptic=True
     def __init__(self,**kwargs):        
@@ -452,19 +578,34 @@ class oimELorentz(oimLorentz):
 ###############################################################################    
    
 class oimLinearLDD(oimComponentFourier):
+    """Linear Limb Darkened Disk component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d: u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    a: u.dimensionless_unscaled | oimInterp
+        linear limb darkening coefficient
+    """
     name="Linear Limb Darkened Disk "
     shortname = "LLDD" 
     def __init__(self,**kwargs): 
         super().__init__(**kwargs)
         self.params["d"]=oimParam(**_standardParameters["d"])  
         self.params["a"]=oimParam(name="a",value=0,description="Linear LDD coeff",
-                                  unit=units.one,mini=-1,maxi=1)
+                                  unit=u.one,mini=-1,maxi=1)
                
         self._eval(**kwargs)
     
     def _visFunction(self,xp,yp,rho,wl,t):
                
-        xx=np.pi*self.params["d"](wl,t)* self.params["d"].unit.to(units.rad)*rho
+        xx=np.pi*self.params["d"](wl,t)* self.params["d"].unit.to(u.rad)*rho
         
         a=self.params["a"](wl,t)
   
@@ -475,6 +616,23 @@ class oimLinearLDD(oimComponentFourier):
 ###############################################################################    
 
 class oimQuadLDD(oimComponentFourier):
+    """Quadratic Limb Darkened Disk component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d: u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    a1: u.dimensionless_unscaled | oimInterp
+        first quadratic limb darkening coefficient
+    a2: u.dimensionless_unscaled | oimInterp
+        second quadratic limb darkening coefficient
+    """
     #From Domiciano de Souza 2003 (phd thesis)
     name="Quadratic Limb Darkened Disk "
     shortname = "QLDD"  
@@ -482,15 +640,15 @@ class oimQuadLDD(oimComponentFourier):
         super().__init__(**kwargs)
         self.params["d"]=oimParam(**_standardParameters["d"])  
         self.params["a1"]=oimParam(name="a1",value=0,description="1st QLDD coeff",
-                                   unit=units.one,mini=-1,maxi=1)
+                                   unit=u.one,mini=-1,maxi=1)
         self.params["a2"]=oimParam(name="a2",value=0,description="2nd QLDD coeff",
-                                   unit=units.one,mini=-1,maxi=1)
+                                   unit=u.one,mini=-1,maxi=1)
                 
         self._eval(**kwargs)
     
     def _visFunction(self,xp,yp,rho,wl,t):
                
-        xx=np.pi*self.params["d"](wl,t)* self.params["d"].unit.to(units.rad)*rho
+        xx=np.pi*self.params["d"](wl,t)* self.params["d"].unit.to(u.rad)*rho
         
         a1=self.params["a1"](wl,t)
         a2=self.params["a2"](wl,t)
@@ -506,12 +664,20 @@ class oimQuadLDD(oimComponentFourier):
 ###############################################################################    
 
 class oimConvolutor(oimComponentFourier):
+    """
+    Parameters
+    ----------
+    component1: oimComponentFourier
+        first fourier component of the convolution
+    component2: oimComponentFourier
+        first fourier component of the convolution
+    """
     def __init__(self,component1, component2,**kwargs):        
         super().__init__(**kwargs)
         
         self.component1=component1
         self.component2=component2
-        self.name="Convonlution Component"
+        self.name="Convolution Component"
         self.shortname = "Conv"
          
         for key in component2.params:
