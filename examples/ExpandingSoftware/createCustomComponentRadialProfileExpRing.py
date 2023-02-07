@@ -27,7 +27,7 @@ class oimExpRing(oim.oimComponentRadialProfile):
          super().__init__(**kwargs)
          self.params["d"]=oim.oimParam(**(oim._standardParameters["d"]))
          self.params["fwhm"]=oim.oimParam(**(oim._standardParameters["fwhm"]))
-         
+
          self._dim=dim
          
          self._t = np.array([0]) # constant value <=> static model

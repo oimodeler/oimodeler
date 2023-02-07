@@ -13,13 +13,14 @@ path = os.path.dirname(oim.__file__)
 mas2rad=u.mas.to(u.rad)
 
 #Some components
-gd=oim.oimGauss(fwhm=oim.oimInterpWl(wl=[3e-6,3.5e-6,4e-6],value=[1,3,4]),
-                 f=oim.oimInterpWl([3e-6,4e-6],[1,4]))
+gd=oim.oimGauss(fwhm=oim.oimInterp("wl", wl=[3e-6,3.5e-6,4e-6],values=[1,3,4]),
+                 f=oim.oimInterp("wl", wl=[3e-6,4e-6], values=[1,4]))
 ud=oim.oimUD(d=0.7,f=1)
-ud2=oim.oimUD(x=0,y=5,d=1.5,f=oim.oimInterpWl(wl=[3e-6,4e-6],value=[0,1]))
-ud3=oim.oimUD(x=-5,y=2,d=0.5,f=oim.oimInterpWl(wl=[3e-6,4e-6],value=[0.1,1]))
-eg=oim.oimEGauss(fwhm=1,elong=1.5,pa=oim.oimInterpWl([3e-6,4e-6],[20,60]),f=oim.oimInterpWl([3e-6,4e-6],[1,0.1]))
-er=oim.oimERing(din= 8,dout=oim.oimInterpWl([3e-6,4e-6],[15,20]),elong=2,pa=0)
+ud2=oim.oimUD(x=0,y=5,d=1.5,f=oim.oimInterp("wl", wl=[3e-6,4e-6],values=[0,1]))
+ud3=oim.oimUD(x=-5,y=2,d=0.5,f=oim.oimInterp("wl", wl=[3e-6,4e-6],values=[0.1,1]))
+eg=oim.oimEGauss(fwhm=1,elong=1.5,pa=oim.oimInterp("wl", wl=[3e-6,4e-6],
+                                                   values=[20,60]),f=oim.oimInterp("wl", wl=[3e-6,4e-6], values=[1,0.1]))
+er=oim.oimERing(din= 8,dout=oim.oimInterp("wl", wl=[3e-6,4e-6], values=[15,20]),elong=2,pa=0)
 
 #linking some parameters, actually replacing them
 er.params["elong"]=eg.params["elong"]

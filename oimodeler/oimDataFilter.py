@@ -8,8 +8,8 @@ import numpy as np
 from astropy.io import fits
 
 from .oimData import _oimDataType, _oimDataTypeArr
-from .oimDataFilter import cutWavelengthRange
 from .oimParam import oimParam, _standardParameters
+from .oimUtils import cutWavelengthRange
 
 
 ###############################################################################

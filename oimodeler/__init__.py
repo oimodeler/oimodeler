@@ -12,11 +12,19 @@ import numpy as np
 
 from .oimBasicFourierComponents import *
 from .oimCustomComponents import *
-from .oimData import oimData
-from .oimFitter import oimFitterEmcee
-from .oimModel import oimModel
-from .oimPlots import oimAxes, oimPlot
-from .oimSimulator import oimSimulator
+from .oimComponent import *
+from .oimData import *
+from .oimData import _oimDataType, _oimDataTypeArr, _oimDataTypeErr
+from .oimDataFilter import *
+from .oimFTBackends import *
+from .oimFitter import *
+from .oimModel import *
+from .oimOptions import oimOptions
+from .oimParam import *
+from .oimParam import _standardParameters
+from .oimPlots import *
+from .oimSimulator import *
+from .oimUtils import *
 
 
 np.seterr(invalid='ignore')
