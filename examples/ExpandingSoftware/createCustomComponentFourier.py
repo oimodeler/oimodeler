@@ -96,7 +96,7 @@ m2.showModel(512,0.2,colorbar=False,figsize=(5,5),
 
 
 #%%
-b4=oimBox(dx=oim.oimInterpWl([2e-6,2.4e-6],[5,10]),dy=2,x=20,y=0,f=0.5)
+b4=oimBox(dx=oim.oimInterp("wl", wl=[2e-6,2.4e-6], values=[5,10]),dy=2,x=20,y=0,f=0.5)
 b4.params['dy']=oim.oimParamLinker(b4.params['dx'],'mult',4)
     
 m3=oim.oimModel([b4])
