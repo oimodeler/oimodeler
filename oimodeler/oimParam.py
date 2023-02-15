@@ -53,6 +53,36 @@ class oimParam(object):
             except NameError:
                 print("Note valid parameter : {}".format(value))
 
+    def __add__(self, other):
+        if isinstance(other, oimParam):
+            return self.value + other.value
+        else:
+            return self.value + value
+
+    def __sub__(self, other):
+        if isinstance(other, oimParam):
+            return self.value - other.value
+        else:
+            return self.value - value
+
+    def __mul__(self, other):
+        if isinstance(other, oimParam):
+            return self.value * other.value
+        else:
+            return self.value * value
+
+    def __div__(self, other):
+        if isinstance(other, oimParam):
+            return self.value / other.value
+        else:
+            return self.value / value
+
+    def __floordiv__(self, other):
+        if isinstance(other, oimParam):
+            return self.value // other.value
+        else:
+            return self.value // value
+
     def __call__(self, wl=None, t=None):
         """ The call function will be useful for wavelength or time dependent
         parameters. In a simple oimParam it only return the parameter value
