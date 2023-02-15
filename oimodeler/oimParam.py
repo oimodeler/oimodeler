@@ -56,32 +56,27 @@ class oimParam(object):
     def __add__(self, other):
         if isinstance(other, oimParam):
             return self.value + other.value
-        else:
-            return self.value + value
+        return self.value + other
 
     def __sub__(self, other):
         if isinstance(other, oimParam):
             return self.value - other.value
-        else:
-            return self.value - value
+        return self.value - other
 
     def __mul__(self, other):
         if isinstance(other, oimParam):
             return self.value * other.value
-        else:
-            return self.value * value
+        return self.value * other
 
     def __div__(self, other):
         if isinstance(other, oimParam):
             return self.value / other.value
-        else:
-            return self.value / value
+        return self.value / value
 
     def __floordiv__(self, other):
         if isinstance(other, oimParam):
             return self.value // other.value
-        else:
-            return self.value // value
+        return self.value // value
 
     def __call__(self, wl=None, t=None):
         """ The call function will be useful for wavelength or time dependent
