@@ -284,26 +284,21 @@ class oimComponentImage(oimComponent):
     """
     Base class for components define in 2D : x,y (regular grid) in the image plan.
     """
-    
-    elliptic=False
-    def __init__(self,**kwargs): 
+    elliptic = False
+
+    def __init__(self, **kwargs): 
         super().__init__(**kwargs)
+        self._wl, self._t = None, None
         
-        self._wl=None
-        self._t=None
-        self._pixSize=0 #in rad
-        
-        self._allowExternalRotation=True
-        self.normalizeImage=True
+        self._allowExternalRotation = True
+        self.normalizeImage = True
                
-        self.params["dim"]=oimParam(**_standardParameters["dim"])
+        self.params["dim"] = oimParam(**_standardParameters["dim"])
+        self.params["pa"] = oimParam(**_standardParameters["pa"])
+        self.params["pixSize"] = oimParam(**_standardParameters["pixSize"]) 
         
-        self.params["pa"]=oimParam(**_standardParameters["pa"])
-        
-        
-       
         #Add ellipticity 
-        if self.elliptic==True:
+        if self.elliptic == True:
             self.params["elong"]=oimParam(**_standardParameters["elong"])
             
         if 'FTBackend' in kwargs:
@@ -325,7 +320,7 @@ class oimComponentImage(oimComponent):
         
         im0=self.getInternalImage(wl,t)
         im=self._padImage(im0)
-        pix=self._pixSize
+        pix=self.params["pixSize"]
         
         tr=self._ftTranslateFactor(ucoord,vcoord,wl,t)*self.params["f"](wl,t)
         
@@ -495,7 +490,7 @@ class oimComponentImage(oimComponent):
         else:
             t0= self._t            
         
-        pix=self._pixSize*units.rad.to(units.mas)
+        pix = self.params["pixSize"](wl, t)*self.params["pixSize"].unit.to(units.mas)
         v=np.linspace(-0.5,0.5,self.params["dim"].value)        
         xy=v*pix*self.params["dim"].value
         
@@ -545,6 +540,7 @@ class oimComponentRadialProfile(oimComponent):
         if self.elliptic==True:
             self.params["pa"]=oimParam(**_standardParameters["pa"])
             self.params["elong"]=oimParam(**_standardParameters["elong"])
+        self.params["pixSize"] = oimParam(**_standardParameters["pixSize"]) 
 
         self._eval(**kwargs)      
                 
@@ -659,7 +655,7 @@ class oimComponentRadialProfile(oimComponent):
             t0= self._t  
      
         if self._r is None:
-            pix=self._pixSize*units.rad.to(units.mas)
+            pix=self.params["pixSize"](wl, t)*self.params["pixSize"].unit.to(units.mas)
             r=np.linspace(0,(self.params["dim"].value-1)*pix,self.params["dim"].value)   
         else:
             r=self._r
