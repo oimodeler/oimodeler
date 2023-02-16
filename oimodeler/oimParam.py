@@ -46,13 +46,6 @@ class oimParam(object):
         self.description = description
         self.unit = unit
 
-    def set(self, **kwargs):
-        for key, value in kwargs.items():
-            try:
-                self.__dict__[key] = value
-            except NameError:
-                print("Note valid parameter : {}".format(value))
-
     def __add__(self, other):
         if isinstance(other, oimParam):
             return self.value + other.value
@@ -97,6 +90,24 @@ class oimParam(object):
                                                                                      self.value, self.error, self.unit.to_string(), self.min, self.max, self.free)
         except:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
+
+    def set(self, **kwargs):
+        for key, value in kwargs.items():
+            try:
+                self.__dict__[key] = value
+            except NameError:
+                print("Note valid parameter : {}".format(value))
+
+    def to(self, unit: units.Quantity):
+        """Converts the parameter to a new unit
+
+        Parameters
+        ----------
+        unit: units.Quantity
+        """
+        self.value = self.value*self.unit.to(unit)
+        self.unit = unit
+
 
 
 
