@@ -320,7 +320,7 @@ class oimComponentImage(oimComponent):
         
         im0=self.getInternalImage(wl,t)
         im=self._padImage(im0)
-        pix=self.params["pixSize"]
+        pix=self.params["pixSize"](wl, t)
         
         tr=self._ftTranslateFactor(ucoord,vcoord,wl,t)*self.params["f"](wl,t)
         
