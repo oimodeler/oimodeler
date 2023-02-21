@@ -21,10 +21,7 @@ _oimDataTypeArr=["OI_VIS2","OI_VIS","OI_VIS","OI_T3","OI_T3","OI_FLUX"]
 ###############################################################################    
     
 def oimDataGetWl(data,arr,dwl=True):
-        print(arr)
-            
         insname=arr.header['INSNAME']
-        print(insname)
         oiWlArr=[arri for arri in data if (arri.name=="OI_WAVELENGTH" 
                                            and arri.header['INSNAME']==insname)][0]
         if dwl==False:
