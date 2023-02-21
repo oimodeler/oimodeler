@@ -21,7 +21,10 @@ _oimDataTypeArr=["OI_VIS2","OI_VIS","OI_VIS","OI_T3","OI_T3","OI_FLUX"]
 ###############################################################################    
     
 def oimDataGetWl(data,arr,dwl=True):
+        print(arr)
+            
         insname=arr.header['INSNAME']
+        print(insname)
         oiWlArr=[arri for arri in data if (arri.name=="OI_WAVELENGTH" 
                                            and arri.header['INSNAME']==insname)][0]
         if dwl==False:
@@ -84,7 +87,7 @@ def oimGetDataValErrAndTypeFlag(arr):
                 else:
                     dtype|=oimDataType.VISPHI_DIF
             except:
-                dtype|=oimDataType.VISPHI_ABS           
+                dtype|=oimDataType.VISPHI_DIF           
     if arr.name=="OI_T3": 
         t3amp=np.size(np.where(arr.data["T3AMP"]!=0))
         if t3amp!=0:
