@@ -449,7 +449,57 @@ class oimParamPolynomialWl(oimParamPolynomial):
 class oimParamPolynomialTime(oimParamPolynomial):
     def _init(self, param, order=2,coeffs=None,x0=None):
         super()._init(param, dependence="mjd", order=order,coeffs=coeffs,x0=x0)
-        
+
+
+###############################################################################
+
+class oimParamPowerLaw(oimParamInterpolator):
+    """Power-law interpolation, i.e. A*(x/x0)**p."""
+
+    def _init(self, param, dependence, x0, A, p, **kwargs):
+
+        self.dependence = dependence
+
+        self.x0 = oimParam(**_standardParameters[dependence])
+        self.x0.name = 'x0'
+        self.x0.description = 'Power-law reference value (wl0 or t0)'
+        self.x0.value = x0
+        self.x0.free = False
+
+        self.A = oimParam(**_standardParameters['scale'])
+        self.A.name = 'A'
+        self.A.description = 'Power-law scale factor'
+        self.A.value = A
+        self.A.free = True
+
+        self.p = oimParam(**_standardParameters['index'])
+        self.p.name = 'p'
+        self.p.description = 'Power-law index'
+        self.p.value = p
+        self.p.free = True
+
+    def _interpFunction(self, wl, t):
+
+        if self.dependence == 'wl':
+            x = wl
+        elif self.dependence == 'mjd':
+            x = t
+        else:
+            raise NotImplementedError('No support for interpolation along "%s"'%self.dependence)
+
+        return self.A()*(x/self.x0())**self.p()
+
+    def _getParams(self):
+        return [self.x0, self.A, self.p]
+
+class oimParamPowerLawTime(oimParamPowerLaw):
+    def _init(self, param, x0, A, p):
+        super()._init(param, dependence='t', x0=x0, A=A, p=p)
+
+class oimParamPowerLawWl(oimParamPowerLaw):
+    def _init(self, param, x0, A, p):
+        super()._init(param, dependence='wl', x0=x0, A=A, p=p)
+
 ###############################################################################        
 class oimParamLinearRangeWl(oimParamInterpolator):
 
@@ -507,6 +557,8 @@ oimParamInterpolatorList={"wl":oimParamInterpolatorWl,
                 "cosTime":oimParamCosineTime,
                 "polyWl":oimParamPolynomialWl,
                 "polyTime":oimParamPolynomialTime,
+                "powerlawWl":oimParamPowerLawWl,
+                "powerlawTime":oimParamPowerLawTime,
                 "rangeWl":oimParamLinearRangeWl}
 """
 dictionary of available interpolators
@@ -553,5 +605,6 @@ _standardParameters = {
     "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": units.one, "free": False,"mini":1},
     "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": units.m, "mini": 0},
     "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": units.day},
-    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": units.one}
+    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": units.one},
+    'index':{'name':'index', 'value':1, 'description':'Index', 'unit':units.one}
 }
