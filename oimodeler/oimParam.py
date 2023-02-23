@@ -64,12 +64,12 @@ class oimParam(object):
     def __div__(self, other):
         if isinstance(other, oimParam):
             return self.value / other.value
-        return self.value / value
+        return self.value / other
 
     def __floordiv__(self, other):
         if isinstance(other, oimParam):
             return self.value // other.value
-        return self.value // value
+        return self.value // other
 
     def __call__(self, wl=None, t=None):
         """ The call function will be useful for wavelength or time dependent
