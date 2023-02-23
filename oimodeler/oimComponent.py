@@ -750,31 +750,18 @@ class oimComponentFitsImage(oimComponentImage):
     elliptic=False
     name="Fits Image Component"
     shortname="Fits_Comp"
-    def __init__(self,fitsImage,**kwargs): 
+    def __init__(self,fitsImage,useinternalPA=False,**kwargs): 
         super().__init__(**kwargs)
-        
-        
-        
-        self.loadImage(fitsImage)
-        
-
+        self.loadImage(fitsImage,useinternalPA=useinternalPA)
         self.params["pa"]=oimParam(**_standardParameters["pa"])
         self.params["scale"]=oimParam(**_standardParameters["scale"])
-        
-
         self._t = np.array([0]) # this component is static
-
-        if 'FTBackend' in kwargs:
-             self.FTBackend=kwargs['FTBackend']
-        else: 
-            self.FTBackend=oimOptions['FTBackend']
-            
-        self.FTBackendData=None
         
         self._eval(**kwargs)   
         
     
-    def loadImage(self,fitsImage):
+    def loadImage(self,fitsImage, useinternalPA=False):
+        
         if isinstance(fitsImage, str):
             try:
                 im=fits.open(fitsImage)[0]
@@ -798,23 +785,32 @@ class oimComponentFitsImage(oimComponentImage):
             raise TypeError("Current version only works with square images")
         self._dim=dimx
         
-        
         pixX=self._header["CDELT1"]
         pixY=self._header["CDELT2"]
         if pixX!=pixY:
             raise TypeError("Current version only works with the same pixels"
                             " scale in x and y dimension")
-        self._pixSize0=pixX 
+        if "CUNIT1" in  self._header:
+            unit0=units.Unit( self._header["CUNIT1"])
+        else:
+            unit0=units.rad
+        self._pixSize0=pixX*unit0.to(units.rad) 
         
-          
+        if "CROTA1" in  self._header:
+            pa0= self._header["CROTA1"]
+        elif "CROTA2" in  self._header:
+            pa0= self._header["CROTA2"]
+        
+        #TODO check units
+        if useinternalPA:
+            self.params["pa"].value=pa0
+        
         if dims==3:
-            self._wl=getWlFromFitsImageCube(self._header)
-            self._image=im.data[None,:,:,:]  #adding the time dimension (nt,nwl,ny,nx)
-        
+            self._wl=oim.getWlFromFitsImageCube(self._header,units.m)
+            self._image=im.data[None,:,:,:]  #adding the time dimension (nt,nwl,ny,nx)  
         else:
             self._image=im.data[None,None,:,:] #adding the wl and time dimensions (nt,nwl,ny,nx)
 
-    
     def _internalImage(self):
         self.params["dim"].value=self._dim
         self._pixSize=self._pixSize0*self.params["scale"].value
