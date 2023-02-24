@@ -35,8 +35,9 @@ class oimModel(object):
             self.components = components
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-        """Compute and return the complex coherent flux for an array of u,v
-        (and optionally wavelength and time) coordinates.
+        """
+        Compute and return the complex coherent flux for an array of u,v
+        (and optionally wavelength and time ) coordinates.
 
         Parameters
         ----------
@@ -332,7 +333,7 @@ class oimModel(object):
 
         axe = np.array(axe).flatten().reshape((nwl, nt))
 
-        if not('norm' in kwargs):
+        if not 'norm' in kwargs:
             kwargs['norm'] = colors.PowerNorm(gamma=normPow)
 
         for iwl, wli in enumerate(wl):
@@ -363,14 +364,14 @@ class oimModel(object):
                             txt += "wl={:.4f}$\mu$m\n".format(wli*1e6)
                         if t[0] != None:
                             txt += "Time={}".format(ti)
-                        if not('color' in kwargs_legend):
+                        if not 'color' in kwargs_legend:
                             kwargs_legend['color'] = "w"
                     else:
                         if t[0] != None:
                             txt += "wl={:.4f}$\mu$m\n".format(ti*1e6)
                         if wl[0] != None:
                             txt += "Time={}".format(wli)
-                        if not('color' in kwargs_legend):
+                        if not 'color' in kwargs_legend:
                             kwargs_legend['color'] = "w"
                     axe[iwl, it].text(0, 0.95*dim/2*pixSize, txt,
                                       va='top', ha='center', **kwargs_legend)
