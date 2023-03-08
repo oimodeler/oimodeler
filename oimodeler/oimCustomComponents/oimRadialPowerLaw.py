@@ -1,9 +1,5 @@
 import astropy.units as u
-import matplotlib.cm as cm
-import matplotlib.colors as colors
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import interp1d
 
 from ..oimComponent import oimComponentImage
 from ..oimParam import oimParam, _standardParameters
@@ -24,14 +20,16 @@ class oimRadialPowerLaw(oimComponentImage):
         self.params["pixSize"] = oimParam(**_standardParameters["pixSize"])
         self.params["p"] = oimParam(name="p", value=0, description="Power-law exponent")
         self._eval(**kwargs)
-        
+
     def _imageFunction(self, xx, yy, wl, t):
         """The function describing the component's image"""
-        self._pixSize = self.params["pixSize"](wl, t)*self.params["pixSize"].unit.to(u.rad)
+        self._pixSize = self.params["pixSize"](
+            wl, t)*self.params["pixSize"].unit.to(u.rad)
         rin, rout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
         r, p = np.sqrt(xx**2+yy**2), self.params["p"](wl, t)
-        return np.nan_to_num(np.logical_and(r>rin, r<rout).astype(int)*np.divide(r, rin)**p, nan=0)
-   
+        return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*np.divide(r, rin)**p, nan=0)
+
+
 class oimAsymmetricRadialPowerLaw(oimRadialPowerLaw):
     """An asymmetrically azimuthally modulated 2D-radial power law distribution
 
@@ -40,8 +38,10 @@ class oimAsymmetricRadialPowerLaw(oimRadialPowerLaw):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["a"] = oimParam(name="a", value=0, description="Azimuthal modulation amplitude")
-        self.params["phi"] = oimParam(name="phi", value=0, description="Azimuthal modulation angle")
+        self.params["a"] = oimParam(
+            name="a", value=0, description="Azimuthal modulation amplitude")
+        self.params["phi"] = oimParam(
+            name="phi", value=0, description="Azimuthal modulation angle")
         self._eval(**kwargs)
 
     def _azimuthal_modulation(self, x_arr, y_arr, wl, t):
@@ -51,5 +51,5 @@ class oimAsymmetricRadialPowerLaw(oimRadialPowerLaw):
         return (1 + self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t)))
 
     def _imageFunction(self, xx, yy, wl, t):
-        img=super()._imageFunction(xx,yy,wl,t)
+        img = super()._imageFunction(xx, yy, wl, t)
         return self._azimuthal_modulation(xx, yy, wl, t)*img
