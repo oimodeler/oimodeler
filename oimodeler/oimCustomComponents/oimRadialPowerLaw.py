@@ -18,7 +18,8 @@ class oimRadialPowerLaw(oimComponentImage):
         self.params["din"] = oimParam(**_standardParameters["din"])
         self.params["dout"] = oimParam(**_standardParameters["dout"])
         self.params["pixSize"] = oimParam(**_standardParameters["pixSize"])
-        self.params["p"] = oimParam(name="p", value=0, description="Power-law exponent")
+        self.params["p"] = oimParam(**_standardParameters["exponent"])
+        self.params["p"].name = "p"
         self._eval(**kwargs)
 
     def _imageFunction(self, xx, yy, wl, t):
