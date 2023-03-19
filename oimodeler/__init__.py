@@ -20,6 +20,7 @@ from .oimFTBackends import *
 from .oimFitter import *
 from .oimModel import *
 from .oimOptions import oimOptions
+from .oimOptoolBackend import oimOptoolBackend
 from .oimParam import *
 from .oimParam import _standardParameters
 from .oimPlots import *
