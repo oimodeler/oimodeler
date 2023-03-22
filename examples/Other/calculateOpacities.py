@@ -1,4 +1,13 @@
+from pathlib import Path
+
 import oimodeler as oim
-test = oim.oimOptoolBackend("pyr", computational_method="mmf",
-                            monomer_radius=0.01, gs_min=0.05, gs_max=3000)
-print(test.kabs)
+
+# Get wavelength solution from file
+path = Path(oim.__file__).parent.parent
+# files = list(map(str, (path / "examples" / "testData" / "FSCMa_MATISSE").glob("*.fits")))
+file = path / "examples" / "testData" / "Optool" / "dustkappa.dat"
+# data = oim.oimData(files[0])
+# data.prepareData()
+
+test = oim.oimOptoolBackend(opacity_file=file)
+breakpoint()

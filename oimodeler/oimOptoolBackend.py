@@ -1,69 +1,20 @@
 import pkg_resources
+import subprocess
+from datetime import datetime
 from distutils.spawn import find_executable
 from pathlib import Path
 from typing import Optional, Any, List, Dict
 
-import astropy.units as u
 import numpy as np
 import optool as op
-from scipy import interpolate
+import toml
 
 
-def interpolate_opacity(wl: np.ndarray, opacity: np.ndarray,
-                        wavelength_solution: Optional[np.ndarray | u.Quantity] = None
-                        ) -> np.ndarray:
-    """Interpolates the opacity to a given wavelength solution if provided,
-    otherwise returns the opacity as is
-
-    Parameters
-    ----------
-    wl: np.ndarray
-        The wavelength from a optool calculated (.dat)-file
-    opacity: np.ndarray
-        The opacity from a optool calculated (.dat)-file
-    wavelength_solution: np.ndarray | u.um, optional
-        A wavelength solution to interpolate the opacity distribution to
-
-    Returns
-    -------
-    opactiy: np.ndarray
-        Either the opacity or interpolated opacity if a wavelength solution is
-        provided
-    """
+def make_wavelength_file(wavelength_solution: np.ndarray):
+    """Makes a (.dat)-file from a wavelength solution to be passed to optool"""
     if wavelength_solution is not None:
-        if isinstance(wavelength_solution, u.Quantity):
-            wavelength_solution = wavelength_solution.value
-    return interpolate.interp1d(wl, opacity)(wavelength_solution)
-
-
-def load_optool_opacity(file: Path = None,
-                        scat: Optional[bool] = False,
-                        wavelength_solution: Optional[np.ndarray | u.Quantity] = None
-                        ) -> np.ndarray:
-    """Reads the absorption opacity from a (.dat)-file created with optool.
-
-    If a wavelength solution is given, the wavelength range from the optool-file
-    is interpolated to the provided wavelength solution
-
-    Parameters
-    ----------
-    file: Path, optional
-        Input (.dat)-file, created with optool, containing the opacity
-        distribution
-    scat: bool, optional
-        If toggled will assume that the input (.dat)-file contains a scattering
-        matrix
-    wavelength_solution: np.ndarray | u.um, optional
-        A wavelength solution to interpolate the opacity distribution to
-
-    Returns
-    -------
-    opacity: np.ndarray
-        The opacity distribution in [cm**2/u.g]. If a wavelength solution has
-        been provided, then it is interpolated to it
-    """
-    _, wl, opacity, *_ = op.readoutputfile(str(file), scat=scat)
-    return interpolate_opacity(wl, opacity, wavelength_solution)
+        wavelength_file = storage_dir / "wavelength_solution.dat"
+        np.savetxt(wavelength_file, np.array(wavelength_solution))
 
 
 def generate_switch_string(value: Any, switch: str,
@@ -98,47 +49,53 @@ def generate_switch_string(value: Any, switch: str,
     elif isinstance(value, Dict):
         return f"-{switch} {' '.join([f'{k} {v}' for k, v in value.items()])}"
     else:
-        raise IOError(f"Input type '{type(value)}' for '{switch}' is not supported!")
+        raise IOError(
+            f"Input type '{type(value)}' for '{switch}' is not supported!")
 
 
+# TODO: Also write number of files into (.toml)-file?
 class oimOptoolBackend(op.particle):
-    """A wrapper for the dust distribution calculation with optool that
-    inherits much of the optool.particle's class functionality.
+    """A wrapper class for optool  that can either load a file or calculate
+    the dust distribution.
+
+    Inherits much of the optool.particle's class functionality.
 
     Once calculated the (.dat)-files (if no other output path provided) will be
-    stored internally in 'oimodeler/data/cache/optool/' (if no other path is
-    provided) to increase the speed of future calculations
+    stored in a specified folder internally in 'oimodeler/data/cache/optool/'
+    (if no other path is provided) to increase the speed of future calculations
 
     Parameters
     ----------
     grains: Path | str | Dict[str, int]
         Path to a (.lnk)-file or string (name) of a material or dictionary
-        containing materials to include in the grain. If a dictionary is passed
-        then it needs to contain the name of the material as key and its mass
-        fraction as value (e.g., {"pyr-mg70": 0.87, "c": 0.13}).
-        Mass fractions do not have to add up to 1, they will be renormalized.
+        containing materials to include in the grain. If a dictionary is
+        passed then it needs to contain the name of the material as key and
+        its mass fraction as value (e.g., {"pyr-mg70": 0.87, "c": 0.13}).
+        Mass fractions do not have to add up to 1, they will be
+        renormalized.
         Up to 20 materials can be specified to build up a grain
     grain_mantels: Path | str | Dict[str, int], optional
-        The same as the grains parameter, but the material will be placed into
-        the grain mantle. Multiple mantle materials will be mixed using the
-        Bruggeman rule, and than that mix will be added to the core using the
-        Maxwell-Garnett rule
+        The same as the grains parameter, but the material will be placed
+        into the grain mantle. Multiple mantle materials will be mixed
+        using the Bruggeman rule, and than that mix will be added to the
+        core using the Maxwell-Garnett rule
     porosity: int | List[int], optional
-        The volume fraction of vacuum, a number smaller than 1. The default is
-        0. A single value will apply to both core and mantle, but if a list
-        with two values is provided the second value will be specific for the
-        mantle (and may be 0)
+        The volume fraction of vacuum, a number smaller than 1. The default
+        is 0. A single value will apply to both core and mantle, but if a
+        list with two values is provided the second value will be specific
+        for the mantle (and may be 0)
     dust_distribution: str, optional
-        Some preset dust distributions. If toggled all other inputs will be
-        ignored. Use DIANA (Woitke+2016) "diana" or DSHARP (Birnstiel+2018)
-        "dsharp" compositions (or DSHARP without ice "dsharp-no-ice")
+        Some preset dust distributions. DISCLAIMER: If toggled all other
+        inputs will be ignored. Use DIANA (Woitke+2016) "diana" or DSHARP
+        (Birnstiel+2018) "dsharp" compositions (or DSHARP without ice
+        "dsharp-no-ice")
     computational_method: str, optional
         Various computational methods for the dust distribution. Possible
-        choices are "dhs", "mff", "mie" and "cde". The default is "dhs" with
-        f_max of 0.8
+        choices are "dhs", "mff", "mie" and "cde". The default is "dhs"
+        with f_max of 0.8
     f_max: float, optional
-        The default is 0.8. A value of 0
-        means to use solid spheres (Mie theory), i.e. perfectly regular grains
+        The default is 0.8. A value of 0 means to use solid spheres
+        (Mie theory), i.e. perfectly regular grains
     monomer_radius: float, optional
         The monomer radius for the Modified Mean Field theory.
         The default is 0.1μm
@@ -160,53 +117,71 @@ class oimOptoolBackend(op.particle):
         The centroid size for a log-normal size distribution
     gs_sigma: float, optional
         The logarithmic width for a log-normal size distribution. If it is
-        negative then a normal distribution with that width [µm] around gs_mean
-        is created
+        negative then a normal distribution with that width [µm] around
+        gs_mean is created
     ngs: int, optional
-        The number of size bins. The default is 15 per size decade with a fixed
-        minimum of 5
+        The number of size bins. The default is 15 per size decade with a
+        fixed minimum of 5
+    gs_file: Path, optional
+        The path to a (.dat)-file containing the grain size distribution
     wl_min: float, optional
-        The minimum wavelength. Can be specified without a maximum wavelength
-        nor a the number of wavelength points. The default value is 0.05 µm
+        The minimum wavelength. Can be specified without a maximum
+        wavelength nor a the number of wavelength points.
+        The default value is 0.05 µm
     wl_max: float, optional
         The maximum wavelength. The default value is 10000 µm
     nwl: int, optional
-        The number of wavelength points for the construction of the wavelength
-        grid. The default is 300
+        The number of wavelength points for the construction of the
+        wavelength grid. The default is 300
     wavelength_file: Path | str, optional
         Read the wavelength grid from a (.dat)-file. To get an example file
         'optool_lam.dat', execute this script with the option 'wgrid=True'.
         Otherwise, an (.lnk)-file could be used here as well
+    wavelength_solution: np.ndarray, optional
+        A wavelength solution that will be written to a temporary file and
+        used for the wavelength file parameter/switch in the optool
+        executable.
+        DISCLAIMER: The wavelength solution will take precendent over a
+        provided wavelength file (if both is given)
     nang: int, optional
         The number of evenly spaced angular grid points that cover a range
         between 0 and 180 degrees. The default for nang is 180
     nsub: int, optional
-        Divide the computation up into parts to produce a file for each grain
-        size. Each size will be an average over a range of nsub grains around
-        the real size. The default is 5
+        Divide the computation up into parts to produce a file for each
+        grain size. Each size will be an average over a range of nsub
+        grains around the real size. The default is 5
     ndeg: int, optional
-        Cap the first degrees of the forward scattering peak. The default is 2
+        Cap the first degrees of the forward scattering peak.
+        The default is 2
     fits: bool, optional
         Write into a (.fits)-file instead to ASCII (.dat). With nsub, write
         files that amount to the grain size bins 'ngs'.
     radmc_label: str, optional
-        If a label is provided then the file names will contain the label and
-        have the extension (.inp). This makes it so the files can be used as
-        input for RADMC-3D, which uses a different angular grid and scattering
-        matrix normalization
+        If a label is provided then the file names will contain the label
+        and have the extension (.inp). This makes it so the files can be
+        used as input for RADMC-3D, which uses a different angular grid and
+        scattering matrix normalization
     wgrid: bool, optional
-        Create the additional files optool_sd.dat and optool_lam.dat with the
-        grain size distribution and the wavelengths grid, respectively
+        Create the additional files optool_sd.dat and optool_lam.dat with
+        the grain size distribution and the wavelengths grid, respectively
+    cmd: str, optional
+        An optool compliant command line argument that is called from within
+        python. If this is provided, all other optool related arguments will
+        be ignored
+    opacity_file: Path | str, optional
+        A (.dat)-file already containing an dust distribution in the optool
+        format. If the scattering matrix is included, set the scat paramter
+        to True as well
     cache_dir: Path, optional
-        The directory to store the (.dat)-files in so they can be read instead
-        of recomputed the next time the same command is used. The cache is
-        automatically cleared when CMD changes between runs. The default is
-        'oimodeler/data/cache/optool/'
+        The directory to create a folder in to store the (.dat)-files so they
+        can be read instead of recomputed the next time the same command
+        is used.
+        The default directory is 'oimodeler/data/cache/optool/'
 
     Attributes
     ----------
     cmd: str
-        The full command given in the particle (super.__init__()) call
+        The full command given in the particle call
     radmc: bool
         Indicates if the output is to RADMC conventions
     scat: bool
@@ -276,6 +251,12 @@ class oimOptoolBackend(op.particle):
          computemean method)
     norm: str
         The current scattering matrix normalization
+    cache_dir: Path
+        The directory to create a folder in to store the (.dat)-files so they
+        can be read instead of recomputed the next time the same command
+        is used
+    storage_dir: Path
+        The specific directory to store the (.dat)-files for this calculation
 
     Methods
     --------
@@ -292,10 +273,12 @@ class oimOptoolBackend(op.particle):
     computemean(tmin=10, tmax=1500, ntemp=100)
         Compute mean opacities from the opacities
 
+
     See also
     --------
     optool.particle(cmd, cache="")
-        Run optool and turn output into a python object
+        Class that runs optool and turns output into a python object as well as
+        providing additional functionality
     optool.lnktable(file, i_lnk=[1, 2, 3], nskip=0, nlam_rho=True)
         Class to work with lnk files
 
@@ -304,7 +287,8 @@ class oimOptoolBackend(op.particle):
     * Computational Methods
 
     - The Distribution of Hollow Spheres (DHS, Min+ 2005) approach to model
-      deviations from perfect spherical symmetry and low-porosity aggregates.
+      deviations from perfect spherical symmetry and low-porosity
+      aggregates.
       Spheres with inner holes with volume fractions between 0 and f_max
       are averaged to mimic irregularities.
     - The Modified Mean Field theory (MMF, Tazaki & Tanaka 2018)
@@ -344,7 +328,7 @@ class oimOptoolBackend(op.particle):
     For more information on the optool python extension see
     https://github.com/cdominik/optool/blob/b68e67e5abdf8746078d3767acbba4e28fcbc75f/UserGuide.org#sizedist
 
-    * Optool Installation Instructions
+    * Optool Installation Instructions (Needed for optool calculation)
     You can download, compile, and install optool with these simple steps,
     using the freely available GNU FORTRAN compiler 'gfortran'.
 
@@ -371,8 +355,7 @@ class oimOptoolBackend(op.particle):
 
     Warnings
     --------
-    For this backend to work the optool bin must be installed on your computer.
-    See installation instructions under Notes
+    For this backend to work the optool-bin must be installed on your computer
     """
 
     def __init__(self, grains: Path | str | Dict[str, int] = None,
@@ -391,28 +374,105 @@ class oimOptoolBackend(op.particle):
                  gs_mean: Optional[float] = None,
                  gs_sigma: Optional[float] = None,
                  ngs: Optional[int] = None,
-                 grain_size_file: Optional[Path | str] = None,
+                 gs_file: Optional[Path | str] = None,
                  wl_min: Optional[float] = None,
                  wl_max: Optional[float] = None,
                  nwl: Optional[int] = None,
                  wavelength_file: Optional[Path | str] = None,
-                 nang: Optional[int] = None,
+                 wavelength_solution: Optional[np.ndarray | List] = None,
+                 nang: Optional[int] = 180,
                  nsub: Optional[int] = None,
                  ndeg: Optional[int] = None,
                  fits: Optional[bool] = False,
                  radmc_label: Optional[str] = None,
                  wgrid: Optional[bool] = False,
-                 cache_dir: Optional[Path] = None):
-        """Constructs the command for the optool particle's class and then executes it"""
+                 cmd: Optional[str] = None,
+                 opacity_file: Optional[Path] = None,
+                 cache_dir: Optional[Path] = None) -> None:
+        """Instantiates a version of the class"""
+        if cache_dir is None:
+            self.cache_dir = Path(pkg_resources.resource_filename("oimodeler",
+                                                                  "data/cache/optool/"))
+        else:
+            self.cache_dir = cache_dir
+
+        self.scat = scat
+        self.np, self.masscale = [1]*2
+        self.materials, self.rho = [], []
+        self.storage_dir = self.create_cache()
+
+        if wavelength_solution is not None:
+            wavelength_file = self.make_wavelength_file(wavelength_solution)
+        cmd_output = self.make_cmd(grains, grain_mantels, porosity,
+                                   dust_distribution, computational_method,
+                                   f_max, monomer_radius, dfrac_or_fill,
+                                   prefactor, gs_min, gs_max,
+                                   gs_pow, gs_mean, gs_sigma, ngs, gs_file,
+                                   wl_min, wl_max, nwl, wavelength_file,
+                                   wavelength_solution, nang, nsub, ndeg,
+                                   fits, radmc_label, wgrid, cmd)
+
+        self.cmd = cmd_output.split("-o")[0].strip()
+
+        if opacity_file is not None:
+            self.read_files(opacity_file)
+        elif (storage_dir := self.cmd_in_cache()) is not None:
+            self.storage_dir = storage_dir
+            self.read_cache()
+        else:
+            self.run_optool(cmd_output)
+
+    def run_optool(self, cmd_output: str) -> None:
+        """Runs optool to calculate the opacities for the input parameters
+
+        Parameters
+        ----------
+        cmd_output: str
+            The full command containing the output path for the files
+        """
         if not find_executable("optool"):
             raise RuntimeError("The 'optool' executable has not been found!")
 
-        if cache_dir is None:
-            cache_dir = Path(pkg_resources.resource_filename("oimodeler",
-                                                             "data/cache/optool/"))
+        with open(self.storage_dir / "calculation_info.toml", "w+") as toml_file:
+            toml.dump({"cmd": self.cmd, "scat": self.scat}, toml_file)
 
+        print(f"[Calling] {cmd_output}")
+        subprocess.run(cmd_output, shell=True, check=True)
+
+    def make_cmd(self, grains: Path | str | Dict[str, int] = None,
+                 grain_mantels: Optional[Path | str | Dict[str, int]] = None,
+                 porosity: Optional[int | List[int]] = None,
+                 dust_distribution: Optional[str] = None,
+                 computational_method: Optional[str] = None,
+                 f_max: Optional[float] = 0.8,
+                 monomer_radius: Optional[float] = 0.1,
+                 dfrac_or_fill: Optional[float] = 0.2,
+                 prefactor: Optional[float] = None,
+                 gs_min: Optional[float] = None,
+                 gs_max: Optional[float] = None,
+                 gs_pow: Optional[float] = None,
+                 gs_mean: Optional[float] = None,
+                 gs_sigma: Optional[float] = None,
+                 ngs: Optional[int] = None,
+                 gs_file: Optional[Path | str] = None,
+                 wl_min: Optional[float] = None,
+                 wl_max: Optional[float] = None,
+                 nwl: Optional[int] = None,
+                 wavelength_file: Optional[Path | str] = None,
+                 wavelength_solution: Optional[np.ndarray | List] = None,
+                 nang: Optional[int] = 180,
+                 nsub: Optional[int] = None,
+                 ndeg: Optional[int] = None,
+                 fits: Optional[bool] = False,
+                 radmc_label: Optional[str] = None,
+                 wgrid: Optional[bool] = False,
+                 cmd: Optional[str] = None) -> str:
+        """Generates the optool's command line arguments from the values passed
+        to the class
+
+        Refer to the class's documentation
+        """
         cmd_arguments = ["optool"]
-
         if dust_distribution is None:
             # NOTE: Grain composition
             cmd_arguments.append(generate_switch_string(grains, "c"))
@@ -420,7 +480,7 @@ class oimOptoolBackend(op.particle):
             cmd_arguments.append(generate_switch_string(porosity, "p"))
 
             # NOTE: Grain geometry and computational method
-            if computational_method == "dhs":
+            if computational_method is None or computational_method == "dhs":
                 cmd_arguments.append(generate_switch_string(f_max, "dhs"))
             elif computational_method == "mmf":
                 mmf_switch = generate_switch_string(monomer_radius, "mmf")
@@ -434,37 +494,117 @@ class oimOptoolBackend(op.particle):
                               f" {computational_method} is supported!")
 
             # NOTE: Grain size distribution and wavelength grid
-            cmd_arguments.append(generate_switch_string(gs_min, "amin"))
-            cmd_arguments.append(generate_switch_string(gs_max, "amax"))
-            cmd_arguments.append(generate_switch_string(gs_pow, "apow"))
-            cmd_arguments.append(generate_switch_string(gs_mean, "amean"))
-            cmd_arguments.append(generate_switch_string(gs_sigma, "asig"))
-            cmd_arguments.append(generate_switch_string(ngs, "na"))
-            cmd_arguments.append(generate_switch_string(wl_min, "lmin"))
-            cmd_arguments.append(generate_switch_string(wl_max, "lmax"))
-            cmd_arguments.append(generate_switch_string(nwl, "nlam"))
+            if gs_file is not None:
+                cmd_arguments.append(generate_switch_string(gs_file, "a"))
+            else:
+                cmd_arguments.append(generate_switch_string(gs_min, "amin"))
+                cmd_arguments.append(generate_switch_string(gs_max, "amax"))
+                cmd_arguments.append(generate_switch_string(gs_pow, "apow"))
+                cmd_arguments.append(generate_switch_string(gs_mean, "amean"))
+                cmd_arguments.append(generate_switch_string(gs_sigma, "asig"))
+                cmd_arguments.append(generate_switch_string(ngs, "na"))
+
+            if wavelength_file is not None:
+                cmd_arguments.append(generate_switch_string(wavelength_file, "l"))
+            else:
+                cmd_arguments.append(generate_switch_string(wl_min, "lmin"))
+                cmd_arguments.append(generate_switch_string(wl_max, "lmax"))
+                cmd_arguments.append(generate_switch_string(nwl, "nlam"))
 
             # NOTE: Output control
-            cmd_arguments.append(generate_switch_string(nang, "s", [0, 180]))
+            if self.scat:
+                cmd_arguments.append(generate_switch_string(nang, "s", [0, 180]))
             cmd_arguments.append(generate_switch_string(nsub, "d"))
             cmd_arguments.append(generate_switch_string(ndeg, "chop"))
-            cmd_arguments.append(generate_switch_string(cache_dir, "o"))
             cmd_arguments.append(generate_switch_string("", "fits") if fits else "")
             cmd_arguments.append(generate_switch_string(radmc_label, "radmc"))
             cmd_arguments.append(generate_switch_string("", "wgrid") if wgrid else "")
         else:
             # NOTE: Uses specific, predetermined dust distribution
             cmd_arguments.append(generate_switch_string("", dust_distribution))
-        cmd = " ".join([switch for switch in cmd_arguments if switch])
-        print(f"[Calling] {cmd}")
+        cmd_arguments.append(generate_switch_string(self.storage_dir, "o"))
 
-        # NOTE: Call the optool executable via inheritance of the optool
-        # particle class
-        super().__init__(cmd, str(cache_dir))
+        return " ".join([switch for switch in cmd_arguments if switch])\
+            if cmd is None else cmd
 
-        self.lam, self.gsca = map(lambda x: x.squeeze(), (self.lam, self.gsca))
-        self.kabs, self.ksca, self.kext = map(lambda x: x.squeeze(),
-                                              (self.kabs, self.ksca, self.kext))
+    def create_cache(self) -> Path:
+        """Create a folder for the timestamp of the calculation and write an
+        info file to the disk that can be loaded in later on and write the
+        and returns the folder path
 
-        # TODO: Implement renaming of the files
-        # TODO: Maybe use the write function for it?
+        Returns
+        -------
+        storage_dir: Path
+            The directory in which the cached files are stored
+        """
+        dir_name = str(datetime.now()).replace(" ", "_").replace(":", "-")
+        storage_dir = self.cache_dir / dir_name
+        if not storage_dir.exists():
+            storage_dir.mkdir(parents=True)
+        return storage_dir
+
+    def cmd_in_cache(self) -> Optional[Path]:
+        """Checks if the command is in the cache directory and returns its
+        path if found otherwise None"""
+        for toml_path in self.cache_dir.rglob("*.toml"):
+            with open(toml_path, "r") as toml_file:
+                calculation_info = toml.load(toml_file)
+                cmd = calculation_info["cmd"] if "cmd" in calculation_info else ""
+                if cmd == self.cmd:
+                    return toml_path.parent
+        return None
+
+    # TODO: Iterate over all cached files
+    def read_cache(self) -> None:
+        """Reads in all files contained in a cache directory and stores
+        their values in the cache"""
+        for toml_path in self.cache_dir.rglob("*.toml"):
+            with open(toml_path, "r") as toml_file:
+                calculation_info = toml.load(toml_file)
+                self.cmd = calculation_info["cmd"]
+                self.scat = calculation_info["scat"]
+        if self.scat:
+            filename = "*dustkapscatmat*"
+        else:
+            filename = "*dustkappa*"
+
+        dust_files = list(self.storage_dir.rglob(filename))
+        self.np = len(dust_files)
+        self.read_files(dust_files)
+        print(f"Read in cached files from '{self.storage_dir}'")
+
+    def read_files(self, files: Path | list[Path]) -> None:
+        """Reads one or more opacity files in and stores the values in the class"""
+        self.header = []
+        self.kabs, self.ksca,\
+            self.kext, self.gsca, self.scatang = [], [], [], [], []
+        self.f11, self.f12, self.f22,\
+            self.f33, self.f34, self.f44 = [], [], [], [], [], []
+
+        if isinstance(files, Path):
+            files = [files]
+
+        for file in files:
+            header, *rest = op.readoutputfile(file, self.scat)
+            self.header.append(header)
+            if self.scat:
+                lam, kabs, ksca,\
+                    phase_g, scatang,\
+                    f11, f12, f22, f33,\
+                    f34, f44 = map(np.squeeze, rest)
+                self.scatang.append(scatang)
+                self.f11.append(f11)
+                self.f12.append(f12)
+                self.f22.append(f22)
+                self.f33.append(f33)
+                self.f34.append(f34)
+                self.f44.append(f44)
+            else:
+                lam, kabs,\
+                    ksca, phase_g = map(np.squeeze, rest)
+            kext = kabs + ksca
+            self.kabs.append(kabs)
+            self.ksca.append(ksca)
+            self.kext.append(kext)
+            self.gsca.append(phase_g)
+        self.nang = len(self.scatang) if self.scatang else 0
