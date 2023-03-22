@@ -397,12 +397,13 @@ class oimOptoolBackend(op.particle):
             self.cache_dir = cache_dir
 
         self.scat = scat
+        self.storage_dir = self.make_storage_dir_name()
+
         self.np, self.masscale = [1]*2
         self.materials, self.rho = [], []
-        self.storage_dir = self.create_cache()
 
         if wavelength_solution is not None:
-            wavelength_file = self.make_wavelength_file(wavelength_solution)
+            wavelength_file = make_wavelength_file(wavelength_solution)
         cmd_output = self.make_cmd(grains, grain_mantels, porosity,
                                    dust_distribution, computational_method,
                                    f_max, monomer_radius, dfrac_or_fill,
@@ -433,11 +434,16 @@ class oimOptoolBackend(op.particle):
         if not find_executable("optool"):
             raise RuntimeError("The 'optool' executable has not been found!")
 
+        if not self.storage_dir.exists():
+            self.storage_dir.mkdir(parents=True)
+
         with open(self.storage_dir / "calculation_info.toml", "w+") as toml_file:
             toml.dump({"cmd": self.cmd, "scat": self.scat}, toml_file)
 
         print(f"[Calling] {cmd_output}")
         subprocess.run(cmd_output, shell=True, check=True)
+
+        self.read_cache()
 
     def make_cmd(self, grains: Path | str | Dict[str, int] = None,
                  grain_mantels: Optional[Path | str | Dict[str, int]] = None,
@@ -527,21 +533,16 @@ class oimOptoolBackend(op.particle):
         return " ".join([switch for switch in cmd_arguments if switch])\
             if cmd is None else cmd
 
-    def create_cache(self) -> Path:
-        """Create a folder for the timestamp of the calculation and write an
-        info file to the disk that can be loaded in later on and write the
-        and returns the folder path
+    def make_storage_dir_name(self) -> Path:
+        """Makes a timestamp of the calculation for the cache directory name
 
         Returns
         -------
         storage_dir: Path
-            The directory in which the cached files are stored
+            The directory in which the cached files are to be stored
         """
         dir_name = str(datetime.now()).replace(" ", "_").replace(":", "-")
-        storage_dir = self.cache_dir / dir_name
-        if not storage_dir.exists():
-            storage_dir.mkdir(parents=True)
-        return storage_dir
+        return self.cache_dir / dir_name
 
     def cmd_in_cache(self) -> Optional[Path]:
         """Checks if the command is in the cache directory and returns its

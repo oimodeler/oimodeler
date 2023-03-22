@@ -9,5 +9,5 @@ file = path / "examples" / "testData" / "Optool" / "dustkappa.dat"
 # data = oim.oimData(files[0])
 # data.prepareData()
 
-test = oim.oimOptoolBackend(opacity_file=file)
+test = oim.oimOptoolBackend(grains="pyr")
 breakpoint()
