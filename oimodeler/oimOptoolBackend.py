@@ -121,28 +121,36 @@ class oimOptoolBackend(op.particle):
         The logarithmic width for a log-normal size distribution. If it is
         negative then a normal distribution with that width [µm] around
         gs_mean is created
-    ngs: int, optional
+    gs_num: int, optional
         The number of size bins. The default is 15 per size decade with a
         fixed minimum of 5
+    gs_sizes: int | float | np.ndarray, optional
+        One or a number of grain sizes to be used [u.um].
+        Will be added to the command
     gs_file: Path, optional
-        The path to a (.dat)-file containing the grain size distribution
+        The path to a (.dat)-file containing the grain size distribution.
+        Will take precedent over the grain size parameter
     wl_min: float, optional
-        The minimum wavelength. Can be specified without a maximum
+        The minimum wavelength [u.um]. Can be specified without a maximum
         wavelength nor a the number of wavelength points.
         The default value is 0.05 µm
     wl_max: float, optional
-        The maximum wavelength. The default value is 10000 µm
-    nwl: int, optional
+        The maximum wavelength [u.um]. The default value is 10000 µm
+    wl_num: int, optional
         The number of wavelength points for the construction of the
         wavelength grid. The default is 300
+    wavelengths: int | float | np.ndarray, optional
+        One or a number of wavelengths to be used [u.um].
+        Will be added to the command
     wavelength_file: Path | str, optional
         Read the wavelength grid from a (.dat)-file. To get an example file
         'optool_lam.dat', execute this script with the option 'wgrid=True'.
-        Otherwise, an (.lnk)-file could be used here as well
+        Otherwise, an (.lnk)-file could be used here as well. Will take
+        precedent over the wavelengths parameter
     wavelength_solution: np.ndarray, optional
-        A wavelength solution that will be written to a temporary file and
+        A wavelength solution that will be written to a (.dat)-file and
         used for the wavelength file parameter/switch in the optool
-        executable.
+        executable. Keeps the command of optool readable.
         DISCLAIMER: The wavelength solution will take precendent over a
         provided wavelength file (if both is given)
     nang: int, optional
@@ -179,6 +187,9 @@ class oimOptoolBackend(op.particle):
         can be read instead of recomputed the next time the same command
         is used.
         The default directory is 'oimodeler/data/cache/optool/'
+    storage_dir: Path, optional
+        If this is specified then the sub-directory of the cache directory
+        will have the specified name
 
     Attributes
     ----------
@@ -375,11 +386,13 @@ class oimOptoolBackend(op.particle):
                  gs_pow: Optional[float] = None,
                  gs_mean: Optional[float] = None,
                  gs_sigma: Optional[float] = None,
-                 ngs: Optional[int] = None,
+                 gs_num: Optional[int] = None,
+                 gs_sizes: Optional[int | float | np.ndarray] = None,
                  gs_file: Optional[Path | str] = None,
                  wl_min: Optional[float] = None,
                  wl_max: Optional[float] = None,
-                 nwl: Optional[int] = None,
+                 wl_num: Optional[int] = None,
+                 wavelengths: Optional[int | float | np.ndarray] = None,
                  wavelength_file: Optional[Path | str] = None,
                  wavelength_solution: Optional[np.ndarray | List] = None,
                  nang: Optional[int] = 180,
@@ -390,16 +403,17 @@ class oimOptoolBackend(op.particle):
                  wgrid: Optional[bool] = False,
                  cmd: Optional[str] = None,
                  opacity_file: Optional[Path] = None,
-                 cache_dir: Optional[Path] = None) -> None:
+                 cache_dir: Optional[Path] = None,
+                 storage_dir: Optional[Path] = None) -> None:
         """Instantiates a version of the class"""
         if cache_dir is None:
             self.cache_dir = Path(pkg_resources.resource_filename("oimodeler",
                                                                   "data/cache/optool/"))
         else:
-            self.cache_dir = cache_dir
+            self.cache_dir = Path(cache_dir)
 
         self.scat = scat
-        self.storage_dir = self.make_storage_dir_name()
+        self.storage_dir = self.make_storage_dir_name(storage_dir)
 
         self.np, self.masscale = [1]*2
         self.materials, self.rho = [], []
@@ -411,8 +425,9 @@ class oimOptoolBackend(op.particle):
                                    dust_distribution, computational_method,
                                    f_max, monomer_radius, dfrac_or_fill,
                                    prefactor, gs_min, gs_max,
-                                   gs_pow, gs_mean, gs_sigma, ngs, gs_file,
-                                   wl_min, wl_max, nwl, wavelength_file,
+                                   gs_pow, gs_mean, gs_sigma, gs_num,
+                                   gs_sizes, gs_file, wl_min, wl_max,
+                                   wl_num, wavelengths, wavelength_file,
                                    wavelength_solution, nang, nsub,
                                    ndeg, fits, radmc_label, wgrid, cmd)
 
@@ -470,11 +485,13 @@ class oimOptoolBackend(op.particle):
                  gs_pow: Optional[float] = None,
                  gs_mean: Optional[float] = None,
                  gs_sigma: Optional[float] = None,
-                 ngs: Optional[int] = None,
+                 gs_num: Optional[int] = None,
+                 gs_sizes: Optional[int | float | np.ndarray] = None,
                  gs_file: Optional[Path | str] = None,
                  wl_min: Optional[float] = None,
                  wl_max: Optional[float] = None,
-                 nwl: Optional[int] = None,
+                 wl_num: Optional[int] = None,
+                 wavelengths: Optional[int | float | np.ndarray] = None,
                  wavelength_file: Optional[Path | str] = None,
                  wavelength_solution: Optional[np.ndarray] = None,
                  nang: Optional[int] = 180,
@@ -514,21 +531,25 @@ class oimOptoolBackend(op.particle):
             # TODO: Make all the files not important for command saving
             if gs_file is not None:
                 cmd_arguments.append(generate_switch_string(gs_file, "a"))
+            elif gs_sizes is not None:
+                cmd_arguments.append(generate_switch_string(gs_sizes, "a"))
             else:
                 cmd_arguments.append(generate_switch_string(gs_min, "amin"))
                 cmd_arguments.append(generate_switch_string(gs_max, "amax"))
                 cmd_arguments.append(generate_switch_string(gs_pow, "apow"))
                 cmd_arguments.append(generate_switch_string(gs_mean, "amean"))
                 cmd_arguments.append(generate_switch_string(gs_sigma, "asig"))
-                cmd_arguments.append(generate_switch_string(ngs, "na"))
+                cmd_arguments.append(generate_switch_string(gs_num, "na"))
 
             # TODO: Make all the files not important for command saving
             if wavelength_file is not None:
                 cmd_arguments.append(generate_switch_string(wavelength_file, "l"))
+            elif wavelengths is not None:
+                cmd_arguments.append(generate_switch_string(wavelengths, "l"))
             else:
                 cmd_arguments.append(generate_switch_string(wl_min, "lmin"))
                 cmd_arguments.append(generate_switch_string(wl_max, "lmax"))
-                cmd_arguments.append(generate_switch_string(nwl, "nlam"))
+                cmd_arguments.append(generate_switch_string(wl_num, "nlam"))
 
             # NOTE: Output control
             if self.scat:
@@ -546,7 +567,7 @@ class oimOptoolBackend(op.particle):
         return " ".join([switch for switch in cmd_arguments if switch])\
             if cmd is None else cmd
 
-    def make_storage_dir_name(self) -> Path:
+    def make_storage_dir_name(self, storage_dir: Path) -> Path:
         """Makes a timestamp of the calculation for the cache directory name
 
         Returns
@@ -554,6 +575,8 @@ class oimOptoolBackend(op.particle):
         storage_dir: Path
             The directory in which the cached files are to be stored
         """
+        if storage_dir is not None:
+            return self.cache_dir / storage_dir
         dir_name = str(datetime.now()).replace(" ", "_").replace(":", "-")
         return self.cache_dir / dir_name
 
@@ -565,6 +588,7 @@ class oimOptoolBackend(op.particle):
                 calculation_info = toml.load(toml_file)
                 cmd = calculation_info["cmd"] if "cmd" in calculation_info else ""
                 if cmd == self.cmd:
+                    print("Cached files detected!")
                     return toml_path.parent
         return None
 
@@ -584,19 +608,19 @@ class oimOptoolBackend(op.particle):
         dust_files = list(self.storage_dir.rglob(filename))
         self.np = len(dust_files)
         self.read_files(dust_files)
-        print(f"Read in cached files from '{self.storage_dir}'")
 
     def read_files(self, files: Path | list[Path]) -> None:
         """Reads one or more opacity files in and stores the values in the class"""
         self.header = []
-        self.kabs, self.ksca,\
-            self.kext, self.gsca, self.scatang = [], [], [], [], []
+        self.lam, self.kabs, self.ksca,\
+            self.kext, self.gsca, self.scatang = [], [], [], [], [], []
         self.f11, self.f12, self.f22,\
             self.f33, self.f34, self.f44 = [], [], [], [], [], []
 
         if isinstance(files, Path):
             files = [files]
 
+        scatang = []
         for file in files:
             header, *rest = op.readoutputfile(file, self.scat)
             self.header.append(header)
@@ -605,7 +629,6 @@ class oimOptoolBackend(op.particle):
                     phase_g, scatang,\
                     f11, f12, f22, f33,\
                     f34, f44 = map(np.squeeze, rest)
-                self.scatang.append(scatang)
                 self.f11.append(f11)
                 self.f12.append(f12)
                 self.f22.append(f22)
@@ -619,4 +642,9 @@ class oimOptoolBackend(op.particle):
             self.ksca.append(ksca)
             self.kext.append(kabs + ksca)
             self.gsca.append(phase_g)
+
+        self.lam = lam
+        self.scatang = scatang
+        self.nlam = len(self.lam)
         self.nang = len(self.scatang) if self.scatang else 0
+        self = op.parse_headers(self.header, self)
