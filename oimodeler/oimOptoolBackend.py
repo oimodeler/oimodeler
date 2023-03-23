@@ -10,11 +10,13 @@ import optool as op
 import toml
 
 
-def make_wavelength_file(wavelength_solution: np.ndarray):
+def create_wavelength_file(wavelength_file: Path | str,
+                           wavelength_solution: np.ndarray) -> None:
     """Makes a (.dat)-file from a wavelength solution to be passed to optool"""
-    if wavelength_solution is not None:
-        wavelength_file = storage_dir / "wavelength_solution.dat"
-        np.savetxt(wavelength_file, np.array(wavelength_solution))
+    if wavelength_file is not None and wavelength_solution is not None:
+        wl_solution = np.array(wavelength_solution)
+        np.savetxt(wavelength_file, wl_solution,
+                   header=str(wl_solution.shape[0]), comments="")
 
 
 def generate_switch_string(value: Any, switch: str,
@@ -403,15 +405,16 @@ class oimOptoolBackend(op.particle):
         self.materials, self.rho = [], []
 
         if wavelength_solution is not None:
-            wavelength_file = make_wavelength_file(wavelength_solution)
+            wavelength_file = self.storage_dir / "wavelength_solution.dat"
+
         cmd_output = self.make_cmd(grains, grain_mantels, porosity,
                                    dust_distribution, computational_method,
                                    f_max, monomer_radius, dfrac_or_fill,
                                    prefactor, gs_min, gs_max,
                                    gs_pow, gs_mean, gs_sigma, ngs, gs_file,
                                    wl_min, wl_max, nwl, wavelength_file,
-                                   wavelength_solution, nang, nsub, ndeg,
-                                   fits, radmc_label, wgrid, cmd)
+                                   wavelength_solution, nang, nsub,
+                                   ndeg, fits, radmc_label, wgrid, cmd)
 
         self.cmd = cmd_output.split("-o")[0].strip()
 
@@ -421,15 +424,22 @@ class oimOptoolBackend(op.particle):
             self.storage_dir = storage_dir
             self.read_cache()
         else:
-            self.run_optool(cmd_output)
+            self.run_optool(cmd_output, wavelength_file, wavelength_solution)
 
-    def run_optool(self, cmd_output: str) -> None:
+    def run_optool(self, cmd_output: str,
+                   wavelength_file: Path,
+                   wavelength_solution: bool = None) -> None:
         """Runs optool to calculate the opacities for the input parameters
 
         Parameters
         ----------
         cmd_output: str
             The full command containing the output path for the files
+        wavelength_file: Path
+            Read the wavelength grid from a (.dat)-file
+        wavelength_solution: np.ndarray
+            Wavelength solution used for wavelength file parameter/switch in the
+            optool executable
         """
         if not find_executable("optool"):
             raise RuntimeError("The 'optool' executable has not been found!")
@@ -437,12 +447,13 @@ class oimOptoolBackend(op.particle):
         if not self.storage_dir.exists():
             self.storage_dir.mkdir(parents=True)
 
+        create_wavelength_file(wavelength_file, wavelength_solution)
+
         with open(self.storage_dir / "calculation_info.toml", "w+") as toml_file:
             toml.dump({"cmd": self.cmd, "scat": self.scat}, toml_file)
 
         print(f"[Calling] {cmd_output}")
         subprocess.run(cmd_output, shell=True, check=True)
-
         self.read_cache()
 
     def make_cmd(self, grains: Path | str | Dict[str, int] = None,
@@ -465,7 +476,7 @@ class oimOptoolBackend(op.particle):
                  wl_max: Optional[float] = None,
                  nwl: Optional[int] = None,
                  wavelength_file: Optional[Path | str] = None,
-                 wavelength_solution: Optional[np.ndarray | List] = None,
+                 wavelength_solution: Optional[np.ndarray] = None,
                  nang: Optional[int] = 180,
                  nsub: Optional[int] = None,
                  ndeg: Optional[int] = None,
@@ -500,6 +511,7 @@ class oimOptoolBackend(op.particle):
                               f" {computational_method} is supported!")
 
             # NOTE: Grain size distribution and wavelength grid
+            # TODO: Make all the files not important for command saving
             if gs_file is not None:
                 cmd_arguments.append(generate_switch_string(gs_file, "a"))
             else:
@@ -510,6 +522,7 @@ class oimOptoolBackend(op.particle):
                 cmd_arguments.append(generate_switch_string(gs_sigma, "asig"))
                 cmd_arguments.append(generate_switch_string(ngs, "na"))
 
+            # TODO: Make all the files not important for command saving
             if wavelength_file is not None:
                 cmd_arguments.append(generate_switch_string(wavelength_file, "l"))
             else:
@@ -555,7 +568,6 @@ class oimOptoolBackend(op.particle):
                     return toml_path.parent
         return None
 
-    # TODO: Iterate over all cached files
     def read_cache(self) -> None:
         """Reads in all files contained in a cache directory and stores
         their values in the cache"""
@@ -603,9 +615,8 @@ class oimOptoolBackend(op.particle):
             else:
                 lam, kabs,\
                     ksca, phase_g = map(np.squeeze, rest)
-            kext = kabs + ksca
             self.kabs.append(kabs)
             self.ksca.append(ksca)
-            self.kext.append(kext)
+            self.kext.append(kabs + ksca)
             self.gsca.append(phase_g)
         self.nang = len(self.scatang) if self.scatang else 0
