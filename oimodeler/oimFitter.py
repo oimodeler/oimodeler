@@ -3,20 +3,21 @@
 model fitting
 
 """
-
-import numpy as np
-from oimodeler import oimParam
-import oimodeler as oim
+import corner
 import emcee
 import matplotlib.pyplot as plt
-import corner
+import numpy as np
+
+from .oimParam import oimParam
+from .oimSimulator import oimSimulator
+
 
 class oimFitter(object):
     params={}
     def __init__(self,*args,**kwargs):
         nargs=len(args)
         if nargs==2:
-            self.simulator=oim.oimSimulator(args[0],args[1])
+            self.simulator=oimSimulator(args[0],args[1])
         elif nargs==1:
             self.simulator=args[0]
         else:
@@ -101,7 +102,6 @@ class oimFitterEmcee(oimFitter):
         moves=[(emcee.moves.DEMove(), 0.8), 
                (emcee.moves.DESnookerMove(), 0.2)]
        
-        print(self.params["nwalkers"].value)
         self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value, 
                         self.nfree,self._logProbability,moves=moves,**kwargs)
         return kwargs   
@@ -138,8 +138,6 @@ class oimFitterEmcee(oimFitter):
             initialParams[:,iparam]=np.ones(nw)*parami.value
                     
         return initialParams
-        
-        
         
     def _run(self,**kwargs):
         self.sampler.run_mcmc(self.initialParams,**kwargs)

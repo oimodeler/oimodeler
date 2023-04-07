@@ -1,9 +1,9 @@
-
-from oimodeler import oimComponentFourier,oimParam
-import numpy as np
 import astropy.units as u
+import numpy as np
 
-##############################################################################
+from ..oimComponent import oimComponentFourier
+from ..oimParam import oimParam
+
 
 class oimBox(oimComponentFourier):
     name="2D Box"
@@ -23,5 +23,3 @@ class oimBox(oimComponentFourier):
     def _imageFunction(self,xx,yy,wl,t):
         return ((np.abs(xx)<=self.params["dx"](wl,t)/2) &
                 (np.abs(yy)<=self.params["dy"](wl,t)/2)).astype(float)
-
-##############################################################################

@@ -353,12 +353,189 @@ Let's finish this example by creating a figure with the image and visibility for
 
 
 
+.. _imageFits:
+
+Precomputed fits-formated image
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the `FitsImageModel.py <https://github.com/oimodeler/oimodeler/tree/main/examples/BasicExamples/FitsImageModel.py>`_ script, we demonstrate the capability of building models using precomputed  image in fits format.
+
+In this example we will use a semi-physical model for a classical Be star and its circumstellar disk. The model, detailed in `Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_ was taken form the `AMHRA <https://amhra.oca.eu/AMHRA/disco-gas/input.htm>`_ service of the JMMC. 
+
+.. note::
+    AMHRA develops and provides various online astrophysical models dedicated to the scientific exploitation of high angular and high spectral facilities. Currently available models are : semi-physical gaseous disk of classical Be stars and dusty disk of YSO, Red-supergiant and AGB, binary spiral for WR stars, physical limb-darkening models, kinematics gaseous disks, and a grid of supergiant B[e] stars models.
+
+    
+Let's start by importing oimodeler as well as useful packages.
+
+.. code-block:: python
+
+    import oimodeler as oim
+    from matplotlib import pyplot as plt
+    import numpy as np
+    import os
+    from astropy.io import fits
+    
+    
+The fits-formatted image-cube we will use, ``BeDisco.fits``, is located in the ``./examples/basicExamples`` directory.
+    
+.. code-block:: python
+
+    path = os.path.dirname(oim.__file__)
+    pathData=os.path.join(path,os.pardir,"examples","BasicExamples")
+    filename=os.path.join(pathData,"BeDisco.fits")
+
+The class for loading fits-images and image-cubes is named **oimComponentFitsImage**. It derives from the **oimComponentImage**, i.e. the partially abstract class for all components defined in the image plan. **oimComponentImage** derives from the fully abstract **oimComponent**, i.e. the parent class of all oimodeler components.
+
+.. note::
+    To learn more on the image-based model built with oimComponentImage, check the advanced models and the expanding software sections of these tutorials
+    
+There are two ways to load fits image into a oimComponentFitsImage object. The first one is to open the fits file using the fits module of the astropy package and then passing it to the oimComponentFitsImage class.
+
+
+.. code-block:: python
+
+    im=fits.open(filename)
+    c=oim.oimComponentFitsImage(im) 
+    
+A simplier way, if the user doesn’t need to access directly to the content of im, is to pass the filename to the oimComponentFitsImage class.
+
+.. code-block:: python
+
+    c=oim.oimComponentFitsImage(filename)
+
+Finally, we can build our model with this unique component:
+
+.. code-block:: python
+
+    m=oim.oimModel(c)
+    
+We can now plot the model image. 
+
+.. code-block:: python
+
+    m.showModel(512,0.05,legend=True,normalize=True,normPow=1,cmap="hot")
+                 
+.. image:: ../../images/FitsImage_Disco_image.png
+  :alt: Alternative text        
+
+.. note::       
+
+    Although image was computed for a specific wavelength (i.e. 1.5 microns) our model is achromatic as we use a single image to generate it. An example with chromatic model buit on a chromatic image-cube is available :ref:`here <imageCubeFits>`.
+    
+
+We now create spatial frequencies for thousand baselines ranging from 0 to 120m, in the North-South and East-West orientation and at an observing wavlength of 1.5microns.
+
+ .. code-block:: python
+ 
+    wl=1.5e-6
+    nB=1000
+    B=np.linspace(0,120,num=nB)
+
+    spfx=np.append(B,B*0)/wl # 1st half of B array are baseline in the East-West orientation
+    spfy=np.append(B*0,B)/wl # 2nd half are baseline in the North-South orientation
+
+We compute the complex coherent flux and then the absolute visibility
+
+ .. code-block:: python
+
+    ccf = m.getComplexCoherentFlux(spfx,spfy)
+    v = np.abs(ccf)
+    v=v/v.max()
+
+and finally we can plot our results:
+ 
+.. code-block:: python
+  
+    plt.figure()
+    plt.plot(B , v[0:nB],label="East-West")
+    plt.plot(B , v[nB:],label="North-South")
+    plt.xlabel("B (m)")
+    plt.ylabel("Visbility")
+    plt.legend()
+    plt.margins(0)
+
+.. image:: ../../images/FitsImage_Disco_visibility.png
+  :alt: Alternative text
+  
+Let's now have a look at the model parameters:
+    
+.. code-block:: python
+    
+    print(m.getParameters())
+    
+.. code-block::   
+
+    {'c1_Fits_Comp_dim': oimParam at 0x19c6201c820 : dim=128 ± 0  range=[1,inf] free=False ,
+     'c1_Fits_Comp_f': oimParam at 0x19c6201c760 : f=1 ± 0  range=[0,1] free=True ,
+     'c1_Fits_Comp_pa': oimParam at 0x19c00b9bbb0 : pa=0 ± 0 deg range=[-180,180] free=True ,
+     'c1_Fits_Comp_scale': oimParam at 0x19c6201c9d0 : scale=1 ± 0  range=[-inf,inf] free=True ,
+     'c1_Fits_Comp_x': oimParam at 0x19c6201c6a0 : x=0 ± 0 mas range=[-inf,inf] free=False ,
+     'c1_Fits_Comp_y': oimParam at 0x19c6201c640 : y=0 ± 0 mas range=[-inf,inf] free=False }
+
+
+In addition to the ``x``, ``y``, and ``f`` parameters, common to all components, the oimComponentFitsImage have three additional parameters:
+
+* ``dim``: the fixed size of the internal fits image (currently only square image are compatible)
+* ``pa`` : the position of angle of the component (used for rotating the component)
+* ``scale`` : a scaling factor for the component
+
+``pa`` and ``scale`` are both free parameters as default and can be used for model fitting.
+
+Let's try to rotate and scale our model and plot the image again
+
+.. code-block:: python
+
+    c.params['pa'].value=45
+    c.params['scale'].value=2
+    m.showModel(256,0.04,legend=True,normPow=0.4,colorbar=False)
+    
+.. image:: ../../images/FitsImage_Disco_image2.png
+  :alt: Alternative text 
+  
+  
+The the **oimComponentFitsImage** can be combined with any kind of other component. Let's add a companion (i.e. uniform disk) for our Be star model.  
+
+
+.. code-block:: python
+
+    c2=oim.oimUD(x=20,d=1,f=0.03)
+    m2=oim.oimModel(c,c2)
+    
+We add a 1 mas companion located at 20 mas West of the central object and with a flux of 0.03. We can now plot the image of our new model.
+
+.. code-block:: python
+
+    m2.showModel(256,0.2,legend=True,normalize=True,fromFT=True,normPow=1,cmap="hot")
+ 
+.. image:: ../../images/FitsImage_Disco_image3.png
+  :alt: Alternative text 
+    
+To finish this example let's plot the visibility along North-South and East-West baseline for our binary Be-star model.  
+  
+.. code-block:: python
+
+    ccf = m2.getComplexCoherentFlux(spfx,spfy)
+    v = np.abs(ccf)
+    v=v/v.max()
+
+    plt.figure()
+    plt.plot(B , v[0:nB],label="East-West")
+    plt.plot(B , v[nB:],label="North-South")
+    plt.xlabel("B (m)")
+    plt.ylabel("Visbility")
+    plt.legend()
+    plt.margins(0)  
+    
+.. image:: ../../images/FitsImage_Disco_visibility2.png
+  :alt: Alternative text 
+
 .. _createSimulator:
 
 Data/model comparison
 ^^^^^^^^^^^^^^^^^^^^^
 
-In the `exampleOimSimulator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/BasicExamples/exampleOiSimulator.py>`_ script, we use the oimSimulator class to compare some oifits data with a model. We will compute the reduced chi2 and plot the comparison between the data an the simulated data from the model.
+In the `exampleOimSimulator.py <https://github.com/oimodeler/oimodeler/tree/main/examples/BasicExamples/exampleOiSimulator.py>`_ script, we use the oimSimulator class to compare some oifits data with a model. We will compute the reduced chi2 and plot the comparison between the data an the simulated data from the model.
 
 Let's start by importing the needed modules and setting ``files`` to the list of the same oifits files as in the :ref:`exampleOimData` example. 
 

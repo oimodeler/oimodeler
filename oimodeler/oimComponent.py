@@ -5,11 +5,16 @@ based components defined in Fourier or image plan
 """
 
 import numpy as np
+from astropy.io import fits
 from astropy import units as units
 from scipy import interpolate,integrate
 from scipy.special import j0
-import oimodeler as oim
-from oimodeler import oimParam,_standardParameters,oimParamInterpolator,oimInterp
+
+from . import __dict__ as oimDict
+from .oimUtils import getWlFromFitsImageCube
+from .oimOptions import oimOptions
+from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParameters
+
 
 ###############################################################################
 #TODO move somewhere else
@@ -26,11 +31,11 @@ def getFourierComponents():
         
     :meta private:
     """
-    fnames=dir(oim)
+    fnames=dir()
     res=[]
     for f in fnames:
         try:
-            if issubclass(oim.__dict__[f], oim.oimComponentFourier):
+            if issubclass(oimDict[f], oimComponentFourier):
                 res.append(f)
         except:
             pass
@@ -162,6 +167,7 @@ class oimComponent(object):
                 if 'value' in param.__dict__:
                     txt+=" {0}={1:.2f}".format(param.name,param.value)
                 elif isinstance(param,oimParamInterpolator):
+                    #TODO have a string for each oimParamInterpolator
                     txt+=" {0}={1}".format(param.name,param.__class__.__name__)
                 
         return txt
@@ -290,11 +296,7 @@ class oimComponentImage(oimComponent):
         self._allowExternalRotation=True
         self.normalizeImage=True
                
-        self.params["dim"]=oimParam(name="dim",value=256,
-                         description="Image dimension",unit=1,free=False)
-        
-        
-        self.params["dim"]=oimParam(**_standardParameters["pixSize"])
+        self.params["dim"]=oimParam(**_standardParameters["dim"])
         
         self.params["pa"]=oimParam(**_standardParameters["pa"])
         
@@ -307,7 +309,7 @@ class oimComponentImage(oimComponent):
         if 'FTBackend' in kwargs:
              self.FTBackend=kwargs['FTBackend']
         else: 
-            self.FTBackend=oim.oimOptions['FTBackend']
+            self.FTBackend=oimOptions['FTBackend']
             
         self.FTBackendData=None
         
@@ -414,7 +416,7 @@ class oimComponentImage(oimComponent):
             grid=self._getInternalGrid()
             coord=np.transpose(np.array([t_arr,wl_arr,x_arr,y_arr]))
 
-            im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=0)
+            im=interpolate.interpn(grid,im0,coord,bounds_error=False,fill_value=None)
             f0=np.sum(im0)
             f=np.sum(im)
             im=im/f*f0
@@ -462,8 +464,8 @@ class oimComponentImage(oimComponent):
         s0x=np.trim_zeros(im0x).size
         s0y=np.trim_zeros(im0y).size
         
-        min_sizex=s0x*oim.oimOptions["FTpaddingFactor"]
-        min_sizey=s0y*oim.oimOptions["FTpaddingFactor"]
+        min_sizex=s0x*oimOptions["FTpaddingFactor"]
+        min_sizey=s0y*oimOptions["FTpaddingFactor"]
         
         min_pow2x=2**(min_sizex - 1).bit_length()
         min_pow2y=2**(min_sizey - 1).bit_length()
@@ -550,7 +552,7 @@ class oimComponentRadialProfile(oimComponent):
     @staticmethod
     def fht(Ir,r,wlin,tin,sfreq,wl,t):
         
-        pad=oim.oimOptions['FTpaddingFactor']
+        pad=oimOptions['FTpaddingFactor']
         nr=r.size
         ntin=tin.size
         nwlin=wlin.size
@@ -738,5 +740,79 @@ class oimComponentRadialProfile(oimComponent):
 
 
 
+###############################################################################
 
+class oimComponentFitsImage(oimComponentImage):    
+    """
+    Component load load images or chromatic-cubes from fits files 
+    """
+    
+    elliptic=False
+    name="Fits Image Component"
+    shortname="Fits_Comp"
+    def __init__(self,fitsImage,useinternalPA=False,**kwargs): 
+        super().__init__(**kwargs)
+        self.loadImage(fitsImage,useinternalPA=useinternalPA)
+        self.params["pa"]=oimParam(**_standardParameters["pa"])
+        self.params["scale"]=oimParam(**_standardParameters["scale"])
+        self._t = np.array([0]) # this component is static
+        
+        self._eval(**kwargs)   
+        
+    
+    def loadImage(self,fitsImage, useinternalPA=False):
+        
+        if isinstance(fitsImage, str):
+            try:
+                im=fits.open(fitsImage)[0]
+            except:
+                raise TypeError("Not a valid fits file")
+        elif isinstance(fitsImage,fits.hdu.hdulist.HDUList):
+              im=fitsImage[0]
+        elif isinstance(fitsImage,fits.hdu.image.PrimaryHDU):
+                 im=fitsImage
+        
+        self._header=im.header
+        
+        dims=self._header['NAXIS']
+        if dims<2:
+            raise TypeError("oimComponentFitsImage require 2D images or " 
+                            "3D chromatic-image-cubes")
+
+        dimx=self._header['NAXIS1']
+        dimy=self._header['NAXIS2'] 
+        if dimx!=dimy:
+            raise TypeError("Current version only works with square images")
+        self._dim=dimx
+        
+        pixX=self._header["CDELT1"]
+        pixY=self._header["CDELT2"]
+        if pixX!=pixY:
+            raise TypeError("Current version only works with the same pixels"
+                            " scale in x and y dimension")
+        if "CUNIT1" in  self._header:
+            unit0=units.Unit( self._header["CUNIT1"])
+        else:
+            unit0=units.rad
+        self._pixSize0=pixX*unit0.to(units.rad) 
+        
+        if "CROTA1" in  self._header:
+            pa0= self._header["CROTA1"]
+        elif "CROTA2" in  self._header:
+            pa0= self._header["CROTA2"]
+        
+        #TODO check units
+        if useinternalPA:
+            self.params["pa"].value=pa0
+        
+        if dims==3:
+            self._wl=oim.getWlFromFitsImageCube(self._header,units.m)
+            self._image=im.data[None,:,:,:]  #adding the time dimension (nt,nwl,ny,nx)  
+        else:
+            self._image=im.data[None,None,:,:] #adding the wl and time dimensions (nt,nwl,ny,nx)
+
+    def _internalImage(self):
+        self.params["dim"].value=self._dim
+        self._pixSize=self._pixSize0*self.params["scale"].value
+        return self._image
 

@@ -2,13 +2,14 @@
 """data filtering/modifying
 
 """
+import os
 
 import numpy as np
 from astropy.io import fits
-import os
-import oimodeler as oim
-from oimodeler import oimParam,_standardParameters
-#import numbers
+
+from .oimData import _oimDataType, _oimDataTypeArr
+from .oimParam import oimParam, _standardParameters
+from .oimUtils import cutWavelengthRange
 
 
 ###############################################################################
@@ -98,8 +99,8 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
         
     
     def _filteringFunction(self,data):
-        oim.cutWavelengthRange(data,wlRange =  self.params["wlRange"],
-                               addCut=self.params["addCut"])
+        cutWavelengthRange(data,wlRange =  self.params["wlRange"],
+                           addCut=self.params["addCut"])
 
 ###############################################################################
 
@@ -124,9 +125,9 @@ class oimDataTypeFilter(oimDataFilterComponent):
         
         
         for dtype in self.params["dataType"]:
-            idx= np.where(np.array(oim._oimDataType) == dtype)[0]
+            idx= np.where(np.array(_oimDataType) == dtype)[0]
             if idx.size==1:
-                dtypearr=oim._oimDataTypeArr[idx[0]]
+                dtypearr=_oimDataTypeArr[idx[0]]
                 
                 for datai in data:
                     if datai.name==dtypearr:

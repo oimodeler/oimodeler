@@ -1,7 +1,8 @@
-import oimodeler as oim
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+import oimodeler as oim
 
 path = os.path.dirname(oim.__file__)
 
@@ -102,5 +103,3 @@ for i, m in enumerate(models):
     
 
 fig.savefig(os.path.join(path,os.pardir,"images","basicModel_all.png"))   
-#%%
-

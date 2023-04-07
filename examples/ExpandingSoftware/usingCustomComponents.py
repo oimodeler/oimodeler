@@ -4,17 +4,18 @@ Created on Wed Oct 19 12:30:21 2022
 
 @author: Ame
 """
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cm
-from astropy import units as units
-import oimodeler as oim
-from oimodeler.oimCustomComponents import oimFastRotator,oimSpiral,oimBox
 import os
+
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
+import numpy as np
+import oimodeler as oim
+from astropy import units as units
+from oimodeler.oimCustomComponents import oimFastRotator,oimSpiral,oimBox
+
+
 path = os.path.dirname(oim.__file__)
-
-
 
 #%% Creating a model
 

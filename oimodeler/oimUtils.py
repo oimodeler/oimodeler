@@ -2,11 +2,11 @@
 """
 various utilities for optical interferometry
 """
-import numpy as np
-from astropy.io import fits
 import astropy.units as units
+import numpy as np
+from astropy.coordinates import Angle
+from astropy.io import fits
 from astroquery.simbad import Simbad
-from  astropy.coordinates import Angle
 
 ###############################################################################
 
@@ -361,6 +361,43 @@ def cutWavelengthRange(oifits,wlRange = None,addCut=[]):
                     data[idata]=hdu
     return data
 
+###############################################################################
+
+def getWlFromFitsImageCube(header,outputUnit=None):
+    """
+    Return the wl law from a chromatic cube image in the fits format.
+
+    Parameters
+    ----------
+    header : astropy.io.fits.header
+        DESCRIPTION.
+    outputUnit : astropy.unit, optional
+        If set convert the result to the proper unit. The default is None.
+
+    Returns
+    -------
+    wl : float
+        the wavelength in the given unit of the fits cube or the units specified 
+        by the user if outputUnit is set
+
+    """
+    dwl=header['CDELT3']
+    nwl=header['NAXIS3']
+    wl0=header['CRVAL3']
+    try:
+        x0=header['CRPIX3']
+    except:
+        x0=0
+    wl= wl0+(np.arange(nwl)-x0)*dwl
+    
+    if outputUnit:
+        if "CUNIT3" in header:
+            unit0=units.Unit(header["CUNIT3"])
+        else:
+            unit0=units.m
+        wl*unit0.to(outputUnit)
+     
+    return wl
     
 ###############################################################################
 

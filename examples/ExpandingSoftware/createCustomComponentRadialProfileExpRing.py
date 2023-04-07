@@ -4,12 +4,11 @@ Created on Tue Dec 14 14:39:36 2021
 
 @author: Ame
 """
-
-import numpy as np
+import astropy.units as u
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import numpy as np
 import oimodeler as oim
-import astropy.units as u
 
 
 
@@ -28,7 +27,7 @@ class oimExpRing(oim.oimComponentRadialProfile):
          super().__init__(**kwargs)
          self.params["d"]=oim.oimParam(**(oim._standardParameters["d"]))
          self.params["fwhm"]=oim.oimParam(**(oim._standardParameters["fwhm"]))
-         
+
          self._dim=dim
          
          self._t = np.array([0]) # constant value <=> static model
