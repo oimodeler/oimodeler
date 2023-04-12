@@ -543,7 +543,68 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         params.extend(self.values)
         params.append(self.wlmin)
         params.append(self.wlmax)
-        return params    
+        return params
+
+###############################################################################    
+class oimParamLinearTemplateWl(oimParamInterpolator):
+
+    def _init(self, param, wl0=2e-6, dwl=1e-9,f_contrib=1.,values=[], kind="linear",**kwargs):
+       
+        self.kind=kind
+
+        n = len(values)
+        self.wl0 = (oimParam(**_standardParameters["wl"]))
+        self.wl0.name="wl0"
+        self.wl0.description="Initial wl of the range"
+        self.wl0.value=wl0
+        self.wl0.free=False
+        
+        self.dwl = (oimParam(**_standardParameters["wl"]))
+        self.dwl.name="dwl"
+        self.dwl.description="wl step in range"
+        self.dwl.value=dwl
+        self.dwl.free=False
+        
+        self.f_contrib = (oimParam(**_standardParameters["f"]))
+        self.f_contrib.name="f_contrib"
+        self.f_contrib.description="Flux contribution at the wavelength corresponding to the maximum of the associated emission template"
+        self.f_contrib.value=f_contrib
+        self.f_contrib.free=False
+
+        self.values = []
+        
+        for i in range(n):
+            self.values.append(oimParam(name=param.name, value=values[i],
+                                        mini=param.min,maxi=param.max,
+                                        description=param.description,
+                                        unit=param.unit, free=param.free,
+                                        error=param.error))
+            
+    def _interpFunction(self, wl, t):
+
+        vals=np.array([vi.value for vi in self.values])
+        nwl=vals.size   
+        wl0=np.linspace(self.wl0.value,self.wl0.value+self.dwl.value*nwl,num=nwl)
+    
+        interp_template=interp1d(wl0,vals,kind=self.kind,fill_value="extrapolate")(wl)
+        interp_template_norm=interp_template/np.max(interp_template)
+        #print(interp_template_norm)
+        final_template=interp_template_norm*self.f_contrib.value
+        #print(final_template)
+        
+        return final_template
+
+    
+    def _getParams(self):
+        params=[]
+        params.append(self.f_contrib)
+        #params.extend(self.values)
+        #params.append(self.wl0)
+        #params.append(self.dwl)
+        return params
+            
+
+###############################################################################
             
 
 ###############################################################################
@@ -559,7 +620,8 @@ oimParamInterpolatorList={"wl":oimParamInterpolatorWl,
                 "polyTime":oimParamPolynomialTime,
                 "powerlawWl":oimParamPowerLawWl,
                 "powerlawTime":oimParamPowerLawTime,
-                "rangeWl":oimParamLinearRangeWl}
+                "rangeWl":oimParamLinearRangeWl,
+                "TemplateWl":oimParamLinearTemplateWl}
 """
 dictionary of available interpolators
 """
