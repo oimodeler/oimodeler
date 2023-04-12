@@ -80,6 +80,8 @@ class oimComponent(object):
         self.params["x"]=oimParam(**_standardParameters["x"])
         self.params["y"]=oimParam(**_standardParameters["y"])
         self.params["f"]=oimParam(**_standardParameters["f"])
+        self.params["dim"]=oimParam(**_standardParameters["dim"])
+        
        
         self._eval(**kwargs)
        
@@ -296,8 +298,6 @@ class oimComponentImage(oimComponent):
         self._allowExternalRotation=True
         self.normalizeImage=True
                
-        self.params["dim"]=oimParam(**_standardParameters["dim"])
-        
         self.params["pa"]=oimParam(**_standardParameters["pa"])
         
         
@@ -583,10 +583,6 @@ class oimComponentRadialProfile(oimComponent):
         real=interpolate.interpn(grid,np.real(res0),coord,bounds_error=False,fill_value=None)
         imag=interpolate.interpn(grid,np.imag(res0),coord,bounds_error=False,fill_value=None)
         vc=real+imag*1j
-        print(real.shape)
-        #print("interp {:.2f}ms".format((time.time() - s0)*1000))    
-         
-        
         return vc
         
     
