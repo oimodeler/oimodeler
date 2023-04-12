@@ -62,11 +62,13 @@ class oimComponent(object):
         All components have at least three parameters the position
         x and y and their flux f
         """
-        self.params = {}
-        self.params["x"] = oimParam(**_standardParameters["x"])
-        self.params["y"] = oimParam(**_standardParameters["y"])
-        self.params["f"] = oimParam(**_standardParameters["f"])
-
+        self.params={}
+        self.params["x"]=oimParam(**_standardParameters["x"])
+        self.params["y"]=oimParam(**_standardParameters["y"])
+        self.params["f"]=oimParam(**_standardParameters["f"])
+        self.params["dim"]=oimParam(**_standardParameters["dim"])
+        
+       
         self._eval(**kwargs)
 
     def _eval(self, **kwargs):
@@ -259,22 +261,22 @@ class oimComponentImage(oimComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        self._wl = None
-        self._t = None
-        self._pixSize = 0  # in rad
-
-        self._allowExternalRotation = True
-        self.normalizeImage = True
-
-        self.params["dim"] = oimParam(**_standardParameters["dim"])
-
-        self.params["pa"] = oimParam(**_standardParameters["pa"])
-
-        # NOTE: Add ellipticity
-        if self.elliptic == True:
-            self.params["elong"] = oimParam(**_standardParameters["elong"])
-
+        
+        self._wl=None
+        self._t=None
+        self._pixSize=0 #in rad
+        
+        self._allowExternalRotation=True
+        self.normalizeImage=True
+               
+        self.params["pa"]=oimParam(**_standardParameters["pa"])
+        
+        
+       
+        #Add ellipticity 
+        if self.elliptic==True:
+            self.params["elong"]=oimParam(**_standardParameters["elong"])
+            
         if 'FTBackend' in kwargs:
             self.FTBackend = kwargs['FTBackend']
         else:
@@ -523,23 +525,17 @@ class oimComponentRadialProfile(oimComponent):
 
         for it in range(ntin):
             for iwl in range(nwlin):
-                res0[it, iwl,
-                     :] /= integrate.trapezoid(2.*np.pi*r*Ir[it, iwl, :], r)
-
-                # res0[it,iwl,:]/=np.sum(r*Ir[it,iwl,:]*dr)
-
-        grid = (tin, wlin, sfreq0)
-
-        coord = np.transpose([t, wl, sfreq])
-
-        real = interpolate.interpn(grid, np.real(
-            res0), coord, bounds_error=False, fill_value=None)
-        imag = interpolate.interpn(grid, np.imag(
-            res0), coord, bounds_error=False, fill_value=None)
-        vc = real+imag*1j
-        # print(real.shape)
-        # print("interp {:.2f}ms".format((time.time() - s0)*1000))
-
+                res0[it,iwl,:]/= integrate.trapezoid(2.*np.pi*r*Ir[it,iwl,:], r)
+                
+                #res0[it,iwl,:]/=np.sum(r*Ir[it,iwl,:]*dr)
+        
+        grid=(tin,wlin,sfreq0)  
+        
+        coord=np.transpose([t,wl,sfreq])  
+       
+        real=interpolate.interpn(grid,np.real(res0),coord,bounds_error=False,fill_value=None)
+        imag=interpolate.interpn(grid,np.imag(res0),coord,bounds_error=False,fill_value=None)
+        vc=real+imag*1j
         return vc
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
