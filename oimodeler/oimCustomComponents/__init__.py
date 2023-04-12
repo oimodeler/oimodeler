@@ -11,6 +11,7 @@ the customComponent module
 
 from .oimBox import oimBox
 from .oimFastRotator import oimFastRotator
+from .oimRadialRing import oimRadialRing
 from .oimRadialPowerLaw import oimRadialPowerLaw, oimAsymRadialPowerLaw
 from .oimSpiral import oimSpiral
 from .oimTempGradient import oimTempGradient, oimAsymTempGradient

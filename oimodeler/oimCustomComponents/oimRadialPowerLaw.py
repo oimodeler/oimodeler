@@ -31,18 +31,17 @@ class oimRadialPowerLaw(oimComponentImage):
     ----------
     params : Dict[str, oimParam]
         Dictionary of parameters
-    _t : np.array
+    _pixSize: u.mas/px
+        Pixel size
+    _t : np.ndarray
         Array of time values
-    _wl : np.array
+    _wl : np.ndarray
         Array of wavelength values
-    _r : np.array
 
     Methods
     -------
-    _eval(**kwargs)
-        Evaluate the model's parameters
     _imageFunction(xx, yy, wl, t)
-        The function describing the component's image
+        Calculates a radial power law
     """
     name = "Radial Power Law"
     shortname = "RadPowerLaw"
@@ -50,20 +49,20 @@ class oimRadialPowerLaw(oimComponentImage):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._t, self._wl = [None]*2
         self.params["din"] = oimParam(**_standardParameters["din"])
         self.params["dout"] = oimParam(**_standardParameters["dout"])
         self.params["pixSize"] = oimParam(**_standardParameters["pixSize"])
-        self.params["q"] = oimParam(name="q", value=0, unit=u.one,
-                                    description="Power-law exponent for the radial profile")
+        self.params["p"] = oimParam(**_standardParameters["p"])
+        self._t = np.array([0])  # constant value <=> static model
+        self._wl = np.array([0])  # constant value <=> achromatic model
         self._eval(**kwargs)
 
     def _imageFunction(self, xx, yy, wl, t):
-        """The function describing the component's image"""
+        """Calculates a radial power law"""
         self._pixSize = self.params["pixSize"](wl, t)*self.params["pixSize"].unit.to(u.rad)
-        rin, rout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
-        r, p = np.sqrt(xx**2+yy**2), self.params["p"](wl, t)
-        return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*np.divide(r, rin)**p, nan=0)
+        din, dout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
+        r, q = np.sqrt(xx**2+yy**2), self.params["p"](wl, t)
+        return np.nan_to_num(np.logical_and(r > din, r < dout).astype(int)*(r / din)**q, nan=0)
 
 
 class oimAsymRadialPowerLaw(oimRadialPowerLaw):
@@ -98,16 +97,16 @@ class oimAsymRadialPowerLaw(oimRadialPowerLaw):
         Dictionary of parameters
     _t : np.array
         Array of time values
-    _wl : np.array
+    _wl : np.ndarray
         Array of wavelength values
-    _r : np.array
+    _r : np.ndarray
 
     Methods
     -------
     _azimuthal_modulation(xx, yy, wl, t)
         Calculates the azimuthal modulation
     _imageFunction(xx, yy, wl, t)
-        The function describing the component's image
+        Calculates a radial power law with an azimuthal asymmetry
     """
     name = "Asymmetric Radial Power Law"
     shortname = "AsymRadPowerLaw"
@@ -127,5 +126,6 @@ class oimAsymRadialPowerLaw(oimRadialPowerLaw):
         return (1 + self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t)))
 
     def _imageFunction(self, xx, yy, wl, t):
+        """Calculates a radial power law with an azimuthal asymmetry"""
         img = super()._imageFunction(xx, yy, wl, t)
         return self._azimuthal_modulation(xx, yy, wl, t)*img
