@@ -606,7 +606,7 @@ _standardParameters = {
     "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": units.m, "mini": 0},
     "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": units.day},
     "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": units.one},
-    "amplitude": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": units.one},
-    "exponent": {"name": "exponent", "value": 0, "description": "Power-law Exponent", "unit": units.one},
+    "amp": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": units.one},
+    "p": {"name": "p", "value": 0, "description": "Power-law Exponent", "unit": units.one},
     "index": {'name': 'index', 'value': 1, 'description': 'Index', 'unit': units.one}
 }
