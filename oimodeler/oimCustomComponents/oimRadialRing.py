@@ -41,7 +41,7 @@ class oimRadialRing(oimComponentRadialProfile):
     """
     name = "Radial Ring"
     shortname = "RadRing"
-    elliptic = True
+    elliptic = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -67,7 +67,7 @@ class oimRadialRing(oimComponentRadialProfile):
         else:
             dout = self.params["dout"](1e99)
         rmax = 4*dout/2.
-        return np.linspace(0, 1, self._dim)*rmax
+        return np.linspace(0, 1, self.params["dim"].value)*rmax
 
     @_r.setter
     def _r(self, r):
