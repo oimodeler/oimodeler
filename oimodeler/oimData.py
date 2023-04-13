@@ -317,7 +317,6 @@ class oimData(object):
             info=None
             if arri.name in _oimDataTypeArr:
                 info={'arr':arri.name, 'idx':iarr}
-                cdata=oimDataCheckData(arri)
                 if arri.name=="OI_VIS2":
                     nB=np.shape(arri.data["VIS2DATA"])
                 if arri.name=="OI_VIS":
@@ -331,8 +330,7 @@ class oimData(object):
                         nB=np.shape(arri.data["FLUX"])
                     
                 info["nB"]=nB
-                cdata=oimDataCheckData(arri)
-                info["data"]=cdata
+                info["data"]=oimDataCheckData(arri)
             if info:
                 dataInfo.append(info)
         
