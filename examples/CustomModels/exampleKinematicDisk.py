@@ -7,8 +7,8 @@ Created on Thu Apr 13 14:07:54 2023
 
 import os
 
-import matplotlib.colors as colors
-import matplotlib.cm as cm
+#import matplotlib.colors as colors
+#import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim 
@@ -61,12 +61,12 @@ filters=oim.oimDataFilter([f1])
 
 data=oim.oimData(oifits)
 
-"""
+
 for datai in data.data:
     datai["OI_VIS"].data["VISPHIERR"]*=0.5
     datai["OI_VIS2"].data["VIS2ERR"]*=0.25
     datai["OI_T3"].data["T3PHIERR"]*=0.25    
-"""
+
 data.setFilter(filters)
 #%%
 

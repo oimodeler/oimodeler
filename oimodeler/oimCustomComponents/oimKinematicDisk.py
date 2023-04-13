@@ -75,7 +75,6 @@ class oimKinematicDisk(oimComponentImage):
         gamma = self.params["gamma"].value
         
         Rstar2mas=rstar.to(units.mas,equivalencies=[angToSize(dist)]).value
-<<<<<<< Updated upstream
         
         #We define the pixelSize in rad from the fov and dim
         self._pixSize=fov*2*Rstar2mas/dim*units.mas.to(units.rad)
