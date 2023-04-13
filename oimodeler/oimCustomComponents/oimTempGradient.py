@@ -1,23 +1,30 @@
+from typing import Dict
+
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
+from astropy.modeling import models
 
 from ..oimComponent import oimComponentRadialProfile
 from ..oimParam import oimParam
 from .oimRadialPowerLaw import oimAsymRadialPowerLaw
 
 
-def calculate_spectral_density(wl: u.um,
-                               kappa_abs: u.cm**2/u.g,
-                               temp_profile: u.K,
-                               sigma_profile: u.g/u.cm**2) -> np.ndarray:
+def calculate_spectral_radiance(params: Dict[str, oimParam],
+                                wavelengths: u.um,
+                                kappa_abs: u.cm**2/u.g,
+                                temp_profile: u.K,
+                                sigma_profile: u.g/u.cm**2,
+                                rJy: bool = False) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
     dust surface density profile
 
     Parameters
     ----------
-    wl : u.um
+    params: Dict[str, oimParam]
+        The oimParams of the oimComponent
+    wavelengths : u.um
         Wavelength value(s)
     kappa_abs : u.cm**2/u.g
         Absorption opacity
@@ -25,16 +32,23 @@ def calculate_spectral_density(wl: u.um,
         Temperature profile
     sigma_profile : u.g/u.cm**2
         Dust surface density profile
+    rJy: bool, optional
+        If toggled returns Jansky per pixel
 
     Returns
     -------
-    spectral_density : np.ndarray
+    intensity : np.ndarray
+        Intensity per pixel
     """
-    c, h, k_B = map(lambda x: x.value, [const.c, const.h, const.k_B])
-    blackbody_profile = (2*h*c/wl**5)\
-        * np.divide(1., np.exp((h*c)/(wl*k_B*temp_profile))-1)
+    plancks_law = models.BlackBody(temperature=temp_profile*u.K)
+    wavelengths = (wavelengths*u.m).to(u.um)
+    spectral_radiance = plancks_law(wavelengths).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2))
     emissivity_factor = 1-np.exp(-sigma_profile*kappa_abs)
-    return blackbody_profile*emissivity_factor
+    if rJy:
+        pix = params["pixSize"].value**2*params["pixSize"].unit**2
+        breakpoint()
+        return ((spectral_radiance*pix).to(u.Jy)*emissivity_factor).value
+    return (spectral_radiance*emissivity_factor).value
 
 
 class oimTempGradient(oimComponentRadialProfile):
@@ -128,8 +142,10 @@ class oimTempGradient(oimComponentRadialProfile):
             f = ((rout_cm/rin_cm)**(p+2)-1)/(p+2)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
         sigma_profile = sigma_in*(r / rin_mas)**p
-        spectral_density = calculate_spectral_density(wl, kappa_abs,
-                                                      temp_profile, sigma_profile)
+        spectral_density = calculate_spectral_radiance(self.params, wl,
+                                                       kappa_abs,
+                                                       temp_profile,
+                                                       sigma_profile)
         return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
 
     @property
@@ -254,6 +270,7 @@ class oimAsymTempGradient(oimAsymRadialPowerLaw):
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
         sigma_profile = self._azimuthal_modulation(xx, yy, wl, t)\
             * sigma_in*(r / rin_mas)**p
-        spectral_density = calculate_spectral_density(wl, kappa_abs,
-                                                      temp_profile, sigma_profile)
+        spectral_density = calculate_spectral_radiance(self.params, wl,
+                                                       kappa_abs, temp_profile,
+                                                       sigma_profile, rJy=True)
         return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
