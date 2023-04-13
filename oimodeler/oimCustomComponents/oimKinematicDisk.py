@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """
+<<<<<<< Updated upstream
 Created on Fri Oct 21 12:27:15 2022
+=======
+Created on Thu Apr 13 14:04:37 2023
+>>>>>>> Stashed changes
 
 @author: Ame
 """
@@ -10,23 +14,21 @@ from oimodeler.oimComponent import oimComponentImage
 from oimodeler.oimParam import oimParam,_standardParameters
 from astropy import units as units
 from astropy import constants as cst
+from ..oimComponent import oimComponentImage
+from ..oimParam import oimParam,_standardParameters
 
 angToSize=lambda x: (units.AU,units.mas,lambda y:1000*y/x.to(units.parsec).value,lambda y:y/1000*x.to(units.parsec).value)
 
 class oimKinematicDisk(oimComponentImage):
 
-     
     name="kinematic disk component"
     shorname="kinDisk"
-    
-    # the model as its own flatening system 
-    #(but rotation is allowed with pa parameter)
     elliptic=False
     
     def __init__(self,**kwargs):
         super(). __init__(**kwargs)
         
-        #The many parameters of the rotatinf disk model
+        #The many parameters of the rotating disk model
         self.params["dim"]=oimParam(**_standardParameters["dim"])
         self.params["fov"]=oimParam(name="fov",value=30,description="Field of view in stellar diameters",unit=units.one,free=False)
         self.params["wl0"]=oimParam(name="wl0",value=2.1656e-6,description="central wavelength of the line",unit=units.m,free=False)
@@ -50,7 +52,6 @@ class oimKinematicDisk(oimComponentImage):
         
         # will be set in the _internalImage function
         #self._wl = None  
-      
         self._eval(**kwargs)
     
     def _internalImage(self):
@@ -74,6 +75,7 @@ class oimKinematicDisk(oimComponentImage):
         gamma = self.params["gamma"].value
         
         Rstar2mas=rstar.to(units.mas,equivalencies=[angToSize(dist)]).value
+<<<<<<< Updated upstream
         
         #We define the pixelSize in rad from the fov and dim
         self._pixSize=fov*2*Rstar2mas/dim*units.mas.to(units.rad)
@@ -128,9 +130,11 @@ class oimKinematicDisk(oimComponentImage):
         C=C1/C2
 
         mapL=np.ndarray([1,nwl,dim,dim])
+
         #The loop is surprisingly faster than the matrix 
         #It computes narrow band images through the emission line 
         for iwl in range(nwl) :
             mapL[0,iwl,:,:]=mapC+ np.exp(-(vmap-v[iwl])**2./C0)*C
         return mapL
  
+
