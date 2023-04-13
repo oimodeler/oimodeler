@@ -67,7 +67,7 @@ class oimRadialRing(oimComponentRadialProfile):
         else:
             dout = self.params["dout"](1e99)
         rmax = 4*dout/2.
-        return np.linspace(0, 1, self._dim)*rmax
+        return np.linspace(0, 1, self.params["dim"](self._wl, self._t))*rmax
 
     @_r.setter
     def _r(self, r):
