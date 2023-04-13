@@ -41,7 +41,7 @@ class oimRadialRing(oimComponentRadialProfile):
     """
     name = "Radial Ring"
     shortname = "RadRing"
-    elliptic = True
+    elliptic = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
