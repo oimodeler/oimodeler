@@ -46,7 +46,6 @@ def calculate_spectral_radiance(params: Dict[str, oimParam],
     emissivity_factor = 1-np.exp(-sigma_profile*kappa_abs)
     if rJy:
         pix = params["pixSize"].value**2*params["pixSize"].unit**2
-        breakpoint()
         return ((spectral_radiance*pix).to(u.Jy)*emissivity_factor).value
     return (spectral_radiance*emissivity_factor).value
 
