@@ -16,7 +16,7 @@ f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
 data.setFilter(oim.oimDataFilter([f1, f2]))
 
 # NOTE: Specifying the parameter space
-atg = oim.oimAsymTempGradient(dim=128, dist=140, kappa_abs=276,
+atg = oim.oimAsymTempGradient(dim=128, dist=140, kappa_abs=276, pixSize=0.1,
                               Tin=1500, rin=0.5, rout=3, p=0.5, q=0.5,
                               a=0.5, phi=45, Mdust=0.11, pa=30, elong=2, f=0.8)
 
