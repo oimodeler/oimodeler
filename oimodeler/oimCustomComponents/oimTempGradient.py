@@ -130,7 +130,6 @@ class oimTempGradient(oimComponentRadialProfile):
         sigma_profile = sigma_in*(r / rin_mas)**p
         spectral_density = calculate_spectral_density(wl, kappa_abs,
                                                       temp_profile, sigma_profile)
-
         return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
 
     @property
