@@ -235,7 +235,7 @@ class oimSimulator(object):
             
             #over-plotting the simulated data as a dotted line  vs spatial frequencies
             axi.oiplot(self.simulatedData.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
-                    color="k",ls=":",lw=1,label="model")
+                    color="k",ls=":",lw=3,label="model")
             
             if axi!=ax[-1]: axi.get_xaxis().set_visible(False)
             if axi==ax[0]:axi.legend()
