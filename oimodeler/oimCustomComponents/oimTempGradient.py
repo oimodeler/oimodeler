@@ -10,12 +10,12 @@ from ..oimParam import oimParam
 from .oimRadialPowerLaw import oimAsymRadialPowerLaw
 
 
-def calculate_spectral_radiance(params: Dict[str, oimParam],
-                                wavelengths: u.um,
-                                kappa_abs: u.cm**2/u.g,
-                                temp_profile: u.K,
-                                sigma_profile: u.g/u.cm**2,
-                                rJy: bool = False) -> np.ndarray:
+def calculate_intensity(params: Dict[str, oimParam],
+                        wavelengths: u.um,
+                        kappa_abs: u.cm**2/u.g,
+                        temp_profile: u.K,
+                        sigma_profile: u.g/u.cm**2,
+                        rJy: bool = False) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
     dust surface density profile
@@ -141,10 +141,10 @@ class oimTempGradient(oimComponentRadialProfile):
             f = ((rout_cm/rin_cm)**(p+2)-1)/(p+2)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
         sigma_profile = sigma_in*(r / rin_mas)**p
-        spectral_density = calculate_spectral_radiance(self.params, wl,
-                                                       kappa_abs,
-                                                       temp_profile,
-                                                       sigma_profile)
+        spectral_density = calculate_intensity(self.params, wl,
+                                               kappa_abs,
+                                               temp_profile,
+                                               sigma_profile)
         return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
 
     @property
@@ -162,7 +162,7 @@ class oimTempGradient(oimComponentRadialProfile):
     @_r.setter
     def _r(self, value):
         """Sets the radius"""
-        pass
+        return
 
 
 class oimAsymTempGradient(oimAsymRadialPowerLaw):
@@ -253,8 +253,6 @@ class oimAsymTempGradient(oimAsymRadialPowerLaw):
         dist, inner_temp = map(lambda x: self.params[x](wl, t), ["dist", "Tin"])
         dust_mass = self.params["Mdust"](wl, t)*const.M_sun.value*1e3
         kappa_abs = self.params["kappa_abs"](wl, t)
-        self._pixSize = self.params["pixSize"](wl, t)*self.params["pixSize"].unit.to(u.rad)
-
         rin_mas, rout_mas = map(lambda x: 1e3*x/dist, [rin, rout])
         rin_cm, rout_cm = map(lambda x: x*self.params["rin"].unit.to(u.cm), [rin, rout])
 
@@ -268,8 +266,9 @@ class oimAsymTempGradient(oimAsymRadialPowerLaw):
             f = ((rout_cm/rin_cm)**(p+2)-1)/(p+2)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
         sigma_profile = self._azimuthal_modulation(xx, yy, wl, t)\
-            * sigma_in*(r / rin_mas)**p
-        spectral_density = calculate_spectral_radiance(self.params, wl,
-                                                       kappa_abs, temp_profile,
-                                                       sigma_profile, rJy=True)
+            * (1 + sigma_in*(r / rin_mas)**p)
+        print(sigma_profile)
+        spectral_density = calculate_intensity(self.params, wl,
+                                               kappa_abs, temp_profile,
+                                               sigma_profile, rJy=True)
         return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
