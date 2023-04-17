@@ -49,17 +49,26 @@ class oimRadialPowerLaw(oimComponentImage):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["din"] = oimParam(**_standardParameters["din"])
-        self.params["dout"] = oimParam(**_standardParameters["dout"])
+        self.params["rin"] = oimParam(**_standardParameters["din"])
+        self.params["rout"] = oimParam(**_standardParameters["dout"])
+        self.params["fov"] = oimParam(**_standardParameters["fov"])
         self.params["pixSize"] = oimParam(**_standardParameters["pixSize"])
         self.params["p"] = oimParam(**_standardParameters["p"])
         self._t = np.array([0])  # constant value <=> static model
         self._wl = np.array([0])  # constant value <=> achromatic model
         self._eval(**kwargs)
 
+    @property
+    def _pixSize(self):
+        self.params["pixSize"].value = pix = self.params["fov"].value/self.params["dim"].value
+        return pix*self.params["fov"].unit.to(u.rad)
+
+    @_pixSize.setter
+    def _pixSize(self, value: u.mas):
+        pass
+
     def _imageFunction(self, xx, yy, wl, t):
         """Calculates a radial power law"""
-        self._pixSize = self.params["pixSize"](wl, t)*self.params["pixSize"].unit.to(u.rad)
         din, dout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
         r, q = np.sqrt(xx**2+yy**2), self.params["p"](wl, t)
         return np.nan_to_num(np.logical_and(r > din, r < dout).astype(int)*(r / din)**q, nan=0)
@@ -123,9 +132,9 @@ class oimAsymRadialPowerLaw(oimRadialPowerLaw):
         """Calculates the azimuthal modulation"""
         # TEST: Is it the other way around (y_arr, x_arr)?
         polar_angle = np.arctan2(xx, yy)
-        return (1 + self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t)))
+        return self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t))
 
     def _imageFunction(self, xx, yy, wl, t):
         """Calculates a radial power law with an azimuthal asymmetry"""
         img = super()._imageFunction(xx, yy, wl, t)
-        return self._azimuthal_modulation(xx, yy, wl, t)*img
+        return self._azimuthal_modulation(xx, yy, wl, t)*(1 + img)
