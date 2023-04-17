@@ -670,5 +670,6 @@ _standardParameters = {
     "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": units.one},
     "amp": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": units.one},
     "p": {"name": "p", "value": 0, "description": "Power-law Exponent", "unit": units.one},
-    "index": {'name': 'index', 'value': 1, 'description': 'Index', 'unit': units.one}
+    "index": {'name': 'index', 'value': 1, 'description': 'Index', 'unit': units.one},
+    "fov": {"name": "fov", "value": 30, "description": "The interferometric field of view", "unit": units.mas, "free": False, "mini": 0},
 }
