@@ -5,12 +5,12 @@ creation of models
 """
 from typing import Union, Optional, Tuple, Dict, List
 
+import astropy.units as u
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from astropy.io.fits import PrimaryHDU
-from astropy import units as units
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
@@ -173,10 +173,9 @@ class oimModel:
             wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
             t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
-            spfx_arr = (vx_arr/pixSize/units.mas.to(units.rad)).flatten()
-            spfy_arr = (vy_arr/pixSize/units.mas.to(units.rad)).flatten()
-            wl_arr = wl_arr.flatten()
-            t_arr = t_arr.flatten()
+            spfx_arr = (vx_arr/pixSize/u.mas.to(u.rad)).flatten()
+            spfy_arr = (vy_arr/pixSize/u.mas.to(u.rad)).flatten()
+            wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
 
             ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
             image = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(
@@ -198,8 +197,8 @@ class oimModel:
 
         if toFits:
             hdu = fits.PrimaryHDU(image)
-            hdu.header['CDELT1'] = pixSize*units.mas.to(units.rad)
-            hdu.header['CDELT2'] = pixSize*units.mas.to(units.rad)
+            hdu.header['CDELT1'] = pixSize*u.mas.to(u.rad)
+            hdu.header['CDELT2'] = pixSize*u.mas.to(u.rad)
             hdu.header['CRVAL1'] = 0
             hdu.header['CRVAL2'] = 0
             hdu.header['CRPIX1'] = dim/2
@@ -295,13 +294,13 @@ class oimModel:
 
         Parameters
         ----------
-        dim : integer
-            Image x & y dimension in pixels..
+        dim : int
+            Image x & y dimension in pixels.
         pixSize : float
-            Pixel angular size in mas
-        wl : integer, list or numpy array, optional
-            wavelength(s) in meter. The default is None.
-        t :  integer, list or numpy array, optional
+            Pixel angular size in mas.
+        wl : int or array_like, optional
+            Wavelength(s) in meter. The default is None.
+        t :  int or array_like, optional
             Time in s (mjd). The default is None.
         fits : bool, optional
             If True returns result as a fits hdu. The default is False.
@@ -321,6 +320,13 @@ class oimModel:
             The default is None.
         colorbar: bool, optional
             Add a colobar to the Axe. The default is True.
+        legend : bool, optional
+            If True displays a legend. Default is False.
+        swapAxes : bool, optional
+            If True swaps the axes of the wavelength and time.
+            Default is True.
+        normalize : bool, optional
+            If True normalizes the image.
         **kwargs : dict
             Arguments to be passed to the plt.imshow function.
 
@@ -330,7 +336,8 @@ class oimModel:
             The Figure created if needed.
         axe : matplotlib.axes.Axes
             The Axes instances, created if needed.
-        im  : the image(s) as a numpy array.
+        im  : numpy.array
+            The image(s).
         """
         im = self.getImage(dim, pixSize, wl, t, fromFT=fromFT,
                            squeeze=False, normalize=normalize)
@@ -404,23 +411,36 @@ class oimModel:
 
         return fig, axe, im
 
-    def showFourier(self):
-        """ Show the mode Image or image-Cube
+    def showFourier(self, dim: int, pixSize: float,
+                    wl: Optional[Union[int, ArrayLike]] = None,
+                    t: Optional[Union[int, ArrayLike]] = None,
+                    axe: Optional[Axes] = None,
+                    normPow: Optional[float] = 0.5,
+                    figsize: Optional[Tuple[float]] = (3.5, 2.5),
+                    savefig: Optional[str] = None,
+                    colorbar: Optional[bool] = True,
+                    legend: Optional[bool] = False,
+                    swapAxes: Optional[bool] = True,
+                    display_mode: Optional[str] = "amp",
+                    kwargs_legend: Optional[Dict] = {},
+                    normalize: Optional[bool] = False,
+                    **kwargs: Dict):
+        """Show the amplitude and phase of the Fourier space
 
         Parameters
         ----------
-        dim : integer
-            image x & y dimension in pixels..
+        dim : int
+            Image x & y dimension in pixels.
         pixSize : float
-            pixel angular size.in mas
-        wl : integer, list or numpy array, optional
-            wavelength(s) in meter. The default is None.
-        t :  integer, list or numpy array, optional
-            time in s (mjd). The default is None.
+            Pixel angular size in mas.
+        wl : int or array_like, optional
+            Wavelength(s) in meter. The default is None.
+        t :  int or array_like, optional
+            Time in s (mjd). The default is None.
         fits : bool, optional
-            if True returns result as a fits hdu. The default is False.
+            If True returns result as a fits hdu. The default is False.
         fromFT : bool, optional
-            If True compute the image using FT formula when available
+            If True compute the image using FT formula when available.
             The default is False.
         axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
@@ -428,15 +448,26 @@ class oimModel:
         normPow : float, optional
             Exponent for the Image colorcale powerLaw normalisation.
             The default is 0.5.
-        figsize : tuple of int, optional
-            The Figure size in inches. The default is (8,6).
+        figsize : tuple of float, optional
+            The Figure size in inches. The default is (8., 6.).
         savefig : str, optional
             Name of the files for saving the figure If None the figure is not saved.
             The default is None.
         colorbar : bool, optional
             Add a colobar to the Axe. The default is True.
+        legend : bool, optional
+            If True displays a legend. Default is False.
+        swapAxes : bool, optional
+            If True swaps the axes of the wavelength and time.
+            Default is True.
+        normalize : bool, optional
+            If True normalizes the image.
+        display_mode : str, optional
+            Displays either the amplitude "amp" or the phase "phase".
+            Default is "amp".
+        kwargs_legend: dict, optional
         **kwargs : dict
-            Arguments to be passed to the plt.imshow function
+            Arguments to be passed to the plt.imshow function.
 
         Returns
         -------
@@ -444,7 +475,100 @@ class oimModel:
             The Figure created if needed
         axe : matplotlib.axes.Axes
             The Axes instances, created if needed.
-        im  : the image(s) as a numpy array
-
+        im  : numpy.array
+            The image(s).
         """
-        ...
+        t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
+
+        if swapAxes:
+            t, wl = wl, t
+
+        nt, nwl = t.size, wl.size
+        dims = (nt, nwl, dim, dim)
+
+        v = np.linspace(-0.5, 0.5, dim)
+        vx, vy = np.meshgrid(v, v)
+
+        vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
+        vy_arr = np.tile(vy[None, None, :, :], (nt, nwl, 1, 1))
+        wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
+        t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
+
+        spfx_arr, spfy_arr = map(lambda x: (x/pixSize/u.mas.to(u.rad)).flatten(), [vx_arr, vy_arr])
+        wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
+        spfx_extent = spfx_arr.max()
+
+        ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
+        if display_mode == "amp":
+            im = np.abs(ft)
+            im /= im.max()
+        elif display_mode == "phase":
+            im = np.angle(ft, deg=True)
+        else:
+            raise NameError("Only 'amp' and 'phase' are valid choice for the display_mode!")
+
+        if normalize:
+            for it in range(nt):
+                for iwl in range(nwl):
+                    im[it, iwl, :, :] /= np.max(im[it, iwl, :, :])
+
+        if axe is None:
+            fig, axe = plt.subplots(nwl, nt,
+                                    figsize=(figsize[0]*nt, figsize[1]*nwl),
+                                    sharex=True, sharey=True,
+                                    subplot_kw={"projection": 'oimAxes'})
+        else:
+            try:
+                fig = axe.get_figure()
+            except Exception:
+                fig = axe.flatten()[0].get_figure()
+
+        axe = np.array(axe).flatten().reshape((nwl, nt))
+
+        if 'norm' not in kwargs:
+            kwargs['norm'] = colors.PowerNorm(gamma=normPow)
+
+        for iwl, wli in enumerate(wl):
+            for it, ti in enumerate(t):
+                if not swapAxes:
+                    cb = axe[iwl, it].imshow(im[it, iwl, :, :],
+                                             extent=[-spfx_extent, spfx_extent,
+                                                     -spfx_extent, spfx_extent],
+                                             origin='lower', **kwargs)
+                else:
+                    cb = axe[iwl, it].imshow(im[iwl, it, :, :],
+                                             extent=[-spfx_extent, spfx_extent,
+                                                     -spfx_extent, spfx_extent],
+                                             origin='lower', **kwargs)
+
+                axe[iwl, it].set_xlim(-spfx_extent, spfx_extent)
+
+                if iwl == nwl-1:
+                    axe[iwl, it].set_xlabel("sp. freq. (cycles/rad)")
+                if it == 0:
+                    axe[iwl, it].set_ylabel("sp. freq. (cycles/rad)")
+
+                if legend:
+                    txt = ""
+                    if not swapAxes:
+                        if wl[0] is not None:
+                            txt += "wl={:.4f}$\mu$m\n".format(wli*1e6)
+                        if t[0] is not None:
+                            txt += "Time={}".format(ti)
+                        if 'color' not in kwargs_legend:
+                            kwargs_legend['color'] = "w"
+                    else:
+                        if t[0] is not None:
+                            txt += "wl={:.4f}$\mu$m\n".format(ti*1e6)
+                        if wl[0] is not None:
+                            txt += f"Time={wli}"
+                        if 'color' not in kwargs_legend:
+                            kwargs_legend['color'] = "w"
+                    axe[iwl, it].text(0, 0.95*dim/2*pixSize, txt,
+                                      va='top', ha='center', **kwargs_legend)
+        if colorbar:
+            fig.colorbar(cb, ax=axe, label="Normalized Intensity")
+           
+        if savefig is not None:
+            plt.savefig(savefig)
+        return fig, axe, im
