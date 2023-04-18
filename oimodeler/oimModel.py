@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-creation of models
-
-"""
+"""Creation of models"""
 from typing import Union, Optional, Tuple, Dict, List
 
 import astropy.units as u
@@ -31,12 +28,12 @@ class oimModel:
     Parameters
     ----------
     *components : List[oimComponent]
-       The components of the model
+       The components of the model.
 
     Attributes
     ----------
     components: List[oimComponent]
-       The components of the model
+       The components of the model.
     """
 
     def __init__(self, *components: List[oimComponent]) -> None:
@@ -54,10 +51,10 @@ class oimModel:
 
         Parameters
         ----------
-        u : array_like
-            Spatial coordinate u (in cycles/rad)
-        v : array_like
-            Spatial coordinate vu (in cycles/rad) .
+        ucoord : array_like
+            Spatial coordinate u (in cycles/rad).
+        vcoord : array_like
+            Spatial coordinate vu (in cycles/rad).
         wl : array_like, optional
             Wavelength(s) in meter. The default is None.
         t :  array_like, optional
@@ -78,14 +75,14 @@ class oimModel:
 
         Parameters
         ----------
-        free : Bool, optional
+        free : bool, optional
             If True retrieve the free parameters of the models only.
             The default is False.
 
         Returns
         -------
         params : Dict of oimParam
-            Dictionnary of the model parameters (or free parameters).
+            Dictionary of the model's parameters (or free parameters).
         """
         params = {}
         for i, c in enumerate(self.components):
@@ -109,7 +106,7 @@ class oimModel:
         Returns
         -------
         Dict of oimParam
-            A Dictionnary of the model free parameters.
+            A Dictionary of the model's free parameters.
         """
         return self.getParameters(free=True)
 
@@ -131,21 +128,23 @@ class oimModel:
         Parameters
         ----------
         dim : int
-            Image x & y dimension in pixels..
+            Image x & y dimension in pixels.
         pixSize : float
-            Pixel angular size.in mas
+            Pixel angular size in mas.
         wl : int or array_like, optional
             Wavelength(s) in meter. The default is None.
         t :  int or array_like, optional
             Time in s (mjd). The default is None.
-        fits : bool, optional
+        toFits : bool, optional
             If True returns result as a fits hdu. The default is False.
         fromFT : bool, optional
             If True compute the image using FT formula when available.
             The default is False.
         squeeze : bool, optional
             If False returns a (nt,nwl,dim,dim) array even if nt and/or nwl equal 1.
-            The default is True
+            The default is True.
+        normalize: bool, optional
+            If True normalizes the image.
 
         Returns
         -------
@@ -244,7 +243,7 @@ class oimModel:
                   wl: Optional[Union[int, ArrayLike]] = None,
                   t: Optional[Union[int, ArrayLike]] = None,
                   fromFT: Optional[bool] = False,
-                  normalize: Optional[bool] = False) -> None:
+                  normalize: Optional[bool] = False) -> Union[np.ndarray, PrimaryHDU]:
         """Save the model image
 
         Parameters
@@ -254,7 +253,7 @@ class oimModel:
         dim : int
             Image x & y dimension in pixels.
         pixSize : float
-            Pixel angular size.in mas
+            Pixel angular size in mas.
         wl : int or array_like, optional
             Wavelength(s) in meter. The default is None.
         t :  int or array_like, optional
@@ -263,6 +262,7 @@ class oimModel:
             If True compute the image using FT formula when available.
             The default is False.
         normalize: bool, optional
+            If True normalizes the image.
 
         Returns
         -------
@@ -302,8 +302,6 @@ class oimModel:
             Wavelength(s) in meter. The default is None.
         t :  int or array_like, optional
             Time in s (mjd). The default is None.
-        fits : bool, optional
-            If True returns result as a fits hdu. The default is False.
         fromFT : bool, optional
             If True compute the image using FT formula when available.
             The default is False.
@@ -311,7 +309,7 @@ class oimModel:
             If provided the image will be shown in this axe. If not a new figure
             will be created. The default is None.
         normPow : float, optional
-            Exponent for the Image colorcale powerLaw normalisation.
+            Exponent for the Image colorscale powerLaw normalisation.
             The default is 0.5.
         figsize : tuple of float, optional
             The Figure size in inches. The default is (8., 6.).
@@ -325,6 +323,7 @@ class oimModel:
         swapAxes : bool, optional
             If True swaps the axes of the wavelength and time.
             Default is True.
+        kwargs_legend: dict, optional
         normalize : bool, optional
             If True normalizes the image.
         **kwargs : dict
@@ -439,16 +438,11 @@ class oimModel:
             Wavelength(s) in meter. The default is None.
         t :  int or array_like, optional
             Time in s (mjd). The default is None.
-        fits : bool, optional
-            If True returns result as a fits hdu. The default is False.
-        fromFT : bool, optional
-            If True compute the image using FT formula when available.
-            The default is False.
         axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
             will be created. The default is None.
         normPow : float, optional
-            Exponent for the Image colorcale powerLaw normalisation.
+            Exponent for the Image colorscale powerLaw normalisation.
             The default is 0.5.
         figsize : tuple of float, optional
             The Figure size in inches. The default is (8., 6.).
@@ -462,12 +456,12 @@ class oimModel:
         swapAxes : bool, optional
             If True swaps the axes of the wavelength and time.
             Default is True.
-        normalize : bool, optional
-            If True normalizes the image.
         display_mode : str, optional
             Displays either the amplitude "amp" or the phase "phase".
             Default is "amp".
         kwargs_legend: dict, optional
+        normalize : bool, optional
+            If True normalizes the image.
         **kwargs : dict
             Arguments to be passed to the plt.imshow function.
 
