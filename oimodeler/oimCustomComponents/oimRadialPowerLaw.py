@@ -42,18 +42,25 @@ class oimRadialPowerLaw(oimComponentImage):
     -------
     _imageFunction(xx, yy, wl, t)
         Calculates a radial power law
+    _azimuthal_modulation(xx, yy, wl, t)
+        Calculates the azimuthal modulation
     """
     name = "Radial Power Law"
     shortname = "RadPowerLaw"
     elliptic = True
+    asymmetric = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["rin"] = oimParam(**_standardParameters["din"])
         self.params["rout"] = oimParam(**_standardParameters["dout"])
+        self.params["p"] = oimParam(**_standardParameters["p"])
         self.params["fov"] = oimParam(**_standardParameters["fov"])
         self.params["pixSize"] = oimParam(**_standardParameters["pixSize"])
-        self.params["p"] = oimParam(**_standardParameters["p"])
+        self.params["a"] = oimParam(name="a", value=0, unit=u.one,
+                                    description="Azimuthal modulation amplitude")
+        self.params["phi"] = oimParam(name="phi", value=0, unit=u.deg,
+                                      description="Azimuthal modulation angle")
         self._t = np.array([0])  # constant value <=> static model
         self._wl = np.array([0])  # constant value <=> achromatic model
         self._eval(**kwargs)
@@ -67,11 +74,21 @@ class oimRadialPowerLaw(oimComponentImage):
     def _pixSize(self, value: u.mas):
         pass
 
+    def _azimuthal_modulation(self, xx, yy, wl, t):
+        """Calculates the azimuthal modulation"""
+        # TEST: Is it the other way around (y_arr, x_arr)?
+        polar_angle = np.arctan2(xx, yy)
+        return self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t))
+
+    def image(self, xx, yy, wl, t):
+        rin, rout = map(lambda x: self.params[x](wl, t), ("rin", "rout"))
+        r, p = np.sqrt(xx**2+yy**2), self.params["p"](wl, t)
+        return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*(r / rin)**p, nan=0)
+
     def _imageFunction(self, xx, yy, wl, t):
-        """Calculates a radial power law"""
-        din, dout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
-        r, q = np.sqrt(xx**2+yy**2), self.params["p"](wl, t)
-        return np.nan_to_num(np.logical_and(r > din, r < dout).astype(int)*(r / din)**q, nan=0)
+        if self.asymmetric:
+            return self.image(xx, yy, wl, t)*(1+self._azimuthal_modulation(xx, yy, wl, t))
+        return self.image(xx, yy, wl, t)
 
 
 class oimAsymRadialPowerLaw(oimRadialPowerLaw):
@@ -109,32 +126,7 @@ class oimAsymRadialPowerLaw(oimRadialPowerLaw):
     _wl : np.ndarray
         Array of wavelength values
     _r : np.ndarray
-
-    Methods
-    -------
-    _azimuthal_modulation(xx, yy, wl, t)
-        Calculates the azimuthal modulation
-    _imageFunction(xx, yy, wl, t)
-        Calculates a radial power law with an azimuthal asymmetry
     """
     name = "Asymmetric Radial Power Law"
     shortname = "AsymRadPowerLaw"
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.params["a"] = oimParam(name="a", value=0, unit=u.one,
-                                    description="Azimuthal modulation amplitude")
-        self.params["phi"] = oimParam(name="phi", value=0, unit=u.deg,
-                                      description="Azimuthal modulation angle")
-        self._eval(**kwargs)
-
-    def _azimuthal_modulation(self, xx, yy, wl, t):
-        """Calculates the azimuthal modulation"""
-        # TEST: Is it the other way around (y_arr, x_arr)?
-        polar_angle = np.arctan2(xx, yy)
-        return self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t))
-
-    def _imageFunction(self, xx, yy, wl, t):
-        """Calculates a radial power law with an azimuthal asymmetry"""
-        img = super()._imageFunction(xx, yy, wl, t)
-        return self._azimuthal_modulation(xx, yy, wl, t)*(1 + img)
+    asymmetric = True
