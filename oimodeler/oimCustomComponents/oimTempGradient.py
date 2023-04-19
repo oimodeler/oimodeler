@@ -121,7 +121,6 @@ class oimTempGradient(oimComponentRadialProfile):
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._eval(**kwargs)
 
-    # FIXME: Possible bug due to r being in mas or rad?
     def _radialProfileFunction(self, r, wl, t):
         """Calculates a radial temperature gradient profile via a dust-surface
         density- and temperature profile."""
