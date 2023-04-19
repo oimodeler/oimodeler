@@ -116,10 +116,9 @@ class oimTempGradient(oimComponentRadialProfile):
                                        description="Distance of the star")
 
         self._t = np.array([0])  # constant value <=> static model
-        self._wl = np.array([0])  # constant value <=> achromatic model
+        self._wl = None  # None value <=> All wavelengths (from Data)
         self._eval(**kwargs)
 
-    # FIXME: Possible bug due to r being in mas or rad?
     def _radialProfileFunction(self, r, wl, t):
         """Calculates a radial temperature gradient profile via a dust-surface
         density- and temperature profile"""
@@ -244,7 +243,7 @@ class oimAsymTempGradient(oimRadialPowerLaw):
                                        description="Distance of the star")
 
         self._t = np.array([0])  # constant value <=> static model
-        self._wl = np.array([0])  # constant value <=> achromatic model
+        self._wl = None  # None value <=> All wavelengths (from Data)
         self._eval(**kwargs)
 
     # FIXME: Possible bug due to r being in mas or rad?
