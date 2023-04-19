@@ -80,7 +80,6 @@ models = [mPt, mUD, mG, mR, mUDPt]
 mNames = ["Point Source", "Uniform Disk", "Gausian", "Ring",
           "Uniform Disk + Point Source"]
 
-
 fig, ax = plt.subplots(2, len(models), figsize=(3*len(models), 6), sharex='row', sharey='row')
 for i, m in enumerate(models):
     m.showModel(512,0.1,normPow=0.2,axe=ax[0,i],colorbar=False)

@@ -62,8 +62,8 @@ class oimModel:
 
         Returns
         -------
-        A numpy array of  the same size as u & v
-            The complex coherent flux.
+        np.ndarray
+            The complex coherent flux. The same size as u & v
         """
         res = complex(0, 0)
         for c in self.components:
@@ -305,7 +305,7 @@ class oimModel:
         fromFT : bool, optional
             If True compute the image using FT formula when available.
             The default is False.
-        axe: matplotlib.axes.Axes, optional
+        axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
             will be created. The default is None.
         normPow : float, optional
