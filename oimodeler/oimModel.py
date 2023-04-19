@@ -27,12 +27,12 @@ class oimModel:
 
     Parameters
     ----------
-    *components : List[oimComponent]
+    *components : list of oimComponent
        The components of the model.
 
     Attributes
     ----------
-    components: List[oimComponent]
+    components : list of oimComponent
        The components of the model.
     """
 
@@ -62,7 +62,7 @@ class oimModel:
 
         Returns
         -------
-        np.ndarray
+        numpy.ndarray
             The complex coherent flux. The same size as u & v
         """
         res = complex(0, 0)
@@ -469,7 +469,7 @@ class oimModel:
             The Figure created if needed
         axe : matplotlib.axes.Axes
             The Axes instances, created if needed.
-        im  : numpy.array
+        im  : numpy.ndarray
             The image(s).
         """
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
