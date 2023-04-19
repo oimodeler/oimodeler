@@ -66,8 +66,8 @@ class oimModel:
             The complex coherent flux. The same size as u & v
         """
         res = complex(0, 0)
-        for c in self.components:
-            res += c.getComplexCoherentFlux(ucoord, vcoord, wl, t)
+        for component in self.components:
+            res += component.getComplexCoherentFlux(ucoord, vcoord, wl, t)
         return res
 
     def getParameters(self, free: Optional[bool] = False) -> Dict[str, oimParam]:
@@ -85,19 +85,19 @@ class oimModel:
             Dictionary of the model's parameters (or free parameters).
         """
         params = {}
-        for i, c in enumerate(self.components):
-            for name, param in c.params.items():
+        for i, component in enumerate(self.components):
+            for name, param in component.params.items():
                 if param not in params.values():
                     if isinstance(param, oimParamInterpolator):
                         for iparam, parami in enumerate(param.params):
                             if parami not in params.values():
                                 if (parami.free or not free):
-                                    params["c{0}_{1}_{2}_interp{3}".format(i+1, c.shortname.replace(" ", "_"), name, iparam+1)] = parami
+                                    params["c{0}_{1}_{2}_interp{3}".format(i+1, component.shortname.replace(" ", "_"), name, iparam+1)] = parami
                     elif isinstance(param, oimParamLinker):
                         pass
                     else:
                         if (param.free or not free):
-                            params["c{0}_{1}_{2}".format(i+1, c.shortname.replace(" ", "_"), name)] = param
+                            params["c{0}_{1}_{2}".format(i+1, component.shortname.replace(" ", "_"), name)] = param
         return params
 
     def getFreeParameters(self) -> Dict[str, oimParam]:
@@ -179,11 +179,10 @@ class oimModel:
             ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
             image = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(
                 ft, axes=[-2, -1]), axes=[-2, -1]), axes=[-2, -1]))
-
         else:
             image = np.zeros(dims)
-            for c in self.components:
-                image += c.getImage(dim, pixSize, wl, t)
+            for component in self.components:
+                image += component.getImage(dim, pixSize, wl, t)
 
         if normalize:
             for it in range(nt):
@@ -562,7 +561,7 @@ class oimModel:
                                       va='top', ha='center', **kwargs_legend)
         if colorbar:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
-           
+
         if savefig is not None:
             plt.savefig(savefig)
         return fig, axe, im
