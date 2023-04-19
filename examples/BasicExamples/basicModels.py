@@ -80,19 +80,24 @@ models = [mPt, mUD, mG, mR, mUDPt]
 mNames = ["Point Source", "Uniform Disk", "Gausian", "Ring",
           "Uniform Disk + Point Source"]
 
-
-fig, ax = plt.subplots(2, len(models), figsize=(
-    3*len(models), 6), sharex='row', sharey='row')
-
+fig, ax = plt.subplots(2, len(models), figsize=(3*len(models), 6), sharex='row', sharey='row')
 for i, m in enumerate(models):
-    m.showModel(512, 0.1, normPow=0.2, axe=ax[0, i], colorbar=False)
-
-    v = np.abs(m.getComplexCoherentFlux(spf, spf*0))
-    v = v/v.max()
-    ax[1, i].plot(spf, v)
-
+    m.showModel(512,0.1,normPow=0.2,axe=ax[0,i],colorbar=False)
+    
+    v = np.abs(m.getComplexCoherentFlux(spf,spf*0)) 
+    v=v/v.max()
+    ax[1, i].plot(spf , v)
+    
     ax[0, i].set_title(mNames[i])
     ax[1, i].set_xlabel("sp. freq. (cycles/rad)")
 
+fig.savefig(os.path.join(path, os.pardir, "images", "basicModel_all.png"))   
 
-fig.savefig(os.path.join(path, os.pardir, "images", "basicModel_all.png"))
+fig, ax = plt.subplots(2, len(models), figsize=(3*len(models), 6), sharex='row', sharey='row')
+for i, m in enumerate(models):
+    m.showFourier(512, 0.1, wl=wl, normPow=0.2, axe=ax[0, i], colorbar=False, display_mode="amp")
+    m.showFourier(512, 0.1, wl=wl, normPow=0.2, axe=ax[1, i], colorbar=False, display_mode="phase")
+    ax[0, i].set_title(mNames[i])
+    ax[1, i].set_xlabel("sp. freq. (cycles/rad)")
+
+fig.savefig(os.path.join(path, os.pardir, "images", "basicModelFourier_all.png"))   

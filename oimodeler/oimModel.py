@@ -1,147 +1,157 @@
 # -*- coding: utf-8 -*-
-"""
-creation of models
+"""Creation of models"""
+from typing import Union, Optional, Tuple, Dict, List
 
-"""
+import astropy.units as u
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
-from astropy import units as units
+from astropy.io.fits import PrimaryHDU
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from numpy.typing import ArrayLike
 
-from .oimParam import oimParamLinker, oimParamInterpolator
+from .oimComponent import oimComponent
+from .oimParam import oimParam, oimParamLinker, oimParamInterpolator
 
 
 ###############################################################################
-class oimModel(object):
-    """The oimModel class hold a model made of one or more components
+class oimModel:
+    """The oimModel class hold a model made of one or more components (derived
+    from the oimComponent class).
 
-    These components are (derived from the oimComponent class), and allow to
-    compute images (or image cubes for wavelength or time dependent models)
-    and complex coherent fluxes for a vector of u,v,wl, and t coordinates.
+    It allows to compute images (or image cubes for wavelength or time
+    dependent models) and complex coherent fluxes for a vector of u,v,wl,
+    and t coordinates.
+
+    Parameters
+    ----------
+    *components : list of oimComponent
+       The components of the model.
+
+    Attributes
+    ----------
+    components : list of oimComponent
+       The components of the model.
     """
 
-    def __init__(self, *components):
-        """Initialize a new instance of the oimModel class
-
-        Parameters
-        ----------
-        *components : list or serie of oimComponents
-           The components of the model
-        """
+    def __init__(self, *components: List[oimComponent]) -> None:
+        """Constructor of the class"""
         if len(components) == 1 and type(components[0]) == list:
             self.components = components[0]
         else:
             self.components = components
 
-    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+    def getComplexCoherentFlux(self, ucoord: ArrayLike, vcoord: ArrayLike,
+                               wl: Optional[ArrayLike] = None,
+                               t: Optional[ArrayLike] = None) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
         (and optionally wavelength and time) coordinates.
 
         Parameters
         ----------
-        u : list or numpy array
-            Spatial coordinate u (in cycles/rad)
-        v : list or numpy array
-            Spatial coordinate vu (in cycles/rad) .
-        wl : list or numpy array, optional
+        ucoord : array_like
+            Spatial coordinate u (in cycles/rad).
+        vcoord : array_like
+            Spatial coordinate vu (in cycles/rad).
+        wl : array_like, optional
             Wavelength(s) in meter. The default is None.
-        t :  list or numpy array, optional
+        t :  array_like, optional
             Time in s (mjd). The default is None.
 
         Returns
         -------
-        A numpy array of  the same size as u & v
-            The complex coherent flux.
+        numpy.ndarray
+            The complex coherent flux. The same size as u & v
         """
         res = complex(0, 0)
-        for c in self.components:
-            res += c.getComplexCoherentFlux(ucoord, vcoord, wl, t)
-
+        for component in self.components:
+            res += component.getComplexCoherentFlux(ucoord, vcoord, wl, t)
         return res
 
-    def getParameters(self, free=False):
-        """
-
-        Get the Model paramters (or free parameters)
+    def getParameters(self, free: Optional[bool] = False) -> Dict[str, oimParam]:
+        """Get the Model paramters (or free parameters)
 
         Parameters
         ----------
-        free: Bool, optional
-            Retrieve the free parameters of the models only.
-            The default is False
+        free : bool, optional
+            If True retrieve the free parameters of the models only.
+            The default is False.
 
         Returns
         -------
-        params: Dict of oimParam
-            Dictionary containing the model parameters (or free parameters).
+        params : Dict of oimParam
+            Dictionary of the model's parameters (or free parameters).
         """
-
         params = {}
-        for i, c in enumerate(self.components):
-            for name, param in c.params.items():
-                if not (param in params.values()):
+        for i, component in enumerate(self.components):
+            for name, param in component.params.items():
+                if param not in params.values():
                     if isinstance(param, oimParamInterpolator):
                         for iparam, parami in enumerate(param.params):
-                            if not (parami in params.values()):
-                                if (parami.free == True or free == False):
-                                    params["c{0}_{1}_{2}_interp{3}".format(
-                                        i+1, c.shortname.replace(" ", "_"),
-                                        name, iparam+1)] = parami
+                            if parami not in params.values():
+                                if (parami.free or not free):
+                                    params["c{0}_{1}_{2}_interp{3}".format(i+1, component.shortname.replace(" ", "_"), name, iparam+1)] = parami
                     elif isinstance(param, oimParamLinker):
                         pass
                     else:
-                        if (param.free == True or free == False):
-
-                            params["c{0}_{1}_{2}".format(i+1,
-                                                         c.shortname.replace(" ", "_"), name)] = param
+                        if (param.free or not free):
+                            params["c{0}_{1}_{2}".format(i+1, component.shortname.replace(" ", "_"), name)] = param
         return params
 
-    def getFreeParameters(self):
-        """Gets the Model's free parameters
+    def getFreeParameters(self) -> Dict[str, oimParam]:
+        """Get the Model free paramters
 
         Returns
         -------
         Dict of oimParam
-            A Dictionary of the model free parameters
+            A Dictionary of the model's free parameters.
         """
         return self.getParameters(free=True)
 
-    def getImage(self, dim, pixSize, wl=None, t=None, toFits=False,
-                 fromFT=False, squeeze=True, normalize=False):
+    def getImage(self, dim: int, pixSize: float,
+                 wl: Optional[Union[float, ArrayLike]] = None,
+                 t: Optional[Union[float, ArrayLike]] = None,
+                 toFits: Optional[bool] = False,
+                 fromFT: Optional[bool] = False,
+                 squeeze: Optional[bool] = True,
+                 normalize: Optional[bool] = False) -> Union[np.ndarray, PrimaryHDU]:
         """Compute and return an image or and image cube (if wavelength and time
         are given).
 
-        The returned image has the x,y dimension 'dim' in pixel with
+        The returned image as the x,y dimension dim in pixel with
         an angular pixel size pixSize in rad. Image is returned as a numpy
         array unless the keyword fits is set to True. In that case the image is
         returned as an astropy.io.fits hdu.
 
         Parameters
         ----------
-        dim: integer
-            Image x & y dimension in pixels
-        pixSize: float
-            Pixel angular size.in mas
-        wl: integer, list or numpy array, optional
-            Wavelength(s) in meter. The default is None
-        t: integer, list or numpy array, optional
-            time in s (mjd). The default is None
-        fits: bool, optional
-            If True returns result as a fits hdu. The default is False
-        fromFT: bool, optional
-            If True compute the image using FT formula when available
-            The default is False
-        squeeze: bool, optional
-            If False returns a (nt, nwl, dim, dim) array even if nt and/or nwl equal 1
-            The default is True
+        dim : int
+            Image x & y dimension in pixels.
+        pixSize : float
+            Pixel angular size in mas.
+        wl : int or array_like, optional
+            Wavelength(s) in meter. The default is None.
+        t :  int or array_like, optional
+            Time in s (mjd). The default is None.
+        toFits : bool, optional
+            If True returns result as a fits hdu. The default is False.
+        fromFT : bool, optional
+            If True compute the image using FT formula when available.
+            The default is False.
+        squeeze : bool, optional
+            If False returns a (nt,nwl,dim,dim) array even if nt and/or nwl equal 1.
+            The default is True.
+        normalize: bool, optional
+            If True normalizes the image.
 
         Returns
         -------
         numpy.ndarray or astropy.io.fits.hdu
-            Numpy 2D array (or 3 or 4D array if wl, t or both are given) or an
-            astropy.io.fits hdu.imagehdu if fits=True.
-            The image of the component with given size in pixels and mas or rad
+             A numpy 2D array (or 3D/4D array if wl, t or both are given) or an
+             astropy.io.fits hdu.imagehdu if fits=True.
+             The image of the component with given size in pixels and mas or rad
         """
         # TODO : maybe we should change all None to zero as default values
         if wl is None:
@@ -149,14 +159,11 @@ class oimModel(object):
         if t is None:
             t = 0
 
-        t = np.array(t).flatten()
-        nt = t.size
-        wl = np.array(wl).flatten()
-        nwl = wl.size
+        t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
+        nt, nwl = t.size, wl.size
         dims = (nt, nwl, dim, dim)
 
-        if fromFT == True:
-
+        if fromFT:
             v = np.linspace(-0.5, 0.5, dim)
             vx, vy = np.meshgrid(v, v)
 
@@ -165,36 +172,31 @@ class oimModel(object):
             wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
             t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
-            spfx_arr = (vx_arr/pixSize/units.mas.to(units.rad)).flatten()
-            spfy_arr = (vy_arr/pixSize/units.mas.to(units.rad)).flatten()
-            wl_arr = wl_arr.flatten()
-            t_arr = t_arr.flatten()
+            spfx_arr = (vx_arr/pixSize/u.mas.to(u.rad)).flatten()
+            spfy_arr = (vy_arr/pixSize/u.mas.to(u.rad)).flatten()
+            wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
 
-            ft = self.getComplexCoherentFlux(
-                spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
-
+            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
             image = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(
                 ft, axes=[-2, -1]), axes=[-2, -1]), axes=[-2, -1]))
-
         else:
             image = np.zeros(dims)
-            for c in self.components:
-                image += c.getImage(dim, pixSize, wl, t)
+            for component in self.components:
+                image += component.getImage(dim, pixSize, wl, t)
 
-        if normalize == True:
+        if normalize:
             for it in range(nt):
                 for iwl in range(nwl):
                     image[it, iwl, :, :] /= np.max(image[it, iwl, :, :])
 
         # Always squeeze dim which are equal to one if exported to fits format
-        if squeeze == True or toFits == True:
+        if squeeze or toFits:
             image = np.squeeze(image)
 
-        if toFits == True:
-
+        if toFits:
             hdu = fits.PrimaryHDU(image)
-            hdu.header['CDELT1'] = pixSize*units.mas.to(units.rad)
-            hdu.header['CDELT2'] = pixSize*units.mas.to(units.rad)
+            hdu.header['CDELT1'] = pixSize*u.mas.to(u.rad)
+            hdu.header['CDELT2'] = pixSize*u.mas.to(u.rad)
             hdu.header['CRVAL1'] = 0
             hdu.header['CRVAL2'] = 0
             hdu.header['CRPIX1'] = dim/2
@@ -210,11 +212,10 @@ class oimModel(object):
 
                 if np.all(np.abs(dwl-dwl[0]) < 1e-12):
                     dwl = dwl[0]
-
-                    hdu.header['CDELT{}'.format(naxis)] = dwl
-                    hdu.header['CRPIX{}'.format(naxis)] = 1
-                    hdu.header['CRVAL{}'.format(naxis)] = wl[0]
-                    hdu.header['CUNIT{}'.format(naxis)] = "m"
+                    hdu.header[f'CDELT{naxis}'] = dwl
+                    hdu.header[f'CRPIX{naxis}'] = 1
+                    hdu.header[f'CRVAL{naxis}'] = wl[0]
+                    hdu.header[f'CUNIT{naxis}'] = "m"
                     naxis += 1
 
                 else:
@@ -226,37 +227,47 @@ class oimModel(object):
 
                 if np.all(np.abs(dt-dt[0]) < 1e-12):
                     dt = dt[0]
-
-                    hdu.header['CDELT{}'.format(naxis)] = dt
-                    hdu.header['CRPIX{}'.format(naxis)] = 1
-                    hdu.header['CRVAL{}'.format(naxis)] = t[0]
-                    hdu.header['CUNIT{}'.format(naxis)] = "day"
+                    hdu.header[f'CDELT{naxis}'] = dt
+                    hdu.header[f'CRPIX{naxis}'] = 1
+                    hdu.header[f'CRVAL{naxis}'] = t[0]
+                    hdu.header[f'CUNIT{naxis}'] = "day"
 
                 else:
                     raise TypeError("Time vector is not regular. Fit image"
                                     " with irregular grid not yet implemented")
             return hdu
-        else:
-            return image
+        return image
 
-    def saveImage(self, filename, dim,
-                  pixSize, wl=None, t=None,
-                  fromFT=False, normalize=False) -> None:
-        """Saves the image in the format specified
+    def saveImage(self, filename: str, dim: int, pixSize: float,
+                  wl: Optional[Union[int, ArrayLike]] = None,
+                  t: Optional[Union[int, ArrayLike]] = None,
+                  fromFT: Optional[bool] = False,
+                  normalize: Optional[bool] = False) -> Union[np.ndarray, PrimaryHDU]:
+        """Save the model image
 
         Parameters
         ----------
-        dim: integer
-            Image x & y dimension in pixels
-        pixSize: float
-            Pixel angular size.in mas
-        wl: integer, list or numpy array, optional
-            Wavelength(s) in meter. The default is None
-        t: integer, list or numpy array, optional
-            time in s (mjd). The default is None
-        fromFT: bool, optional
-            If True compute the image using FT formula when available
-            The default is False
+        filename: str
+            The name the file is to be saved as.
+        dim : int
+            Image x & y dimension in pixels.
+        pixSize : float
+            Pixel angular size in mas.
+        wl : int or array_like, optional
+            Wavelength(s) in meter. The default is None.
+        t :  int or array_like, optional
+            Time in s (mjd). The default is None.
+        fromFT : bool, optional
+            If True compute the image using FT formula when available.
+            The default is False.
+        normalize: bool, optional
+            If True normalizes the image.
+
+        Returns
+        -------
+        numpy.ndarray or astropy.io.fits.hdu
+             A numpy 2D array (or 3D/4D array if wl, t or both are given).
+             The image of the component with given size in pixels and mas or rad
         """
         im = self.getImage(dim, pixSize, wl=wl, t=t, toFits=True,
                            fromFT=fromFT, normalize=normalize)
@@ -264,62 +275,77 @@ class oimModel(object):
         im.writeto(filename, overwrite=True)
         return im
 
-    def showModel(self, dim, pixSize, wl=None, t=None,
-                  fromFT=False, axe=None, normPow=0.5, figsize=(3.5, 2.5), savefig=None,
-                  colorbar=True, legend=False, swapAxes=True, kwargs_legend={},
-                  normalize=False, **kwargs):
+    def showModel(self, dim: int, pixSize: float,
+                  wl: Optional[Union[int, ArrayLike]] = None,
+                  t: Optional[Union[int, ArrayLike]] = None,
+                  fromFT: Optional[bool] = False,
+                  axe: Optional[Axes] = None,
+                  normPow: Optional[float] = 0.5,
+                  figsize: Optional[Tuple[float]] = (3.5, 2.5),
+                  savefig: Optional[str] = None,
+                  colorbar: Optional[bool] = True,
+                  legend: Optional[bool] = False,
+                  swapAxes: Optional[bool] = True,
+                  kwargs_legend: Dict = {},
+                  normalize: Optional[bool] = False,
+                  **kwargs: Dict) -> Tuple[Figure, Axes, np.ndarray]:
         """Show the mode Image or image-Cube
 
         Parameters
         ----------
-        dim: integer
-            Image x & y dimension in pixels..
-        pixSize: float
-            Pixel angular size.in mas
-        wl: integer, list or numpy array, optional
+        dim : int
+            Image x & y dimension in pixels.
+        pixSize : float
+            Pixel angular size in mas.
+        wl : int or array_like, optional
             Wavelength(s) in meter. The default is None.
-        t:  integer, list or numpy array, optional
+        t :  int or array_like, optional
             Time in s (mjd). The default is None.
-        fits: bool, optional
-            If True returns result as a fits hdu. The default is False.
-        fromFT: bool, optional
-            If True compute the image using FT formula when available
+        fromFT : bool, optional
+            If True compute the image using FT formula when available.
             The default is False.
-        axe: matplotlib.axes.Axes, optional
+        axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
             will be created. The default is None.
-        normPow: float, optional
-            Exponent for the Image colorcale powerLaw normalisation.
+        normPow : float, optional
+            Exponent for the Image colorscale powerLaw normalisation.
             The default is 0.5.
-        figsize: tuple of int, optional
-            The Figure size in inches. The default is (8,6).
-        savefig: str, optional
+        figsize : tuple of float, optional
+            The Figure size in inches. The default is (8., 6.).
+        savefig : str, optional
             Name of the files for saving the figure If None the figure is not saved.
             The default is None.
         colorbar: bool, optional
             Add a colobar to the Axe. The default is True.
-        **kwargs: dict
-            Arguments to be passed to the plt.imshow function
+        legend : bool, optional
+            If True displays a legend. Default is False.
+        swapAxes : bool, optional
+            If True swaps the axes of the wavelength and time.
+            Default is True.
+        kwargs_legend: dict, optional
+        normalize : bool, optional
+            If True normalizes the image.
+        **kwargs : dict
+            Arguments to be passed to the plt.imshow function.
 
         Returns
         -------
-        fig: matplotlib.figure.Figure
-            The Figure created if needed
-        axe: matplotlib.axes.Axes
+        fig : matplotlib.figure.Figure
+            The Figure created if needed.
+        axe : matplotlib.axes.Axes
             The Axes instances, created if needed.
-        im: The image(s) as a numpy array
+        im  : numpy.array
+            The image(s).
         """
         im = self.getImage(dim, pixSize, wl, t, fromFT=fromFT,
                            squeeze=False, normalize=normalize)
 
-        t = np.array(t).flatten()
-        wl = np.array(wl).flatten()
+        t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
 
         if swapAxes:
             t, wl = wl, t
 
-        nt = t.size
-        nwl = wl.size
+        nt, nwl = t.size, wl.size
 
         if axe is None:
             fig, axe = plt.subplots(nwl, nt, figsize=(
@@ -327,17 +353,17 @@ class oimModel(object):
         else:
             try:
                 fig = axe.get_figure()
-            except:
+            except Exception:
                 fig = axe.flatten()[0].get_figure()
 
         axe = np.array(axe).flatten().reshape((nwl, nt))
 
-        if not('norm' in kwargs):
+        if 'norm' not in kwargs:
             kwargs['norm'] = colors.PowerNorm(gamma=normPow)
 
         for iwl, wli in enumerate(wl):
             for it, ti in enumerate(t):
-                if swapAxes == False:
+                if not swapAxes:
                     cb = axe[iwl, it].imshow(im[it, iwl, :, :],
                                              extent=[-dim/2*pixSize, dim/2*pixSize,
                                                      -dim/2*pixSize, dim/2*pixSize],
@@ -355,30 +381,187 @@ class oimModel(object):
                 if it == 0:
                     axe[iwl, it].set_ylabel("$\\delta$(mas)")
 
-                if legend == True:
+                if legend:
                     txt = ""
-                    if swapAxes == False:
+                    if not swapAxes:
 
-                        if wl[0] != None:
+                        if wl[0] is not None:
                             txt += "wl={:.4f}$\mu$m\n".format(wli*1e6)
-                        if t[0] != None:
+                        if t[0] is not None:
                             txt += "Time={}".format(ti)
-                        if not('color' in kwargs_legend):
+                        if 'color' not in kwargs_legend:
                             kwargs_legend['color'] = "w"
                     else:
-                        if t[0] != None:
+                        if t[0] is not None:
                             txt += "wl={:.4f}$\mu$m\n".format(ti*1e6)
-                        if wl[0] != None:
-                            txt += "Time={}".format(wli)
-                        if not('color' in kwargs_legend):
+                        if wl[0] is not None:
+                            txt += f"Time={wli}"
+                        if 'color' not in kwargs_legend:
                             kwargs_legend['color'] = "w"
                     axe[iwl, it].text(0, 0.95*dim/2*pixSize, txt,
                                       va='top', ha='center', **kwargs_legend)
 
-        if colorbar != False:
+        if colorbar:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
 
-        if savefig != None:
+        if savefig is not None:
             plt.savefig(savefig)
 
+        return fig, axe, im
+
+    def showFourier(self, dim: int, pixSize: float,
+                    wl: Optional[Union[int, ArrayLike]] = None,
+                    t: Optional[Union[int, ArrayLike]] = None,
+                    axe: Optional[Axes] = None,
+                    normPow: Optional[float] = 0.5,
+                    figsize: Optional[Tuple[float]] = (3.5, 2.5),
+                    savefig: Optional[str] = None,
+                    colorbar: Optional[bool] = True,
+                    legend: Optional[bool] = False,
+                    swapAxes: Optional[bool] = True,
+                    display_mode: Optional[str] = "amp",
+                    kwargs_legend: Optional[Dict] = {},
+                    normalize: Optional[bool] = False,
+                    **kwargs: Dict):
+        """Show the amplitude and phase of the Fourier space
+
+        Parameters
+        ----------
+        dim : int
+            Image x & y dimension in pixels.
+        pixSize : float
+            Pixel angular size in mas.
+        wl : int or array_like, optional
+            Wavelength(s) in meter. The default is None.
+        t :  int or array_like, optional
+            Time in s (mjd). The default is None.
+        axe : matplotlib.axes.Axes, optional
+            If provided the image will be shown in this axe. If not a new figure
+            will be created. The default is None.
+        normPow : float, optional
+            Exponent for the Image colorscale powerLaw normalisation.
+            The default is 0.5.
+        figsize : tuple of float, optional
+            The Figure size in inches. The default is (8., 6.).
+        savefig : str, optional
+            Name of the files for saving the figure If None the figure is not saved.
+            The default is None.
+        colorbar : bool, optional
+            Add a colobar to the Axe. The default is True.
+        legend : bool, optional
+            If True displays a legend. Default is False.
+        swapAxes : bool, optional
+            If True swaps the axes of the wavelength and time.
+            Default is True.
+        display_mode : str, optional
+            Displays either the amplitude "amp" or the phase "phase".
+            Default is "amp".
+        kwargs_legend: dict, optional
+        normalize : bool, optional
+            If True normalizes the image.
+        **kwargs : dict
+            Arguments to be passed to the plt.imshow function.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+            The Figure created if needed
+        axe : matplotlib.axes.Axes
+            The Axes instances, created if needed.
+        im  : numpy.ndarray
+            The image(s).
+        """
+        t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
+
+        if swapAxes:
+            t, wl = wl, t
+
+        nt, nwl = t.size, wl.size
+        dims = (nt, nwl, dim, dim)
+
+        v = np.linspace(-0.5, 0.5, dim)
+        vx, vy = np.meshgrid(v, v)
+
+        vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
+        vy_arr = np.tile(vy[None, None, :, :], (nt, nwl, 1, 1))
+        wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
+        t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
+
+        spfx_arr, spfy_arr = map(lambda x: (x/pixSize/u.mas.to(u.rad)).flatten(), [vx_arr, vy_arr])
+        wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
+        spfx_extent = spfx_arr.max()
+
+        ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
+        if display_mode == "amp":
+            im = np.abs(ft)
+            im /= im.max()
+        elif display_mode == "phase":
+            im = np.angle(ft, deg=True)
+        else:
+            raise NameError("Only 'amp' and 'phase' are valid choice for the display_mode!")
+
+        if normalize:
+            for it in range(nt):
+                for iwl in range(nwl):
+                    im[it, iwl, :, :] /= np.max(im[it, iwl, :, :])
+
+        if axe is None:
+            fig, axe = plt.subplots(nwl, nt,
+                                    figsize=(figsize[0]*nt, figsize[1]*nwl),
+                                    sharex=True, sharey=True,
+                                    subplot_kw={"projection": 'oimAxes'})
+        else:
+            try:
+                fig = axe.get_figure()
+            except Exception:
+                fig = axe.flatten()[0].get_figure()
+
+        axe = np.array(axe).flatten().reshape((nwl, nt))
+
+        if 'norm' not in kwargs:
+            kwargs['norm'] = colors.PowerNorm(gamma=normPow)
+
+        for iwl, wli in enumerate(wl):
+            for it, ti in enumerate(t):
+                if not swapAxes:
+                    cb = axe[iwl, it].imshow(im[it, iwl, :, :],
+                                             extent=[-spfx_extent, spfx_extent,
+                                                     -spfx_extent, spfx_extent],
+                                             origin='lower', **kwargs)
+                else:
+                    cb = axe[iwl, it].imshow(im[iwl, it, :, :],
+                                             extent=[-spfx_extent, spfx_extent,
+                                                     -spfx_extent, spfx_extent],
+                                             origin='lower', **kwargs)
+
+                axe[iwl, it].set_xlim(-spfx_extent, spfx_extent)
+
+                if iwl == nwl-1:
+                    axe[iwl, it].set_xlabel("sp. freq. (cycles/rad)")
+                if it == 0:
+                    axe[iwl, it].set_ylabel("sp. freq. (cycles/rad)")
+
+                if legend:
+                    txt = ""
+                    if not swapAxes:
+                        if wl[0] is not None:
+                            txt += "wl={:.4f}$\mu$m\n".format(wli*1e6)
+                        if t[0] is not None:
+                            txt += "Time={}".format(ti)
+                        if 'color' not in kwargs_legend:
+                            kwargs_legend['color'] = "w"
+                    else:
+                        if t[0] is not None:
+                            txt += "wl={:.4f}$\mu$m\n".format(ti*1e6)
+                        if wl[0] is not None:
+                            txt += f"Time={wli}"
+                        if 'color' not in kwargs_legend:
+                            kwargs_legend['color'] = "w"
+                    axe[iwl, it].text(0, 0.95*dim/2*pixSize, txt,
+                                      va='top', ha='center', **kwargs_legend)
+        if colorbar:
+            fig.colorbar(cb, ax=axe, label="Normalized Intensity")
+
+        if savefig is not None:
+            plt.savefig(savefig)
         return fig, axe, im
