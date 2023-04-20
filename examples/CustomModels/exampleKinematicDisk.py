@@ -86,10 +86,10 @@ print("compute chi2: {:.1f}ms/model".format(dt))
 print("chi2:{} ".format(sim.chi2r))
 
 #%%
-fit=oim.oimFitterEmcee(data,m,nwalkers=20)
+fit=oim.oimFitterEmcee(data,m,nwalkers=12)
 
 fit.prepare(init="gaussian")
-fit.run(nsteps=10000,progress=True)
+fit.run(nsteps=2000,progress=True)
 
 #%%
 fit.walkersPlot(chi2limfact=3)
