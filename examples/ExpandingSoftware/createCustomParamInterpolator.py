@@ -4,6 +4,9 @@ Created on Fri Oct 21 12:27:15 2022
 
 @author: Ame
 """
+from pathlib import Path
+from pprint import pprint
+
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
@@ -11,10 +14,8 @@ import numpy as np
 import oimodeler as oim
 from scipy.interpolate import interp1d
 
-import os
 np.random.seed(1)
-
-path = os.path.dirname(oim.__file__)
+path = Path(oim.__file__).parent.parent
 
 
 # %%
@@ -61,8 +62,8 @@ class oimParamLinearRangeWl(oim.oimParamInterpolator):
         return params
 
 
-# NOTE: Add interpolator to those available. Either the class itself, or the class name as a string
-oim._interpolators["rangeWl"] = "oimParamLinearRangeWl"
+# NOTE: Add the new class to the available interpolators. Overrides the "rangeWl" key
+oim._interpolators["rangeWl"] = oimParamLinearRangeWl
 
 # %%
 nref = 10
@@ -71,15 +72,12 @@ c = oim.oimUD(d=oim.oimInterp('rangeWl', wl0=2e-6, kind="cubic",
                               dwl=5e-8, values=np.random.rand(nref)*3+4))
 m = oim.oimModel(c)
 
-
-print(m.getParameters())
-print(m.getFreeParameters())
-
+pprint(m.getParameters())
+pprint(m.getFreeParameters())
 
 # %%
-nB = 200
+nB, nwl = 200, 1000
 B = np.linspace(0, 60, num=nB)
-nwl = 1000
 wl = np.linspace(2.0e-6, 2.5e-6, num=nwl)
 Bx_arr = np.tile(B[None, :], (nwl, 1)).flatten()
 wl_arr = np.tile(wl[:, None], (1, nB)).flatten()
@@ -107,14 +105,11 @@ ax[0].legend()
 for iB in range(1, nB):
     ax[1].plot(wl*1e6, v[:, iB]/v[:, 0], color=plt.cm.plasma(iB/(nB-1)))
 
-
-ax[1].set_xlabel("$\lambda$ ($\mu$m)")
+ax[1].set_xlabel(r"$\lambda$ ($\mu$m)")
 ax[1].set_ylabel("Visibility")
-
 
 norm = colors.Normalize(vmin=np.min(B[1:]), vmax=np.max(B))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax, label="Baseline Length (m)")
 
-
-plt.savefig(os.path.join(path, os.pardir, "images", "createInterp1.png"))
+plt.savefig(path / Path().parent / "images" / "createInterp1.png")

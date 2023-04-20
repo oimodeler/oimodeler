@@ -32,7 +32,9 @@ _standardParameters = {
     'index': {'name': 'index', 'value': 1, 'description': 'Index', 'unit': u.one}
 }
 
-# NOTE: Sets the available interpolators for oimodeler. Can both contain the class name as strings or the class itself
+# NOTE: Sets the available interpolators for oimodeler. If strings are provided,
+# the `oimInterp` looks through `oimParam` in order to find the class.
+# To overwrite provide class variables
 _interpolators = {"wl": "oimParamInterpolatorWl",
                   "time": "oimParamInterpolatorTime",
                   "GaussWl": "oimParamGaussianWl",
@@ -47,7 +49,7 @@ _interpolators = {"wl": "oimParamInterpolatorWl",
                   "rangeWl": "oimParamLinearRangeWl"}
 
 
-class oimParam(object):
+class oimParam:
     """Class of model parameters
 
     Parameters
@@ -106,7 +108,7 @@ class oimParam(object):
 
 
 ###############################################################################
-class oimParamLinker(object):
+class oimParamLinker:
     def __init__(self, param, operator="add", fact=0):
         self.param = param
         self.fact = fact
@@ -137,7 +139,7 @@ class oimParamLinker(object):
 ###############################################################################
 
 
-class oimParamNorm(object):
+class oimParamNorm:
     def __init__(self, params, norm=1):
         if type(params) == list:
             self.params = params
@@ -162,23 +164,34 @@ class oimParamNorm(object):
 
 ###############################################################################
 
-class oimInterp(object):
+class oimInterp:
     """Macro to directly create oimParamInterpolator-derived class in a
     oimComponent object.
 
     Parameters
     ----------
     name : str
-        keyname for the interpolators registered in the _interpolators variable
-    **kwargs : dictionary
-        parameters from the create oimParamInterpolator-derived class
+        Keyname for the interpolators registered in the _interpolators
+        dictionary.
+    **kwargs : dict
+        Parameters from the create oimParamInterpolator-derived class.
+
+    Attributes
+    ----------
+    kwargs : dict
+        Parameters from the create oimParamInterpolator-derived class.
+    type : oimParamInterpolator
+        A param interpolator contained in the _interpolators dictionary.
+        For the local definition in the `oimParam` module, strings can be used.
+        To redefine the dictionary elements from outside, use the class
+        variables, otherwise the local definition will be used.
     """
 
     def __init__(self, name, **kwargs):
         self.kwargs = kwargs
         self.type = _interpolators[name]
 
-        # NOTE: If user inputs str as class name to _interpolators dictionary
+        # NOTE: Strings are accepted as a local definition within this module
         if isinstance(self.type, str):
             self.type = getattr(CURRENT_MODULE, self.type)
 
