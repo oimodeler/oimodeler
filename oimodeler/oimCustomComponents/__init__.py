@@ -19,3 +19,4 @@ directory add the import here so that all component will be available through
 from .oimBox import oimBox
 from .oimFastRotator import oimFastRotator
 from .oimSpiral import oimSpiral
+from .oimKinematicDisk import oimKinematicDisk
