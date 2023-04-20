@@ -232,7 +232,6 @@ class oimData(object):
         self.vect_dwl=None
         self.vect_mjd=None
         
-        
         self._prepared = False       
         self._filter=filt
         self._useFilter=False
