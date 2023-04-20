@@ -232,17 +232,19 @@ class oimData(object):
         self.vect_dwl=None
         self.vect_mjd=None
         
-        self._prepared = False
         
+        self._prepared = False       
         self._filter=filt
         self._useFilter=False
         self._filteredData = None
         self._filteredDataReady = False
         
- 
         if dataOrFilename:
-           self.addData(dataOrFilename) 
+           self.addData(dataOrFilename,prepare=False) 
         
+        if filt!=None:
+            self.setFilter(filt)
+
         self.prepareData()
             
     @property
@@ -255,36 +257,33 @@ class oimData(object):
             return self._filteredData
    
 
-    def addData(self,dataOrFilename):
+    def addData(self,dataOrFilename, prepare=True):
         if type(dataOrFilename)==type([]):
             for el in dataOrFilename:
-                self.addData(el)
+                self.addData(el, prepare=prepare)
         else:        
             if type(dataOrFilename)==str:
                 self._data.append(fits.open(dataOrFilename))
             else:
                 self._data.append(dataOrFilename)
-            self._analyzeOIFitFile(self.data[-1])
-            self.prepared = False
-        
+
+        self.prepared = False
         self._filteredDataReady = False
-        self.prepareData()
+        
+        if prepare == True:
+            self.prepareData()
         
     def removeData(self,dataOrIndex):
         self._prepared = False
         self._filteredDataReady = False
         self.prepareData()
-        #TODO
-      
-        
+
     def setFilter(self,filt=None,useFilter=True):
         self._filter=filt
         self._filteredDataReady = False
         self.useFilter=useFilter
-        
-        
+
     def applyFilter(self):
-        
         self._filteredData=[]
         for data in self._data:
             self._filteredData.append(hdulistDeepCopy(data))
@@ -306,39 +305,37 @@ class oimData(object):
         if val==True:
             if self._filteredDataReady == False:
                 self.applyFilter()
-       
-            
-    
-                
+        
     def _analyzeOIFitFile(self,data):
         dataInfo=[]
+        for datai in data:
+            for iarr,arri in enumerate(datai):
+                info=None
+                if arri.name in _oimDataTypeArr:
+                    info={'arr':arri.name, 'idx':iarr}
+                    cdata=oimDataCheckData(arri)
+                    if arri.name=="OI_VIS2":
+                        nB=np.shape(arri.data["VIS2DATA"])
+                    if arri.name=="OI_VIS":
+                        nB=np.shape(arri.data["VISAMP"])
+                    if arri.name=="OI_T3": 
+                        nB=np.shape(arri.data["T3AMP"])
+                    if arri.name=="OI_FLUX": 
+                        try:
+                            nB=np.shape(arri.data["FLUXDATA"])
+                        except:
+                            nB=np.shape(arri.data["FLUX"])
+                        
+                    info["nB"]=nB
+                    cdata=oimDataCheckData(arri)
+                    info["data"]=cdata
+                if info:
+                    dataInfo.append(info)
         
-        for iarr,arri in enumerate(data):
-            info=None
-            if arri.name in _oimDataTypeArr:
-                info={'arr':arri.name, 'idx':iarr}
-                cdata=oimDataCheckData(arri)
-                if arri.name=="OI_VIS2":
-                    nB=np.shape(arri.data["VIS2DATA"])
-                if arri.name=="OI_VIS":
-                    nB=np.shape(arri.data["VISAMP"])
-                if arri.name=="OI_T3": 
-                    nB=np.shape(arri.data["T3AMP"])
-                if arri.name=="OI_FLUX": 
-                    try:
-                        nB=np.shape(arri.data["FLUXDATA"])
-                    except:
-                        nB=np.shape(arri.data["FLUX"])
-                    
-                info["nB"]=nB
-                cdata=oimDataCheckData(arri)
-                info["data"]=cdata
-            if info:
-                dataInfo.append(info)
-        
-        self.dataInfo.append(dataInfo)
-        
+        self.dataInfo=dataInfo
+
     def prepareData(self):
+        self._analyzeOIFitFile(self.data)
         self.vect_u=np.array([])
         self.vect_v=np.array([])
         self.vect_wl=np.array([])
@@ -415,14 +412,13 @@ class oimData(object):
                     self.struct_flag[-1].append(flag) 
         self._prepared = True
         
-    
-        
     def writeto(self,filename=None,overwrite=False,directory=None):
         ndata=len(self.data)
         for idata,datai in enumerate(self.data):
             if filename!= None:
                 if ndata==1:
                     filenamei=filename
+
                 else:
                     filenamei="{}_{}.fits".format(os.path.splitext(filename)[0],idata)
             elif directory!=None and datai.filename()!=None:
