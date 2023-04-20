@@ -4,21 +4,22 @@ Created on Wed Jun 29 16:16:59 2022
 
 @author: Ame
 """
-import os
+from datetime import datetime
+from pathlib import Path
+from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
-from datetime import datetime
 from tqdm import tqdm
 
 
-path = os.path.dirname(oim.__file__)
-pathData = os.path.join(path, os.pardir, "examples",
-                        "testData", "ASPRO_MATISSE")
-files0 = [os.path.abspath(os.path.join(pathData, fi))
-          for fi in os.listdir(pathData) if ".fits" in fi]
+# Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
+path = Path(oim.__file__).parent.parent
+pathData = path / Path() / "examples" / "testData" / "ASPRO_MATISSE"
 
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
+files0 = list(map(str, pathData.glob("*.fits")))
 
 text = ["Complex Corr Flux only", "Complex Corr Flux + Chi2"]
 computeChi2 = [False, True]
@@ -26,7 +27,6 @@ computeSimulatedData = [False, False]
 
 ndata = 50
 dt = np.ndarray([2, ndata])
-
 start_time0 = datetime.now()
 
 ud = oim.oimUD(d=20, f=4)
@@ -35,9 +35,7 @@ model = oim.oimModel([ud, pt])
 
 
 for idata in tqdm(range(ndata)):
-
     files = files0*(idata+1)
-
     sim = oim.oimSimulator(data=files, model=model)
 
     if idata == 0:
@@ -53,8 +51,7 @@ for idata in tqdm(range(ndata)):
         dt[itype, idata] = (end_time - start_time).total_seconds() * 1000/navg
 
 end_time0 = datetime.now()
-print('Full Computation time {:.3f}s'.format(
-    (end_time0 - start_time0).total_seconds()))
+pprint(f"Full Computation time {(end_time0 - start_time0).total_seconds():.3f}s")
 
 # %% Plot Time Ratio between CorrFlux and Chi2
 plt.figure()
@@ -76,6 +73,4 @@ for c in model.components:
     txt += "+ "
 txt = txt[:-3]
 plt.title("Computation time Ratio \n dt($\chi^2$)/dt(F$_{corr}$)")
-filename = os.path.join(path, os.pardir, "images",
-                        "oimodel_test_simulator_speed_ratio.png")
-plt.savefig(filename)
+plt.savefig(path / Path().parent / "images" / "oimodel_test_simulator_speed_ratio.png")

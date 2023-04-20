@@ -4,28 +4,29 @@ Created on Wed Jun 29 16:16:59 2022
 
 @author: Ame
 """
-import os
 from datetime import datetime
+from pathlib import Path
+from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
 from tqdm import tqdm
 
-path = os.path.dirname(oim.__file__)
-pathData = os.path.join(path, os.pardir, "examples",
-                        "testData", "ASPRO_MATISSE")
-files0 = [os.path.abspath(os.path.join(pathData, fi))
-          for fi in os.listdir(pathData) if ".fits" in fi]
 
+# Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
+path = Path(oim.__file__).parent.parent
+pathData = path / Path() / "examples" / "testData" / "ASPRO_MATISSE"
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
+files0 = list(map(str, pathData.glob("*.fits")))
 
 text = ["Complex Corr Flux only", "Complex Corr Flux + Chi2",
         "Complex Corr Flux + Sim. Data", "Full Computation "]
 computeChi2 = [False, True, False, True]
 computeSimulatedData = [False, False, True, True]
 
-ntest = len(text)
-ndata = 30
+ntest, ndata = len(text), 30
 dt = np.ndarray([ntest, ndata])
 
 start_time0 = datetime.now()
@@ -34,7 +35,6 @@ pt = oim.oimPt(f=6)
 model = oim.oimModel([ud, pt])
 
 for idata in tqdm(range(ndata)):
-
     files = files0*(idata+1)
     sim = oim.oimSimulator(data=files, model=model)
 
@@ -52,8 +52,7 @@ for idata in tqdm(range(ndata)):
         dt[itype, idata] = (end_time - start_time).total_seconds() * 1000/navg
 
 end_time0 = datetime.now()
-print('Full Computation time {:.3f}s'.format(
-    (end_time0 - start_time0).total_seconds()))
+pprint(f"Full Computation time {(end_time0 - start_time0).total_seconds():.3f}s")
 
 # %%
 x = np.linspace(1, ndata, ndata)*x0
@@ -70,12 +69,11 @@ plt.ylabel("Computation time (ms)")
 plt.xlim(0, np.max(x))
 plt.ylim(0, np.max(dt))
 txt = ""
+
 for c in model.components:
     txt += c.__str__().split("x")[0]
     txt += "+ "
 txt = txt[:-3]
 
-plt.title("Computation time for a {} model".format(txt))
-filename = os.path.join(path, os.pardir, "images",
-                        "oimodel_test_simulator_speed.png")
-plt.savefig(filename)
+plt.title(f"Computation time for a {txt} model")
+plt.savefig(path / Path().parent / "images" / "oimodel_test_simulator_speed.png")

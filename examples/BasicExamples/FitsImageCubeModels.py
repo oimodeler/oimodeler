@@ -4,7 +4,7 @@ Created on Thu Jan 26 12:03:58 2023
 
 @author: Ame
 """
-import os
+from pathlib import Path
 from pprint import pprint
 
 import matplotlib.colors as colors
@@ -19,20 +19,20 @@ from matplotlib import pyplot as plt
 # standard numpy FFT module oim.oimOptions['FTpaddingFactor']=2
 # oim.oimOptions['FTBackend']=oim.FFTWBackend
 
-path = os.path.dirname(oim.__file__)
-pathData = os.path.join(path, os.pardir, "examples", "BasicExamples")
-filename = os.path.join(pathData, "KinematicsBeDiskModel.fits")
+path = Path(oim.__file__).parent.parent
+pathData = path / Path().parent / "examples" / "BasicExamples"
+filename = pathData / "KinematicsBeDiskModel.fits"
 
 # %% creating the model
-c = oim.oimComponentFitsImage(filename)
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
+c = oim.oimComponentFitsImage(str(filename))
 m = oim.oimModel(c)
 
 # %% Plotting the model image
 wl0, dwl, nwl = 2.1661e-6, 60e-10, 5
 wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
 m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4, colorbar=False,
-            figsize=(2, 2.5), savefig=os.path.join(path, os.pardir, "images",
-                                                   "FitsImageCube_BeDiskKinematicsModel_images.png"))
+            figsize=(2, 2.5), savefig=path / Path().parent / "images" / "FitsImageCube_BeDiskKinematicsModel_images.png")
 
 
 # %%
@@ -42,8 +42,7 @@ pprint(m.getParameters())
 c.params['pa'].value = 45
 c.params['scale'].value = 2
 m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4, colorbar=False,
-            figsize=(2, 2.5), savefig=os.path.join(path, os.pardir, "images",
-                                                   "FitsImageCube_BeDiskKinematicsModel_images_scaled_rotated.png"))
+            figsize=(2, 2.5), savefig=path / Path().parent / "images" / "FitsImageCube_BeDiskKinematicsModel_images_scaled_rotated.png")
 
 # %% Computing and plotting visibilities for various baselines and walvelengths
 c.params['pa'].value = 0
@@ -93,5 +92,4 @@ norm = colors.Normalize(vmin=np.min(B), vmax=np.max(B))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax, label="B (m)")
 
-fig.savefig(os.path.join(path, os.pardir, "images",
-            "FitsImageCube_BeDiskKinematicsModel_visibility.png"))
+fig.savefig(path / Path().parent / "images" / "FitsImageCube_BeDiskKinematicsModel_visibility.png")

@@ -4,25 +4,23 @@ Created on Sat Sep 10 07:28:17 2022
 
 @author: Ame
 """
-import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import oimodeler as oim
 
-path = os.path.dirname(oim.__file__)
-pathData = os.path.join(path, os.pardir, "examples",
-                        "testData", "ASPRO_MATISSE2")
+path = Path(oim.__file__).parent.parent
+pathData = path / Path() / "examples" / "testData" / "ASPRO_MATISSE2"
 
-files = [os.path.abspath(os.path.join(pathData, fi))
-         for fi in os.listdir(pathData) if ".fits" in fi]
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
+files = list(map(str, pathData.glob("*.fits")))
 data = oim.oimData(files)
-
 
 # %%
 fig1 = plt.figure()
 ax1 = plt.subplot(projection='oimAxes')
 ax1.uvplot(data)
-plt.savefig(os.path.join(path, os.pardir, "images", "ExampleOimPlot_uv.png"))
+plt.savefig(path / Path().parent / "images" / "ExampleOimPlot_uv.png")
 
 # %%
 fig2 = plt.figure()
@@ -33,7 +31,7 @@ lamcol = ax2.oiplot(data, "SPAFREQ", "VIS2DATA", xunit="cycles/mas", label="Data
 plt.colorbar(lamcol, ax=ax2, label="$\\lambda$ ($\mu$m)")
 ax2.legend()
 
-plt.savefig(os.path.join(path, os.pardir, "images", "ExampleOimPlot_v2.png"))
+plt.savefig(path / Path().parent / "images" / "ExampleOimPlot_v2.png")
 
 # %%
 fig3 = plt.figure()
@@ -42,7 +40,7 @@ ax3.oiplot(data, "EFF_WAVE", "VIS2DATA", xunitmultiplier=1e6, color="byConfigura
            errorbar=True, kwargs_error={"alpha": 0.3})
 ax3.legend()
 
-plt.savefig(os.path.join(path, os.pardir, "images", "ExampleOimPlot_v2Wl.png"))
+plt.savefig(path / Path().parent / "images" / "ExampleOimPlot_v2Wl.png")
 
 # using the projection='oimAsxes' for all subpltos allow to use oimPlot custom plots
 fig4, ax4 = plt.subplots(2, 2, subplot_kw=dict(
@@ -83,5 +81,4 @@ ax4[1, 1].autolim()
 
 fig4.tight_layout()
 
-filename = os.path.join(path, os.pardir, "images", "ExampleOimPlot_multi.png")
-plt.savefig(filename)
+plt.savefig(path / Path().parent / "images" / "ExampleOimPlot_multi.png")

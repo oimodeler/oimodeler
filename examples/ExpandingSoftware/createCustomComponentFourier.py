@@ -10,7 +10,7 @@ and a more complex one consisting of three boxes and a uniform disk.
 Complex visibility for North-South and East-West baselines between 0 and 100m
 are computed for both models and plotted as well as images.
 """
-import os
+from pathlib import Path
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ import numpy as np
 import oimodeler as oim
 
 
-path = os.path.dirname(oim.__file__)
+path = Path(oim.__file__).parent.parent
 
 """
 Example of implementation of a new component defined by formula in Fourier Plan
@@ -53,10 +53,8 @@ class oimBox(oim.oimComponentFourier):
     """
 
     def _visFunction(self, ucoord, vcoord, rho, wl, t):
-
         x = self.params["dx"](wl, t)*self.params["dx"].unit.to(u.rad)*ucoord
         y = self.params["dy"](wl, t)*self.params["dy"].unit.to(u.rad)*vcoord
-
         return np.sinc(x)*np.sinc(y)
     """
     Implementation of the image function that will be called whenusing the
@@ -69,7 +67,6 @@ class oimBox(oim.oimComponentFourier):
     """
 
     def _imageFunction(self, xx, yy, wl, t):
-
         return ((np.abs(xx) <= self.params["dx"](wl, t)/2) &
                 (np.abs(yy) <= self.params["dy"](wl, t)/2)).astype(float)
 
@@ -82,16 +79,15 @@ m1.showModel(512, 0.2, axe=ax[0], colorbar=False)
 m1.showModel(512, 0.2, axe=ax[1], fromFT=True, colorbar=False)
 ax[0].set_title("Image with _imageFunction")
 ax[1].set_title("Image with FFT of _visFunction")
-fig.savefig(os.path.join(path, os.pardir, "images", "customCompBox1Image.png"))
+fig.savefig(path / Path().parent / "images" / "customCompBox1Image.png")
 
 # %%
-
 b2 = oimBox(dx=2, dy=2, x=-20, y=0, f=0.5)
 b3 = oimBox(dx=10, dy=20, x=30, y=-10, pa=-40, f=10)
 c = oim.oimUD(d=10, x=30, y=10)
 m2 = oim.oimModel([b1, b2, b3, c])
 m2.showModel(512, 0.2, colorbar=False, figsize=(5, 5),
-             savefig=os.path.join(path, os.pardir, "images", "customCompBoxesImage.png"))
+             savefig=path / Path().parent / "images" / "customCompBoxesImage.png")
 
 
 # %%
@@ -102,7 +98,7 @@ b4.params['dy'] = oim.oimParamLinker(b4.params['dx'], 'mult', 4)
 m3 = oim.oimModel([b4])
 
 m3.showModel(512, 0.2, wl=[2e-6, 2.2e-6, 2.4e-6], colorbar=False, swapAxes=True,
-             savefig=os.path.join(path, os.pardir, "images", "customCompChromBoxImages.png"))
+             savefig=path / Path().parent / "images" / "customCompChromBoxImages.png")
 
 
 # %%
@@ -125,7 +121,6 @@ spf0 = spf*0
 
 fig, ax = plt.subplots(3, 2, figsize=(10, 7))
 
-
 models = [m1, m2, m3]
 names = ["1 Box", "Multi Boxes", "Chromatic box"]
 
@@ -138,8 +133,7 @@ for i, m in enumerate(models):
 
     cb = ax[i, 0].scatter(spf, visWest, c=wls*1e6, s=0.2, cmap="plasma")
     ax[i, 1].scatter(spf, visNorth, c=wls*1e6, s=0.2, cmap="plasma")
-
-    ax[i, 0].set_ylabel("Vis. of {}".format(names[i]))
+    ax[i, 0].set_ylabel(f"Vis. of {names[i]}")
 
     if i != 2:
         ax[i, 0].get_xaxis().set_visible(False)
@@ -155,5 +149,4 @@ ax[2, 1].set_xlabel("B/$\\lambda$ (cycles/rad)")
 ax[0, 0].set_title("East-West baselines")
 ax[0, 1].set_title("North-South baselines")
 
-fig.savefig(os.path.join(path, os.pardir, "images",
-            "customCompMultiBoxesVis.png"))
+fig.savefig(path / Path().parent / "images" / "customCompMultiBoxesVis.png")

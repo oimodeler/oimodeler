@@ -4,7 +4,6 @@ Created on Thu Jan 26 12:03:58 2023
 
 @author: Ame
 """
-import os
 from pathlib import Path
 from pprint import pprint
 
@@ -36,7 +35,7 @@ m = oim.oimModel(c)
 
 # %% Plotting the model image
 m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", figsize=(7, 5.5),
-            savefig=os.path.join(path, os.pardir, "images", "FitsImage_Disco_image.png"))
+            savefig=path / Path().parent / "images" / "FitsImage_Disco_image.png")
 
 # %%
 # Create some spatial frequencies (Baselines from 0 to 120m at 1.5 microns)

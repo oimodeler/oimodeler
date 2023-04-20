@@ -4,22 +4,23 @@ Created on Wed Jun 29 16:16:59 2022
 
 @author: Ame
 """
-import os
+from pathlib import Path
+from pprint import pprint
 
 import oimodeler as oim
 
-path = os.path.dirname(oim.__file__)
-pathData = os.path.join(path, os.pardir, "examples",
-                        "testData", "FSCMa_MATISSE")
-files = [os.path.abspath(os.path.join(pathData, fi))
-         for fi in os.listdir(pathData)]
+path = Path(oim.__file__).parent.parent
+pathData = path / Path().parent / "examples" / "testData" / "FSCMa_MATISSE"
 
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
+files = list(map(str, pathData.glob("*.fits")))
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
 data = oim.oimData(files)
-
-print(data.data)
+pprint(data.data)
 
 data.prepareData()
-print(data.vect_u)
-print(data.vect_v)
-print(data.vect_wl)
-print(data.vect_u.shape)
+pprint(data.vect_u)
+pprint(data.vect_v)
+pprint(data.vect_wl)
+pprint(data.vect_u.shape)
