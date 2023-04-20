@@ -243,7 +243,7 @@ class oimData(object):
     def addData(self, dataOrFilename, prepare=True):
         if type(dataOrFilename) == type([]):
             for el in dataOrFilename:
-                self.addData(el, prepare=prepare))
+                self.addData(el, prepare=prepare)
         else:
             if type(dataOrFilename) == str:
                 self._data.append(fits.open(dataOrFilename))
