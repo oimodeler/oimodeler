@@ -3,8 +3,6 @@
 import numpy as np
 from scipy import interpolate
 
-from .oimOptions import oimOptions
-
 
 class numpyFFTBackend():
     def check(backendPreparation, im, pix, wlin, tin, ucoord, vcoord, wl, t):
@@ -27,9 +25,6 @@ class numpyFFTBackend():
         imag = interpolate.interpn(grid, np.imag(fft2D), coord, bounds_error=False, fill_value=None)
         return real+imag*1j
 
-
-oimOptions["FTBackend"] = numpyFFTBackend
-oimOptions["AvailableFTBackends"] = [numpyFFTBackend]
 
 try:
     import pyfftw
@@ -82,8 +77,5 @@ try:
             vc = real+imag*1j
 
             return vc
-
-    oimOptions["AvailableFTBackends"].append(FFTWBackend)
-
 except:
     pass
