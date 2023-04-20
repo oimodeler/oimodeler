@@ -3,10 +3,8 @@
 import numpy as np
 from scipy import interpolate
 
-from .oimOptions import oimOptions
 
-
-class numpyFFTBackend():
+class numpyFFTBackend:
     def check(backendPreparation, im, pix, wlin, tin, ucoord, vcoord, wl, t):
         return True
 
@@ -28,13 +26,10 @@ class numpyFFTBackend():
         return real+imag*1j
 
 
-oimOptions["FTBackend"] = numpyFFTBackend
-oimOptions["AvailableFTBackends"] = [numpyFFTBackend]
-
 try:
     import pyfftw
 
-    class FFTWBackend():
+    class FFTWBackend:
         def check(backendPreparation, im, pix, wlin, tin, ucoord, vcoord, wl, t):
             try:
                 fft_in, fft_out, fft_object, dim0, nwl0, nt0 = backendPreparation
@@ -82,8 +77,20 @@ try:
             vc = real+imag*1j
 
             return vc
+except ImportError:
+    def _err():
+        """Import error function that gets called when the FFTWBackend
+        dependendy pyfftw has not been properly imported."""
+        raise ImportError("This `FFTWBackend`-class has not been defined for `oimodeler`."
+                          " Try installing `pyfftw` or use another backend!"
+                          " The backend can be set via the `oimOptions`.")
 
-    oimOptions["AvailableFTBackends"].append(FFTWBackend)
+    class FFTWBackend:
+        def check(backendPreparation, im, pix, wlin, tin, ucoord, vcoord, wl, t):
+            _err()
 
-except:
-    pass
+        def prepare(im, pix, wlin, tin, ucoord, vcoord, wl, t):
+            _err()
+
+        def compute(backendPreparation, im, pix, wlin, tin, ucoord, vcoord, wl, t):
+            _err()

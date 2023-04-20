@@ -4,14 +4,14 @@ Created on Fri Oct 21 12:27:15 2022
 
 @author: Ame
 """
-import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
 from astropy import units as units
 
-path = os.path.dirname(oim.__file__)
+path = Path(oim.__file__).parent.parent
 
 
 class oimSpiral(oim.oimComponentImage):
@@ -70,8 +70,7 @@ m.showModel(256, 0.1, swapAxes=True, fromFT=True,
 ax[1].get_yaxis().set_visible(False)
 ax[0].set_title("Direct Image")
 ax[1].set_title("From FFT")
-fig.savefig(os.path.join(path, os.pardir,
-            "images", "customCompImageSpiral.png"))
+fig.savefig(path / Path().parent / "images" / "customCompImageSpiral.png")
 
 
 # %% Computing and plotting visibilities for various baselines and walvelengths
@@ -101,5 +100,4 @@ ax.set_xlabel("B/$\lambda$ (cycles/mas)")
 ax.set_ylabel("Visibility")
 ax.legend()
 
-fig.savefig(os.path.join(path, os.pardir, "images",
-            "customCompImageSpiralVis.png"))
+fig.savefig(path / Path().parent / "images" / "customCompImageSpiralVis.png")

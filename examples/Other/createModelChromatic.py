@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -8,8 +8,7 @@ import numpy as np
 import oimodeler as oim
 
 
-path = os.path.dirname(oim.__file__)
-
+path = Path(oim.__file__).parent.parent
 mas2rad = u.mas.to(u.rad)
 
 # Some components
@@ -105,7 +104,7 @@ norm = colors.Normalize(vmin=np.min(wl), vmax=np.max(wl))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sc, ax=ax[2:, :].ravel().tolist(), label="$\\lambda$ ($\\mu$m)")
 
-filename = os.path.join(path, os.pardir, "images", "createModelChromatic.png")
+filename = path / Path().parent / "images" / "createModelChromatic.png"
 fig.savefig(filename)
 
 # %%
@@ -129,8 +128,6 @@ for iwl, wli in enumerate(wl):
     ax.plot(B/wli*mas2rad, cf2[iwl, :]/cf2[iwl, 0],
             color=plt.cm.plasma(iwl/nwl), alpha=0.5, lw=1)
 
-# ax.get_xaxis().set_visible(False)
-# ax.get_yaxis().set_visible(False)
 ax.axis('off')
-filename = os.path.join(path, os.pardir, "images", "imageForLogo.png")
+filename = path / Path().parent / "images" / "imageForLogo.png"
 fig.savefig(filename, dpi=240, transparent=True)

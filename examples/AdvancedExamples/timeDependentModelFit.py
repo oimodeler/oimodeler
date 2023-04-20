@@ -1,15 +1,15 @@
-import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
 
-path = os.path.dirname(oim.__file__)
-pathData = os.path.join(path, os.pardir, "examples",
-                        "testData", "ASPRO_SPICA_GROWING_UD")
 
-files = [os.path.abspath(os.path.join(pathData, fi))
-         for fi in os.listdir(pathData) if ".fits" in fi]
+path = Path(oim.__file__).parent.parent
+pathData = path / Path().parent / "examples" / "testData" / "ASPRO_SPICA_GROWING_UD"
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
+files = list(map(str, pathData.glob("*.fits")))
 data = oim.oimData(files)
 
 # %%
@@ -33,11 +33,9 @@ fit.run(nsteps=300, progress=True)
 
 # %%
 figWalkers, axeWalkers = fit.walkersPlot(cmap="plasma_r",
-                                         savefig=os.path.join(path, os.pardir, "images",
-                                                              "complexModel_timeDependentWalkers.png"))
+                                         savefig=path / Path().parent / "images" / "complexModel_timeDependentWalkers.png")
 figCorner, axeCorner = fit.cornerPlot(discard=100,
-                                      savefig=os.path.join(path, os.pardir, "images",
-                                                           "complexModel_timeDependentCorner.png"))
+                                      savefig=path / Path().parent / "images" / "complexModel_timeDependentCorner.png")
 
 # %%
 median, err_l, err_u, err = fit.getResults(mode='median', discard=100)
@@ -51,8 +49,7 @@ ax.oiplot(fit.simulator.simulatedData, "SPAFREQ", "VIS2DATA",
           xunit="cycles/mas", color="k", ls=":", label="Model")
 fig.colorbar(timecol, ax=ax, label="MJD (days)")
 ax.legend()
-plt.savefig(os.path.join(path, os.pardir, "images",
-            "complexModel_timeDependentFit.png"))
+plt.savefig(path / Path().parent / "images" / "complexModel_timeDependentFit.png")
 
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(8, 4))
@@ -73,5 +70,4 @@ ax.set_xlabel("Time (MJD)")
 ax.set_ylabel("Diameter (mas)")
 ax.legend()
 
-plt.savefig(os.path.join(path, os.pardir, "images",
-            "complexModel_timeDependentParameter.png"))
+plt.savefig(path / Path().parent / "images" / "complexModel_timeDependentParameter.png")

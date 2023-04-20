@@ -4,9 +4,9 @@ Created on Tue Nov 15 11:53:04 2022
 
 @author: Ame
 """
-import os
 from datetime import datetime
-from pprint import pprint as print
+from pathlib import Path
+from pprint import pprint
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,16 +15,12 @@ import oimodeler as oim
 
 
 matplotlib.use('Agg')
-
 name = "realData"
-
-path = os.path.dirname(oim.__file__)
-
+path = Path(oim.__file__).parent.parent
 
 fc1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 fc2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
 fcwl = oim.oimWavelengthRangeFilter(targets="all", wlRange=[3.1e-6, 3.9e-6])
-
 filt1 = oim.oimDataFilter([fc1, fc2, fcwl])
 
 
@@ -41,8 +37,9 @@ class baseTest:
 
     def __init__(self):
         self.setModel()
-        self.data = oim.oimData(os.path.abspath(
-            os.path.join(self.pathData, self.fdata)))
+
+        # TODO: After pathlib change of all `oimodeler` modules, remove str here
+        self.data = oim.oimData(str((self.pathData / self.fdata).resolve()))
         self.data.setFilter(self.filt)
 
     def setModel(self):
@@ -74,22 +71,19 @@ class baseTest:
 
         fname = prefix+self.name.replace(" ", "_")
 
-        figWalkers, axeWalkers = self.fit.walkersPlot(
-            savefig=os.path.join(path, os.pardir, "examples", "testSuite", "RESULTS", fname+"_walkers"+ext))
+        figWalkers, _ = self.fit.walkersPlot(savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_walkers{ext}")
         plt.close(figWalkers)
 
-        figCorner, axeCorner = self.fit.cornerPlot(discard=self.nstep//2,
-                                                   savefig=os.path.join(path, os.pardir, "examples", "testSuite", "RESULTS", fname+"_corner"+ext))
+        figCorner, _ = self.fit.cornerPlot(discard=self.nstep//2,
+                                                   savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_corner{ext}")
         plt.close(figCorner)
 
-        figSim, axSim = self.fit.simulator.plot(["VIS2DATA", "T3PHI"],
-                                                savefig=os.path.join(path, os.pardir, "examples", "testSuite", "RESULTS", fname+"_v2CP"+ext))
+        figSim, _ = self.fit.simulator.plot(["VIS2DATA", "T3PHI"],
+                                                savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_v2CP{ext}")
         plt.close(figSim)
 
 
 # %%
-
-
 class matisse75Vir(baseTest):
     name = "MATISSE Binary 75 Vir "
     # PIONIER data generated with ASPRO have somme bias
@@ -97,8 +91,7 @@ class matisse75Vir(baseTest):
     chi2r0 = 16.  # and Chi2r is not close to 1
     nwalker = 50
     nstep = 30000
-    pathData = pathData = os.path.join(os.path.join(
-        path, os.pardir, "examples", "testData", "RealData", "MATISSE", "binary75Vir"))
+    pathData = pathData = path / Path().parent / "examples" / "testData" / "RealData" / "MATISSE" / "binary75Vir"
     fdata = "2019-05-23T025507_75Vir_A0G1J2J3_IR-LM_LOW_noChop_cal_oifits_0.fits"
     filt = filt1
 
@@ -119,6 +112,5 @@ ntest = len(tests)
 for itest, testi in enumerate(tests):
     if itest >= 0:
         res, chi2, dt = testi.compute(progress=True)
-        print("{}/{}) {} => res={} chi2={} (dt={:.1f}s)".format(itest +
-              1, ntest, testi.name, res, chi2, dt))
+        pprint("{}/{}) {} => res={} chi2={} (dt={:.1f}s)".format(itest + 1, ntest, testi.name, res, chi2, dt))
         testi.makePlots(prefix=name+"_"+str(itest+1)+"_")

@@ -4,18 +4,18 @@ Created on Wed Jun 29 16:16:59 2022
 
 @author: Ame
 """
-import os
+from pathlib import Path
+from pprint import pprint
 
 import oimodeler as oim
 
 
-path = os.path.dirname(oim.__file__)
-
 # Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
-pathData = os.path.join(path, os.pardir, "examples",
-                        "testData", "ASPRO_MATISSE2")
-files = [os.path.abspath(os.path.join(pathData, fi))
-         for fi in os.listdir(pathData) if ".fits" in fi]
+path = Path(oim.__file__).parent.parent
+pathData = path / Path() / "examples" / "testData" / "ASPRO_MATISSE2"
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
+files = list(map(str, pathData.glob("*.fits")))
 
 # Building a oimodeler model with the same parameters
 ud = oim.oimUD(d=3, f=1, x=10, y=20)
@@ -33,9 +33,9 @@ sim = oim.oimSimulator(data=files, model=model)
 # with option to compute chi2 and final simulated data in oifits format
 sim.compute(computeChi2=True, computeSimulatedData=True)
 # Printing data model chi2r
-print("Chi2r = {}".format(sim.chi2r))
+pprint(f"Chi2r = {sim.chi2r}")
 
 
 # %%
 fig0, ax0 = sim.plot(["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],
-                     savefig=os.path.join(path, os.pardir, "images", "ExampleOimSimulator_model0.png"))
+                     savefig=path / Path().parent / "images" / "ExampleOimSimulator_model0.png")

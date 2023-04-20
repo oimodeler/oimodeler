@@ -4,7 +4,7 @@ Created on Wed Oct 19 12:30:21 2022
 
 @author: Ame
 """
-import os
+from pathlib import Path
 
 import matplotlib.cm as cm
 import matplotlib.colors as colors
@@ -15,7 +15,7 @@ from astropy import units as units
 from oimodeler.oimCustomComponents import oimFastRotator, oimSpiral, oimBox
 
 
-path = os.path.dirname(oim.__file__)
+path = Path(oim.__file__).parent.parent
 
 # %% Creating a model
 fastRot = oimFastRotator(dpole=5, dim=128, incl=-70, rot=0.99,
@@ -76,5 +76,4 @@ plt.subplots_adjust(left=0.10, bottom=0.15, right=0.95,
 norm = colors.Normalize(vmin=np.min(wl)*1e6, vmax=np.max(wl)*1e6)
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax[3], label="$\\lambda$ ($\\mu$m)")
-fig.savefig(os.path.join(path, os.pardir,
-            "images", "usingCustomComponents.png"))
+fig.savefig(path / Path().parent / "images" / "usingCustomComponents.png")

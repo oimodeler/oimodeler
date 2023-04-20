@@ -1,34 +1,75 @@
 # -*- coding: utf-8 -*-
-"""
-Model parameter and parameter interpolators
-"""
+"""Model parameter and parameter interpolators."""
+import sys
+
+import astropy.units as u
 import numpy as np
-from astropy import units as units
 from scipy.interpolate import interp1d
 
 
-class oimParam(object):
-    """Class of model parameters"""
+# NOTE: This module so it can retrieve attributes, even if called from outside
+CURRENT_MODULE = sys.modules[__name__]
 
+
+# NOTE: Here is a list of standard parameters to be used when defining new components
+_standardParameters = {
+    "x": {"name": "x", "value": 0, "description": "x position", "unit": u.mas, "free": False},
+    "y": {"name": "y", "value": 0, "description": "y position", "unit": u.mas, "free": False},
+    "f": {"name": "f", "value": 1, "description": "flux", "unit": u.one, "mini": 0, "maxi": 1},
+    "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": u.mas, "mini": 0},
+    "d": {"name": "d", "value": 0, "description": "Diameter", "unit": u.mas, "mini": 0},
+    "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": u.mas, "mini": 0},
+    "dout": {"name": "dout", "value": 0, "description": "Outer Diameter", "unit": u.mas, "mini": 0},
+    "elong": {"name": "elong", "value": 1, "description": "Elongation Ratio", "unit": u.one, "mini": 1},
+    "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
+    "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": u.one, "mini": 0, "maxi": 1},
+    "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
+    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": u.mas, "mini": 0},
+    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": u.one, "free": False, "mini": 1},
+    "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": u.m, "mini": 0},
+    "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": u.day},
+    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": u.one},
+    'index': {'name': 'index', 'value': 1, 'description': 'Index', 'unit': u.one}
+}
+
+# NOTE: Sets the available interpolators for oimodeler. If strings are provided,
+# the `oimInterp` looks through `oimParam` in order to find the class.
+# To overwrite provide class variables
+_interpolators = {"wl": "oimParamInterpolatorWl",
+                  "time": "oimParamInterpolatorTime",
+                  "GaussWl": "oimParamGaussianWl",
+                  "GaussTime": "oimParamGaussianTime",
+                  "mGaussWl": "oimParamMultipleGaussianWl",
+                  "mGaussTime": "oimParamMultipleGaussianTime",
+                  "cosTime": "oimParamCosineTime",
+                  "polyWl": "oimParamPolynomialWl",
+                  "polyTime": "oimParamPolynomialTime",
+                  "powerlawWl": "oimParamPowerLawWl",
+                  "powerlawTime": "oimParamPowerLawTime",
+                  "rangeWl": "oimParamLinearRangeWl"}
+
+
+class oimParam:
+    """Class of model parameters
+
+    Parameters
+    ----------
+    name: string, optional
+        Name of the Parameter. The default is None.
+    value: float, optional
+        Value of the parameter. The default is None.
+    mini: float, optional
+        Mininum value allowed for the parameter. The default is -1*np.inf.
+    maxi: float, optional
+        maximum value allowed for the parameter. The default is np.inf.
+    description: string, optional
+        Description of the parameter. The default is "".
+    unit: 1 or astropy.unit, optional
+        Unit of the parameter. The default is 1.
+    """
     def __init__(self, name=None, value=None, mini=-1*np.inf, maxi=np.inf,
                  description="", unit=1, free=True, error=0):
-        """Initiliaze a new instance of the oimParam class
-
-        Parameters
-        ----------
-        name: string, optional
-            Name of the Parameter. The default is None.
-        value: float, optional
-            Value of the parameter. The default is None.
-        mini: float, optional
-            Mininum value allowed for the parameter. The default is -1*np.inf.
-        maxi: float, optional
-            maximum value allowed for the parameter. The default is np.inf.
-        description: string, optional
-            Description of the parameter. The default is "".
-        unit: 1 or astropy.unit, optional
-            Unit of the parameter. The default is 1.
-        """
+        """Initialize a new instance of the oimParam class. """
         self.name = name
         self.value = value
         self.error = error
@@ -67,7 +108,7 @@ class oimParam(object):
 
 
 ###############################################################################
-class oimParamLinker(object):
+class oimParamLinker:
     def __init__(self, param, operator="add", fact=0):
         self.param = param
         self.fact = fact
@@ -98,7 +139,7 @@ class oimParamLinker(object):
 ###############################################################################
 
 
-class oimParamNorm(object):
+class oimParamNorm:
     def __init__(self, params, norm=1):
         if type(params) == list:
             self.params = params
@@ -111,7 +152,7 @@ class oimParamNorm(object):
 
     @property
     def unit(self):
-        return self.param.unit
+        return self.params.unit
 
     def __call__(self, wl=None, t=None):
 
@@ -122,6 +163,38 @@ class oimParamNorm(object):
 
 
 ###############################################################################
+
+class oimInterp:
+    """Macro to directly create oimParamInterpolator-derived class in a
+    oimComponent object.
+
+    Parameters
+    ----------
+    name : str
+        Keyname for the interpolators registered in the _interpolators
+        dictionary.
+    **kwargs : dict
+        Parameters from the create oimParamInterpolator-derived class.
+
+    Attributes
+    ----------
+    kwargs : dict
+        Parameters from the create oimParamInterpolator-derived class.
+    type : oimParamInterpolator
+        A param interpolator contained in the _interpolators dictionary.
+        For the local definition in the `oimParam` module, strings can be used.
+        To redefine the dictionary elements from outside, use the class
+        variables, otherwise the local definition will be used.
+    """
+
+    def __init__(self, name, **kwargs):
+        self.kwargs = kwargs
+        self.type = _interpolators[name]
+
+        # NOTE: Strings are accepted as a local definition within this module
+        if isinstance(self.type, str):
+            self.type = getattr(CURRENT_MODULE, self.type)
+
 
 class oimParamInterpolator(oimParam):
     def __init__(self, param, **kwargs):
@@ -215,9 +288,9 @@ class oimParamCosineTime(oimParamInterpolator):
     def _init(self, param, T0=0, P=1, values=[0, 1], x0=None, **kwargs):
         self.assymetric = False
         self.T0 = oimParam(name="T0", value=T0,
-                           description="Start", unit=units.day)
+                           description="Start", unit=u.day)
         self.P = oimParam(name="P", value=P,
-                          description="Period", unit=units.day)
+                          description="Period", unit=u.day)
 
         self.values = []
 
@@ -231,7 +304,7 @@ class oimParamCosineTime(oimParamInterpolator):
         # self.params.append(self.P)
         if x0 != None:
             self.x0 = oimParam(name="x0", value=x0,
-                               description="Inflection point", unit=units.one)
+                               description="Inflection point", unit=u.one)
             # self.params.append(self.x0)
             self.assymetric = True
 
@@ -503,65 +576,3 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         params.append(self.wlmin)
         params.append(self.wlmax)
         return params
-
-
-# NOTE: Dictionary of interpolators defined in oimodels
-# TODO: Rename this properly (is a Dict not a List) and move it to another file?
-oimParamInterpolatorList = {"wl": oimParamInterpolatorWl,
-                            "time": oimParamInterpolatorTime,
-                            "GaussWl": oimParamGaussianWl,
-                            "GaussTime": oimParamGaussianTime,
-                            "mGaussWl": oimParamMultipleGaussianWl,
-                            "mGaussTime": oimParamMultipleGaussianTime,
-                            "cosTime": oimParamCosineTime,
-                            "polyWl": oimParamPolynomialWl,
-                            "polyTime": oimParamPolynomialTime,
-                            "powerlawWl": oimParamPowerLawWl,
-                            "powerlawTime": oimParamPowerLawTime,
-                            "rangeWl": oimParamLinearRangeWl}
-
-
-class oimInterp(object):
-    """
-    Macro to directly create oimParamInterpolator-derived class in a 
-    oimComponent object.
-
-    Parameters
-    ----------
-    name : str
-        keyname for the interpolators registered in the _interpolator variable
-    **kwargs : dictionary
-        parameters from the create oimParamInterpolator-derived class
-
-    Returns
-    -------
-    None.
-
-    """
-
-    def __init__(self, name, **kwargs):
-
-        self.kwargs = kwargs
-        self.type = oimParamInterpolatorList[name]
-
-
-# NOTE: Here is a list of standard parameters to be used when defining new components
-_standardParameters = {
-    "x": {"name": "x", "value": 0, "description": "x position", "unit": units.mas, "free": False},
-    "y": {"name": "y", "value": 0, "description": "y position", "unit": units.mas, "free": False},
-    "f": {"name": "f", "value": 1, "description": "flux", "unit": units.one, "mini": 0, "maxi": 1},
-    "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": units.mas, "mini": 0},
-    "d": {"name": "d", "value": 0, "description": "Diameter", "unit": units.mas, "mini": 0},
-    "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": units.mas, "mini": 0},
-    "dout": {"name": "dout", "value": 0, "description": "Outer Diameter", "unit": units.mas, "mini": 0},
-    "elong": {"name": "elong", "value": 1, "description": "Elongation Ratio", "unit": units.one, "mini": 1},
-    "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": units.deg, "mini": -180, "maxi": 180},
-    "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": units.one, "mini": 0, "maxi": 1},
-    "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": units.deg, "mini": -180, "maxi": 180},
-    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": units.mas, "mini": 0},
-    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": units.one, "free": False, "mini": 1},
-    "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": units.m, "mini": 0},
-    "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": units.day},
-    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": units.one},
-    'index': {'name': 'index', 'value': 1, 'description': 'Index', 'unit': units.one}
-}

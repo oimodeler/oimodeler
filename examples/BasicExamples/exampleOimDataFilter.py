@@ -4,22 +4,21 @@ Created on Mon Sep 26 09:08:46 2022
 
 @author: Ame
 """
-import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import oimodeler as oim
 
-path = os.path.dirname(oim.__file__)
 
 # Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
-pathData = os.path.join(path, os.pardir, "examples",
-                        "testData", "FSCMa_MATISSE")
-files = [os.path.abspath(os.path.join(pathData, fi))
-         for fi in os.listdir(pathData) if ".fits" in fi]
+path = Path(oim.__file__).parent.parent
+pathData = path / Path().parent / "examples" / "testData" / "FSCMa_MATISSE"
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str here
+files = list(map(str, pathData.glob("*.fits")))
 
 # %%
 data = oim.oimData(files)
-
 
 f1 = oim.oimWavelengthRangeFilter(targets="all", wlRange=[3.0e-6, 4e-6])
 
@@ -28,7 +27,6 @@ data.setFilter(filters)
 
 # data.setFilters() #removing the filter
 data.useFilter = False
-
 
 # %%
 fig = plt.figure()
@@ -46,8 +44,7 @@ ax.legend()
 ax.autolim()
 
 fig.tight_layout()
-fig.savefig(os.path.join(path, os.pardir, "images",
-            "ExampleFilter_wavelengthCut.png"))
+fig.savefig(path / Path().parent / "images" / "ExampleFilter_wavelengthCut.png")
 
 # %%
 f2 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
