@@ -83,3 +83,4 @@ title = f"$\\alpha$ Col AMBER data + Kinematic disk model: chi$^2_r$= {sim.chi2r
 fig.suptitle(title)
 ax[0, 0].set_xlim(1e6*(wl0-dwl), 1e6*(wl0+dwl))
 fig.tight_layout()
+plt.show()
