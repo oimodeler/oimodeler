@@ -9,6 +9,7 @@ from scipy.special import j0
 from . import __dict__ as oimDict
 from .oimOptions import oimOptions
 from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParameters
+from .oimUtils import getWlFromFitsImageCube
 
 
 # TODO: Move somewhere else
@@ -742,7 +743,7 @@ class oimComponentFitsImage(oimComponentImage):
             self.params["pa"].value = pa0
 
         if dims == 3:
-            self._wl = oim.getWlFromFitsImageCube(self._header, units.m)
+            self._wl = getWlFromFitsImageCube(self._header, units.m)
             # NOTE: Adding the time dimension (nt,nwl,ny,nx)
             self._image = im.data[None, :, :, :]
         else:

@@ -5,7 +5,7 @@ Created on Thu Jan 26 12:03:58 2023
 @author: Ame
 """
 import os
-from pprint import pprint as print
+from pprint import pprint
 
 import matplotlib.colors as colors
 import matplotlib.cm as cm
@@ -14,9 +14,9 @@ import oimodeler as oim
 from matplotlib import pyplot as plt
 
 
-# You can change FFT option, for instance reduce the standard zero-padding factor
-# from 8 to 2 or use FFTW backend instead of the standard numpy FFT module
-# oim.oimOptions['FTpaddingFactor']=2
+# NOTE: You can change FFT option, for instance reduce the standard
+# zero-padding factor from 8 to 2 or use FFTW backend instead of the
+# standard numpy FFT module oim.oimOptions['FTpaddingFactor']=2
 # oim.oimOptions['FTBackend']=oim.FFTWBackend
 
 path = os.path.dirname(oim.__file__)
@@ -28,17 +28,15 @@ c = oim.oimComponentFitsImage(filename)
 m = oim.oimModel(c)
 
 # %% Plotting the model image
-wl0 = 2.1661e-6
-Dwl = 60e-10
-nwl = 5
-wl = np.linspace(wl0-Dwl/2, wl0+Dwl/2, num=nwl)
+wl0, dwl, nwl = 2.1661e-6, 60e-10, 5
+wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
 m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4, colorbar=False,
             figsize=(2, 2.5), savefig=os.path.join(path, os.pardir, "images",
                                                    "FitsImageCube_BeDiskKinematicsModel_images.png"))
 
 
 # %%
-print(m.getParameters())
+pprint(m.getParameters())
 
 # %% Rotating ans scaling the model and plotting the model again
 c.params['pa'].value = 45
@@ -53,7 +51,7 @@ c.params['scale'].value = 1
 
 nB = 1000
 nwl = 51
-wl = np.linspace(wl0-Dwl/2, wl0+Dwl/2, num=nwl)
+wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
 
 
 B = np.linspace(0, 100, num=nB//2)
@@ -86,7 +84,7 @@ for iB in range(nB):
 
 for i in range(2):
     ax[i].set_title(titles[i])
-    ax[i].set_xlabel("$\lambda$ (nm)")
+    ax[i].set_xlabel(r"$\lambda$ (nm)")
 ax[0].set_ylabel("Visibility")
 ax[1].get_yaxis().set_visible(False)
 
