@@ -703,7 +703,8 @@ class oimConvolutor(oimComponentFourier):
         imConv=np.ndarray([nt,nwl,nx,ny])
         for iwl in range(nwl):
             for it in range(nt):
-                imConv[it,iwl,:,:]=convolve2d(im1[it,iwl,:,:],im2[it,iwl,:,:], mode='same', boundary='fill', fillvalue=0)
+                imConv[it,iwl,:,:] = convolve2d(im1[it,iwl,:,:],im2[it,iwl,:,:],
+                                     mode='same', boundary='fill', fillvalue=0)
                 
         
         return imConv
