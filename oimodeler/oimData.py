@@ -224,6 +224,10 @@ class oimData(object):
 
         if dataOrFilename:
             self.addData(dataOrFilename)
+            
+        
+        if filt != None:
+            self.setFilter(filt)
 
         self.prepareData()
 
@@ -236,20 +240,21 @@ class oimData(object):
                 self.applyFilter()
             return self._filteredData
 
-    def addData(self, dataOrFilename):
+    def addData(self, dataOrFilename, prepare=True):
         if type(dataOrFilename) == type([]):
             for el in dataOrFilename:
-                self.addData(el)
+                self.addData(el, prepare=prepare))
         else:
             if type(dataOrFilename) == str:
                 self._data.append(fits.open(dataOrFilename))
             else:
                 self._data.append(dataOrFilename)
-            self._analyzeOIFitFile(self.data[-1])
-            self.prepared = False
-
+        
+        self.prepared = False
         self._filteredDataReady = False
-        self.prepareData()
+        
+        if prepare == True:
+            self.prepareData()
 
     def removeData(self, dataOrIndex):
         self._prepared = False
@@ -263,6 +268,7 @@ class oimData(object):
 
     def applyFilter(self):
         self._filteredData = []
+
         for data in self._data:
             self._filteredData.append(hdulistDeepCopy(data))
 
@@ -305,9 +311,10 @@ class oimData(object):
                 info["data"] = oimDataCheckData(arri)
             if info:
                 dataInfo.append(info)
-        self.dataInfo.append(dataInfo)
+        self.dataInfo = dataInfo
 
     def prepareData(self):
+        self._analyzeOIFitFile(self.data)
         self.vect_u = np.array([])
         self.vect_v = np.array([])
         self.vect_wl = np.array([])
@@ -330,6 +337,7 @@ class oimData(object):
 
         for idata, datai in enumerate(self.data):
             # print("File {}".format(idata))
+
             self.struct_u.append([])
             self.struct_v.append([])
             self.struct_wl.append([])
@@ -392,6 +400,7 @@ class oimData(object):
             if filename != None:
                 if ndata == 1:
                     filenamei = filename
+
                 else:
                     filenamei = "{}_{}.fits".format(
                         os.path.splitext(filename)[0], idata)
