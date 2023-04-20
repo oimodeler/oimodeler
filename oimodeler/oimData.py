@@ -291,26 +291,28 @@ class oimData(object):
 
     def _analyzeOIFitFile(self, data):
         dataInfo = []
-
-        for iarr, arri in enumerate(data):
-            info = None
-            if arri.name in _oimDataTypeArr:
-                info = {'arr': arri.name, 'idx': iarr}
-                if arri.name == "OI_VIS2":
-                    nB=np.shape(arri.data["VIS2DATA"])
-                if arri.name == "OI_VIS":
-                    nB = np.shape(arri.data["VISAMP"])
-                if arri.name == "OI_T3":
-                    nB = np.shape(arri.data["T3AMP"])
-                if arri.name == "OI_FLUX":
-                    try:
-                        nB = np.shape(arri.data["FLUXDATA"])
-                    except Exception:
-                        nB = np.shape(arri.data["FLUX"])
-                info["nB"] = nB
-                info["data"] = oimDataCheckData(arri)
-            if info:
-                dataInfo.append(info)
+        for datai in data :
+            dataInfoi=[]
+            for iarr, arri in enumerate(datai):
+                info = None
+                if arri.name in _oimDataTypeArr:
+                    info = {'arr': arri.name, 'idx': iarr}
+                    if arri.name == "OI_VIS2":
+                        nB=np.shape(arri.data["VIS2DATA"])
+                    if arri.name == "OI_VIS":
+                        nB = np.shape(arri.data["VISAMP"])
+                    if arri.name == "OI_T3":
+                        nB = np.shape(arri.data["T3AMP"])
+                    if arri.name == "OI_FLUX":
+                        try:
+                            nB = np.shape(arri.data["FLUXDATA"])
+                        except Exception:
+                            nB = np.shape(arri.data["FLUX"])
+                    info["nB"] = nB
+                    info["data"] = oimDataCheckData(arri)
+                if info:
+                    dataInfoi.append(info)
+            dataInfo.append(dataInfoi)
         self.dataInfo = dataInfo
 
     def prepareData(self):
