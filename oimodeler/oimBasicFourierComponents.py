@@ -4,8 +4,9 @@ basic model-components defined in the Fourier plan
 """
 import astropy.units as u
 import numpy as np
-from scipy.special import j0, j1, jv
-
+from astropy import units as units
+from scipy.special import j0,j1,jv
+from scipy.signal import convolve2d
 from .oimComponent import oimComponentFourier
 from .oimParam import oimParam, _standardParameters
 
@@ -686,10 +687,24 @@ class oimConvolutor(oimComponentFourier):
 
         self._eval(**kwargs)
 
-    def _visFunction(self, xp, yp, rho, wl, t):
-        return self.component1.getComplexCoherentFlux(xp, yp, wl, t) * \
-            self.component2._visFunction(xp, yp, rho, wl, t)
+    def _visFunction(self,xp,yp,rho,wl,t):     
+    
+        return  self.component1.getComplexCoherentFlux(xp,yp,wl,t)* \
+                self.component2._visFunction(xp,yp,rho,wl,t)
+     
+    def _imageFunction(self,xx,yy,wl,t):
+            
+        im1=self.component1._imageFunction(xx,yy,wl,t)
+        im2=self.component2._imageFunction(xx,yy,wl,t)
+        nt,nwl,nx,ny=im1.shape
 
-    def _imageFunction(self, xx, yy, wl, t):
-        return self.component1._imageFunction(xx, yy, wl, t) * \
-            self.component2._imageFunction(xx, yy, wl, t)
+        print(nt,nwl,nx,ny)
+        #TODO : no loop
+        imConv=np.ndarray([nt,nwl,nx,ny])
+        for iwl in range(nwl):
+            for it in range(nt):
+                imConv[it,iwl,:,:]=convolve2d(im1[it,iwl,:,:],im2[it,iwl,:,:], mode='same', boundary='fill', fillvalue=0)
+                
+        
+        return imConv
+
