@@ -21,7 +21,7 @@ from .oimFitter import *
 from .oimModel import *
 from .oimOptions import oimOptions
 from .oimParam import *
-from .oimParam import _standardParameters
+from .oimParam import _standardParameters, _interpolators
 from .oimPlots import *
 from .oimSimulator import *
 from .oimUtils import *

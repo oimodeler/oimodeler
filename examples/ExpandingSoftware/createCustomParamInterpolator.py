@@ -61,7 +61,8 @@ class oimParamLinearRangeWl(oim.oimParamInterpolator):
         return params
 
 
-oim._interpolator["rangeWl"] = oimParamLinearRangeWl
+# NOTE: Add interpolator to those available. Either the class itself, or the class name as a string
+oim._interpolators["rangeWl"] = "oimParamLinearRangeWl"
 
 # %%
 nref = 10
