@@ -18,27 +18,27 @@ def calculate_intensity(params: Dict[str, oimParam],
                         rJy: bool = False) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
-    dust surface density profile
+    dust surface density profile.
 
     Parameters
     ----------
-    params: Dict[str, oimParam]
-        The oimParams of the oimComponent
+    params : dict with keys of str and values of oimParam
+        The oimParams of the oimComponent.
     wavelengths : u.um
-        Wavelength value(s)
+        Wavelength value(s).
     kappa_abs : u.cm**2/u.g
         Absorption opacity
     temp_profile : u.K
-        Temperature profile
+        Temperature profile.
     sigma_profile : u.g/u.cm**2
-        Dust surface density profile
+        Dust surface density profile.
     rJy: bool, optional
-        If toggled returns Jansky per pixel
+        If toggled returns Jansky per pixel.
 
     Returns
     -------
-    intensity : np.ndarray
-        Intensity per pixel
+    intensity : numpy.ndarray
+        Intensity per pixel.
     """
     plancks_law = models.BlackBody(temperature=temp_profile*u.K)
     wavelengths = (wavelengths*u.m).to(u.um)
@@ -52,48 +52,50 @@ def calculate_intensity(params: Dict[str, oimParam],
 
 class oimTempGradient(oimComponentRadialProfile):
     """A ring defined by a radial temperature profile in r^q and a radial dust
-    surface density profile in r^p
+    surface density profile in r^p.
 
     Parameters
     ----------
     rin : float
-        Inner radius of the disk [au]
+        Inner radius of the disk [au].
     rout : float
-        Outer radius of the disk [au]
+        Outer radius of the disk [au].
     Tin : float
-        Inner radius temperature [K]
+        Inner radius temperature [K].
     Mdust : float
-        Mass of the dusty disk [M_sun]
+        Mass of the dusty disk [M_sun].
     q : float
-        Power-law exponent for the temperature profile
+        Power-law exponent for the temperature profile.
     p : float
-        Power-law exponent for the dust surface density profile
-    kappa_abs : float | oimInterp
-        Dust mass absorption coefficient [cm2.g-1]
+        Power-law exponent for the dust surface density profile.
+    kappa_abs : float or oimInterp
+        Dust mass absorption coefficient [cm2.g-1].
     dist : float
-        Distance of the star [pc]
+        Distance of the star [pc].
 
     Attributes
     ----------
-    params : Dict[str, oimParam]
-        Dictionary of parameters
-    _t : np.ndarray
-        Array of time values
-    _wl : np.ndarray
-        Array of wavelength values
-    _r : np.ndarray
+    params : dict with keys of str and values of oimParam
+        Dictionary of parameters.
+    _t : numpy.ndarray
+        Array of time values.
+    _wl : numpy.ndarray
+        Array of wavelength values.
+    _r : numpy.ndarray
+        Radial grid.
 
     Methods
     -------
     _radialProfileFunction(r, wl, t)
         Calculates a radial temperature gradient profile via a dust-surface
-        density- and temperature profile
+        density- and temperature profile.
     """
     name = "Temperature Gradient"
     shortname = "TempGrad"
     elliptic = True
 
     def __init__(self, **kwargs):
+        """The class's constructor."""
         super().__init__(**kwargs)
         self.params["rin"] = oimParam(name="rin", value=0, unit=u.au,
                                       description="Inner radius of the disk")
@@ -121,7 +123,7 @@ class oimTempGradient(oimComponentRadialProfile):
 
     def _radialProfileFunction(self, r, wl, t):
         """Calculates a radial temperature gradient profile via a dust-surface
-        density- and temperature profile"""
+        density- and temperature profile."""
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
         dist, inner_temp = map(lambda x: self.params[x](wl, t), ["dist", "Tin"])
@@ -149,7 +151,7 @@ class oimTempGradient(oimComponentRadialProfile):
 
     @property
     def _r(self):
-        """Gets the radius"""
+        """Gets the radius."""
         if False:
             rout = self.params["rout"](self._wl, self._t)
         else:
@@ -161,59 +163,59 @@ class oimTempGradient(oimComponentRadialProfile):
 
     @_r.setter
     def _r(self, value):
-        """Sets the radius"""
+        """Sets the radius."""
         return
 
 
 class oimAsymTempGradient(oimRadialPowerLaw):
     """A ring defined by a radial temperature profile in r^q and an asymmetric
-    radial dust surface density profile in r^p
+    radial dust surface density profile in r^p.
 
     Parameters
     ----------
     rin : float
-        Inner radius of the disk [mas]
+        Inner radius of the disk [mas].
     rout : float
-        Outer radius of the disk [mas]
+        Outer radius of the disk [mas].
     Tin : float
-        Inner radius temperature [K]
+        Inner radius temperature [K].
     Mdust : float
-        Mass of the dusty disk [M_sun]
+        Mass of the dusty disk [M_sun].
     a : float
-        Azimuthal modulation amplitude
+        Azimuthal modulation amplitude.
     phi : float
-        Azimuthal modulation angle [deg]
+        Azimuthal modulation angle [deg].
     q : float
-        Power-law exponent for the temperature profile
+        Power-law exponent for the temperature profile.
     p : float
-        Power-law exponent for the dust surface density profile
-    kappa_abs : float | oimInterp
-        Dust mass absorption coefficient [cm2.g-1]
+        Power-law exponent for the dust surface density profile.
+    kappa_abs : float or oimInterp
+        Dust mass absorption coefficient [cm2.g-1].
     dist : float
-        Distance of the star [pc]
+        Distance of the star [pc].
     fov: float
-        The field of view [mas]
+        The field of view [mas].
     pa : float
-        Positional angle [deg]
+        Positional angle [deg].
     elong : float
-        Elongation of the disk
+        Elongation of the disk.
     dim : float
-        Dimension of the image
+        Dimension of the image.
 
     Attributes
     ----------
-    params : Dict[str, oimParam]
-        Dictionary of parameters
-    _t : np.ndarray
-        Array of time values
-    _wl : np.ndarray
-        Array of wavelength values
+    params : dict with keys of str and values of oimParam
+        Dictionary of parameters.
+    _t : numpy.ndarray
+        Array of time values.
+    _wl : numpy.ndarray
+        Array of wavelength values.
 
     Methods
     -------
     _imageFunction(xx, yy, wl, t)
         Calculates a 2D temperature gradient profile via the dust-surface
-        density- and temperature profile
+        density- and temperature profile.
     """
     name = "Asymmetric Temperature Gradient"
     shortname = "AsymTempGrad"
@@ -221,6 +223,7 @@ class oimAsymTempGradient(oimRadialPowerLaw):
     asymmetric = True
 
     def __init__(self, **kwargs):
+        """The class's constructor."""
         super().__init__(**kwargs)
         self.params["rin"] = oimParam(name="rin", value=0, unit=u.mas,
                                       description="Inner radius of the disk")
@@ -246,9 +249,10 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._eval(**kwargs)
 
-    # FIXME: Possible bug due to r being in mas or rad?
     # FIXME: Does pixsize need to be in rad or in mas? -> Check again, probably correct as is
     def _imageFunction(self, xx, yy, wl, t):
+        """Calculates a 2D temperature gradient profile via the dust-surface
+        density- and temperature profile."""
         r = np.sqrt(xx**2+yy**2)
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
