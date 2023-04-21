@@ -29,7 +29,10 @@ _standardParameters = {
     "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": u.m, "mini": 0},
     "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": u.day},
     "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": u.one},
-    'index': {'name': 'index', 'value': 1, 'description': 'Index', 'unit': u.one}
+    "index": {"name": "index", "value": 1, "description": "Index", "unit": u.one},
+    "fov": {"name": "fov", "value": 30, "description": "The interferometric field of view", "unit": u.mas, "free": False, "mini": 0},
+    "amp": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": u.one},
+    "p": {"name": "p", "value": 0, "description": "Power-law Exponent", "unit": u.one},
 }
 
 # NOTE: Sets the available interpolators for oimodeler. If strings are provided,
@@ -46,7 +49,8 @@ _interpolators = {"wl": "oimParamInterpolatorWl",
                   "polyTime": "oimParamPolynomialTime",
                   "powerlawWl": "oimParamPowerLawWl",
                   "powerlawTime": "oimParamPowerLawTime",
-                  "rangeWl": "oimParamLinearRangeWl"}
+                  "rangeWl": "oimParamLinearRangeWl",
+                  "TemplateWl": "oimParamLinearTemplateWl"}
 
 
 class oimParam:
@@ -577,131 +581,52 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         params.append(self.wlmax)
         return params
 
-###############################################################################    
-class oimParamLinearTemplateWl(oimParamInterpolator):
 
-    def _init(self, param, wl0=2e-6, dwl=1e-9,f_contrib=1.,values=[], kind="linear",**kwargs):
-       
-        self.kind=kind
+class oimParamLinearTemplateWl(oimParamInterpolator):
+    def _init(self, param, wl0=2e-6, dwl=1e-9,
+              f_contrib=1., values=[],  kind="linear", **kwargs):
+        self.kind = kind
 
         n = len(values)
         self.wl0 = (oimParam(**_standardParameters["wl"]))
-        self.wl0.name="wl0"
-        self.wl0.description="Initial wl of the range"
-        self.wl0.value=wl0
-        self.wl0.free=False
-        
+        self.wl0.name = "wl0"
+        self.wl0.description = "Initial wl of the range"
+        self.wl0.value = wl0
+        self.wl0.free = False
+
         self.dwl = (oimParam(**_standardParameters["wl"]))
-        self.dwl.name="dwl"
-        self.dwl.description="wl step in range"
-        self.dwl.value=dwl
-        self.dwl.free=False
-        
+        self.dwl.name = "dwl"
+        self.dwl.description = "wl step in range"
+        self.dwl.value = dwl
+        self.dwl.free = False
+
         self.f_contrib = (oimParam(**_standardParameters["f"]))
-        self.f_contrib.name="f_contrib"
-        self.f_contrib.description="Flux contribution at the wavelength corresponding to the maximum of the associated emission template"
-        self.f_contrib.value=f_contrib
-        self.f_contrib.free=False
+        self.f_contrib.name = "f_contrib"
+        self.f_contrib.description = "Flux contribution at the wavelength"\
+            " corresponding to the maximum of the"\
+            " associated emission template"
+        self.f_contrib.value = f_contrib
+        self.f_contrib.free = False
 
         self.values = []
-        
+
         for i in range(n):
             self.values.append(oimParam(name=param.name, value=values[i],
                                         mini=param.min,maxi=param.max,
                                         description=param.description,
                                         unit=param.unit, free=param.free,
                                         error=param.error))
-            
-    def _interpFunction(self, wl, t):
 
-        vals=np.array([vi.value for vi in self.values])
-        nwl=vals.size   
-        wl0=np.linspace(self.wl0.value,self.wl0.value+self.dwl.value*nwl,num=nwl)
-    
-        interp_template=interp1d(wl0,vals,kind=self.kind,fill_value="extrapolate")(wl)
-        interp_template_norm=interp_template/np.max(interp_template)
-        #print(interp_template_norm)
-        final_template=interp_template_norm*self.f_contrib.value
-        #print(final_template)
-        
+    def _interpFunction(self, wl, t):
+        vals = np.array([vi.value for vi in self.values])
+        nwl = vals.size
+        wl0 = np.linspace(self.wl0.value, self.wl0.value+self.dwl.value*nwl, num=nwl)
+        interp_template = interp1d(wl0,vals,kind=self.kind,fill_value="extrapolate")(wl)
+        interp_template_norm = interp_template/np.max(interp_template)
+        final_template = interp_template_norm*self.f_contrib.value
         return final_template
 
-    
     def _getParams(self):
-        params=[]
+        params = []
         params.append(self.f_contrib)
-        #params.extend(self.values)
-        #params.append(self.wl0)
-        #params.append(self.dwl)
         return params
-            
-
-###############################################################################
-            
-
-###############################################################################
-# List of interpolators defined in oimodels
-oimParamInterpolatorList={"wl":oimParamInterpolatorWl,
-                "time":oimParamInterpolatorTime,
-                "GaussWl":oimParamGaussianWl,
-                "GaussTime":oimParamGaussianTime,
-                "mGaussWl":oimParamMultipleGaussianWl,
-                "mGaussTime":oimParamMultipleGaussianTime,
-                "cosTime":oimParamCosineTime,
-                "polyWl":oimParamPolynomialWl,
-                "polyTime":oimParamPolynomialTime,
-                "powerlawWl":oimParamPowerLawWl,
-                "powerlawTime":oimParamPowerLawTime,
-                "rangeWl":oimParamLinearRangeWl,
-                "TemplateWl":oimParamLinearTemplateWl}
-"""
-dictionary of available interpolators
-"""
-###############################################################################
-
-class oimInterp(object):
-    """
-    Macro to directly create oimParamInterpolator-derived class in a 
-    oimComponent object.
-
-    Parameters
-    ----------
-    name : str
-        keyname for the interpolators registered in the _interpolator variable
-    **kwargs : dictionary
-        parameters from the create oimParamInterpolator-derived class
-
-    Returns
-    -------
-    None.
-
-    """
-    def __init__(self,name, **kwargs):
-
-        self.kwargs=kwargs
-        self.type=oimParamInterpolatorList[name]
-
-###############################################################################
-# Here is a list of standard parameters to be used when defining new components
-_standardParameters = {
-    "x": {"name": "x", "value": 0, "description": "x position", "unit": units.mas, "free": False},
-    "y": {"name": "y", "value": 0, "description": "y position", "unit": units.mas, "free": False},
-    "f": {"name": "f", "value": 1, "description": "flux", "unit": units.one,"mini":0,"maxi":1},
-    "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": units.mas,"mini":0},
-    "d": {"name": "d", "value": 0, "description": "Diameter", "unit": units.mas,"mini":0},
-    "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": units.mas,"mini":0},
-    "dout": {"name": "dout", "value": 0, "description": "Outer Diameter", "unit": units.mas,"mini":0},
-    "elong": {"name": "elong", "value": 1, "description": "Elongation Ratio", "unit": units.one,"mini":1},
-    "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": units.deg,"mini":-180,"maxi":180},
-    "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": units.one,"mini":0,"maxi":1},
-    "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": units.deg,"mini":-180,"maxi":180},
-    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": units.mas, "free": False, "mini": 0},
-    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": units.one, "free": False,"mini":1},
-    "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": units.m, "mini": 0},
-    "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": units.day},
-    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": units.one},
-    "amp": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": units.one},
-    "p": {"name": "p", "value": 0, "description": "Power-law Exponent", "unit": units.one},
-    "index": {'name': 'index', 'value': 1, 'description': 'Index', 'unit': units.one},
-    "fov": {"name": "fov", "value": 30, "description": "The interferometric field of view", "unit": units.mas, "free": False, "mini": 0},
-}
