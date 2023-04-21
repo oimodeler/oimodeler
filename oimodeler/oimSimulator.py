@@ -195,49 +195,49 @@ class oimSimulator(object):
                                               * np.logical_not(flag[ival]))
                             chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
                             chi2List.append(chi2i)
+    
+       
+        if computeChi2==True: 
+             self.chi2=chi2
+             self.chi2r=chi2/(nelChi2-len(self.model.getFreeParameters()))
+             self.chi2List=chi2List
+             self.nelChi2=nelChi2
+                
+           
+    def plot(self,arr,simulated=True,savefig=None,visLog=False,**kwargs):
+        # plotting  data and simulatiedData
 
-        if computeChi2 == True:
-            self.chi2 = chi2
-            self.chi2r = chi2/(nelChi2-len(self.model.getFreeParameters()))
-            self.chi2List = chi2List
-            self.nelChi2 = nelChi2
+        if type(arr)!=type([]):
+           
+            arr=[arr]
+        
+        #Set the projection to oimAxes for all subplots to use oimodeler custom plots
+        fig,ax=plt.subplots(len(arr),1,sharex=True,figsize=(8,6),
+                            subplot_kw=dict(projection='oimAxes'))
 
-    def plot(self, arr, simulated=True, savefig=None, visLog=False, **kwargs):
-        # NOTE: Plotting  data and simulated data
+        if len(arr)==1:
+            ax=np.array([ax])
 
-        if type(arr) != type([]):
-            arr = [arr]
+        plt.subplots_adjust(left=0.09,top=0.98,right=0.98,hspace=0.14)
 
-        # NOTE: Set the projection to oimAxes for all subplots to use oimodeler
-        # custom plots
-        fig, ax = plt.subplots(len(arr), 1, sharex=True, figsize=(8, 6),
-                               subplot_kw=dict(projection='oimAxes'))
+        # Ploting loop :  plotting data and simulated data for each data type in arr
+        for iax,axi in enumerate(ax):
+            
+            #plotting the data with wavelength colorscale + errorbars vs spatial frequencies
+            scale=axi.oiplot(self.data.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
+                    cname="EFF_WAVE",cunitmultiplier=1e6,lw=2,cmap="coolwarm",
+                    errorbar=True,label="data")
+            
+            #over-plotting the simulated data as a dotted line  vs spatial frequencies
+            axi.oiplot(self.simulatedData.data,"SPAFREQ",arr[iax] ,xunit="cycles/mas",
+                    color="k",ls=":",lw=3,label="model")
+            
+            if axi!=ax[-1]: axi.get_xaxis().set_visible(False)
+            if axi==ax[0]:axi.legend()
+                    
+            #automatic ylim => 0-1 for visibilties, -180,180 for phases
 
-        if len(arr) == 1:
-            ax = np.array([ax])
-
-        plt.subplots_adjust(left=0.09, top=0.98, right=0.98, hspace=0.14)
-
-        # NOTE: Plotting loop: Plotting data and simulated data for each data type in arr
-        for iax, axi in enumerate(ax):
-            # NOTE: Plotting the data with wavelength colorscale + errorbars vs
-            # spatial frequencies
-            scale = axi.oiplot(self.data.data, "SPAFREQ", arr[iax], xunit="cycles/mas",
-                               cname="EFF_WAVE", cunitmultiplier=1e6, lw=2, cmap="coolwarm",
-                               errorbar=True, label="data")
-
-            # NOTE: Over-plotting the simulated data as a dotted line vs spatial
-            # frequencies
-            axi.oiplot(self.simulatedData.data, "SPAFREQ", arr[iax], xunit="cycles/mas",
-                       color="k", ls=":", lw=1, label="model")
-
-            if axi != ax[-1]:
-                axi.get_xaxis().set_visible(False)
-            if axi == ax[0]:
-                axi.legend()
-
-            # NOTE: Automatic ylim => 0-1 for visibilties, -180,180 for phases
-            if arr[iax] in ["VIS2DATA", "VISAMP"] and visLog == True:
+            if arr[iax] in ["VIS2DATA","VISAMP"] and visLog==True:
                 axi.set_yscale("log")
 
             axi.autolim()
