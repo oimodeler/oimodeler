@@ -4,6 +4,7 @@ import numpy as np
 from astropy.modeling import models
 
 from ..oimComponent import oimComponentImage
+from ..oimOptions import oimOptions
 from ..oimParam import oimParam
 
 
@@ -37,8 +38,8 @@ class oimStar(oimComponentImage):
     _calc_stellar_flux(wl, t)
         Calculates the stellar flux from its distance and radius.
     _imageFunction(xx, yy, wl, t)
-        Calculates a 2D-image with the stellar flux in Jansky at its centre
-        and only 0 for the rest.
+        Calculates a 2D-image with a central dot at its centre and only 0
+        for the rest.
     """
     name = "Physical Star"
     shortname = "Star"
@@ -138,8 +139,11 @@ class oimStar(oimComponentImage):
 
     def _imageFunction(self, xx: np.ndarray, yy: np.ndarray,
                        wl: np.ndarray, t: np.ndarray) -> np.ndarray:
-        """Calculates a 2D-image with the stellar flux in Jansky at its centre
-        and only 0 for the rest.
+        """Calculates a 2D-image with a central dot at its centre and only 0
+        for the rest.
+
+        If physical output is specified, the central dot has the value
+        of the stellar flux [Jy] at its centre, else 1.
 
         Parameters
         ----------
@@ -159,5 +163,10 @@ class oimStar(oimComponentImage):
         image = xx*0
         val = np.abs(xx)+np.abs(yy)
         idx = np.unravel_index(np.argmin(val), np.shape(val))
-        image[idx] = self._calc_stellar_flux(wl, t).value
+
+        if oimOptions["ModelType"] == "physical":
+            image[idx] = self._calc_stellar_flux(wl, t).value
+        else:
+            image[idx] = 1
+
         return image

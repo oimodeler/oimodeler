@@ -625,28 +625,3 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
         interp_template_norm = interp_template/np.max(interp_template)
         final_template = interp_template_norm*self.f_contrib.value
         return final_template
-
-###############################################################################
-# Here is a list of standard parameters to be used when defining new components
-_standardParameters = {
-    "x": {"name": "x", "value": 0, "description": "x position", "unit": units.mas, "free": False},
-    "y": {"name": "y", "value": 0, "description": "y position", "unit": units.mas, "free": False},
-    "f": {"name": "f", "value": 1, "description": "flux", "unit": units.one,"mini":0,"maxi":1},
-    "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": units.mas,"mini":0},
-    "d": {"name": "d", "value": 0, "description": "Diameter", "unit": units.mas,"mini":0},
-    "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": units.mas,"mini":0},
-    "dout": {"name": "dout", "value": 0, "description": "Outer Diameter", "unit": units.mas,"mini":0},
-    "elong": {"name": "elong", "value": 1, "description": "Elongation Ratio", "unit": units.one,"mini":1},
-    "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": units.deg,"mini":-180,"maxi":180},
-    "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": units.one,"mini":0,"maxi":1},
-    "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": units.deg,"mini":-180,"maxi":180},
-    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": units.mas, "free": False, "mini": 0},
-    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": units.one, "free": False,"mini":1},
-    "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": units.m, "mini": 0},
-    "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": units.day},
-    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": units.one},
-    "amp": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": units.one},
-    "p": {"name": "p", "value": 0, "description": "Power-law Exponent", "unit": units.one},
-    "index": {'name': 'index', 'value': 1, 'description': 'Index', 'unit': units.one},
-    "fov": {"name": "fov", "value": 30, "description": "The interferometric field of view", "unit": units.mas, "free": False, "mini": 0},
-}

@@ -1,4 +1,5 @@
 from typing import Dict
+from warnings import warn
 
 import astropy.units as u
 import astropy.constants as const
@@ -6,6 +7,7 @@ import numpy as np
 from astropy.modeling import models
 
 from ..oimComponent import oimComponentRadialProfile
+from ..oimOptions import oimOptions
 from ..oimParam import oimParam
 from .oimRadialPowerLaw import oimRadialPowerLaw
 
@@ -42,9 +44,16 @@ def calculate_intensity(params: Dict[str, oimParam],
     wavelengths = (wavelengths*u.m).to(u.um)
     spectral_radiance = plancks_law(wavelengths).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2))
     emissivity_factor = 1-np.exp(-sigma_profile*kappa_abs)
-    if rJy:
+
+    if oimOptions["ModelType"] == "physical":
+        if "pixSize" not in params:
+            raise KeyError("'pixSize' needs to be directly or indirectly"
+                           " (via the 'fov'-parameter) set by the user!")
+        if params["pixSize"].value == 0.1:
+            warn("'pixSize' may not have been set by the user!")
         pix = params["pixSize"].value**2*params["pixSize"].unit**2
         return ((spectral_radiance*pix).to(u.Jy)*emissivity_factor).value
+
     return (spectral_radiance*emissivity_factor).value
 
 
@@ -268,6 +277,9 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         """Calculates a 2D-image from a dust-surface density- and
         temperature profile.
 
+        If physical output is specified, the model will produce Jansky per
+        pixel else unitless intensity.
+
         Parameters
         ----------
         xx : numpy.ndarray
@@ -306,5 +318,5 @@ class oimAsymTempGradient(oimRadialPowerLaw):
             sigma_profile = sigma_profile*(1+self._azimuthal_modulation(xx, yy, wl, t))
         spectral_density = calculate_intensity(self.params, wl,
                                                kappa_abs, temp_profile,
-                                               sigma_profile, rJy=True)
+                                               sigma_profile)
         return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*spectral_density, nan=0)

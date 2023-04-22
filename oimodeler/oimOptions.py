@@ -4,6 +4,7 @@ from .oimFTBackends import numpyFFTBackend
 
 # NOTE: The dictionary oimOption contains all the customizable option of oimodeler
 oimOptions = {}
+oimOptions["ModelType"] = "non-physical"
 oimOptions["FTpaddingFactor"] = 8
 oimOptions["FTBackend"] = numpyFFTBackend
 
@@ -11,7 +12,7 @@ oimOptions["FTBackend"] = numpyFFTBackend
 oimOptions["AvailableFTBackends"] = [numpyFFTBackend]
 
 try:
-    #  Only append the `FFTWBackend` if `fftw` is installed and imported
+    # NOTE: Only append the `FFTWBackend` if `fftw` is installed and imported
     import pyfftw
     from .oimFTBackends import FFTWBackend
     oimOptions["AvailableFTBackends"].append(FFTWBackend)
