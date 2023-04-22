@@ -8,42 +8,41 @@ from ..oimParam import oimParam, _standardParameters
 class oimRadialPowerLaw(oimComponentImage):
     """A 2D-radial power law distribution.
 
-    It accounts for elongation and rotation
+    It accounts for elongation and rotation.
 
     Parameters
     ----------
-    din : u.mas
-        Inner radius of the disk
-    dout : u.mas
-        Outer radius of the disk
-    pixSize: u.mas/px
-        Pixel size
-    p : u.one
-        Power-law exponent for the radial profile
-    pa : u.deg
-        Positional angle
+    rin : float
+        Inner radius of the disk [mas].
+    rout : float
+        Outer radius of the disk [mas].
+    pixSize: float
+        Pixel size [mas/px].
+    p : float
+        Power-law exponent for the radial profile.
+    pa : float
+        Positional angle.
     elong : float
-        Elongation of the disk
-    dim : u.one
-        Dimension of the image
+        Elongation of the disk.
+    dim : float
+        Dimension of the image.
 
     Attributes
     ----------
-    params : Dict[str, oimParam]
-        Dictionary of parameters
-    _pixSize: u.mas/px
-        Pixel size
-    _t : np.ndarray
-        Array of time values
-    _wl : np.ndarray
-        Array of wavelength values
+    _pixSize
+    params : dict with keys of str and values of oimParam
+        Dictionary of parameters.
+    _wl : array_like
+        Wavelengths.
+    _t : array_like
+        Times.
 
     Methods
     -------
-    _imageFunction(xx, yy, wl, t)
-        Calculates a radial power law
     _azimuthal_modulation(xx, yy, wl, t)
-        Calculates the azimuthal modulation
+        Calculates the azimuthal modulation.
+    _imageFunction(xx, yy, wl, t)
+        Calculates the image from a radial power law.
     """
     name = "Radial Power Law"
     shortname = "RadPowerLaw"
@@ -51,6 +50,7 @@ class oimRadialPowerLaw(oimComponentImage):
     asymmetric = False
 
     def __init__(self, **kwargs):
+        """The class's constructor."""
         super().__init__(**kwargs)
         self.params["rin"] = oimParam(**_standardParameters["din"])
         self.params["rout"] = oimParam(**_standardParameters["dout"])
@@ -67,25 +67,63 @@ class oimRadialPowerLaw(oimComponentImage):
 
     @property
     def _pixSize(self):
+        """The pixel size [mas/px]."""
         self.params["pixSize"].value = pix = self.params["fov"].value/self.params["dim"].value
         return pix*self.params["fov"].unit.to(u.rad)
 
     @_pixSize.setter
     def _pixSize(self, value: u.mas):
+        """The pixel size [mas/px]."""
         pass
 
-    def _azimuthal_modulation(self, xx, yy, wl, t):
-        """Calculates the azimuthal modulation"""
+    def _azimuthal_modulation(self, xx: np.ndarray, yy: np.ndarray,
+                              wl: np.ndarray, t: np.ndarray) -> np.ndarray:
+        """Calculates the azimuthal modulation.
+
+        Parameters
+        ----------
+        xx : numpy.ndarray
+            The x-coordinate grid
+        yy : numpy.ndarray
+            The y-coordinate grid
+        wl : numpy.ndarray
+            Wavelengths.
+        t : numpy.ndarray
+            Times.
+
+        Returns
+        -------
+        azimuthal_modulation : numpy.ndarray
+        """
         # TEST: Is it the other way around (y_arr, x_arr)?
         polar_angle = np.arctan2(xx, yy)
         return self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t))
 
-    def image(self, xx, yy, wl, t):
+    def image(self, xx: np.ndarray, yy: np.ndarray,
+              wl: np.ndarray, t: np.ndarray) -> np.ndarray:
         rin, rout = map(lambda x: self.params[x](wl, t), ("rin", "rout"))
         r, p = np.sqrt(xx**2+yy**2), self.params["p"](wl, t)
         return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*(r / rin)**p, nan=0)
 
-    def _imageFunction(self, xx, yy, wl, t):
+    def _imageFunction(self, xx: np.ndarray, yy: np.ndarray,
+                       wl: np.ndarray, t: np.ndarray) -> np.ndarray:
+        """Calculates a 2D-image from a radial power law.
+
+        Parameters
+        ----------
+        xx : numpy.ndarray
+            The x-coordinate grid
+        yy : numpy.ndarray
+            The y-coordinate grid
+        wl : numpy.ndarray
+            Wavelengths.
+        t : numpy.ndarray
+            Times.
+
+        Returns
+        -------
+        image : numpy.ndarray
+        """
         if self.asymmetric:
             return self.image(xx, yy, wl, t)*(1+self._azimuthal_modulation(xx, yy, wl, t))
         return self.image(xx, yy, wl, t)
@@ -98,34 +136,33 @@ class oimAsymRadialPowerLaw(oimRadialPowerLaw):
 
     Parameters
     ----------
-    din : u.mas
-        Inner radius of the disk
-    dout : u.mas
-        Outer radius of the disk
-    pixSize: u.mas/px
-        Pixel size
-    p : u.one
-        Power-law exponent for the radial profile
-    a : u.one
-        Azimuthal modulation amplitude
+    rin : float
+        Inner radius of the disk [mas].
+    rout : float
+        Outer radius of the disk [mas].
+    pixSize: float
+        Pixel size [mas/px].
+    p : float
+        Power-law exponent for the radial profile.
+    a : float
+        Azimuthal modulation amplitude.
     phi : float
-        Azimuthal modulation angle
-    pa : u.deg
-        Positional angle
-    elong : u.one
-        Elongation of the disk
-    dim : u.one
-        Dimension of the image [px]
+        Azimuthal modulation angle [deg].
+    pa : float
+        Positional angle.
+    elong : float
+        Elongation of the disk.
+    dim : float
+        Dimension of the image.
 
     Attributes
     ----------
-    params : Dict[str, oimParam]
-        Dictionary of parameters
-    _t : np.array
-        Array of time values
-    _wl : np.ndarray
-        Array of wavelength values
-    _r : np.ndarray
+    params : dict with keys of str and values of oimParam
+        Dictionary of parameters.
+    _wl : numpy.ndarray
+        Wavelengths.
+    _t : numpy.array
+        Times.
     """
     name = "Asymmetric Radial Power Law"
     shortname = "AsymRadPowerLaw"

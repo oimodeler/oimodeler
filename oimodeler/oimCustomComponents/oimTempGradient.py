@@ -24,16 +24,14 @@ def calculate_intensity(params: Dict[str, oimParam],
     ----------
     params : dict with keys of str and values of oimParam
         The oimParams of the oimComponent.
-    wavelengths : u.um
+    wavelengths : astropy.units.um
         Wavelength value(s).
-    kappa_abs : u.cm**2/u.g
+    kappa_abs : astropy.units.cm**2/astropy.units.g
         Absorption opacity
-    temp_profile : u.K
+    temp_profile : astropy.units.K
         Temperature profile.
-    sigma_profile : u.g/u.cm**2
+    sigma_profile : astropy.units.g/astropy.units.cm**2
         Dust surface density profile.
-    rJy: bool, optional
-        If toggled returns Jansky per pixel.
 
     Returns
     -------
@@ -77,11 +75,11 @@ class oimTempGradient(oimComponentRadialProfile):
     ----------
     params : dict with keys of str and values of oimParam
         Dictionary of parameters.
-    _t : numpy.ndarray
-        Array of time values.
-    _wl : numpy.ndarray
-        Array of wavelength values.
-    _r : numpy.ndarray
+    _wl : array_like
+        Wavelengths.
+    _t : array_like
+        Times.
+    _r : array_like
         Radial grid.
 
     Methods
@@ -121,9 +119,24 @@ class oimTempGradient(oimComponentRadialProfile):
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._eval(**kwargs)
 
-    def _radialProfileFunction(self, r, wl, t):
+    def _radialProfileFunction(self, r: np.ndarray,
+                               wl: np.ndarray, t: np.ndarray) -> np.ndarray:
         """Calculates a radial temperature gradient profile via a dust-surface
-        density- and temperature profile."""
+        density- and temperature profile.
+
+        Parameters
+        ----------
+        r : numpy.ndarray
+            Radial grid.
+        wl : numpy.ndarray
+            Wavelengths.
+        t : numpy.ndarray
+            Times.
+
+        Results
+        -------
+        radial_profile : numpy.ndarray
+        """
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
         dist, inner_temp = map(lambda x: self.params[x](wl, t), ["dist", "Tin"])
@@ -214,8 +227,8 @@ class oimAsymTempGradient(oimRadialPowerLaw):
     Methods
     -------
     _imageFunction(xx, yy, wl, t)
-        Calculates a 2D temperature gradient profile via the dust-surface
-        density- and temperature profile.
+        Calculates a 2D-image from a dust-surface density- and
+        temperature profile.
     """
     name = "Asymmetric Temperature Gradient"
     shortname = "AsymTempGrad"
@@ -250,9 +263,26 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         self._eval(**kwargs)
 
     # FIXME: Does pixsize need to be in rad or in mas? -> Check again, probably correct as is
-    def _imageFunction(self, xx, yy, wl, t):
-        """Calculates a 2D temperature gradient profile via the dust-surface
-        density- and temperature profile."""
+    def _imageFunction(self, xx: np.ndarray, yy: np.ndarray,
+                       wl: np.ndarray, t: np.ndarray) -> np.ndarray:
+        """Calculates a 2D-image from a dust-surface density- and
+        temperature profile.
+
+        Parameters
+        ----------
+        xx : numpy.ndarray
+            The x-coordinate grid
+        yy : numpy.ndarray
+            The y-coordinate grid
+        wl : numpy.ndarray
+            Wavelengths.
+        t : numpy.ndarray
+            Times.
+
+        Returns
+        -------
+        image : numpy.ndarray
+        """
         r = np.sqrt(xx**2+yy**2)
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
