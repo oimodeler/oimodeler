@@ -291,6 +291,8 @@ class oimComponentImage(oimComponent):
             t = ucoord*0
 
         im0 = self.getInternalImage(wl, t)
+        if oimOptions["FTbinningFactor"] is not None:
+            im0 = self._binImage(im0)
         im = self._padImage(im0)
         pix = self._pixSize
 
@@ -440,6 +442,26 @@ class oimComponentImage(oimComponent):
         return np.pad(im, ((0, 0), (0, 0), (padx, padx), (pady, pady)),
                       'constant', constant_values=0)
 
+    def _binImage(self, im: np.ndarray) -> np.ndarray:
+        """Bins the 2D-image down according to the binning factor.
+
+        Parameters
+        ----------
+        im: numpy.ndarray
+            The image to be rebinned.
+
+        Returns
+        -------
+        rebinned_image: numpy.ndarray
+            The rebinned image.
+        """
+        new_dim = self.params["dim"].value
+        binned_shape = (new_dim, im.shape[2] // new_dim,
+                        new_dim, im.shape[2] // new_dim)
+        shape = (im.shape[0], im.shape[1], *binned_shape)
+        binned_im = im.reshape(shape).mean(-1).mean(-2)
+        return binned_im
+
     def _imageFunction(self, xx, yy, wl, t):
         image = xx*0+1
         return image
@@ -455,9 +477,13 @@ class oimComponentImage(oimComponent):
         else:
             t0 = self._t
 
+        dim = self.params["dim"](wl, t)
+        if oimOptions["FTbinningFactor"] is not None:
+            dim *= 2**oimOptions["FTbinningFactor"]
+
         pix = self._pixSize*units.rad.to(units.mas)
-        v = np.linspace(-0.5, 0.5, self.params["dim"].value)
-        xy = v*pix*self.params["dim"].value
+        v = np.linspace(-0.5, 0.5, dim)
+        xy = v*pix*dim
 
         if simple == True:
             return t0, wl0, xy, xy
@@ -471,10 +497,8 @@ class oimComponentImage(oimComponent):
             xx, yy = np.meshgrid(xy, xy)
             x_arr = np.tile(xx[None, None, :, :], (nt, nwl, 1, 1))
             y_arr = np.tile(yy[None, None, :, :], (nt, nwl, 1, 1))
-            wl_arr = np.tile(wl[None, :, None, None], (nt, 1,
-                                                       self.params["dim"].value, self.params["dim"].value))
-            t_arr = np.tile(t[:, None, None, None], (1, nwl,
-                                                     self.params["dim"].value, self.params["dim"].value))
+            wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
+            t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
             if flatten == True:
                 return t_arr.flatten(), wl_arr.flatten(), \

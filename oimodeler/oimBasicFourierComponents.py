@@ -4,8 +4,7 @@ basic model-components defined in the Fourier plan
 """
 import astropy.units as u
 import numpy as np
-from astropy import units as units
-from scipy.special import j0,j1,jv
+from scipy.special import j0, j1, jv
 from scipy.signal import convolve2d
 from .oimComponent import oimComponentFourier
 from .oimParam import oimParam, _standardParameters

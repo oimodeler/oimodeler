@@ -5,6 +5,7 @@ from .oimFTBackends import numpyFFTBackend
 # NOTE: The dictionary oimOption contains all the customizable option of oimodeler
 oimOptions = {}
 oimOptions["FTpaddingFactor"] = 8
+oimOptions["FTbinningFactor"] = None
 oimOptions["FTBackend"] = numpyFFTBackend
 
 # TODO: Should this be a dictionary?
