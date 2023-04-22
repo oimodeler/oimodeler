@@ -228,6 +228,8 @@ class oimAsymTempGradient(oimRadialPowerLaw):
     ----------
     params : dict with keys of str and values of oimParam
         Dictionary of parameters.
+    pixSize : float
+        Pixel size [mas].
     _t : numpy.ndarray
         Array of time values.
     _wl : numpy.ndarray

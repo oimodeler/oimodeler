@@ -19,11 +19,15 @@ class oimStar(oimComponentImage):
         The star's luminosity [Lsun].
     eff_temp : float
         The star's effective temperature [K].
+    dim : float
+        Dimension of the image.
 
     Attributes
     ----------
     params : dict with keys of str and values of oimParam
         Dictionary of parameters.
+    pixSize : float
+        Pixel size [mas].
     _wl : array_like
         Wavelengths.
     _t : array_like
@@ -57,14 +61,14 @@ class oimStar(oimComponentImage):
         self.params["eff_temp"] = oimParam(name="eff_temp", value=0,
                                            unit=u.K, free=False,
                                            description="The star's effective temperature")
-
         self._wl = None
         self._t = np.array([0])
         self._eval(**kwargs)
+        self._pixSize = 1
 
     def _convert_radius_to_parallax(self, orbital_radius: u.m,
                                     wl: np.ndarray, t: np.ndarray) -> u.mas:
-        """Calculates the parallax from the orbital radius.
+        r"""Calculates the parallax from the orbital radius.
 
         Parameters
         ----------
@@ -129,7 +133,7 @@ class oimStar(oimComponentImage):
         plancks_law = models.BlackBody(
             temperature=self.params["eff_temp"](wl, t) * self.params["eff_temp"].unit)
         spectral_radiance = plancks_law(wl).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2))
-        stellar_radius = self.calc_stellar_radius(wl, t)
+        stellar_radius = self._calc_stellar_radius(wl, t)
 
         # TODO: Check if that can be used in this context -> The conversion
         stellar_radius_angular = self._convert_radius_to_parallax(stellar_radius, wl, t)

@@ -18,6 +18,9 @@ data.setFilter(oim.oimDataFilter([f1, f2]))
 # NOTE: Specifying the parameter space
 s = oim.oimStar(dist=140, lum=19, eff_temp=7800)
 
+# NOTE: Determine the upbinning before calculation
+oim.oimOptions["FTbinningFactor"] = 3
+
 # NOTE: Model creation
 model = oim.oimModel([s])
 
