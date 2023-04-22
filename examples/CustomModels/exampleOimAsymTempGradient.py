@@ -15,6 +15,9 @@ f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
 data.setFilter(oim.oimDataFilter([f1, f2]))
 
+# NOTE: Specifies that the model's output should be in Jansky
+oim.oimOption["ModelType"] = "physical"
+
 # NOTE: Specifying the parameter space
 atg = oim.oimAsymTempGradient(dim=128, dist=140, kappa_abs=276, pixSize=0.1,
                               Tin=1500, rin=0.5, rout=3, p=0.5, q=0.5,
