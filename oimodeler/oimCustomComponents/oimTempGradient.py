@@ -156,15 +156,15 @@ class oimTempGradient(oimComponentRadialProfile):
         rin_cm, rout_cm = map(lambda x: x*self.params["rin"].unit.to(u.cm), [rin, rout])
 
         # NOTE: Temperature radial profile
-        temp_profile = inner_temp*(r / rin_mas)**q
+        temp_profile = inner_temp*(r / rin_mas)**(-q)
 
         # NOTE: Surface density radial profile
-        if p == -2:
+        if p == 2:
             sigma_in = dust_mass/(2.*np.pi*np.log(rout_cm/rin_cm)*rin_cm**2)
         else:
-            f = ((rout_cm/rin_cm)**(p+2)-1)/(p+2)
+            f = ((rout_cm/rin_cm)**(2-p)-1)/(2-p)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
-        sigma_profile = sigma_in*(r / rin_mas)**p
+        sigma_profile = sigma_in*(r / rin_mas)**(-p)
         spectral_density = calculate_intensity(self.params, wl,
                                                kappa_abs,
                                                temp_profile,
