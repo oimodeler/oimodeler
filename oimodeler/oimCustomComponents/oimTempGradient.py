@@ -306,15 +306,15 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         kappa_abs = self.params["kappa_abs"](wl, t)
 
         # NOTE: Temperature radial profile
-        temp_profile = inner_temp*(r / rin)**q
+        temp_profile = inner_temp*(r / rin)**(-q)
 
         # NOTE: Surface density radial profile
-        if p == -2:
+        if p == 2:
             sigma_in = dust_mass/(2.*np.pi*np.log(rout_cm/rin_cm)*rin_cm**2)
         else:
-            f = ((rout_cm/rin_cm)**(p+2)-1)/(p+2)
+            f = ((rout_cm/rin_cm)**(2-p)-1)/(2-p)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
-        sigma_profile = sigma_in*(r / rin)**p
+        sigma_profile = sigma_in*(r / rin)**(-p)
 
         if self.asymmetric:
             sigma_profile = sigma_profile*(1+self._azimuthal_modulation(xx, yy, wl, t))

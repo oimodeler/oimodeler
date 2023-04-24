@@ -13,5 +13,6 @@ from .oimFastRotator import oimFastRotator
 from .oimKinematicDisk import oimKinematicDisk
 from .oimRadialRing import oimRadialRing
 from .oimRadialPowerLaw import oimRadialPowerLaw, oimAsymRadialPowerLaw
+from .oimStar import oimStar
 from .oimSpiral import oimSpiral
 from .oimTempGradient import oimTempGradient, oimAsymTempGradient
