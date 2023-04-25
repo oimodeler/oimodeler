@@ -419,7 +419,7 @@ class oimModel:
                     colorbar: Optional[bool] = True,
                     legend: Optional[bool] = False,
                     swapAxes: Optional[bool] = True,
-                    display_mode: Optional[str] = "amp",
+                    display_mode: Optional[str] = "vis",
                     kwargs_legend: Optional[Dict] = {},
                     normalize: Optional[bool] = False,
                     **kwargs: Dict):
@@ -491,14 +491,21 @@ class oimModel:
         wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
         spfx_extent = spfx_arr.max()
 
-        ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
-        if display_mode == "amp":
+        if not swapAxes:
+            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
+        else:
+            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, t_arr, wl_arr).reshape(dims)
+            
+        if display_mode == "vis":
             im = np.abs(ft)
             im /= im.max()
+        elif display_mode == "corr_flux":
+            im = np.abs(ft)
         elif display_mode == "phase":
             im = np.angle(ft, deg=True)
         else:
-            raise NameError("Only 'amp' and 'phase' are valid choice for the display_mode!")
+            raise NameError("Only 'vis', 'corr_flux' and 'phase' are valid"
+                            " choices for the display_mode!")
 
         if normalize:
             for it in range(nt):
