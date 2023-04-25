@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 """Model parameter and parameter interpolators."""
 import sys
+from typing import Union, Optional
 
 import astropy.units as u
+import astropy.constants as const
 import numpy as np
+from astropy.modeling import models
+from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
 
@@ -24,7 +28,7 @@ _standardParameters = {
     "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
     "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": u.one, "mini": 0, "maxi": 1},
     "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
-    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": u.mas, "mini": 0},
+    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": u.mas, "free": False, "mini": 0},
     "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": u.one, "free": False, "mini": 1},
     "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": u.m, "mini": 0},
     "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": u.day},
@@ -50,7 +54,9 @@ _interpolators = {"wl": "oimParamInterpolatorWl",
                   "powerlawWl": "oimParamPowerLawWl",
                   "powerlawTime": "oimParamPowerLawTime",
                   "rangeWl": "oimParamLinearRangeWl",
-                  "TemplateWl": "oimParamLinearTemplateWl"}
+                  "TemplateWl": "oimParamLinearTemplateWl",
+                  "TempWl": "oimParamLinearTemperatureWl",
+                  "StarWl": "oimParamLinearStarWl"}
 
 
 class oimParam:
@@ -621,12 +627,243 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
         vals = np.array([vi.value for vi in self.values])
         nwl = vals.size
         wl0 = np.linspace(self.wl0.value, self.wl0.value+self.dwl.value*nwl, num=nwl)
-        interp_template = interp1d(wl0,vals,kind=self.kind,fill_value="extrapolate")(wl)
-        interp_template_norm = interp_template/np.max(interp_template)
-        final_template = interp_template_norm*self.f_contrib.value
-        return final_template
+        interp_template = interp1d(wl0, vals, kind=self.kind, fill_value="extrapolate")(wl)
+        interp_template_norm = interp_template/interp_template.max()
+        return interp_template_norm*self.f_contrib.value
 
     def _getParams(self):
         params = []
         params.append(self.f_contrib)
         return params
+
+
+class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
+    """Interpolates/Calculates a blackbody distribution
+    for different wavelengths for the input temperatures
+    (via Planck's law).
+
+    Parameters
+    ----------
+    param : oimParam
+        The parameter that is to be calculated/interpolated.
+    wl : array_like
+        Wavelengths [m].
+    temperature : int or float or numpy.ndarray
+        The temperature(s) to be calculated.
+
+    Attributes
+    ----------
+    temp : oimParam
+    """
+
+    def _init(self, param: oimParam, wl: ArrayLike,
+              temperature: Union[int, float, ArrayLike],
+              kind: Optional[str] = "linear",
+              extrapolate: Optional[bool] = False,
+              fixedRef: Optional[bool] = True, **kwargs) -> None:
+        """The subclass's constructor."""
+        self.extrapolate = extrapolate
+        self.fixedRef = fixedRef
+        self.kind = kind
+        self.keyframes = []
+
+        for kf in wl:
+            self.keyframes.append(oimParam(**_standardParameters["wl"]))
+            self.keyframes[-1].value = kf
+
+        self.temp = self.keyvalues = oimParam(name="T", value=temperature,
+                                              unit=u.K, free=False,
+                                              description="The Temperature")
+
+    def _getParams(self):
+        """Sets the parameters for the interpolator."""
+        params = []
+        if not self.fixedRef:
+            params.append(self.keyvalues)
+        params.extend(self.keyframes)
+        return params
+
+    def _interpFunction(self, wl: np.ndarray, t: np.ndarray):
+        """Calculates a temperature and wavelength dependent blackbody
+        distribution via Planck's law.
+
+
+        Parameters
+        ----------
+        wl : numpy.ndarray
+            Wavelengths [m].
+        t : numpy.ndarray
+            Times.
+
+        Returns
+        -------
+        blackbody_distribution : astropy.units.Jy
+            The star's flux.
+        """
+        keyframes = np.array([param.value for param in self.keyframes])*self.keyframes[0].unit
+        plancks_law = models.BlackBody(temperature=self.temp.value*self.temp.unit)
+        spectral_radiance = plancks_law(keyframes).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2))
+
+        if self.extrapolate:
+            fill_value = "extrapolate"
+            bounds_error = None
+        else:
+            fill_value = (spectral_radiance[0], spectral_radiance[-1])
+            bounds_error = False
+
+        return interp1d(keyframes, spectral_radiance, fill_value=fill_value,
+                        kind=self.kind, bounds_error=bounds_error)(wl)
+
+
+class oimParamLinearStarWl(oimParamInterpolator):
+    """Interpolates/Calculates the stellar flux for distinct wavelengths.
+
+    Parameters
+    ----------
+    param : oimParam
+        The parameter that is to be calculated/interpolated.
+    wl : array_like
+        Wavelengths [m].
+    temperature : array_like
+        The temperature distribution to be calculated at different wavelengths.
+    distance : int or float
+        The distance to the star [pc].
+    luminostiy : int or float
+        The star's luminosity [Lsun].
+    **kwargs : dict
+
+    Attributes
+    ----------
+    stellar_radius : astropy.units.m
+    stellar_angular_radius :  astropy.units.mas
+    dist : oimParam
+        An oimParam containing the distance to the star.
+    lum : oimParam
+        An oimParam containing the star's luminosity.
+    """
+
+    def _init(self, param: oimParam,
+              wl: ArrayLike,
+              temperature: Union[int, float, ArrayLike],
+              distance: Union[int, float],
+              luminosity: Union[int, float],
+              kind: Optional[str] = "linear",
+              extrapolate: Optional[bool] = False,
+              fixedRef: Optional[bool] = True, **kwargs) -> None:
+        """The subclass's constructor."""
+        self.extrapolate = extrapolate
+        self.fixedRef = fixedRef
+        self.kind = kind
+        self.keyframes = []
+
+        for kf in wl:
+            self.keyframes.append(oimParam(**_standardParameters["wl"]))
+            self.keyframes[-1].value = kf
+
+        self._stellar_radius = None
+        self._stellar_angular_radius = None
+        self.temp = self.keyvalues = oimParam(name="T", value=temperature,
+                                              unit=u.K, free=False,
+                                              description="The Temperature")
+        self.dist = oimParam(name="dist",
+                             value=distance,
+                             unit=u.pc, free=False,
+                             description="Distance to the star")
+        self.lum = oimParam(name="lum",
+                            value=luminosity,
+                            unit=u.Lsun, free=False,
+                            description="The star's luminosity")
+
+
+    @property
+    def stellar_radius(self) -> u.m:
+        """Calculates the stellar radius.
+
+        Returns
+        -------
+        stellar_radius : astropy.units.m
+            The star's radius.
+        """
+        if self._stellar_radius is None:
+            luminosity = (self.lum.value*self.lum.unit).to(u.W)
+            self._stellar_radius = np.sqrt(luminosity/(4*np.pi*const.sigma_sb*(self.temp.value*self.temp.unit)**4))
+        return self._stellar_radius
+
+    @property
+    def stellar_radius_angular(self) -> u.mas:
+        r"""Calculates the parallax from the stellar radius and the distance to
+        the object.
+
+        Returns
+        -------
+        stellar_radius_angular : astropy.units.mas
+            The parallax of the stellar radius.
+
+        Notes
+        -----
+        The formula for the angular diameter $ \delta = \frac{d}{D} $ is used.
+        This produces an output in radians.
+        """
+        if self._stellar_angular_radius is None:
+            distance = self.dist.value*self.dist.unit
+            self._stellar_angular_radius = (self.stellar_radius.to(u.m) \
+                                            / distance.to(u.m)*u.rad).to(u.mas)
+        return self._stellar_angular_radius
+
+    def _getParams(self):
+        """Sets the parameters for the interpolator."""
+        params = []
+        if not self.fixedRef:
+            params.append(self.keyvalues)
+        params.extend(self.keyframes)
+        return params
+
+    def _calc_spectral_radiance(self, wl: u.m) -> np.ndarray:
+        """Calculates a temperature and wavelength dependent blackbody
+        distribution via Planck's law.
+
+
+        Parameters
+        ----------
+        wl : astropy.units.m
+            Wavelengths [m].
+
+        Returns
+        -------
+        blackbody_distribution : astropy.units.Jy
+            The star's flux.
+        """
+        plancks_law = models.BlackBody(temperature=self.temp.value*self.temp.unit)
+        return plancks_law(wl).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2))
+
+    def _interpFunction(self, wl: np.ndarray, t: np.ndarray) -> np.ndarray:
+        """Calculates the stellar flux from its distance and radius and
+        interpolates it to the input wavelengths,
+
+        This function is not time dependent.
+
+        Parameters
+        ----------
+        wl : numpy.ndarray
+            Wavelengths [m].
+        t : numpy.ndarray
+            Times.
+
+        Returns
+        -------
+        stellar_flux : np.ndarray
+            The star's flux [Jy].
+        """
+        keyframes = np.array([param.value for param in self.keyframes])
+        spectral_radiance = self._calc_spectral_radiance(keyframes*self.keyframes[0].unit)
+        stellar_flux = (np.pi*spectral_radiance*self.stellar_radius_angular**2).to(u.Jy).value
+
+        if self.extrapolate:
+            fill_value = "extrapolate"
+            bounds_error = None
+        else:
+            fill_value = (stellar_flux[0], stellar_flux[-1])
+            bounds_error = False
+
+        return interp1d(keyframes, stellar_flux, fill_value=fill_value,
+                        kind=self.kind, bounds_error=bounds_error)(wl)
