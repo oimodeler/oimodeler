@@ -491,7 +491,11 @@ class oimModel:
         wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
         spfx_extent = spfx_arr.max()
 
-        ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
+        if not swapAxes:
+            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
+        else:
+            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, t_arr, wl_arr).reshape(dims)
+
         if display_mode == "amp":
             im = np.abs(ft)
             im /= im.max()
