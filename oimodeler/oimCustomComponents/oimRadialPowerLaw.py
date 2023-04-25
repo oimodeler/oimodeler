@@ -57,10 +57,13 @@ class oimRadialPowerLaw(oimComponentImage):
         self.params["p"] = oimParam(**_standardParameters["p"])
         self.params["fov"] = oimParam(**_standardParameters["fov"])
         self.params["pixSize"] = oimParam(**_standardParameters["pixSize"])
-        self.params["a"] = oimParam(name="a", value=0, unit=u.one,
-                                    description="Azimuthal modulation amplitude")
-        self.params["phi"] = oimParam(name="phi", value=0, unit=u.deg,
-                                      description="Azimuthal modulation angle")
+
+        if self.asymmetric:
+            self.params["a"] = oimParam(name="a", value=0, unit=u.one,
+                                        description="Azimuthal modulation amplitude")
+            self.params["phi"] = oimParam(name="phi", value=0, unit=u.deg,
+                                          description="Azimuthal modulation angle")
+
         self._t = np.array([0])  # constant value <=> static model
         self._wl = np.array([0])  # constant value <=> achromatic model
         self._eval(**kwargs)

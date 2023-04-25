@@ -292,10 +292,12 @@ class oimComponentImage(oimComponent):
         if t is None:
             t = ucoord*0
 
-        im0 = self.getInternalImage(wl, t)
+        im = self.getInternalImage(wl, t)
+
         if oimOptions["FTbinningFactor"] is not None:
-            im0 = self._binImage(im0)
-        im = self._padImage(im0)
+            im = self._binImage(im)
+
+        im = self._padImage(im)
         pix = self._pixSize
 
         tr = self._ftTranslateFactor(
@@ -461,8 +463,7 @@ class oimComponentImage(oimComponent):
         binned_shape = (new_dim, im.shape[2] // new_dim,
                         new_dim, im.shape[2] // new_dim)
         shape = (im.shape[0], im.shape[1], *binned_shape)
-        binned_im = im.reshape(shape).mean(-1).mean(-2)
-        return binned_im
+        return im.reshape(shape).mean(-1).mean(-2)
 
     def _imageFunction(self, xx, yy, wl, t):
         image = xx*0+1

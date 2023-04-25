@@ -4,7 +4,7 @@ from .oimFTBackends import numpyFFTBackend
 
 # NOTE: The dictionary oimOption contains all the customizable option of oimodeler
 oimOptions = {}
-oimOptions["ModelType"] = "non-physical"
+oimOptions["ModelOutput"] = "vis"
 oimOptions["FTpaddingFactor"] = 8
 oimOptions["FTbinningFactor"] = None
 oimOptions["FTBackend"] = numpyFFTBackend

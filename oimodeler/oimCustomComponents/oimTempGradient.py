@@ -45,12 +45,12 @@ def calculate_intensity(params: Dict[str, oimParam],
     spectral_radiance = plancks_law(wavelengths).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2))
     emissivity_factor = 1-np.exp(-sigma_profile*kappa_abs)
 
-    if oimOptions["ModelType"] == "physical":
+    if oimOptions["ModelOutput"] == "corr_flux":
         if "pixSize" not in params:
             raise KeyError("'pixSize' needs to be directly or indirectly"
                            " (via the 'fov'-parameter) set by the user!")
         if params["pixSize"].value == 0.1:
-            warn("'pixSize' may not have been set by the user!")
+            warn("'pixSize' or 'fov' may not have been set by the user! (Value at 0.1)")
         pix = params["pixSize"].value**2*params["pixSize"].unit**2
         return ((spectral_radiance*pix).to(u.Jy)*emissivity_factor).value
 
