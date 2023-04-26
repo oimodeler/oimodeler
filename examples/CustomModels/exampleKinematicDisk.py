@@ -7,6 +7,7 @@ Created on Thu Apr 13 14:07:54 2023
 
 import os
 
+from  pprint import pprint as print
 import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim 
@@ -14,13 +15,19 @@ from datetime import datetime
 
 path = os.path.dirname(oim.__file__)
 
-#
+# setting the FFT parameters and backend. As the kinematicsDisk model as no 
+# outer sharp edge we decide not to zero-pad the images during the FFT process
+# no oder to save time and without noticeable effect on the simulated visibilities
 oim.oimOptions['FTpaddingFactor']=1
 oim.oimOptions['FTBackend']=oim.FFTWBackend
 
+#In this example we will use an old VLTI/AMBER observation of a classical 
+# Be star Alpha Col published in Cochetti et al. 2019 
 path="D:\\Travail\\GitHub\\oimodeler\\tempTests\\"
 oifits=[path+"ALPHACOL_2010-01-09T00_58.fits",path+"ALPHACOL_2010-01-20T10_36.fits"]
 
+
+#%% Pretting plot with error bars
 def errorFill(axe,X,Y,dY,color="k",alpha=1,zorder=0,line=True,smooth=3):
     Ys=Y
     if smooth!=1:      
@@ -32,7 +39,7 @@ def errorFill(axe,X,Y,dY,color="k",alpha=1,zorder=0,line=True,smooth=3):
     if line :
         axe.plot(X,Y,zorder=zorder+1,color=color)
 
-#%%
+#%% Creating a keplerian rotating disk model 
 nwl=81
 wl0=2.1656e-6
 c=oim.oimKinematicDisk(dim=64,fov=20,incl=45,Rstar=5.8,dist=80,fwhmCont=2.2,
@@ -41,7 +48,7 @@ c=oim.oimKinematicDisk(dim=64,fov=20,incl=45,Rstar=5.8,dist=80,fwhmCont=2.2,
                    res=1.8e-10)
 m=oim.oimModel(c)
 
-#%%
+#%% Defining the parameters space and free/fixed parameters
 
 c.params["f"].free=False
 c.params["Rstar"].free=False
@@ -58,44 +65,43 @@ c.params["fluxDiskCont"].set(min=0, max=0.6,error=0.1)
 c.params["incl"].set(min=20, max=70,error=10)
 c.params["EW"].set(min=2, max=12,error=1)
 c.params["vrot"].set(min=100, max=600,error=20)
-#c.params["beta"].set(mini=-1, maxi=0,error=0.1)
 
-#print(m.getFreeParameters())
+print(m.getFreeParameters())
 
-#%%
-dlam=2e-9
-f1=oim.oimWavelengthRangeFilter(targets="all",wlRange=([(wl0-dlam),(wl0+dlam)]))
-filters=oim.oimDataFilter([f1])
-
+#%% Filtering and modifying the data before fitting. 
 data=oim.oimData(oifits)
-
+#Here we divide the errors on the AMBER data that were obviously overestimated
 for datai in data.data:
     datai["OI_VIS"].data["VISPHIERR"]*=0.5
     datai["OI_VIS2"].data["VIS2ERR"]*=0.5
     datai["OI_T3"].data["T3PHIERR"]*=0.5   
-
+    
+#We only fit the Br Gamma line within a 20 angstrom band
+dlam=2e-9
+f1=oim.oimWavelengthRangeFilter(targets="all",wlRange=([(wl0-dlam),(wl0+dlam)]))
+filters=oim.oimDataFilter([f1])
 data.setFilter(filters)
-#%%
+
+
+#%% Creating a simple simulator to compare our data and model
 sim=oim.oimSimulator(data,m)
 t0 = datetime.now()
-n=10
-for i in range(n):
-    sim.compute(computeChi2=True)
-dt=(datetime.now() - t0).total_seconds()*1000/n
+sim.compute(computeChi2=True)
+dt=(datetime.now() - t0).total_seconds()*1000
 print("compute chi2: {:.1f}ms/model".format(dt))
 print("chi2:{} ".format(sim.chi2r))
 
-#%%
-fit=oim.oimFitterEmcee(data,m,nwalkers=20)
 
+#%% Runinng the mcmc fit
+fit=oim.oimFitterEmcee(data,m,nwalkers=12)
 fit.prepare(init="gaussian")
 fit.run(nsteps=10000,progress=True)
 
-#%%
+#%% Walkers and corner plots
 fit.walkersPlot(chi2limfact=3)
 fit.cornerPlot(chi2limfact=3)
 
-#%%
+#%% Generating the per baseline plots of the data and model
 
 data.setFilter(filters)
 sim.compute(computeChi2=True,computeSimulatedData=True)
@@ -170,7 +176,8 @@ for k in range(2):
 title="$\\alpha$ Col AMBER data + Kinematics disk model chi$^2_r$= {:.1f}".format(sim.chi2r)
 fig.suptitle(title)
 ax[0][0].set_xlim((wl0-Dlam)*1e6,(wl0+Dlam)*1e6)
-#%%
+
+#%% Plotting images of the best model
 wl0=2.1656e-6
 Dwl=32e-10
 nwl=5
