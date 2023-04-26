@@ -23,7 +23,7 @@ oim.oimOptions['FTBackend']=oim.FFTWBackend
 
 #In this example we will use an old VLTI/AMBER observation of a classical 
 # Be star Alpha Col published in Cochetti et al. 2019 
-path="D:\\Travail\\GitHub\\oimodeler\\tempTests\\"
+path="D:\\Travail\\GitHub\\oimodeler\\examples\testData\AMBER_AlphaCol\\"
 oifits=[path+"ALPHACOL_2010-01-09T00_58.fits",path+"ALPHACOL_2010-01-20T10_36.fits"]
 
 
