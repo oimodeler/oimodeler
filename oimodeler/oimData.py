@@ -5,7 +5,7 @@ from enum import IntFlag
 
 import numpy as np
 from astropy.io import fits
-
+from pathlib import Path
 from .oimUtils import hdulistDeepCopy
 
 
@@ -245,7 +245,7 @@ class oimData(object):
             for el in dataOrFilename:
                 self.addData(el, prepare=prepare)
         else:
-            if type(dataOrFilename) == str:
+            if type(dataOrFilename) == str :
                 self._data.append(fits.open(dataOrFilename))
             else:
                 self._data.append(dataOrFilename)
