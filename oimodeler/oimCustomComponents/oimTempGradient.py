@@ -1,5 +1,4 @@
-from typing import Dict
-from warnings import warn
+from typing import Optional
 
 import astropy.units as u
 import astropy.constants as const
@@ -12,28 +11,21 @@ from ..oimParam import oimParam
 from .oimRadialPowerLaw import oimRadialPowerLaw
 
 
-def calculate_intensity(params: Dict[str, oimParam],
-                        wavelengths: u.um,
-                        kappa_abs: u.cm**2/u.g,
+def calculate_intensity(wavelengths: u.um,
                         temp_profile: u.K,
-                        sigma_profile: u.g/u.cm**2,
-                        rJy: bool = False) -> np.ndarray:
+                        pixSize: Optional[float] = None) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
     dust surface density profile.
 
     Parameters
     ----------
-    params : dict with keys of str and values of oimParam
-        The oimParams of the oimComponent.
     wavelengths : astropy.units.um
         Wavelength value(s).
-    kappa_abs : astropy.units.cm**2/astropy.units.g
-        Absorption opacity
     temp_profile : astropy.units.K
         Temperature profile.
-    sigma_profile : astropy.units.g/astropy.units.cm**2
-        Dust surface density profile.
+    pixSize: float, optional
+        The pixel size [rad].
 
     Returns
     -------
@@ -42,19 +34,15 @@ def calculate_intensity(params: Dict[str, oimParam],
     """
     plancks_law = models.BlackBody(temperature=temp_profile*u.K)
     wavelengths = (wavelengths*u.m).to(u.um)
-    spectral_radiance = plancks_law(wavelengths).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2))
-    emissivity_factor = 1-np.exp(-sigma_profile*kappa_abs)
+    spectral_radiance = plancks_law(wavelengths).to(u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
 
     if oimOptions["ModelOutput"] == "corr_flux":
-        if "pixSize" not in params:
+        if pixSize is None:
             raise KeyError("'pixSize' needs to be directly or indirectly"
                            " (via the 'fov'-parameter) set by the user!")
-        if params["pixSize"].value == 0.1:
-            warn("'pixSize' or 'fov' may not have been set by the user! (Value at 0.1)")
-        pix = params["pixSize"].value**2*params["pixSize"].unit**2
-        return ((spectral_radiance*pix).to(u.Jy)*emissivity_factor).value
-
-    return (spectral_radiance*emissivity_factor).value
+        pixSize *= u.rad
+        return (spectral_radiance*pixSize**2).to(u.Jy).value
+    return spectral_radiance.value
 
 
 class oimTempGradient(oimComponentRadialProfile):
@@ -165,10 +153,8 @@ class oimTempGradient(oimComponentRadialProfile):
             f = ((rout_cm/rin_cm)**(2-p)-1)/(2-p)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
         sigma_profile = sigma_in*(r / rin_mas)**(-p)
-        spectral_density = calculate_intensity(self.params, wl,
-                                               kappa_abs,
-                                               temp_profile,
-                                               sigma_profile)
+        spectral_density = (2*const.h.value*const.c.value**2/wl**5)*np.divide(1., np.exp((const.h.value*const.c.value)/(wl*const.k_B.value*temp_profile))-1)
+        spectral_density *= 1-np.exp(-sigma_profile*kappa_abs)
         return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
 
     @property
@@ -245,10 +231,13 @@ class oimAsymTempGradient(oimRadialPowerLaw):
     shortname = "AsymTempGrad"
     elliptic = True
     asymmetric = True
+    asymmetric_image = False
+    asymmetric_surface_density = False
 
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
+        self.normalizeImage = False
         self.params["rin"] = oimParam(name="rin", value=0, unit=u.mas,
                                       description="Inner radius of the disk")
         self.params["rout"] = oimParam(name="rout", value=0, unit=u.mas,
@@ -316,9 +305,14 @@ class oimAsymTempGradient(oimRadialPowerLaw):
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
         sigma_profile = sigma_in*(r / rin)**(-p)
 
-        if self.asymmetric:
-            sigma_profile = sigma_profile*(1+self._azimuthal_modulation(xx, yy, wl, t))
-        spectral_density = calculate_intensity(self.params, wl,
-                                               kappa_abs, temp_profile,
-                                               sigma_profile)
+        spectral_density = calculate_intensity(wl, temp_profile,
+                                               pixSize=self._pixSize)
+        if self.asymmetric_image:
+            spectral_density *= (1+self._azimuthal_modulation(xx, yy, wl, t))
+        elif self.asymmetric_surface_density:
+            sigma_profile *= (1+self._azimuthal_modulation(xx, yy, wl, t))
+
+        spectral_density *= 1-np.exp(-sigma_profile*kappa_abs)
         return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*spectral_density, nan=0)
+
+# TODO: Make multiple temperature gradient model options that do different stuff
