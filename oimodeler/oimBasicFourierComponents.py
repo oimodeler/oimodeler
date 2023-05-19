@@ -697,7 +697,6 @@ class oimConvolutor(oimComponentFourier):
         im2=self.component2._imageFunction(xx,yy,wl,t)
         nt,nwl,nx,ny=im1.shape
 
-        print(nt,nwl,nx,ny)
         #TODO : no loop
         imConv=np.ndarray([nt,nwl,nx,ny])
         for iwl in range(nwl):

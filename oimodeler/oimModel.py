@@ -339,7 +339,6 @@ class oimModel:
         """
         im = self.getImage(dim, pixSize, wl, t, fromFT=fromFT,
                            squeeze=False, normalize=normalize)
-
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
 
         if swapAxes:

@@ -402,7 +402,6 @@ class oimComponentImage(oimComponent):
                     if tot[it, iwl] != 0:
                         im[it, iwl, :, :] = im[it, iwl, :, :]  \
                             / tot[it, iwl]*self.params["f"](wli, ti)
-
         return im
 
     def getInternalImage(self, wl, t):

@@ -577,7 +577,6 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         vals = np.array([vi.value for vi in self.values])
         nwl = vals.size
         wl0 = np.linspace(self.wlmin.value, self.wlmax.value, num=nwl)
-        print(wl0)
         return interp1d(wl0, vals, kind=self.kind, fill_value="extrapolate")(wl)
 
     def _getParams(self):
@@ -808,5 +807,4 @@ class oimParamLinearStarWl(oimParamInterpolator):
         """
         spectral_radiance = self._calc_spectral_radiance(wl*u.m)
         spectral_radiance = (np.pi*spectral_radiance*self.stellar_radius_angular**2).to(u.Jy).value
-        print(spectral_radiance)
         return spectral_radiance
