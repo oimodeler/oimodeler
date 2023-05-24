@@ -331,6 +331,7 @@ def cutWavelengthRange(oifits, wlRange=None, addCut=[]):
     return data
 
 
+
 def getWlFromFitsImageCube(header, outputUnit=None):
     """Returns the wl law from a chromatic cube image in the fits format
 
@@ -359,7 +360,10 @@ def getWlFromFitsImageCube(header, outputUnit=None):
 
     if outputUnit:
         if "CUNIT3" in header:
-            unit0 = units.Unit(header["CUNIT3"])
+            try:
+                unit0 = units.Unit(header["CUNIT3"])
+            except:
+                unit0 = units.m
         else:
             unit0 = units.m
         wl*unit0.to(outputUnit)

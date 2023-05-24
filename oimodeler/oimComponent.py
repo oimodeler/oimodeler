@@ -752,7 +752,11 @@ class oimComponentFitsImage(oimComponentImage):
             raise TypeError("Current version only works with the same pixels"
                             " scale in x and y dimension")
         if "CUNIT1" in self._header:
-            unit0 = units.Unit(self._header["CUNIT1"])
+            try:
+                unit0 = units.Unit(self._header["CUNIT1"])
+            except:
+                unit0 = units.rad
+                    
         else:
             unit0 = units.rad
         self._pixSize0 = pixX*unit0.to(units.rad)
