@@ -16,20 +16,18 @@ f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
 data.setFilter(oim.oimDataFilter([f1, f2]))
 
 # NOTE: Specifying the parameter space
-rr = oim.oimRadialRing(dim=128, din=2, dout=5, p=0.5, pa=30, elong=2, f=0.8)
+rr = oim.oimRadialRing(dim=128, din=2, dout=5, p=0.5, f=0.8)
 
 rr.params["din"].set(min=0, max=20)
 rr.params["dout"].set(min=10, max=20)
 rr.params["p"].set(min=0, max=1)
-rr.params["elong"].set(min=1, max=50)
-rr.params["pa"].set(min=0, max=360)
 rr.params["f"].free = False
 
 # NOTE: Model creation
 model = oim.oimModel([rr])
 
-sim = oim.oimSimulator(data=data, model=model)
-sim.compute(computeChi2=True, computeSimulatedData=True)
+# sim = oim.oimSimulator(data=data, model=model)
+# sim.compute(computeChi2=True, computeSimulatedData=True)
 
 # NOTE: Perfoming the model-fitting
 fit = oim.oimFitterEmcee(data, model, nwalkers=25)
