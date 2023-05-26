@@ -439,6 +439,10 @@ class oimComponentImage(oimComponent):
         min_pow2x = 2**(min_sizex - 1).bit_length()
         min_pow2y = 2**(min_sizey - 1).bit_length()
 
+        # TODO: Image has zeros around it already then this does not work -> Rework
+        if min_pow2x < dimx:
+            return im
+
         padx = (min_pow2x-dimx)//2
         pady = (min_pow2y-dimy)//2
 
