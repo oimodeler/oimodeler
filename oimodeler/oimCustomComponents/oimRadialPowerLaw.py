@@ -114,8 +114,7 @@ class oimRadialPowerLaw(oimComponentImage):
         -------
         azimuthal_modulation : numpy.ndarray
         """
-        # TEST: Is it the other way around (y_arr, x_arr)?
-        polar_angle = np.arctan2(xx, yy)
+        polar_angle = np.arctan2(yy, xx)
         return self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t))
 
     def image(self, xx: np.ndarray, yy: np.ndarray,
