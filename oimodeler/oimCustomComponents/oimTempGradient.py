@@ -8,6 +8,7 @@ from astropy.modeling import models
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import oimOptions
 from ..oimParam import oimParam
+from ..oimUtils import convert_radial_profile_to_meter
 from .oimRadialPowerLaw import oimRadialPowerLaw
 
 
@@ -72,12 +73,11 @@ class oimTempGradient(oimComponentRadialProfile):
     ----------
     params : dict with keys of str and values of oimParam
         Dictionary of parameters.
-    _wl : array_like
-        Wavelengths.
-    _t : array_like
-        Times.
     _r : array_like
-        Radial grid.
+    _wl : array_like
+        Wavelengths [micron].
+    _t : array_like
+        Times [second].
 
     Methods
     -------
@@ -124,11 +124,11 @@ class oimTempGradient(oimComponentRadialProfile):
         Parameters
         ----------
         r : numpy.ndarray
-            Radial grid.
+            Radial grid [mas].
         wl : numpy.ndarray
-            Wavelengths.
+            Wavelengths [micron].
         t : numpy.ndarray
-            Times.
+            Times [second].
 
         Results
         -------
@@ -159,7 +159,7 @@ class oimTempGradient(oimComponentRadialProfile):
 
     @property
     def _r(self):
-        """Gets the radius."""
+        """Gets the radial profile [mas]."""
         if False:
             rout = self.params["rout"](self._wl, self._t)
         else:
@@ -171,7 +171,7 @@ class oimTempGradient(oimComponentRadialProfile):
 
     @_r.setter
     def _r(self, value):
-        """Sets the radius."""
+        """Sets the radial profile [mas]."""
         return
 
 
@@ -217,9 +217,9 @@ class oimAsymTempGradient(oimRadialPowerLaw):
     pixSize : float
         Pixel size [mas].
     _t : numpy.ndarray
-        Array of time values.
+        Array of time values [second].
     _wl : numpy.ndarray
-        Array of wavelength values.
+        Array of wavelength values [micron].
 
     Methods
     -------
@@ -233,6 +233,7 @@ class oimAsymTempGradient(oimRadialPowerLaw):
     asymmetric = True
     asymmetric_image = False
     asymmetric_surface_density = False
+    const_temp = False
 
     def __init__(self, **kwargs):
         """The class's constructor."""
@@ -257,12 +258,53 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         self.params["dist"] = oimParam(name="dist", value=0,
                                        unit=u.pc, free=False,
                                        description="Distance of the star")
+        self.params["Teff"] = oimParam(name="Teff", value=0,
+                                       unit=u.K, free=False,
+                                       description="The star's effective Temperature")
+        self.params["lum"] = oimParam(name="lum", value=0,
+                                      unit=u.Lsun, free=False,
+                                      description="The star's luminosity")
 
         self._t = np.array([0])  # constant value <=> static model
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._eval(**kwargs)
 
-    # FIXME: Does pixsize need to be in rad or in mas? -> Check again, probably correct as is
+    # NOTE: Add notes for the formulas used.
+    def _const_temperature_profile(self, r, wl, t):
+        """Creates a constant/idealised temperature profile derived from the
+        star's luminosity and the observer's distance to the star and
+        contingent only on those values.
+
+        Parameters
+        ----------
+        r : numpy.ndarray
+            Radial grid [mas].
+        wl : numpy.ndarray
+            Wavelengths [micron].
+        t : numpy.ndarray
+            Times [second].
+
+        Returns
+        -------
+        temperature_profile : numpy.ndarray
+            The temperature profile [K].
+
+        Notes
+        -----
+        The stellar radius is calculated from its lumionsity via
+
+        .. math:: R_* = \\sqrt{\\frac{L_*}{4\\pi\\sigma_sb\\T_*^4}}
+
+        And with this the individual grain's temperature profile is
+
+        .. math:: T_{grain} = \\sqrt{\\frac{R_*}{2r}}\\cdot T_*
+        """
+        radius = convert_radial_profile_to_meter(r, self.params["dist"](wl, t))
+        luminosity = (self.params["lum"](wl, t)*self.params["lum"].unit).to(u.W)
+        stellar_temperature = self.params["Teff"](wl, t)*self.params["Teff"].unit
+        stellar_radius = np.sqrt(luminosity/(4*np.pi*const.sigma_sb*stellar_temperature**4))
+        return (np.sqrt(stellar_radius/(2*radius))*stellar_temperature).value
+
     def _imageFunction(self, xx: np.ndarray, yy: np.ndarray,
                        wl: np.ndarray, t: np.ndarray) -> np.ndarray:
         """Calculates a 2D-image from a dust-surface density- and
@@ -278,9 +320,9 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         yy : numpy.ndarray
             The y-coordinate grid
         wl : numpy.ndarray
-            Wavelengths.
+            Wavelengths [micron].
         t : numpy.ndarray
-            Times.
+            Times [second].
 
         Returns
         -------
@@ -294,10 +336,13 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         dust_mass = self.params["Mdust"](wl, t)*const.M_sun.value*1e3
         kappa_abs = self.params["kappa_abs"](wl, t)
 
-        # NOTE: Temperature radial profile
-        temp_profile = inner_temp*(r / rin)**(-q)
+        # NOTE: Radial temperature profile
+        if self.const_temp:
+            temp_profile = self._const_temperature_profile(r, wl, t)
+        else:
+            temp_profile = inner_temp*(r / rin)**(-q)
 
-        # NOTE: Surface density radial profile
+        # NOTE: Radial surface density profile
         if p == 2:
             sigma_in = dust_mass/(2.*np.pi*np.log(rout_cm/rin_cm)*rin_cm**2)
         else:

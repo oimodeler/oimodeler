@@ -1,10 +1,46 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
+from typing import Optional, Union
+
 import astropy.units as units
 import numpy as np
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
+
+
+def convert_radial_profile_to_meter(radius: Union[float, np.ndarray],
+                                    distance: float,
+                                    rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
+    """Converts the distance from mas to meters for a radial profile around
+    a star via the angular diameter small angle approximation.
+
+    Parameters
+    ----------
+    radius : float or numpy.ndarray
+        The radius of the object around the star [mas].
+    distance : float
+        The star's distance to the observer [pc].
+    rvalue : bool, optional
+        If toggled, returns the value witout units else returns
+        an astropy.units.Quantity object. The default is False.
+
+    Returns
+    -------
+    radius : float or numpy.ndarray
+        The radius of the object around the star [m].
+
+    Notes
+    -----
+    The formula for the angular diameter small angle approximation is
+
+    .. math:: \\delta = \\frac{d}{D}
+
+    where d is the distance from the star and D is the distance from the star
+    to the observer and ..math::`\\delta` is the angular diameter.
+    """
+    radius = ((radius*units.mas).to(units.arcsec).value*distance*units.au).to(units.m)
+    return radius.value if rvalue else radius
 
 
 def getBaselineName(oifits, hduname="OI_VIS2", length=False, angle=False,
