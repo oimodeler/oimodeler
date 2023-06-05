@@ -3,6 +3,7 @@ import numpy as np
 
 from ..oimComponent import oimComponentImage
 from ..oimParam import oimParam, _standardParameters
+from ..oimUtils import get_next_power_of_two
 
 
 class oimRadialPowerLaw(oimComponentImage):
@@ -70,9 +71,24 @@ class oimRadialPowerLaw(oimComponentImage):
 
     @property
     def _pixSize(self):
-        """The pixel size [mas/px]."""
-        self.params["pixSize"].value = pix = self.params["fov"].value/self.params["dim"].value
-        return pix*self.params["fov"].unit.to(u.rad)
+        """Returns the pixel size [mas/px].
+
+        Additionally this property also calculates the pixel size from
+        the field of view [mas] and the dimension [px], if the pixel size
+        [mas/px] is not provided. Otherwise, it will automatically adjust the
+        dimension [px] depending on the field of view [mas] and the pixel
+        size [mas/px].
+        """
+        if self.params["fov"].value == 0:
+            raise ValueError("The field of view must be specified as a keyword argument.")
+        if self.params["pixSize"].value == 0:
+            self.params["pixSize"].value = pix = self.params["fov"].value/self.params["dim"].value
+            return pix*self.params["fov"].unit.to(u.rad)
+        dim = get_next_power_of_two(self.params["fov"].value/\
+                                    self.params["pixSize"].value)
+        if dim != self.params["dim"].value:
+            self.params["dim"].value = dim
+        return self.params["pixSize"].value*self.params["pixSize"].unit.to(u.rad)
 
     @_pixSize.setter
     def _pixSize(self, value: u.mas):

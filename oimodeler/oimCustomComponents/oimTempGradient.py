@@ -35,7 +35,8 @@ def calculate_intensity(wavelengths: u.um,
     """
     plancks_law = models.BlackBody(temperature=temp_profile*u.K)
     wavelengths = (wavelengths*u.m).to(u.um)
-    spectral_radiance = plancks_law(wavelengths).to(u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
+    spectral_radiance = plancks_law(wavelengths).to(
+        u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
 
     if oimOptions["ModelOutput"] == "corr_flux":
         if pixSize is None:
@@ -136,12 +137,14 @@ class oimTempGradient(oimComponentRadialProfile):
         """
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
-        dist, inner_temp = map(lambda x: self.params[x](wl, t), ["dist", "Tin"])
+        dist, inner_temp = map(
+            lambda x: self.params[x](wl, t), ["dist", "Tin"])
         dust_mass = self.params["Mdust"](wl, t)*const.M_sun.value*1e3
         kappa_abs = self.params["kappa_abs"](wl, t)
 
         rin_mas, rout_mas = map(lambda x: 1e3*x/dist, [rin, rout])
-        rin_cm, rout_cm = map(lambda x: x*self.params["rin"].unit.to(u.cm), [rin, rout])
+        rin_cm, rout_cm = map(
+            lambda x: x*self.params["rin"].unit.to(u.cm), [rin, rout])
 
         # NOTE: Temperature radial profile
         temp_profile = inner_temp*(r / rin_mas)**(-q)
@@ -153,7 +156,8 @@ class oimTempGradient(oimComponentRadialProfile):
             f = ((rout_cm/rin_cm)**(2-p)-1)/(2-p)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
         sigma_profile = sigma_in*(r / rin_mas)**(-p)
-        spectral_density = (2*const.h.value*const.c.value**2/wl**5)*np.divide(1., np.exp((const.h.value*const.c.value)/(wl*const.k_B.value*temp_profile))-1)
+        spectral_density = (2*const.h.value*const.c.value**2/wl**5)*np.divide(
+            1., np.exp((const.h.value*const.c.value)/(wl*const.k_B.value*temp_profile))-1)
         spectral_density *= 1-np.exp(-sigma_profile*kappa_abs)
         return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
 
@@ -300,9 +304,12 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         .. math:: T_{grain} = \\sqrt{\\frac{R_*}{2r}}\\cdot T_*
         """
         radius = convert_radial_profile_to_meter(r, self.params["dist"](wl, t))
-        luminosity = (self.params["lum"](wl, t)*self.params["lum"].unit).to(u.W)
-        stellar_temperature = self.params["Teff"](wl, t)*self.params["Teff"].unit
-        stellar_radius = np.sqrt(luminosity/(4*np.pi*const.sigma_sb*stellar_temperature**4))
+        luminosity = (self.params["lum"](wl, t) *
+                      self.params["lum"].unit).to(u.W)
+        stellar_temperature = self.params["Teff"](
+            wl, t)*self.params["Teff"].unit
+        stellar_radius = np.sqrt(
+            luminosity/(4*np.pi*const.sigma_sb*stellar_temperature**4))
         return (np.sqrt(stellar_radius/(2*radius))*stellar_temperature).value
 
     def _imageFunction(self, xx: np.ndarray, yy: np.ndarray,
@@ -328,21 +335,22 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         -------
         image : numpy.ndarray
         """
-        r = np.sqrt(xx**2+yy**2)
+        dist = self.params["dist"](wl, t)
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
-        q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
-        dist, inner_temp = map(lambda x: self.params[x](wl, t), ["dist", "Tin"])
-        rin_cm, rout_cm = map(lambda x: x*dist*self.params["rin"].unit.to(u.arcsec)*u.au.to(u.cm), [rin, rout])
-        dust_mass = self.params["Mdust"](wl, t)*const.M_sun.value*1e3
-        kappa_abs = self.params["kappa_abs"](wl, t)
+        rin_cm = convert_radial_profile_to_meter(rin, dist).to(u.cm).value
+        rout_cm = convert_radial_profile_to_meter(rout, dist).to(u.cm).value
 
         # NOTE: Radial temperature profile
+        r = np.sqrt(xx**2+yy**2)
         if self.const_temp:
             temp_profile = self._const_temperature_profile(r, wl, t)
         else:
+            q, inner_temp = map(lambda x: self.params[x](wl, t), ["q", "Tin"])
             temp_profile = inner_temp*(r / rin)**(-q)
 
         # NOTE: Radial surface density profile
+        p = self.params["p"](wl, t)
+        dust_mass = self.params["Mdust"](wl, t)*const.M_sun.value*1e3
         if p == 2:
             sigma_in = dust_mass/(2.*np.pi*np.log(rout_cm/rin_cm)*rin_cm**2)
         else:
@@ -357,7 +365,6 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         elif self.asymmetric_surface_density:
             sigma_profile *= (1+self._azimuthal_modulation(xx, yy, wl, t))
 
-        spectral_density *= 1-np.exp(-sigma_profile*kappa_abs)
+        spectral_density *= 1 - \
+            np.exp(-sigma_profile*self.params["kappa_abs"](wl, t))
         return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*spectral_density, nan=0)
-
-# TODO: Make multiple temperature gradient model options that do different stuff

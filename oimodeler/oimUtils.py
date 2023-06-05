@@ -9,6 +9,22 @@ from astropy.io import fits
 from astroquery.simbad import Simbad
 
 
+def get_next_power_of_two(number: Union[int, float]) -> int:
+    """Returns the next power of two for an integer or float input.
+
+    Parameters
+    ----------
+    number : int or float
+        An input number.
+
+    Returns
+    -------
+    closest_power_of_two : int
+        The, to the input, closest power of two.
+    """
+    return int(2**np.ceil(np.log2(number)))
+
+
 def convert_radial_profile_to_meter(radius: Union[float, np.ndarray],
                                     distance: float,
                                     rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
