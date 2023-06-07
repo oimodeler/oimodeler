@@ -14,4 +14,5 @@ from .oimKinematicDisk import oimKinematicDisk
 from .oimRadialRing import oimRadialRing
 from .oimRadialPowerLaw import oimRadialPowerLaw, oimAsymRadialPowerLaw
 from .oimSpiral import oimSpiral
-from .oimTempGradient import oimTempGradient, oimAsymTempGradient
+from .oimTempGradient import oimTempGradient, oimAsymTempGradient,\
+    oimAsymSDTempGradient, oimAsymSDGreyBody

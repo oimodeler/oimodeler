@@ -53,8 +53,10 @@ class oimRadialPowerLaw(oimComponentImage):
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
-        self.params["rin"] = oimParam(**_standardParameters["din"])
-        self.params["rout"] = oimParam(**_standardParameters["dout"])
+        self.params["rin"] = oimParam(name="rin", value=0, unit=u.mas,
+                                      description="Inner radius of the disk")
+        self.params["rout"] = oimParam(name="rout", value=0, unit=u.mas,
+                                       description="Outer radius of the disk")
         self.params["p"] = oimParam(**_standardParameters["p"])
         self.params["fov"] = oimParam(**_standardParameters["fov"])
         self.params["pixSize"] = oimParam(**_standardParameters["pixSize"])
@@ -117,8 +119,8 @@ class oimRadialPowerLaw(oimComponentImage):
         polar_angle = np.arctan2(yy, xx)
         return self.params["a"](wl, t)*np.cos(polar_angle-self.params["phi"](wl, t))
 
-    def image(self, xx: np.ndarray, yy: np.ndarray,
-              wl: np.ndarray, t: np.ndarray) -> np.ndarray:
+    def _image(self, xx: np.ndarray, yy: np.ndarray,
+               wl: np.ndarray, t: np.ndarray) -> np.ndarray:
         rin, rout = map(lambda x: self.params[x](wl, t), ("rin", "rout"))
         r, p = np.sqrt(xx**2+yy**2), self.params["p"](wl, t)
         return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*(r / rin)**p, nan=0)
@@ -143,8 +145,9 @@ class oimRadialPowerLaw(oimComponentImage):
         image : numpy.ndarray
         """
         if self.asymmetric:
-            return self.image(xx, yy, wl, t)*(1+self._azimuthal_modulation(xx, yy, wl, t))
-        return self.image(xx, yy, wl, t)
+            return self._image(xx, yy, wl, t) * \
+                (1+self._azimuthal_modulation(xx, yy, wl, t))
+        return self._image(xx, yy, wl, t)
 
 
 class oimAsymRadialPowerLaw(oimRadialPowerLaw):
