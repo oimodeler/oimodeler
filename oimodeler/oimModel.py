@@ -572,3 +572,19 @@ class oimModel:
         if savefig is not None:
             plt.savefig(savefig)
         return fig, axe, im
+    
+    def __str__(self):
+        txt = "Model with "
+        for comp in self.components:
+            txt += "\n" 
+            txt += comp.__str__()
+        return txt
+    
+    def __repr__(self):
+        txt = "oimModel at " + str(hex(id(self))) + " : "
+        for comp in self.components:
+            txt += "\n"             
+            txt += comp.__repr__()
+        return txt    
+    
+    

@@ -426,6 +426,8 @@ class oimESKIRing(oimComponentFourier):
         self.params["skwPa"] = oimParam(**_standardParameters["skwPa"])
         self._eval(**kwargs)
 
+
+    #TODO change definition of skwPA
     def _visFunction(self, xp, yp, rho, wl, t):
         xx = np.pi*self.params["d"](wl, t)*self.params["d"].unit.to(u.rad)*rho
 
@@ -509,6 +511,8 @@ class oimESKRing(oimComponentFourier):
                 (r2 >= (self.params["din"](wl, t)/2)**2)).astype(float)*F
 
 
+
+#TODO 
 class oimLorentz(oimComponentFourier):
     """Pseudo-Lorentzian component defined in the fourier space
 
@@ -547,7 +551,7 @@ class oimLorentz(oimComponentFourier):
         return a/(2*np.pi*3**0.5)*(a**2/3+r2)**(-1.5)
 
 
-class oimELorent(oimLorentz):
+class oimELorentz(oimLorentz):
     """Elliptical-Lorentzian component defined in the fourier space
 
     Parameters
@@ -659,7 +663,7 @@ class oimQuadLDD(oimComponentFourier):
         s = (6-2*a1-a2)/12
         return np.nan_to_num(((1-a1-a2)*c1+(a1+2*a2)*c2-a2*c3)/s, nan=1)
 
-
+#TODO check effect of PA of both component
 class oimConvolutor(oimComponentFourier):
     """
 
