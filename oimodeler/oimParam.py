@@ -195,6 +195,7 @@ class oimInterp:
         if isinstance(self.type, str):
             self.type = getattr(CURRENT_MODULE, self.type)
 
+###############################################################################
 
 class oimParamInterpolator(oimParam):
     def __init__(self, param, **kwargs):
