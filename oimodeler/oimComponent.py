@@ -142,18 +142,27 @@ class oimComponent(object):
         y = y-self.params["y"](wl, t)
         return x, y
 
-    def __str__(self):
-        txt = self.name
+    def _paramstr(self):
+        txt = ""
         for name, param in self.params.items():
             if isinstance(param, oimParam):
                 if 'value' in param.__dict__:
                     txt += " {0}={1:.2f}".format(param.name, param.value)
-                elif isinstance(param, oimParamInterpolator):
+                else:
                     # TODO have a string for each oimParamInterpolator
                     txt += " {0}={1}".format(param.name,
                                              param.__class__.__name__)
+        return txt
+        
+    def __str__(self):
+        txt = self.name + self._paramstr()
+        
 
         return txt
+    
+    def __repr__(self):
+        return self.__class__.__name__ + " at " + str(hex(id(self)))+  " : "+ \
+               self._paramstr()
 
 
 class oimComponentFourier(oimComponent):
@@ -297,7 +306,7 @@ class oimComponentImage(oimComponent):
         pix = self._pixSize
 
         tr = self._ftTranslateFactor(
-            ucoord, vcoord, wl, t)*self.params["f"](wl, t)
+            ucoord, vcoord, wl, t)#♣*self.params["f"](wl, t)
 
         if self._allowExternalRotation == True:
             pa_rad = (self.params["pa"](wl, t)) * \
@@ -409,10 +418,11 @@ class oimComponentImage(oimComponent):
                 simple=False, wl=wl, t=t)
             res = self._imageFunction(x_arr, y_arr, wl_arr, t_arr)
 
-        for it in range(res.shape[0]):
-            for iwl in range(res.shape[1]):
-                res[it, iwl, :, :] = res[it, iwl, :, :] / \
-                    np.sum(res[it, iwl, :, :])
+        if self.normalizeImage == True:
+            for it in range(res.shape[0]):
+                for iwl in range(res.shape[1]):
+                    res[it, iwl, :, :] = res[it, iwl, :, :] / \
+                        np.sum(res[it, iwl, :, :])
 
         return res
 
