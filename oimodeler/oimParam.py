@@ -48,19 +48,20 @@ _interpolators = {"wl": "oimParamInterpolatorWl",
                   "GaussTime": "oimParamGaussianTime",
                   "mGaussWl": "oimParamMultipleGaussianWl",
                   "mGaussTime": "oimParamMultipleGaussianTime",
+                  "multiParam": "oimParamMultiWl",
                   "cosTime": "oimParamCosineTime",
                   "polyWl": "oimParamPolynomialWl",
                   "polyTime": "oimParamPolynomialTime",
                   "powerlawWl": "oimParamPowerLawWl",
                   "powerlawTime": "oimParamPowerLawTime",
                   "rangeWl": "oimParamLinearRangeWl",
-                  "TemplateWl": "oimParamLinearTemplateWl",
-                  "TempWl": "oimParamLinearTemperatureWl",
-                  "StarWl": "oimParamLinearStarWl"}
+                  "templateWl": "oimParamLinearTemplateWl",
+                  "tempWl": "oimParamLinearTemperatureWl",
+                  "starWl": "oimParamLinearStarWl"}
 
 
 class oimParam:
-    """Class of model parameters
+    """Class of model parameters.
 
     Parameters
     ----------
@@ -171,7 +172,6 @@ class oimParamNorm:
             res -= p(wl, t)
         return res
 
-
 ###############################################################################
 
 class oimInterp:
@@ -222,6 +222,9 @@ class oimParamInterpolator(oimParam):
 
     def __call__(self, wl=None, t=None):
         return self._interpFunction(wl, t)
+
+    def _getParams(self):
+        pass
 
     @property
     def params(self):
@@ -283,6 +286,30 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
         params.extend(self.keyvalues)
         return params
 
+
+class oimParamMultiWl(oimParamInterpolatorKeyframes):
+    """Class of model parameters for multiple wavelengths.
+
+    Notes
+    -----
+    The difference of this class to the interpolators is that
+    there will be no interpolation done, but the parameters will be
+    returned for the different wavelengths, at which they are specified.
+    Will raise an error if there are missing wavelengths.
+    """
+
+    def _init(self, param, wl=[], values=[], **kwargs):
+        super()._init(param, dependence="wl", keyframes=wl,
+                      keyvalues=values, **kwargs)
+
+    def _interpFunction(self, wl, t):
+        """Returns the parameter's value for the given wavelength."""
+        keyframes = np.array([param.value for param in self.keyframes])
+        values = np.array([param.value for param in self.keyvalues])
+        new_values = np.zeros(wl.shape)
+        for index, value in enumerate(values[keyframes == np.unique(wl)]):
+            new_values[:, index, :, :] = value
+        return new_values
 
 class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
     def _init(self, param, wl=[], values=[], **kwargs):
