@@ -20,3 +20,4 @@ from .oimBox import oimBox
 from .oimFastRotator import oimFastRotator
 from .oimSpiral import oimSpiral
 from .oimKinematicDisk import oimKinematicDisk
+from .oimExpRing import oimExpRing
