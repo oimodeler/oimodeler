@@ -310,7 +310,7 @@ class oimRing2(oimComponentFourier):
     width: u.mas | oimInterp
         width of the ring (in mas). The default is 0.
     """
-    name = "Ring2"
+    name = "IRing convolved with UD"
     shortname = "R2"
 
     def __init__(self, **kwargs):
@@ -529,7 +529,7 @@ class oimLorentz(oimComponentFourier):
     """
     # NOTE: From Lazareff 2017 A&A 599, 85
     # TODO : Small difference between images using direct formula or inverse of vis function
-    name = "Pseudo-Lorentzian"
+    name = "Pseudo Lorentzian"
     shortname = "LO"
     elliptic = True
 
@@ -540,13 +540,13 @@ class oimLorentz(oimComponentFourier):
 
     def _visFunction(self, xp, yp, rho, wl, t):
 
-        xx = np.pi*self.params["fwhm"](wl, t) * \
+        xx = self.params["fwhm"](wl, t) * \
             self.params["fwhm"].unit.to(u.rad)*rho
         return np.exp(-2*np.pi*xx/3**0.5)
 
     def _imageFunction(self, xx, yy, wl, t):
         r2 = (xx**2+yy**2)
-        a = np.pi*self.params["fwhm"](wl, t) * \
+        a = self.params["fwhm"](wl, t) * \
             self.params["fwhm"].unit.to(u.mas)
         return a/(2*np.pi*3**0.5)*(a**2/3+r2)**(-1.5)
 
@@ -570,7 +570,7 @@ class oimELorentz(oimLorentz):
     elong : u.dimensionless_unscaled | oimInterp
         elongation of the Lorentzian. The default is 1.
     """
-    name = "Elliptical Pseudo-Lorentzian"
+    name = "Elliptical Pseudo Lorentzian"
     shortname = "ELO"
     elliptic = True
 
