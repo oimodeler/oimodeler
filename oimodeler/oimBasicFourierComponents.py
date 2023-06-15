@@ -530,8 +530,7 @@ class oimLorentz(oimComponentFourier):
     # NOTE: From Lazareff 2017 A&A 599, 85
     # TODO : Small difference between images using direct formula or inverse of vis function
     name = "Pseudo Lorentzian"
-    shortname = "LO"
-    elliptic = True
+    shortname = "LZ"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -539,15 +538,18 @@ class oimLorentz(oimComponentFourier):
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
-
+        
+        #1.13 factor was computed to transform the Half-light Radius originally
+        # in Lazareff paper into FWHM
+    
         xx = self.params["fwhm"](wl, t) * \
-            self.params["fwhm"].unit.to(u.rad)*rho
+            self.params["fwhm"].unit.to(u.rad)*rho/1.13
         return np.exp(-2*np.pi*xx/3**0.5)
 
     def _imageFunction(self, xx, yy, wl, t):
         r2 = (xx**2+yy**2)
         a = self.params["fwhm"](wl, t) * \
-            self.params["fwhm"].unit.to(u.mas)
+            self.params["fwhm"].unit.to(u.mas)/1.13
         return a/(2*np.pi*3**0.5)*(a**2/3+r2)**(-1.5)
 
 
@@ -571,7 +573,7 @@ class oimELorentz(oimLorentz):
         elongation of the Lorentzian. The default is 1.
     """
     name = "Elliptical Pseudo Lorentzian"
-    shortname = "ELO"
+    shortname = "ELZ"
     elliptic = True
 
     def __init__(self, **kwargs):
