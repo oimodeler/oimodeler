@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
+from multiprocessing import Pool
+
 import corner
 import emcee
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .oimOptions import oimOptions
 from .oimParam import oimParam
 from .oimSimulator import oimSimulator
 
@@ -23,7 +26,7 @@ class oimFitter(object):
 
         self.data = self.simulator.data
         self.model = self.simulator.model
-
+        self.pool = None
         self.isPrepared = False
 
         self._eval(**kwargs)
@@ -90,9 +93,10 @@ class oimFitterEmcee(oimFitter):
 
         moves = [(emcee.moves.DEMove(), 0.8),
                  (emcee.moves.DESnookerMove(), 0.2)]
-
+        self.pool = Pool(processes=oimOptions["FittingNCores"])
         self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
-                                             self.nfree, self._logProbability, moves=moves, **kwargs)
+                                             self.nfree, self._logProbability,
+                                             moves=moves, pool=self.pool, **kwargs)
         return kwargs
 
     def _initGaussian(self):
@@ -126,7 +130,8 @@ class oimFitterEmcee(oimFitter):
 
     def _run(self, **kwargs):
         self.sampler.run_mcmc(self.initialParams, **kwargs)
-
+        self.pool.close()
+        self.pool.join()
         self.getResults()
 
         return kwargs
