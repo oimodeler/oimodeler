@@ -68,6 +68,7 @@ include-package-data = true
 [tool.setuptools.packages.find]
 exclude = [
     "docs*",
+    "images*",
     "examples*",
 ]
 
