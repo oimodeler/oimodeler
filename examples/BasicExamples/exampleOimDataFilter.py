@@ -11,11 +11,16 @@ import oimodeler as oim
 
 
 # Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
-path = Path(oim.__file__).parent.parent
-pathData = path / Path().parent / "examples" / "testData" / "FSCMa_MATISSE"
+path = Path().resolve().parent.parent
+data_dir = path / "examples" / "testData" / "FSCMa_MATISSE"
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-files = list(map(str, pathData.glob("*.fits")))
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
+files = list(map(str, data_dir.glob("*.fits")))
 
 # %%
 data = oim.oimData(files)
@@ -44,7 +49,7 @@ ax.legend()
 ax.autolim()
 
 fig.tight_layout()
-fig.savefig(path / Path().parent / "images" / "ExampleFilter_wavelengthCut.png")
+fig.savefig(save_dir / "ExampleFilter_wavelengthCut.png")
 
 # %%
 f2 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])

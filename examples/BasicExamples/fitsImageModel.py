@@ -18,14 +18,16 @@ from matplotlib import pyplot as plt
 # standard numpy FFT module oim.oimOptions['FTpaddingFactor']=2
 # oim.oimOptions['FTBackend']=oim.FFTWBackend
 
-path = Path(oim.__file__).parent.parent
-pathData = path / Path().parent / "examples" / "BasicExamples"
-filename = pathData / "BeDISCO.fits"
+path = Path().resolve().parent.parent
+file_name = path / "examples" / "BasicExamples" / "BeDISCO.fits"
 
-im = fits.open(filename)
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 # %% creating the model
-im = fits.open(filename)
+im = fits.open(file_name)
 
 # load image from an opened astropy.io.primaryHDU
 c = oim.oimComponentFitsImage(im)
@@ -35,7 +37,7 @@ m = oim.oimModel(c)
 
 # %% Plotting the model image
 m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", figsize=(7, 5.5),
-            savefig=path / Path().parent / "images" / "FitsImage_Disco_image.png")
+            savefig=save_dir / "FitsImage_Disco_image.png")
 
 # %%
 # Create some spatial frequencies (Baselines from 0 to 120m at 1.5 microns)
@@ -60,7 +62,7 @@ plt.ylabel("Visbility")
 plt.legend()
 plt.margins(0)
 
-plt.savefig(path / Path().parent / "images" / "FitsImage_Disco_visibility.png")
+plt.savefig(save_dir / "FitsImage_Disco_visibility.png")
 plt.close()
 
 # %%
@@ -71,7 +73,7 @@ c.params['pa'].value = 40
 c.params['scale'].value = 0.8
 
 m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", figsize=(7, 5.5),
-            savefig=path / Path().parent / "images" / "FitsImage_Disco_image2.png")
+            savefig=save_dir / "FitsImage_Disco_image2.png")
 
 # %%Adding a companion
 
@@ -79,8 +81,7 @@ c2 = oim.oimUD(x=20, d=1, f=0.03)
 m2 = oim.oimModel(c, c2)
 
 m2.showModel(512, 0.1, legend=True, normalize=True, fromFT=True, normPow=1,
-             cmap="hot", savefig=path / Path().parent / "images" / "FitsImage_Disco_image3.png")
-
+             cmap="hot", savefig=save_dir / "FitsImage_Disco_image3.png")
 
 # %%
 ccf = m2.getComplexCoherentFlux(spfx, spfy)
@@ -94,6 +95,4 @@ plt.xlabel("B (m)")
 plt.ylabel("Visbility")
 plt.legend()
 plt.margins(0)
-
-plt.savefig(path / Path().parent / "images" / "FitsImage_Disco_visibility2.png")
-plt.close()
+plt.savefig(save_dir / "FitsImage_Disco_visibility2.png")

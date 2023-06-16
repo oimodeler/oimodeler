@@ -5,7 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
 
-path = Path(oim.__file__).parent.parent
+
+path = Path().resolve().parent.parent
+
+# NOTE: Change these path if you want to save the products at another location
+save_dir = path / "images"
+product_dir = Path()
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 # %%
 pt = oim.oimPt(f=0.1)
@@ -40,19 +47,19 @@ pprint(freeParams)
 im = mUDPt.getImage(512, 0.1)
 plt.figure()
 plt.imshow(im**0.2)
-plt.savefig(path / Path().parent / "images" / "basicModel_imshow.png")
+plt.savefig(save_dir / "basicModel_imshow.png")
 
 # %%
 im = mUDPt.getImage(256, 0.1, toFits=True)
 pprint(im)
 pprint(im.header)
 pprint(im.data)
-im = mUDPt.saveImage("modelImage.fits", 256, 0.1)
+im = mUDPt.saveImage(product_dir / "modelImage.fits", 256, 0.1)
 
 
 # %%
 figImg, axImg, Img = mUDPt.showModel(512, 0.1, normPow=0.2, figsize=(5, 4),
-                                     savefig=path / Path().parent / "images" / "basicModel_showModel.png")
+                                     savefig=save_dir / "basicModel_showModel.png")
 
 
 # %%
@@ -73,7 +80,7 @@ plt.figure()
 plt.plot(spf, v)
 plt.xlabel("spatial frequency (cycles/rad)")
 plt.ylabel("Visbility")
-plt.savefig(path / Path().parent / "images" / "basicModel_vis0.png")
+plt.savefig(save_dir / "basicModel_vis0.png")
 
 # Some components
 models = [mPt, mUD, mG, mR, mUDPt]
@@ -90,7 +97,7 @@ for i, m in enumerate(models):
     ax[0, i].set_title(mNames[i])
     ax[1, i].set_xlabel("sp. freq. (cycles/rad)")
 
-fig.savefig(path / Path().parent / "images" / "basicModel_all.png")
+fig.savefig(save_dir / "basicModel_all.png")
 
 fig, ax = plt.subplots(2, len(models), figsize=(
     3*len(models), 6), sharex='row', sharey='row')
@@ -102,4 +109,4 @@ for i, m in enumerate(models):
     ax[0, i].set_title(mNames[i])
     ax[1, i].set_xlabel("sp. freq. (cycles/rad)")
 
-fig.savefig(path / Path().parent / "images" / "basicModelFourier_all.png")
+fig.savefig(save_dir / "basicModelFourier_all.png")

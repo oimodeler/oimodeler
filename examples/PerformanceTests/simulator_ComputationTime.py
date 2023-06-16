@@ -15,11 +15,16 @@ from tqdm import tqdm
 
 
 # Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
-path = Path(oim.__file__).parent.parent
-pathData = path / Path() / "examples" / "testData" / "ASPRO_MATISSE"
+path = Path().resolve().parent.parent
+data_dir = path / "examples" / "testData" / "ASPRO_MATISSE"
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-files0 = list(map(str, pathData.glob("*.fits")))
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
+files0 = list(map(str, data_dir.glob("*.fits")))
 
 text = ["Complex Corr Flux only", "Complex Corr Flux + Chi2",
         "Complex Corr Flux + Sim. Data", "Full Computation "]
@@ -76,4 +81,4 @@ for c in model.components:
 txt = txt[:-3]
 
 plt.title(f"Computation time for a {txt} model")
-plt.savefig(path / Path().parent / "images" / "oimodel_test_simulator_speed.png")
+plt.savefig(save_dir / "oimodel_test_simulator_speed.png")

@@ -8,7 +8,13 @@ import numpy as np
 import oimodeler as oim
 
 
-path = Path(oim.__file__).parent.parent
+path = Path().resolve().parent.parent
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
 mas2rad = u.mas.to(u.rad)
 
 # Some components
@@ -104,8 +110,8 @@ norm = colors.Normalize(vmin=np.min(wl), vmax=np.max(wl))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sc, ax=ax[2:, :].ravel().tolist(), label="$\\lambda$ ($\\mu$m)")
 
-filename = path / Path().parent / "images" / "createModelChromatic.png"
-fig.savefig(filename)
+file_name = save_dir / "createModelChromatic.png"
+fig.savefig(file_name)
 
 # %%
 nB = 200  # number of baselines
@@ -129,5 +135,5 @@ for iwl, wli in enumerate(wl):
             color=plt.cm.plasma(iwl/nwl), alpha=0.5, lw=1)
 
 ax.axis('off')
-filename = path / Path().parent / "images" / "imageForLogo.png"
-fig.savefig(filename, dpi=240, transparent=True)
+file_name = save_dir / "imageForLogo.png"
+fig.savefig(file_name, dpi=240, transparent=True)

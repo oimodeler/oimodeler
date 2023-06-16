@@ -5,11 +5,16 @@ import numpy as np
 import oimodeler as oim
 
 
-path = Path(oim.__file__).parent.parent
-pathData = path / Path().parent / "examples" / "testData" / "ASPRO_SPICA_GROWING_UD"
+path = Path().resolve().parent.parent
+data_dir = path / "examples" / "testData" / "ASPRO_SPICA_GROWING_UD"
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-files = list(map(str, pathData.glob("*.fits")))
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
+files = list(map(str, data_dir.glob("*.fits")))
 data = oim.oimData(files)
 
 # %%
@@ -33,9 +38,9 @@ fit.run(nsteps=300, progress=True)
 
 # %%
 figWalkers, axeWalkers = fit.walkersPlot(cmap="plasma_r",
-                                         savefig=path / Path().parent / "images" / "complexModel_timeDependentWalkers.png")
+                                         savefig=save_dir / "complexModel_timeDependentWalkers.png")
 figCorner, axeCorner = fit.cornerPlot(discard=100,
-                                      savefig=path / Path().parent / "images" / "complexModel_timeDependentCorner.png")
+                                      savefig=save_dir / "complexModel_timeDependentCorner.png")
 
 # %%
 median, err_l, err_u, err = fit.getResults(mode='median', discard=100)
@@ -49,7 +54,7 @@ ax.oiplot(fit.simulator.simulatedData, "SPAFREQ", "VIS2DATA",
           xunit="cycles/mas", color="k", ls=":", label="Model")
 fig.colorbar(timecol, ax=ax, label="MJD (days)")
 ax.legend()
-plt.savefig(path / Path().parent / "images" / "complexModel_timeDependentFit.png")
+plt.savefig(save_dir / "complexModel_timeDependentFit.png")
 
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(8, 4))
@@ -69,5 +74,4 @@ ax.scatter(mjd_Obs, diam_Obs, marker="X", s=100, c=mjd_Obs, zorder=10,
 ax.set_xlabel("Time (MJD)")
 ax.set_ylabel("Diameter (mas)")
 ax.legend()
-
-plt.savefig(path / Path().parent / "images" / "complexModel_timeDependentParameter.png")
+plt.savefig(save_dir / "complexModel_timeDependentParameter.png")

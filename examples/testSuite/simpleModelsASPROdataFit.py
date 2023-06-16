@@ -16,8 +16,9 @@ import oimodeler as oim
 
 matplotlib.use('Agg')
 name = "simpleASPRO"
-path = Path(oim.__file__).parent.parent
-pathData = path / Path().parent / "examples" / "testData" / "SIMPLE_TESTS"
+
+path = Path().resolve().parent.parent
+data_dir = path / "examples" / "testData" / "SIMPLE_TESTS"
 
 fc1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 fc2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
@@ -38,7 +39,7 @@ class baseTest:
         self.setModel()
 
         # TODO: After pathlib change of all `oimodeler` modules, remove str here
-        self.data = oim.oimData(str((pathData / self.fdata).resolve()))
+        self.data = oim.oimData(str((data_dir / self.fdata).resolve()))
         self.data.setFilter(self.filt)
 
     def setModel(self):
@@ -68,15 +69,15 @@ class baseTest:
     def makePlots(self, prefix="", ext="pdf"):
         fname = prefix+self.name.replace(" ", "_")
 
-        figWalkers, _ = self.fit.walkersPlot(savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_walkers{ext}")
+        figWalkers, _ = self.fit.walkersPlot(savefig=path / "examples" / "testSuite" / "RESULTS" / f"{fname}_walkers{ext}")
         plt.close(figWalkers)
 
         figCorner, _ = self.fit.cornerPlot(discard=self.nstep//2,
-                                                   savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_corner{ext}")
+                                                   savefig=path / "examples" / "testSuite" / "RESULTS" / f"{fname}_corner{ext}")
         plt.close(figCorner)
 
         figSim, _ = self.fit.simulator.plot(["VIS2DATA", "T3PHI"],
-                                                savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_v2CP{ext}")
+                                                savefig=path / "examples" / "testSuite" / "RESULTS" / f"{fname}_v2CP{ext}")
         plt.close(figSim)
 
 

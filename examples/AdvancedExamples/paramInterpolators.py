@@ -13,7 +13,13 @@ import matplotlib.cm as cm
 import numpy as np
 import oimodeler as oim
 
-path = Path(oim.__file__).parent.parent
+
+path = Path().resolve().parent.parent
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 
 # %% Function to simplify plotting of parameter an visibility
@@ -89,7 +95,7 @@ wl = np.linspace(2.1e-6, 2.3e-6, num=nwl)
 fig, ax, im = plotParamAndVis(B, wl, None, m1, c1.params['d'])
 fig.suptitle(
     "Gaussian interpolator in $\lambda$ on a uniform disk diameter", fontsize=10)
-plt.savefig(path / Path().parent / "images" / "interp1.png")
+plt.savefig(save_dir / "interp1.png")
 
 pprint(c1.params['d'].params)
 pprint(c1.params['d'].x0)
@@ -112,7 +118,7 @@ wl = np.linspace(1.9e-6, 2.4e-6, num=nwl)
 fig, ax, im = plotParamAndVis(B, wl, None, m2, c2.params['d'])
 fig.suptitle(
     "Multiple Gaussian interpolator in $\lambda$ on a uniform disk diameter", fontsize=10)
-plt.savefig(path / Path().parent / "images" / "interp2.png")
+plt.savefig(save_dir / "interp2.png")
 
 
 # %%
@@ -126,7 +132,7 @@ wl = 2.2e-6
 fig, ax, im = plotParamAndVis(B, wl, t, m3, c3.params['fwhm'])
 fig.suptitle(
     "Assym. Cosine interpolator in Time on a Gaussian fwhm", fontsize=10)
-plt.savefig(path / Path().parent / "images" / "interp3.png")
+plt.savefig(save_dir / "interp3.png")
 
 # %%
 c4 = oim.oimIRing(d=oim.oimInterp("wl", wl=[2e-6, 2.4e-6, 2.7e-6, 3e-6], values=[2, 6, 5, 6],
@@ -160,7 +166,7 @@ for i in range(1, 6):
 fig.suptitle("Linear, Quadratic and Cubic interpolators (with extrapolation"
              r" or fixed values outside the range) in $\lambda$ on a uniform"
              " disk diameter", fontsize=18)
-plt.savefig(path / Path().parent / "images" / "interp4.png")
+plt.savefig(save_dir / "interp4.png")
 # %%
 c5 = oim.oimUD(d=oim.oimInterp('polyTime', coeffs=[1, 3.5, -0.5], x0=60000))
 m5 = oim.oimModel(c5)
@@ -171,4 +177,4 @@ t = np.linspace(60000, 60006, num=nt)
 fig, ax, im = plotParamAndVis(B, wl, t, m5, c5.params['d'])
 fig.suptitle(
     "Polynomial interpolator in Time on a uniform disk diameter", fontsize=10)
-plt.savefig(path / Path().parent / "images" / "interp5.png")
+plt.savefig(save_dir / "interp5.png")

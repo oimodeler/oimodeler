@@ -15,7 +15,13 @@ import oimodeler as oim
 from scipy.interpolate import interp1d
 
 np.random.seed(1)
-path = Path(oim.__file__).parent.parent
+
+path = Path().resolve().parent.parent
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 
 # %%
@@ -112,4 +118,4 @@ norm = colors.Normalize(vmin=np.min(B[1:]), vmax=np.max(B))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax, label="Baseline Length (m)")
 
-plt.savefig(path / Path().parent / "images" / "createInterp1.png")
+plt.savefig(save_dir / "createInterp1.png")

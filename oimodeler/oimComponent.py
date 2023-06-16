@@ -277,7 +277,6 @@ class oimComponentImage(oimComponent):
         self.normalizeImage = True
 
         self.params["dim"] = oimParam(**_standardParameters["dim"])
-
         self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add ellipticity
@@ -530,6 +529,7 @@ class oimComponentRadialProfile(oimComponent):
         self._wl = None
         self._r = None
 
+        # CHECK: Is this not redundant as oimComponent is already ellpitical?
         # NOTE: Add ellipticity
         if self.elliptic == True:
             self.params["pa"] = oimParam(**_standardParameters["pa"])

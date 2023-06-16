@@ -9,18 +9,24 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import oimodeler as oim
 
-path = Path(oim.__file__).parent.parent
-pathData = path / Path() / "examples" / "testData" / "ASPRO_MATISSE2"
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-files = list(map(str, pathData.glob("*.fits")))
+path = Path().resolve().parent.parent
+data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
+files = list(map(str, data_dir.glob("*.fits")))
 data = oim.oimData(files)
 
 # %%
 fig1 = plt.figure()
 ax1 = plt.subplot(projection='oimAxes')
 ax1.uvplot(data)
-plt.savefig(path / Path().parent / "images" / "ExampleOimPlot_uv.png")
+plt.savefig(save_dir / "ExampleOimPlot_uv.png")
 
 # %%
 fig2 = plt.figure()
@@ -31,7 +37,7 @@ lamcol = ax2.oiplot(data, "SPAFREQ", "VIS2DATA", xunit="cycles/mas", label="Data
 plt.colorbar(lamcol, ax=ax2, label="$\\lambda$ ($\mu$m)")
 ax2.legend()
 
-plt.savefig(path / Path().parent / "images" / "ExampleOimPlot_v2.png")
+plt.savefig(save_dir / "ExampleOimPlot_v2.png")
 
 # %%
 fig3 = plt.figure()
@@ -40,7 +46,7 @@ ax3.oiplot(data, "EFF_WAVE", "VIS2DATA", xunitmultiplier=1e6, color="byConfigura
            errorbar=True, kwargs_error={"alpha": 0.3})
 ax3.legend()
 
-plt.savefig(path / Path().parent / "images" / "ExampleOimPlot_v2Wl.png")
+plt.savefig(save_dir / "ExampleOimPlot_v2Wl.png")
 
 # using the projection='oimAsxes' for all subpltos allow to use oimPlot custom plots
 fig4, ax4 = plt.subplots(2, 2, subplot_kw=dict(
@@ -81,4 +87,4 @@ ax4[1, 1].autolim()
 
 fig4.tight_layout()
 
-plt.savefig(path / Path().parent / "images" / "ExampleOimPlot_multi.png")
+plt.savefig(save_dir / "ExampleOimPlot_multi.png")

@@ -10,8 +10,17 @@ from pprint import pprint
 import numpy as np
 import oimodeler as oim
 
-path = Path(oim.__file__).parent.parent
-pathData = path / Path().parent / "examples" / "testData" / "ASPRO_CHROMATIC_SKWDISK"
+
+path = Path().resolve().parent.parent
+data_dir = path / "examples" / "testData" / "ASPRO_CHROMATIC_SKWDISK"
+
+# NOTE: Change these paths if you want to save the products at another location
+save_dir = path / "images"
+product_dir = path / "examples" / "testData" / "IMAGES"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+if not product_dir.exists():
+    product_dir.mkdir(parents=True)
 
 # %% Model creation
 star = oim.oimUD(d=1, f=oim.oimInterp(
@@ -24,18 +33,18 @@ model = oim.oimModel(star, ring)
 
 # %% Showing images at the reference walvnegths (3 and 4 microns) and also at the  3.5microns
 model.showModel(256, 0.06, wl=np.linspace(3., 4, num=3)*1e-6, legend=True, normalize=True, normPow=1, fromFT=True,
-                savefig=path / Path().parent / "images" / "chromaticModelFitImageInit.png")
+                savefig=save_dir / "chromaticModelFitImageInit.png")
 
 # %% Exporting a 50 wl image cube for ASPRO
 img = model.getImage(256, 0.06, toFits=True, fromFT=True,
                      wl=np.linspace(3, 4, num=50)*1e-6)
-imgfname = path / Path().parent / "examples" / "testData" / "IMAGES" / "skwDisk.fits"
+imgfname = product_dir / "skwDisk.fits"
 img.writeto(imgfname, overwrite=True)
 
 # %% Load the simulated data from ASPRO and apply some filter to keep only
 # VIS2DATA and T3PHI for model fitting
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-files = list(map(str, pathData.glob("*.fits")))
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
+files = list(map(str, data_dir.glob("*.fits")))
 data = oim.oimData(files)
 f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
@@ -67,19 +76,19 @@ fit.run(nsteps=3000, progress=True)
 
 # %%
 figWalkers, axeWalkers = fit.walkersPlot(
-    savefig=path / Path().parent / "images" / "chromaticModelFitWalkers.png")
+    savefig=save_dir / "chromaticModelFitWalkers.png")
 
 # %%
 figCorner, axeCorner = fit.cornerPlot(discard=2500, chi2limfact=3,
-                                      savefig=path / Path().parent / "images" / "chromaticModelFitCorner.png")
+                                      savefig=save_dir / "chromaticModelFitCorner.png")
 
 # %%
 best, err_l, err_u, err = fit.getResults(mode='best', discard=1500)
 
 figSim, axSim = fit.simulator.plot(["VIS2DATA", "T3PHI"],
-                                   savefig=path / Path().parent / "images" / "chromaticModelFitVisCP.png")
+                                   savefig=save_dir / "chromaticModelFitVisCP.png")
 pprint(f"Chi2r = {fit.simulator.chi2r}")
 
 # %%
 figImg, axImg, im = model.showModel(256, 0.06, wl=[3e-6, 4e-6], normPow=1, legend=True, normalize=True, fromFT=True,
-                                    savefig=path / Path().parent / "images" / "chromaticModelFitImageFinal.png")
+                                    savefig=save_dir / "chromaticModelFitImageFinal.png")

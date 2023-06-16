@@ -9,13 +9,14 @@ from pprint import pprint
 
 import oimodeler as oim
 
-path = Path(oim.__file__).parent.parent
-pathData = path / Path().parent / "examples" / "testData" / "FSCMa_MATISSE"
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-files = list(map(str, pathData.glob("*.fits")))
+path = Path().resolve().parent.parent
+data_dir = path / "examples" / "testData" / "FSCMa_MATISSE"
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
+files = list(map(str, data_dir.glob("*.fits")))
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
 data = oim.oimData(files)
 pprint(data.data)
 
