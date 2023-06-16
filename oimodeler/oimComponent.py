@@ -193,9 +193,9 @@ class oimComponentFourier(oimComponent):
                 self.params["pa"].unit.to(units.rad)
             co = np.cos(pa_rad)
             si = np.sin(pa_rad)
-            fxp = ucoord*co-vcoord*si
+            fxp = (ucoord*co-vcoord*si)/self.params["elong"](wl, t)
             fyp = ucoord*si+vcoord*co
-            rho = np.sqrt(fxp**2/self.params["elong"](wl, t)**2+fyp**2)
+            rho = np.sqrt(fxp**2+fyp**2)
         else:
             fxp = ucoord
             fyp = vcoord
