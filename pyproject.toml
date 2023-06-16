@@ -38,6 +38,17 @@ dependencies = [
     'tqdm>=4.64.1'
 ]
 
+[options.extras_require]
+dev = [
+    "pytest >= 7.2.1",
+    "pytest-cov >= 4.0.0",
+    "sphinx == 7.0.1",
+    "sphinx-autobuild == 2021.3.14",
+    "sphinx-autodoc-typehints == 1.23",
+    "pydata-sphinx-theme==0.13.3",
+    "numpydoc==1.5.0",
+]
+
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
@@ -52,15 +63,13 @@ Github = "https://gitlab.oca.eu/oimodeler/oimodeler"
 license-files = [
     "LICENSE",
 ]
-include-package-data = false
+include-package-data = true
 
 [tool.setuptools.packages.find]
 exclude = [
+    "docs*",
     "examples*",
-    "tests*",
-    "doc*",
 ]
-namespaces = false
 
 [tool.black]
 line-length = 79
