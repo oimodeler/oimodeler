@@ -24,7 +24,6 @@ if not save_dir.exists():
 
 # %%
 def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
-    """"""
     h = 6.63e-34
     c = 3e8
     kb = 1.38e-23

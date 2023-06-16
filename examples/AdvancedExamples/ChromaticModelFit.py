@@ -38,8 +38,7 @@ model.showModel(256, 0.06, wl=np.linspace(3., 4, num=3)*1e-6, legend=True, norma
 # %% Exporting a 50 wl image cube for ASPRO
 img = model.getImage(256, 0.06, toFits=True, fromFT=True,
                      wl=np.linspace(3, 4, num=50)*1e-6)
-imgfname = product_dir / "skwDisk.fits"
-img.writeto(imgfname, overwrite=True)
+img.writeto(product_dir / "skwDisk.fits", overwrite=True)
 
 # %% Load the simulated data from ASPRO and apply some filter to keep only
 # VIS2DATA and T3PHI for model fitting

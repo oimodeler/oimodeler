@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "oimodeler"
-version = "0.2"
+version = "0.8.0"
 authors = [
     { name = "Anthony meilland", email = "ame@oca.eu" },
 ]
@@ -45,7 +45,7 @@ dev = [
     "sphinx == 7.0.1",
     "sphinx-autobuild == 2021.3.14",
     "sphinx-autodoc-typehints == 1.23",
-    "pydata-sphinx-theme==0.13.3",
+    "sphinx_rtd_theme == 1.2.0",
     "numpydoc==1.5.0",
 ]
 
