@@ -259,6 +259,28 @@ def getSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
     return spaFreq
 
 
+def getWlFromOifits(oifits, arr="OI_VIS2",extver=None,returnBand=False):
+    
+    if isinstance(arr,str):
+        arr=oifits[arr,extver]
+        
+    insname=arr.header['INSNAME']
+    
+    oiwls = np.array([di for di in oifits if di.name == "OI_WAVELENGTH"])
+    oiwls_insname = np.array([oiwli.header['INSNAME'] for oiwli in oiwls])
+    
+    iwl=np.where(oiwls_insname == insname)[0][0]
+    oiwl = oiwls[iwl]
+    
+    wl  = oiwl.data['EFF_WAVE']
+    
+    if returnBand:
+        dwl = oiwl.data['EFF_BAND']
+        return wl,dwl
+    else:
+        return wl
+    
+
 def hdulistDeepCopy(hdulist):
     res = hdulist.copy()
     res._file = hdulist._file
