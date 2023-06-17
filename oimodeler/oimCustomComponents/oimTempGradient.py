@@ -7,7 +7,7 @@ from astropy.modeling import models
 
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import oimOptions
-from ..oimParam import oimParam, oimParamInterpolator
+from ..oimParam import oimParam
 from ..oimUtils import convert_radial_profile_to_meter
 from .oimRadialPowerLaw import oimRadialPowerLaw
 
