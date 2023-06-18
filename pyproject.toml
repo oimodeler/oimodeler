@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "oimodeler"
-version = "0.8.0"
+dynamic = ["version"]
 authors = [
     { name = "Anthony meilland", email = "ame@oca.eu" },
 ]
@@ -72,6 +72,9 @@ exclude = [
     "examples*",
     "requirements*",
 ]
+
+[tool.setuptools.dynamic]
+version = {attr = "oimodeler.__version__"}
 
 [tool.black]
 line-length = 79

@@ -12,12 +12,15 @@
 #
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+import os
 import sys
 from pathlib import Path
 
-sys.path.append(Path().resolve().parent.parent)
-sys.path.append(Path("sphinxext").resolve())
+import oimodeler as oim
 
+
+sys.path.append(Path(__file__).parent.parent.parent / "oimodeler")
+sys.path.append(Path("sphinxext").resolve())
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here.
@@ -25,9 +28,8 @@ sys.path.append(Path("sphinxext").resolve())
 # -- Project information -----------------------------------------------------
 
 project = 'oimodeler'
-release = "0.8.0"
+release = oim.__version__
 copyright = '2023, A. Meilland'
-
 author = 'A. Meilland'
 
 

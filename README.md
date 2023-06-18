@@ -5,7 +5,6 @@
 [![License: GNU](https://img.shields.io/badge/License-GNU-yellow.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 ![Lifecycle:
 Early Development](https://img.shields.io/badge/lifecycle-EarlyDevelopment-orange.svg)
-![version](https://img.shields.io/badge/version-0.8.0-blue)
 
 Oimodeler is a modular modelling tool for optical interferometry
 
