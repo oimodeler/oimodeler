@@ -10,7 +10,7 @@ from pprint import pprint
 import oimodeler as oim
 
 
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "FSCMa_MATISSE"
 
 # TODO: After pathlib change of all `oimodeler` modules, remove str casting.

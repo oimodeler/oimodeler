@@ -17,7 +17,7 @@ import oimodeler as oim
 matplotlib.use('Agg')
 name = "simpleASPRO"
 
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "SIMPLE_TESTS"
 
 fc1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])

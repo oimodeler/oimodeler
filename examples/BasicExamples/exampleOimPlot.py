@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import oimodeler as oim
 
 
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
 
 # NOTE: Change this path if you want to save the products at another location

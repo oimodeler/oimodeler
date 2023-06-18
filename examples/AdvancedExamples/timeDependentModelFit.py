@@ -5,7 +5,7 @@ import numpy as np
 import oimodeler as oim
 
 
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "ASPRO_SPICA_GROWING_UD"
 
 # NOTE: Change this path if you want to save the products at another location

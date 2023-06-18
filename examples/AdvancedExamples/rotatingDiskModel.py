@@ -17,7 +17,7 @@ oim.oimOptions['FTpaddingFactor'] = 1
 oim.oimOptions['FTBackend'] = oim.FFTWBackend
 
 # Path to the AMBER oifits files: the classical Be star Alpha Col
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "RealData" / "AMBER" / "AlphaCol"
 
 # TODO: After pathlib change of all `oimodeler` modules, remove str casting.

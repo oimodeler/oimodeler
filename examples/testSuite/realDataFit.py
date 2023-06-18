@@ -17,7 +17,7 @@ import oimodeler as oim
 matplotlib.use('Agg')
 name = "realData"
 
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 
 fc1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 fc2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])

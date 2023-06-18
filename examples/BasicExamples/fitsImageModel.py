@@ -18,7 +18,7 @@ from matplotlib import pyplot as plt
 # standard numpy FFT module oim.oimOptions['FTpaddingFactor']=2
 # oim.oimOptions['FTBackend']=oim.FFTWBackend
 
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 file_name = path / "examples" / "BasicExamples" / "BeDISCO.fits"
 
 # NOTE: Change this path if you want to save the products at another location

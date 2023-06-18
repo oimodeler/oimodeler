@@ -12,7 +12,7 @@ import oimodeler as oim
 from astropy import units as units
 
 
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 
 # NOTE: Change this path if you want to save the products at another location
 save_dir = path / "images"

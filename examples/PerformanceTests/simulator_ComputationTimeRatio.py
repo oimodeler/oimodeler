@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 
 # Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
-path = Path().resolve().parent.parent
+path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "ASPRO_MATISSE"
 
 # NOTE: Change this path if you want to save the products at another location
