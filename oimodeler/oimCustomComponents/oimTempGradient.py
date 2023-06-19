@@ -319,7 +319,7 @@ class oimAsymTempGradient(oimRadialPowerLaw):
 
         sigma_profile = sigma_in*(np.sqrt(xx**2+yy**2) / rin)**(-p)
         if self.asymmetric_surface_density:
-            return sigma_profile*(1-self._azimuthal_modulation(xx, yy, wl, t))
+            return sigma_profile*(1+self._azimuthal_modulation(xx, yy, wl, t))
         return sigma_profile
 
     def _temperature_profile(self, r, wl, t):
@@ -432,7 +432,7 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         """
         if self.asymmetric_image:
             return self._image(xx, yy, wl, t) * \
-                (1-self._azimuthal_modulation(xx, yy, wl, t))
+                (1+self._azimuthal_modulation(xx, yy, wl, t))
         return self._image(xx, yy, wl, t)
 
 

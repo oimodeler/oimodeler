@@ -116,7 +116,7 @@ class oimRadialPowerLaw(oimComponentImage):
         -------
         azimuthal_modulation : numpy.ndarray
         """
-        phi = self.params["phi"](wl, t) * self.params["phi"].unit.to(u.rad)
+        phi = self.params["phi"](wl, t)*self.params["phi"].unit.to(u.rad)
         return self.params["a"](wl, t)*np.cos(np.arctan2(yy, xx)-phi)
 
     def _image(self, xx: np.ndarray, yy: np.ndarray,
@@ -146,7 +146,7 @@ class oimRadialPowerLaw(oimComponentImage):
         """
         if self.asymmetric:
             return self._image(xx, yy, wl, t) * \
-                (1-self._azimuthal_modulation(xx, yy, wl, t))
+                (1+self._azimuthal_modulation(xx, yy, wl, t))
         return self._image(xx, yy, wl, t)
 
 
