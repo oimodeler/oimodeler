@@ -9,6 +9,45 @@ from astropy.io import fits
 from astroquery.simbad import Simbad
 
 
+def rebin_image(image: np.ndarray,
+                binning_factor: Optional[int] = None,
+                rdim: Optional[bool] = False) -> np.ndarray:
+    """Bins a 2D-image down according.
+
+    The down binning is according to the binning factor
+    in oimOptions["FTBinningFactor"]. Only accounts for
+    square images.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        The image to be rebinned.
+    binning_factor : int, optional
+        The binning factor. The default is 0
+    rdim : bool
+        If toggled, returns the dimension
+
+    Returns
+    -------
+    rebinned_image : numpy.ndarray
+        The rebinned image.
+    dimension : int, optional
+        The new dimension of the image.
+    """
+    if binning_factor is None:
+        return image, image.shape[-1] if rdim else image
+    new_dim = int(image.shape[-1] * 2**-binning_factor)
+    binned_shape = (new_dim, int(image.shape[-1] / new_dim),
+                    new_dim, int(image.shape[-1] / new_dim))
+    if len(image.shape) == 4:
+        shape = (image.shape[0], image.shape[1], *binned_shape)
+    else:
+        shape = binned_shape
+    if rdim:
+        return image.reshape(shape).mean(-1).mean(-2), new_dim
+    return image.reshape(shape).mean(-1).mean(-2)
+
+
 def get_next_power_of_two(number: Union[int, float]) -> int:
     """Returns the next power of two for an integer or float input.
 

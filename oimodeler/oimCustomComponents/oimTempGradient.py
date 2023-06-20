@@ -397,8 +397,9 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
 
         temperature_profile = self._temperature_profile(r, wl, t)
+        pix = self._pixSize
         spectral_density = calculate_intensity(wl, temperature_profile,
-                                               pixSize=self._pixSize)
+                                               pixSize=pix)
         sigma_profile = self._surface_density_profile(xx, yy, wl, t)
         if self.continuum_contribution:
             optical_depth = -sigma_profile*(self.params["kappa_abs"](wl, t) +

@@ -14,6 +14,7 @@ from numpy.typing import ArrayLike
 
 from .oimComponent import oimComponent
 from .oimParam import oimParam, oimParamLinker, oimParamInterpolator
+from .oimUtils import rebin_image
 
 
 ###############################################################################
@@ -288,6 +289,7 @@ class oimModel:
                   swapAxes: Optional[bool] = True,
                   kwargs_legend: Dict = {},
                   normalize: Optional[bool] = False,
+                  rebin: Optional[bool] = False,
                   **kwargs: Dict) -> Tuple[Figure, Axes, np.ndarray]:
         """Show the mode Image or image-Cube
 
@@ -325,6 +327,8 @@ class oimModel:
         kwargs_legend: dict, optional
         normalize : bool, optional
             If True normalizes the image.
+        rebin : bool, optional
+            If True rebin the image according to oimOptions["FTBinningFactor"].
         **kwargs : dict
             Arguments to be passed to the plt.imshow function.
 
@@ -405,6 +409,9 @@ class oimModel:
 
         if savefig is not None:
             plt.savefig(savefig)
+
+        if rebin:
+            im = rebin_image(im)
 
         return fig, axe, im
 

@@ -9,7 +9,7 @@ from scipy.special import j0
 from . import __dict__ as oimDict
 from .oimOptions import oimOptions
 from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParameters
-from .oimUtils import getWlFromFitsImageCube
+from .oimUtils import getWlFromFitsImageCube, rebin_image
 
 
 # TODO: Move somewhere else
@@ -294,8 +294,8 @@ class oimComponentImage(oimComponent):
 
         im = self.getInternalImage(wl, t)
 
-        if oimOptions["FTbinningFactor"] is not None:
-            im = self._binImage(im)
+        if oimOptions["FTBinningFactor"] is not None:
+            im = rebin_image(im, oimOptions["FTBinningFactor"])
 
         im = self._padImage(im)
         pix = self._pixSize
@@ -449,25 +449,6 @@ class oimComponentImage(oimComponent):
         return np.pad(im, ((0, 0), (0, 0), (padx, padx), (pady, pady)),
                       'constant', constant_values=0)
 
-    def _binImage(self, im: np.ndarray) -> np.ndarray:
-        """Bins the 2D-image down according to the binning factor.
-
-        Parameters
-        ----------
-        im: numpy.ndarray
-            The image to be rebinned.
-
-        Returns
-        -------
-        rebinned_image: numpy.ndarray
-            The rebinned image.
-        """
-        new_dim = self.params["dim"].value
-        binned_shape = (new_dim, im.shape[2] // new_dim,
-                        new_dim, im.shape[2] // new_dim)
-        shape = (im.shape[0], im.shape[1], *binned_shape)
-        return im.reshape(shape).mean(-1).mean(-2)
-
     def _imageFunction(self, xx, yy, wl, t):
         image = xx*0+1
         return image
@@ -484,8 +465,6 @@ class oimComponentImage(oimComponent):
             t0 = self._t
 
         dim = self.params["dim"](wl, t)
-        if oimOptions["FTbinningFactor"] is not None:
-            dim *= 2**oimOptions["FTbinningFactor"]
 
         pix = self._pixSize*units.rad.to(units.mas)
         v = np.linspace(-0.5, 0.5, dim)

@@ -1,3 +1,5 @@
+from warnings import warn
+
 import astropy.units as u
 import numpy as np
 
@@ -71,25 +73,15 @@ class oimRadialPowerLaw(oimComponentImage):
         self._wl = np.array([0])  # constant value <=> achromatic model
         self._eval(**kwargs)
 
+        # NOTE: Adjusts the dimension to the one needed for the field
+        # of view and pixel size
+        self.params["dim"].value =\
+            get_next_power_of_two(self.params["fov"].value /
+                                  self.params["pixSize"].value)
+
     @property
     def _pixSize(self):
-        """Returns the pixel size [mas/px].
-
-        Additionally this property also calculates the pixel size from
-        the field of view [mas] and the dimension [px], if the pixel size
-        [mas/px] is not provided. Otherwise, it will automatically adjust the
-        dimension [px] depending on the field of view [mas] and the pixel
-        size [mas/px].
-        """
-        if self.params["fov"].value == 0:
-            raise ValueError("The field of view must be specified as a keyword argument.")
-        if self.params["pixSize"].value == 0:
-            self.params["pixSize"].value = pix = self.params["fov"].value/self.params["dim"].value
-            return pix*self.params["fov"].unit.to(u.rad)
-        dim = get_next_power_of_two(self.params["fov"].value/\
-                                    self.params["pixSize"].value)
-        if dim != self.params["dim"].value:
-            self.params["dim"].value = dim
+        """Returns the pixel size [rad/px]."""
         return self.params["pixSize"].value*self.params["pixSize"].unit.to(u.rad)
 
     @_pixSize.setter
