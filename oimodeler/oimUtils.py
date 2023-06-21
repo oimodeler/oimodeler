@@ -5,7 +5,60 @@ import numpy as np
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
+import oimodeler as oim
+from os import PathLike
 
+
+def loadOifitsData(something, mode="listOfHdlulist"):
+    """ 
+    return the oifits data from either filenames, already opened oifts or a 
+    oimData boject as either a list of hdlulist (default) or as a oimData 
+    object using the option mode="oimData". This Function is used in oimData 
+    and multiple plotting functions
+    
+    Parameters
+    ----------
+    something : astropy.io.fits.hdu.hdulist.HDUList, oimodeler.oimData, string, list
+        The data to deal with. Can be a oimData object, a hdulist, a string 
+        representing a filename or a list of these kind of object
+    mode : str, optional
+        The type of the return data, either "listOfHdlulist" or "oimData"
+        The default is "listOfHdlulist"
+    """
+    
+    if isinstance(something, oim.oimData):
+        if mode =="oimData":
+            data = something
+        else:    
+            data = something.data    
+    else: 
+               
+        if isinstance(something,fits.hdu.hdulist.HDUList) or \
+           isinstance(something,PathLike) or \
+           isinstance(something,str):
+            something=[something]
+            
+        if isinstance(something,list):
+            data=[] 
+            
+            for el in something:
+                if  isinstance(el,fits.hdu.hdulist.HDUList):
+                    data.append(el)
+                else:
+                    try:
+                        data.append(fits.open(el))
+                    except:
+                        raise ValueError("the path does not exist or is not a"\
+                                         " valid fits files")
+        else:
+            raise TypeError("only oimData,hdulist,Path or string, or list of"\
+                            " these kind of objects allowed ") 
+            
+        if mode =="oimData":
+             data = oim.oimData(data)
+    
+    return data
+    
 
 def getBaselineName(oifits, hduname="OI_VIS2", length=False, angle=False,
                     extver=None, squeeze=True):
