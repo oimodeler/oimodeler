@@ -1,28 +1,46 @@
 Installation
 ============
 
-
-oimodeler can be installed directly using the pip install command.
+The ``oimodeler`` package can be installed directly using the pip install command:
 
 .. code-block:: console
 
     $ pip install git+https://github.com/oimodeler/oimodeler
 
 
-.. note::
-    The examples including  dedicated data won't be instaled when using pip. They are available on the `Github  <https://github.com/oimodeler/oimodeler/tree/main/examples/>`_ archive.
+.. warning::
 
-Alternatively, you can install the complete oimodeler package including examples and data by cloning the git repository.
+    The examples including  dedicated data won't be installed when using pip in this way.
+    They are available on the `Github  <https://github.com/oimodeler/oimodeler/tree/main/examples/>`_
+    archive for manual download.
+
+
+Alternatively, you can install the complete ``oimodeler `` package (including examples
+and data) by cloning the `Github repository <https://github.com/oimodeler/oimodeler>`_:
 
 .. code-block:: console
 
     $ git clone https://github.com/oimodeler/oimodeler
+    $ cd oimodeler/
+
+and installing it. As a non-editable install:
+
+.. code-block:: console
+
+    $ pip install .
+
+
+Or as an editable (development) install:
+
+.. code-block:: console
+
+    $ pip install -e .
     
     
 Dependancies
 ------------
 
-oimodeler python library depends only on the following packages:
+The ``oimodeler`` package requires the following packages:
 
 - `numpy <https://numpy.org/>`_
 - `scipy <https://scipy.org/>`_
@@ -34,11 +52,22 @@ oimodeler python library depends only on the following packages:
 - `tqdm <https://tqdm.github.io/>`_
 - `pyFFTW <https://pypi.org/project/pyFFTW/>`_ (optional)
 
-    
-These packages (except the optional ones) are automatically installed if missing when installing oimodeler with the pip command but manual installation are required when cloning the repository.
+And for development some optional packages might be useful:
+
+- `pytest <https://docs.pytest.org/en/7.3.x/>`_
+- `pytest-cov <https://pytest-cov.readthedocs.io/en/latest/index.html>`_
+- `sphinx <https://www.sphinx-doc.org/>`_
+- `sphinx-autobuild <https://github.com/executablebooks/sphinx-autobuild>`_
+- `sphinx-autodoc-typehints <https://github.com/tox-dev/sphinx-autodoc-typehints>`_
+- `sphinx_rtd_theme <https://sphinx-rtd-theme.readthedocs.io/en/stable/index.html>`_
+- `numpydoc <https://numpydoc.readthedocs.io/en/latest/>`_
+
+These packages (except the development dependencies) are automatically installed if missing
+when installing ``oimodeler``.
 
 
 Checking installation
 ---------------------
 
-The check that oimodeler is properly installed you can run :ref:`getting_started` or other :ref:`examples` scripts
+The check if ``oimodeler`` is properly installed you can run the :ref:`getting_started`
+or other :ref:`examples` scripts.

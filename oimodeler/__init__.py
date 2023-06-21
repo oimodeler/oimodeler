@@ -30,6 +30,8 @@ from .oimUtils import *
 np.seterr(invalid='ignore')
 proj.register_projection(oimAxes)
 
+__version__ = "0.8.0"
+
 # TODO: After pathlib change of all `oimodeler` modules, remove str here
 __pkg_dir__ = Path(inspect.getfile(inspect.currentframe())).parent
 

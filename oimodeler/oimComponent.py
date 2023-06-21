@@ -193,9 +193,9 @@ class oimComponentFourier(oimComponent):
                 self.params["pa"].unit.to(units.rad)
             co = np.cos(pa_rad)
             si = np.sin(pa_rad)
-            fxp = ucoord*co-vcoord*si
+            fxp = (ucoord*co-vcoord*si)/self.params["elong"](wl, t)
             fyp = ucoord*si+vcoord*co
-            rho = np.sqrt(fxp**2/self.params["elong"](wl, t)**2+fyp**2)
+            rho = np.sqrt(fxp**2+fyp**2)
         else:
             fxp = ucoord
             fyp = vcoord
@@ -277,7 +277,6 @@ class oimComponentImage(oimComponent):
         self.normalizeImage = True
 
         self.params["dim"] = oimParam(**_standardParameters["dim"])
-
         self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add ellipticity
@@ -530,6 +529,7 @@ class oimComponentRadialProfile(oimComponent):
         self._wl = None
         self._r = None
 
+        # CHECK: Is this not redundant as oimComponent is already ellpitical?
         # NOTE: Add ellipticity
         if self.elliptic == True:
             self.params["pa"] = oimParam(**_standardParameters["pa"])

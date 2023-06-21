@@ -14,12 +14,16 @@ import oimodeler as oim
 from astropy import units as units
 
 
-path = Path(oim.__file__).parent.parent
+path = Path(__file__).parent.parent.parent
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 
 # %%
 def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
-    """"""
     h = 6.63e-34
     c = 3e8
     kb = 1.38e-23
@@ -161,7 +165,7 @@ m = oim.oimModel(c)
 
 # %% Plotting the model image
 m.showModel(512, 0.025, wl=[1e-6, 10e-6], legend=True, normalize=True,
-            savefig=path / Path().parent / "images" / "customCompImageFastRotator.png")
+            savefig=save_dir / "customCompImageFastRotator.png")
 
 # %% Computing and plotting visibilities for various baselines and walvelengths
 nB = 1000
@@ -202,7 +206,7 @@ ax[1].get_yaxis().set_visible(False)
 norm = colors.Normalize(vmin=np.min(wl)*1e6, vmax=np.max(wl)*1e6)
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax, label="$\\lambda$ ($\\mu$m)")
-fig.savefig(path / Path().parent / "images" / "customCompImageFastRotatorVis.png")
+fig.savefig(save_dir / "customCompImageFastRotatorVis.png")
 
 
 # %% Modifying the fast rotator parameters and  creating a new model with UD component
@@ -213,7 +217,7 @@ m2 = oim.oimModel(c, ud)
 
 # %% Plotting the new model image
 m2.showModel(512, 0.06, wl=[1e-6, 10e-6], legend=True, normalize=True, normPow=0.5,
-             savefig=path / Path().parent / "images" / "customCompImageFastRotator2.png")
+             savefig=save_dir / "customCompImageFastRotator2.png")
 
 # %% Computing and plotting visibilities for various baselines and walvelengths
 vc = m2.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr)
@@ -237,7 +241,7 @@ ax[1].get_yaxis().set_visible(False)
 norm = colors.Normalize(vmin=np.min(wl)*1e6, vmax=np.max(wl)*1e6)
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax, label="$\\lambda$ ($\\mu$m)")
-fig.savefig(path / Path().parent / "images" / "customCompImageFastRotatorVis2.png")
+fig.savefig(save_dir / "customCompImageFastRotatorVis2.png")
 
 
 # %%  Plot an image and the visibility side by side ( for main page of documentation)
@@ -267,4 +271,4 @@ plt.subplots_adjust(left=0.10, bottom=0.15, right=0.95,
 norm = colors.Normalize(vmin=np.min(wl)*1e6, vmax=np.max(wl)*1e6)
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax[2], label="$\\lambda$ ($\\mu$m)")
-fig.savefig(path / Path().parent / "images" / "customCompImageFastRotatorImageAndVis.png")
+fig.savefig(save_dir / "customCompImageFastRotatorImageAndVis.png")

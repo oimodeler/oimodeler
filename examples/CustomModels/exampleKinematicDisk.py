@@ -8,25 +8,22 @@ from datetime import datetime
 from pathlib import Path
 from pprint import pprint
 
-from  pprint import pprint as print
 import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
 
-# setting the FFT parameters and backend. As the kinematicsDisk model as no 
+
+# setting the FFT parameters and backend. As the kinematicsDisk model as no
 # outer sharp edge we decide not to zero-pad the images during the FFT process
 # no oder to save time and without noticeable effect on the simulated visibilities
-oim.oimOptions['FTpaddingFactor']=1
-oim.oimOptions['FTBackend']=oim.FFTWBackend
+oim.oimOptions['FTpaddingFactor'] = 1
+oim.oimOptions['FTBackend'] = oim.FFTWBackend
 
-
-path = Path(oim.__file__).parent.parent
-
-#In this example we will use an old VLTI/AMBER observation of a classical 
-# Be star Alpha Col published in Cochetti et al. 2019 
-data_path = path / "examples" / "testData" / "AMBER_AlphaCol"
-oifits = [str(data_path / "ALPHACOL_2010-01-09T00_58.fits"),
-          str(data_path / "ALPHACOL_2010-01-20T10_36.fits")]
+# In this example we will use an old VLTI/AMBER observation of a classical
+# Be star Alpha Col published in Cochetti et al. 2019
+path = Path(__file__).parent.parent.parent
+data_dir = path / "examples" / "testData" / "AMBER_AlphaCol"
+files = list(map(str, data_dir.glob("*.fits")))
 
 # Pretting plot with error bars
 def errorFill(axe, X, Y, dY, color="k",
@@ -42,16 +39,16 @@ def errorFill(axe, X, Y, dY, color="k",
         axe.plot(X, Y, zorder=zorder+1, color=color)
 
 
-#%% Creating a keplerian rotating disk model 
-nwl=81
-wl0=2.1656e-6
-c=oim.oimKinematicDisk(dim=64,fov=20,incl=45,Rstar=5.8,dist=80,fwhmCont=2.2,
-                   fluxDiskCont=0.25,EW=10.4,fwhmLine=5.7,nwl=nwl,
-                   vrot=360,beta=-0.5,pa=-83.2,wl0=2.1656e-6,dwl=0.9e-10,
-                   res=1.8e-10)
-m=oim.oimModel(c)
+# %% Creating a keplerian rotating disk model
+nwl = 81
+wl0 = 2.1656e-6
+c = oim.oimKinematicDisk(dim=64, fov=20, incl=45, Rstar=5.8, dist=80, fwhmCont=2.2,
+                         fluxDiskCont=0.25, EW=10.4, fwhmLine=5.7, nwl=nwl,
+                         vrot=360, beta=-0.5, pa=-83.2, wl0=2.1656e-6, dwl=0.9e-10,
+                         res=1.8e-10)
+m = oim.oimModel(c)
 
-#%% Defining the parameters space and free/fixed parameters
+# %% Defining the parameters space and free/fixed parameters
 c.params["f"].free = False
 c.params["Rstar"].free = False
 c.params["dist"].free = False
@@ -71,53 +68,54 @@ c.params["vrot"].set(min=100, max=600, error=20)
 # pprint(m.getFreeParameters())
 
 
-#%% Filtering and modifying the data before fitting. 
+# %% Filtering and modifying the data before fitting.
 
-data=oim.oimData(oifits)
-#Here we divide the errors on the AMBER data that were obviously overestimated
+data = oim.oimData(files)
+# Here we divide the errors on the AMBER data that were obviously overestimated
 for datai in data.data:
-    datai["OI_VIS"].data["VISPHIERR"]*=0.5
-    datai["OI_VIS2"].data["VIS2ERR"]*=0.5
-    datai["OI_T3"].data["T3PHIERR"]*=0.5   
-    
-#We only fit the Br Gamma line within a 20 angstrom band
-dlam=2e-9
-f1=oim.oimWavelengthRangeFilter(targets="all",wlRange=([(wl0-dlam),(wl0+dlam)]))
-filters=oim.oimDataFilter([f1])
+    datai["OI_VIS"].data["VISPHIERR"] *= 0.5
+    datai["OI_VIS2"].data["VIS2ERR"] *= 0.5
+    datai["OI_T3"].data["T3PHIERR"] *= 0.5
+
+# We only fit the Br Gamma line within a 20 angstrom band
+dlam = 2e-9
+f1 = oim.oimWavelengthRangeFilter(
+    targets="all", wlRange=([(wl0-dlam), (wl0+dlam)]))
+filters = oim.oimDataFilter([f1])
 data.setFilter(filters)
 
-#%% Creating a simple simulator to compare our data and model
-sim=oim.oimSimulator(data,m)
+# %% Creating a simple simulator to compare our data and model
+sim = oim.oimSimulator(data, m)
 t0 = datetime.now()
 sim.compute(computeChi2=True)
-dt=(datetime.now() - t0).total_seconds()*1000
-print("compute chi2: {:.1f}ms/model".format(dt))
-print("chi2:{} ".format(sim.chi2r))
+dt = (datetime.now() - t0).total_seconds()*1000
+pprint("compute chi2: {:.1f}ms/model".format(dt))
+pprint("chi2:{} ".format(sim.chi2r))
 
 
 # %% Creating the fitter and preparing the parameter space
 fit = oim.oimFitterEmcee(data, m, nwalkers=12)
 
-c.params["pa"].set(min=-180, max=0,error=10)
-c.params["fwhmLine"].set(min=2, max=10,error=2)
-c.params["fluxDiskCont"].set(min=0, max=0.6,error=0.1)
-c.params["incl"].set(min=20, max=70,error=10)
-c.params["EW"].set(min=2, max=12,error=1)
-c.params["vrot"].set(min=100, max=600,error=20)
+c.params["pa"].set(min=-180, max=0, error=10)
+c.params["fwhmLine"].set(min=2, max=10, error=2)
+c.params["fluxDiskCont"].set(min=0, max=0.6, error=0.1)
+c.params["incl"].set(min=20, max=70, error=10)
+c.params["EW"].set(min=2, max=12, error=1)
+c.params["vrot"].set(min=100, max=600, error=20)
 
-print(m.getFreeParameters())
+pprint(m.getFreeParameters())
 
-fit=oim.oimFitterEmcee(data,m,nwalkers=12)
+fit = oim.oimFitterEmcee(data, m, nwalkers=12)
 fit.prepare(init="gaussian")
 
-#%% Runinng the mcmc fit
+# %% Runinng the mcmc fit
 fit.run(nsteps=2000, progress=True)
 
-#%% Walkers and corner plots
+# %% Walkers and corner plots
 fit.walkersPlot(chi2limfact=3)
 fit.cornerPlot(chi2limfact=3)
 
-#%% Generating the per baseline plots of the data and model
+# %% Generating the per baseline plots of the data and model
 data.setFilter(filters)
 sim.compute(computeChi2=True, computeSimulatedData=True)
 pprint(f"chi2:{sim.chi2r} ")
@@ -160,7 +158,6 @@ for k in range(2):
             ax[1+2*k][i].plot([(wl0+dlam)*1e6, (wl0+dlam)*1e6],
                               [-100, 100], ls=":", color="k")
 
-
     # ax[0+2*k][0].set_xlim([(wl0-Dlam)*1e6,(lam0+Dlam)*1e6])
     # sp=np.mean(sim.data.data[k]["AMBER_SPECTRUM"].data["SPECTRUM"],axis=1)
     # sperr=np.mean(sim.data.data[k]["AMBER_SPECTRUM"].data["SPECTRUM_ERROR"],axis=1)
@@ -192,14 +189,14 @@ ax[0][0].set_xlim((wl0-dlam)*1e6, (wl0+dlam)*1e6)
 # %%
 wl0, dwl, nwl = 2.1656e-6, 32e-10, 5
 wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
-ax[0][0].set_xlim((wl0-Dlam)*1e6,(wl0+Dlam)*1e6)
+ax[0][0].set_xlim((wl0-dlam)*1e6, (wl0+dlam)*1e6)
 
-#%% Plotting images of the best model
-wl0=2.1656e-6
-Dwl=32e-10
-nwl=5
-wl=np.linspace(wl0-Dwl/2,wl0+Dwl/2,num=nwl)
-mydim=256
+# %% Plotting images of the best model
+wl0 = 2.1656e-6
+Dwl = 32e-10
+nwl = 5
+wl = np.linspace(wl0-Dwl/2, wl0+Dwl/2, num=nwl)
+mydim = 256
 t0 = datetime.now()
 dim = c.params["dim"].value
 c.params["dim"].value = mydim

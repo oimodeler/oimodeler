@@ -19,20 +19,24 @@ from matplotlib import pyplot as plt
 # standard numpy FFT module oim.oimOptions['FTpaddingFactor']=2
 # oim.oimOptions['FTBackend']=oim.FFTWBackend
 
-path = Path(oim.__file__).parent.parent
-pathData = path / Path().parent / "examples" / "BasicExamples"
-filename = pathData / "KinematicsBeDiskModel.fits"
+path = Path(__file__).parent.parent.parent
+file_name = path / "examples" / "AdvancedExamples" / "KinematicsBeDiskModel.fits"
+
+# NOTE: Change this path if you want to save the products at a certain location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 # %% creating the model
 # TODO: After pathlib change of all `oimodeler` modules, remove str here
-c = oim.oimComponentFitsImage(str(filename))
+c = oim.oimComponentFitsImage(str(file_name))
 m = oim.oimModel(c)
 
 # %% Plotting the model image
 wl0, dwl, nwl = 2.1661e-6, 60e-10, 5
 wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
 m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4, colorbar=False,
-            figsize=(2, 2.5), savefig=path / Path().parent / "images" / "FitsImageCube_BeDiskKinematicsModel_images.png")
+            figsize=(2, 2.5), savefig=save_dir / "FitsImageCube_BeDiskKinematicsModel_images.png")
 
 
 # %%
@@ -42,7 +46,7 @@ pprint(m.getParameters())
 c.params['pa'].value = 45
 c.params['scale'].value = 2
 m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4, colorbar=False,
-            figsize=(2, 2.5), savefig=path / Path().parent / "images" / "FitsImageCube_BeDiskKinematicsModel_images_scaled_rotated.png")
+            figsize=(2, 2.5), savefig=save_dir / "FitsImageCube_BeDiskKinematicsModel_images_scaled_rotated.png")
 
 # %% Computing and plotting visibilities for various baselines and walvelengths
 c.params['pa'].value = 0
@@ -51,7 +55,6 @@ c.params['scale'].value = 1
 nB = 1000
 nwl = 51
 wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
-
 
 B = np.linspace(0, 100, num=nB//2)
 
@@ -67,19 +70,16 @@ spfx_arr = Bx_arr/wl_arr
 spfy_arr = By_arr/wl_arr
 
 vc = m.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr)
-
 v = np.abs(vc.reshape(nwl, nB))
 v = v/np.tile(v[:, 0][:, None], (1, nB))
 
 fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 titles = ["East-West Baselines", "North-South Baselines"]
 
-
 for iB in range(nB):
     cB = (iB % (nB//2))/(nB//2-1)
     ax[2*iB//nB].plot(wl*1e9, v[:, iB],
                       color=plt.cm.plasma(cB))
-
 
 for i in range(2):
     ax[i].set_title(titles[i])
@@ -87,9 +87,7 @@ for i in range(2):
 ax[0].set_ylabel("Visibility")
 ax[1].get_yaxis().set_visible(False)
 
-
 norm = colors.Normalize(vmin=np.min(B), vmax=np.max(B))
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax, label="B (m)")
-
-fig.savefig(path / Path().parent / "images" / "FitsImageCube_BeDiskKinematicsModel_visibility.png")
+fig.savefig(save_dir / "FitsImageCube_BeDiskKinematicsModel_visibility.png")

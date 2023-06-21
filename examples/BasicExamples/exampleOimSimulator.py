@@ -11,11 +11,16 @@ import oimodeler as oim
 
 
 # Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
-path = Path(oim.__file__).parent.parent
-pathData = path / Path() / "examples" / "testData" / "ASPRO_MATISSE2"
+path = Path(__file__).parent.parent.parent
+data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-files = list(map(str, pathData.glob("*.fits")))
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
+files = list(map(str, data_dir.glob("*.fits")))
 
 # Building a oimodeler model with the same parameters
 ud = oim.oimUD(d=3, f=1, x=10, y=20)
@@ -38,4 +43,4 @@ pprint(f"Chi2r = {sim.chi2r}")
 
 # %%
 fig0, ax0 = sim.plot(["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],
-                     savefig=path / Path().parent / "images" / "ExampleOimSimulator_model0.png")
+                     savefig=save_dir / "ExampleOimSimulator_model0.png")
