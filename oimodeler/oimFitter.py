@@ -2,7 +2,9 @@
 """model fitting"""
 import corner
 import emcee
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
 
 from .oimParam import oimParam
@@ -204,8 +206,9 @@ class oimFitterEmcee(oimFitter):
             plt.savefig(savefig)
 
         return fig, fig.axes
-
-    def walkersPlot(self, savefig=None, chi2limfact=20, labelsize=10, **kwargs):
+    
+    def walkersPlot(self, savefig=None, chi2limfact=20, labelsize=10,
+                       ncolors=128, **kwargs):
         fig, ax = plt.subplots(self.nfree, figsize=(10, 7), sharex=True)
         if self.nfree == 1:
             ax = np.array([ax])
@@ -227,10 +230,37 @@ class oimFitterEmcee(oimFitter):
         xf = xf[idx]
         samples = samples.reshape(
             [samples.shape[0]*samples.shape[1], samples.shape[2]])[idx, :]
+        """
+        idxCut=np.where(chi2f<chi2limfact*chi2.min())[0]
+        print(idxCut)
+        
+        print(idxCut.shape)
+        print(chi2f.shape)
+        print(xf.shape)     
+        
+        chi2f = chi2f[idxCut]
+        xf = xf[idxCut]
+        samples = samples[idxCut, :]
+        """
+        chi2min=chi2f.min()
+        chi2max=chi2limfact*chi2min
+        chi2bins=np.linspace(chi2max,chi2min,ncolors)
+        if 'cmap' in kwargs:
+            cmap=cm.get_cmap(kwargs.pop('cmap'), ncolors)
+        else:
+            cmap=cm.get_cmap(mpl.rcParams['image.cmap'],ncolors)
+        
         for i in range(self.nfree):
+            for icol in range(ncolors):
+                if icol!=0:
+                    idxi=np.where((chi2f>chi2bins[icol]) & (chi2f<=chi2bins[icol-1]))[0]
+                else:
+                    idxi=np.where(chi2f>chi2bins[icol])[0]
 
-            scale = ax[i].scatter(xf, samples[:, i], c=chi2f, marker=".",
-                                  vmin=chi2.min(), vmax=chi2limfact*chi2.min(), s=0.1, **kwargs)
+                ax[i].scatter(xf[idxi], samples[idxi, i], 
+                              color=cmap(ncolors-icol-1),
+                              marker=".", s=0.1, **kwargs)
+
             ax[i].set_xlim(0, np.max(xf))
 
             txt = pnames[i]
@@ -245,8 +275,12 @@ class oimFitterEmcee(oimFitter):
             ax[i].text(0.02*np.max(xf), c, txt, va="center", ha="left", fontsize=labelsize,
                        backgroundcolor=(1, 1, 1, 0.5))
             ax[i].yaxis.set_label_coords(-0.1, 0.5)
-
-        fig.colorbar(scale, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
+        
+        norm = mpl.colors.Normalize(vmin=chi2min, vmax=chi2max)
+        sm =cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        fig.colorbar(sm,ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
+        #fig.colorbar(scale, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
 
         ax[-1].set_xlabel("step number")
 
