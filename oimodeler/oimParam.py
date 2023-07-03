@@ -68,7 +68,7 @@ class oimParam:
         Unit of the parameter. The default is 1.
     """
     def __init__(self, name=None, value=None, mini=-1*np.inf, maxi=np.inf,
-                 description="", unit=1, free=True, error=0):
+                 description="", unit=u.one, free=True, error=0):
         """Initialize a new instance of the oimParam class. """
         self.name = name
         self.value = value
