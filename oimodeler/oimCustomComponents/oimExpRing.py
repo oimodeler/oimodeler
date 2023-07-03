@@ -46,7 +46,7 @@ class oimExpRing(oimComponentRadialProfile):
             fwhm_max = self.params["fwhm"](1e99)
             r0_max = self.params["d"](1e99)
         rmax = r0_max+8*fwhm_max
-        return np.linspace(0, 1,  self.params["dim"])*rmax
+        return np.linspace(0, 1,  self.params["dim"].value)*rmax
 
     @_r.setter
     def _r(self, r):
