@@ -1,50 +1,13 @@
-from typing import Optional
-
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
-from astropy.modeling import models
+
+from line_profiler import LineProfiler
 
 from ..oimComponent import oimComponentRadialProfile
-from ..oimOptions import oimOptions
 from ..oimParam import oimParam
-from ..oimUtils import convert_radial_profile_to_meter
+from ..oimUtils import convert_radial_profile_to_meter, calculate_intensity
 from .oimRadialPowerLaw import oimRadialPowerLaw
-
-
-def calculate_intensity(wavelengths: u.um,
-                        temp_profile: u.K,
-                        pixSize: Optional[float] = None) -> np.ndarray:
-    """Calculates the blackbody_profile via Planck's law and the
-    emissivity_factor for a given wavelength, temperature- and
-    dust surface density profile.
-
-    Parameters
-    ----------
-    wavelengths : astropy.units.um
-        Wavelength value(s).
-    temp_profile : astropy.units.K
-        Temperature profile.
-    pixSize: float, optional
-        The pixel size [rad].
-
-    Returns
-    -------
-    intensity : numpy.ndarray
-        Intensity per pixel.
-    """
-    plancks_law = models.BlackBody(temperature=temp_profile*u.K)
-    wavelengths = (wavelengths*u.m).to(u.um)
-    spectral_radiance = plancks_law(wavelengths).to(
-        u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
-
-    if oimOptions["ModelOutput"] == "corr_flux":
-        if pixSize is None:
-            raise KeyError("'pixSize' needs to be directly or indirectly"
-                           " (via the 'fov'-parameter) set by the user!")
-        pixSize *= u.rad
-        return (spectral_radiance*pixSize**2).to(u.Jy).value
-    return spectral_radiance.value
 
 
 class oimTempGradient(oimComponentRadialProfile):
@@ -393,20 +356,26 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         -------
         image : numpy.ndarray
         """
-        r = np.sqrt(xx**2+yy**2)
-        rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
+        xx_reduced = xx[0, 0, 0].copy()
+        wlr = np.unique(wl)
+        xxr, yyr = np.meshgrid(xx_reduced, xx_reduced[None, :])
+        r = np.sqrt(xxr**2+yyr**2)
+        rin, rout = map(lambda x: self.params[x](wlr, t), ["rin", "rout"])
 
-        temperature_profile = self._temperature_profile(r, wl, t)
-        pix = self._pixSize
-        spectral_density = calculate_intensity(wl, temperature_profile,
-                                               pixSize=pix)
-        sigma_profile = self._surface_density_profile(xx, yy, wl, t)
+        temperature_profile = self._temperature_profile(r, wlr, t)
+        lp = LineProfiler()
+        lp_wrapper = lp(calculate_intensity)
+        spectral_density = lp_wrapper(wlr, temperature_profile,
+                                      pixel_size=self._pixSize)
+        lp.print_stats()
+        breakpoint()
+        sigma_profile = self._surface_density_profile(xxr, yyr, wlr, t)
         if self.continuum_contribution:
-            optical_depth = -sigma_profile*(self.params["kappa_abs"](wl, t) +
-                                            self.params["cont_weight"](wl, t) *
-                                            self.params["kappa_cont"](wl, t))
+            optical_depth = -sigma_profile*(self.params["kappa_abs"](wlr, t) +
+                                            self.params["cont_weight"](wlr, t) *
+                                            self.params["kappa_cont"](wlr, t))
         else:
-            optical_depth = -sigma_profile*self.params["kappa_abs"](wl, t)
+            optical_depth = -sigma_profile*self.params["kappa_abs"](wlr, t)
         radial_profile = np.logical_and(r > rin, r < rout).astype(int)
         return np.nan_to_num(radial_profile * spectral_density *
                              (1 - np.exp(optical_depth)), nan=0)
@@ -431,10 +400,15 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         -------
         image : numpy.ndarray
         """
+        lp = LineProfiler()
+        lp_wrapper = lp(self._image)
         if self.asymmetric_image:
-            return self._image(xx, yy, wl, t) * \
+            img = lp_wrapper(xx, yy, wl, t) * \
                 (1+self._azimuthal_modulation(xx, yy, wl, t))
-        return self._image(xx, yy, wl, t)
+        else:
+            img = lp_wrapper(xx, yy, wl, t)
+        lp.print_stats()
+        return img
 
 
 class oimAsymSDTempGradient(oimAsymTempGradient):

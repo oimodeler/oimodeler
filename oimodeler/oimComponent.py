@@ -262,10 +262,10 @@ class oimComponentImage(oimComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        self._wl=None
-        self._t=None
+        self._wl = None
+        self._t = None
         self._pixSize=0 #in rad
-        
+        self._xx, self._yy = None, None
         self._allowExternalRotation=True
         self.normalizeImage=True
                
@@ -478,7 +478,6 @@ class oimComponentImage(oimComponent):
             nt = t.size
             wl = np.array(wl0).flatten()
             nwl = wl.size
-
             xx, yy = np.meshgrid(xy, xy)
             x_arr = np.tile(xx[None, None, :, :], (nt, nwl, 1, 1))
             y_arr = np.tile(yy[None, None, :, :], (nt, nwl, 1, 1))

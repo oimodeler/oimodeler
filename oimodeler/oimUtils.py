@@ -1,12 +1,60 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 
 import astropy.units as units
 import numpy as np
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
+from astropy.modeling import models
+from numba import njit
+
+from .oimOptions import oimOptions
+
+
+
+
+# TODO: Maybe even optimize calculation time further in the future
+# Got it down from 3.5s to 0.66s for 3 wavelengths. It is 0.19s per wl.
+@njit(parallel=True)
+def calculate_intensity(wavelengths: units.um,
+                        temp_profile: units.K,
+                        oimOptions: Dict,
+                        pixel_size: Optional[float] = None) -> np.ndarray:
+    """Calculates the blackbody_profile via Planck's law and the
+    emissivity_factor for a given wavelength, temperature- and
+    dust surface density profile.
+
+    Parameters
+    ----------
+    wavelengths : astropy.units.um
+        Wavelength value(s).
+    temp_profile : astropy.units.K
+        Temperature profile.
+    pixSize: float, optional
+        The pixel size [rad].
+
+    Returns
+    -------
+    intensity : numpy.ndarray
+        Intensity per pixel.
+    """
+    plancks_law = models.BlackBody(temperature=temp_profile*units.K)
+    spectral_profile = []
+    pixel_size *= units.rad
+    for wavelength in wavelengths*units.m:
+        spectral_radiance = plancks_law(wavelength).to(
+            units.erg/(units.cm**2*units.Hz*units.s*units.rad**2))
+
+        if oimOptions.get("ModelOutput") == "corr_flux":
+            if pixel_size is None:
+                raise ValueError("'pixSize' needs to be directly or indirectly"
+                                 " (via the 'fov'-parameter) set by the user!")
+            spectral_profile.append((spectral_radiance*pixel_size**2).to(units.Jy).value)
+        else:
+            spectral_profile.append(spectral_radiance.value)
+    return np.array(spectral_profile)
 
 
 def rebin_image(image: np.ndarray,
