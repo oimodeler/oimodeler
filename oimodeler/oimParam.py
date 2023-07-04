@@ -307,10 +307,10 @@ class oimParamMultiWl(oimParamInterpolatorKeyframes):
         keyframes = np.array([param.value for param in self.keyframes])
         values = np.array([param.value for param in self.keyvalues])
         new_values = np.zeros(wl.shape)
-        for index, value in enumerate(values[keyframes == np.unique(wl)]):
+        indices = np.where(np.isin(keyframes, np.unique(wl)))[0]
+        for index, value in enumerate(values[indices]):
             if len(wl.shape) == 1:
-                new_values[:] = value
-                break
+                new_values[index] = value
             else:
                 new_values[:, index, :, :] = value
         return new_values

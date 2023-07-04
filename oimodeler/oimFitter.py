@@ -93,7 +93,7 @@ class oimFitterEmcee(oimFitter):
 
         moves = [(emcee.moves.DEMove(), 0.8),
                  (emcee.moves.DESnookerMove(), 0.2)]
-        self.pool = Pool(processes=oimOptions["FittingNCores"])
+        # self.pool = Pool(processes=oimOptions["FittingNCores"])
         self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
                                              self.nfree, self._logProbability,
                                              moves=moves, pool=self.pool, **kwargs)
@@ -130,8 +130,7 @@ class oimFitterEmcee(oimFitter):
 
     def _run(self, **kwargs):
         self.sampler.run_mcmc(self.initialParams, **kwargs)
-        self.pool.close()
-        self.pool.join()
+        # self.pool.close()
         self.getResults()
 
         return kwargs
@@ -143,7 +142,7 @@ class oimFitterEmcee(oimFitter):
         for i, key in enumerate(self.freeParams):
             val = theta[i]
             low, up = self.limits[key]
-            if not (low < val < up):
+            if not low < val < up:
                 return -np.inf
 
         self.simulator.compute(computeChi2=True)

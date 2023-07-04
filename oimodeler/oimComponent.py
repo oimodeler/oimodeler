@@ -9,7 +9,7 @@ from scipy.special import j0
 from . import __dict__ as oimDict
 from .oimOptions import oimOptions
 from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParameters
-from .oimUtils import getWlFromFitsImageCube, rebin_image
+from .oimUtils import getWlFromFitsImageCube, pad_image, rebin_image
 
 
 # TODO: Move somewhere else
@@ -261,29 +261,23 @@ class oimComponentImage(oimComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
         self._wl = None
         self._t = None
-        self._pixSize=0 #in rad
-        self._xx, self._yy = None, None
-        self._allowExternalRotation=True
-        self.normalizeImage=True
+        self._pixSize = 0 # NOTE: In rad
+        self._allowExternalRotation = True
+        self.normalizeImage = True
                
-        self.params["pa"]=oimParam(**_standardParameters["pa"])
-        
-        
-       
-        #Add ellipticity 
-        if self.elliptic==True:
-            self.params["elong"]=oimParam(**_standardParameters["elong"])
-            
+        self.params["pa"] = oimParam(**_standardParameters["pa"])
+
+        # NOTE: Add ellipticity
+        if self.elliptic:
+            self.params["elong"] = oimParam(**_standardParameters["elong"])
         if 'FTBackend' in kwargs:
             self.FTBackend = kwargs['FTBackend']
         else:
             self.FTBackend = oimOptions['FTBackend']
 
         self.FTBackendData = None
-
         self._eval(**kwargs)
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
@@ -297,7 +291,7 @@ class oimComponentImage(oimComponent):
         if oimOptions["FTBinningFactor"] is not None:
             im = rebin_image(im, oimOptions["FTBinningFactor"])
 
-        im = self._padImage(im)
+        im = pad_image(im)
         pix = self._pixSize
 
         tr = self._ftTranslateFactor(
@@ -420,34 +414,7 @@ class oimComponentImage(oimComponent):
         return res
 
     def _internalImage(self):
-        return None
-
-    def _padImage(self, im):
-        im0 = np.sum(im, axis=(0, 1))
-        dimy = im0.shape[0]
-        dimx = im0.shape[1]
-
-        im0x = np.sum(im0, axis=1)
-        im0y = np.sum(im0, axis=1)
-
-        s0x = np.trim_zeros(im0x).size
-        s0y = np.trim_zeros(im0y).size
-
-        min_sizex = s0x*oimOptions["FTpaddingFactor"]
-        min_sizey = s0y*oimOptions["FTpaddingFactor"]
-
-        min_pow2x = 2**(min_sizex - 1).bit_length()
-        min_pow2y = 2**(min_sizey - 1).bit_length()
-
-        # TODO: Image has zeros around it already then this does not work -> Rework
-        if min_pow2x < dimx:
-            return im
-
-        padx = (min_pow2x-dimx)//2
-        pady = (min_pow2y-dimy)//2
-
-        return np.pad(im, ((0, 0), (0, 0), (padx, padx), (pady, pady)),
-                      'constant', constant_values=0)
+        return
 
     def _imageFunction(self, xx, yy, wl, t):
         image = xx*0+1
@@ -470,7 +437,7 @@ class oimComponentImage(oimComponent):
         v = np.linspace(-0.5, 0.5, dim)
         xy = v*pix*dim
 
-        if simple == True:
+        if simple:
             return t0, wl0, xy, xy
 
         else:

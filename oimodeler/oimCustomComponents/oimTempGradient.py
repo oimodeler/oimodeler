@@ -6,7 +6,8 @@ from line_profiler import LineProfiler
 
 from ..oimComponent import oimComponentRadialProfile
 from ..oimParam import oimParam
-from ..oimUtils import convert_radial_profile_to_meter, calculate_intensity
+from ..oimUtils import convert_radial_profile_to_meter,\
+    calculate_intensity, reshape_and_fill
 from .oimRadialPowerLaw import oimRadialPowerLaw
 
 
@@ -285,6 +286,38 @@ class oimAsymTempGradient(oimRadialPowerLaw):
             return sigma_profile*(1+self._azimuthal_modulation(xx, yy, wl, t))
         return sigma_profile
 
+    def _optical_depth(self, xx, yy, wl, t):
+        """Calculates and returns the optical depth
+
+        Parameters
+        ----------
+        xx : numpy.ndarray
+            The x-coordinate grid [mas].
+        yy : numpy.ndarray
+            The y-coordinate grid [mas].
+        wl : numpy.ndarray
+            Wavelengths [micron].
+        t : numpy.ndarray
+            Times [second].
+
+        Returns
+        -------
+        optical_depth : np.ndarray
+            The optical depth.
+        """
+        sigma_profile = self._surface_density_profile(xx, yy, wl, t)
+        if self.continuum_contribution:
+            opacities = self.params["kappa_abs"](wl, t) +\
+                        self.params["cont_weight"](wl, t) *\
+                        self.params["kappa_cont"](wl, t)
+        else:
+            opacities = self.params["kappa_abs"](wl, t)
+
+        optical_depth = []
+        for opacity in opacities:
+            optical_depth.append(-sigma_profile*opacity)
+        return np.array(optical_depth)
+
     def _temperature_profile(self, r, wl, t):
         """Calculates the temperature profile.
 
@@ -356,29 +389,19 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         -------
         image : numpy.ndarray
         """
-        xx_reduced = xx[0, 0, 0].copy()
         wlr = np.unique(wl)
+        xx_reduced = xx[0, 0, 0].copy()
         xxr, yyr = np.meshgrid(xx_reduced, xx_reduced[None, :])
+
         r = np.sqrt(xxr**2+yyr**2)
         rin, rout = map(lambda x: self.params[x](wlr, t), ["rin", "rout"])
 
+        radial_profile = reshape_and_fill(np.logical_and(r > rin, r < rout).astype(int), wl)
         temperature_profile = self._temperature_profile(r, wlr, t)
-        lp = LineProfiler()
-        lp_wrapper = lp(calculate_intensity)
-        spectral_density = lp_wrapper(wlr, temperature_profile,
-                                      pixel_size=self._pixSize)
-        lp.print_stats()
-        breakpoint()
-        sigma_profile = self._surface_density_profile(xxr, yyr, wlr, t)
-        if self.continuum_contribution:
-            optical_depth = -sigma_profile*(self.params["kappa_abs"](wlr, t) +
-                                            self.params["cont_weight"](wlr, t) *
-                                            self.params["kappa_cont"](wlr, t))
-        else:
-            optical_depth = -sigma_profile*self.params["kappa_abs"](wlr, t)
-        radial_profile = np.logical_and(r > rin, r < rout).astype(int)
+        optical_depth = self._optical_depth(xxr, yyr, wlr, t).reshape(*wl.shape)
+        spectral_density = calculate_intensity(wlr, temperature_profile, self._pixSize).reshape(*wl.shape)
         return np.nan_to_num(radial_profile * spectral_density *
-                             (1 - np.exp(optical_depth)), nan=0)
+                             (1 - np.exp(self._optical_depth(xxr, yyr, wlr, t))), nan=0)
 
     def _imageFunction(self, xx: np.ndarray, yy: np.ndarray,
                        wl: np.ndarray, t: np.ndarray) -> np.ndarray:
@@ -470,7 +493,7 @@ class oimAsymSDTempGradient(oimAsymTempGradient):
 
 
 class oimAsymSDGreyBody(oimAsymSDTempGradient):
-    """A ring defined by a grain grey body temperature profile and
+    """A disk defined by a grain grey body temperature profile and
     and an asymmetric radial dust surface density profile in r^p
     with opacity curves for the dust surface density profile.
 
@@ -488,8 +511,6 @@ class oimAsymSDGreyBody(oimAsymSDTempGradient):
         Azimuthal modulation amplitude.
     phi : float
         Azimuthal modulation angle [deg].
-    q : float
-        Power-law exponent for the temperature profile.
     p : float
         Power-law exponent for the dust surface density profile.
     kappa_abs : float or oimInterp

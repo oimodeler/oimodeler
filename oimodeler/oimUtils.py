@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
-from typing import Optional, Union, Dict
+from typing import Optional, Union
 
 import astropy.units as units
 import numpy as np
@@ -8,19 +8,33 @@ from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
 from astropy.modeling import models
-from numba import njit
 
 from .oimOptions import oimOptions
 
 
+def reshape_and_fill(array: np.ndarray, wavelengths: np.ndarray) -> np.ndarray:
+    """Reshapes an array that is independent of time and wavelength to the
+    (nt, nwl, ndim, ndim) shape.
 
+    Parameters
+    ----------
+    array : np.ndarray
+        An array of the shape
+    wavelenghts : np.ndarray
+        The wavelenghts of the shape (nt, nwl, ndim, ndim).
+
+    Returns
+    -------
+    reshaped_array : np.ndarray
+    """
+    new_array = np.zeros((*wavelengths.shape[:2], *array.shape))
+    new_array[:, :] = array
+    return new_array
 
 # TODO: Maybe even optimize calculation time further in the future
 # Got it down from 3.5s to 0.66s for 3 wavelengths. It is 0.19s per wl.
-@njit(parallel=True)
 def calculate_intensity(wavelengths: units.um,
                         temp_profile: units.K,
-                        oimOptions: Dict,
                         pixel_size: Optional[float] = None) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
@@ -47,7 +61,7 @@ def calculate_intensity(wavelengths: units.um,
         spectral_radiance = plancks_law(wavelength).to(
             units.erg/(units.cm**2*units.Hz*units.s*units.rad**2))
 
-        if oimOptions.get("ModelOutput") == "corr_flux":
+        if oimOptions["ModelOutput"] == "corr_flux":
             if pixel_size is None:
                 raise ValueError("'pixSize' needs to be directly or indirectly"
                                  " (via the 'fov'-parameter) set by the user!")
@@ -55,6 +69,35 @@ def calculate_intensity(wavelengths: units.um,
         else:
             spectral_profile.append(spectral_radiance.value)
     return np.array(spectral_profile)
+
+
+def pad_image(image: np.ndarray):
+    """Pads an image with additional zeros for Fourier transform."""
+    im0 = np.sum(image, axis=(0, 1))
+    dimy = im0.shape[0]
+    dimx = im0.shape[1]
+
+    im0x = np.sum(im0, axis=1)
+    im0y = np.sum(im0, axis=1)
+
+    s0x = np.trim_zeros(im0x).size
+    s0y = np.trim_zeros(im0y).size
+
+    min_sizex = s0x*oimOptions["FTpaddingFactor"]
+    min_sizey = s0y*oimOptions["FTpaddingFactor"]
+
+    min_pow2x = 2**(min_sizex - 1).bit_length()
+    min_pow2y = 2**(min_sizey - 1).bit_length()
+
+    # HACK: If Image has zeros around it already then this does not work -> Rework
+    if min_pow2x < dimx:
+        return image
+
+    padx = (min_pow2x-dimx)//2
+    pady = (min_pow2y-dimy)//2
+
+    return np.pad(image, ((0, 0), (0, 0), (padx, padx), (pady, pady)),
+                  'constant', constant_values=0)
 
 
 def rebin_image(image: np.ndarray,
