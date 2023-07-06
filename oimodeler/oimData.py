@@ -5,14 +5,8 @@ from enum import IntFlag
 
 import numpy as np
 from astropy.io import fits
-from pathlib import Path
-from .oimUtils import hdulistDeepCopy
-
-
-_oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
-_oimDataTypeErr = ["VIS2ERR", "VISAMPERR",
-                   "VISPHIERR", "T3AMPERR", "T3PHIERR", "FLUXERR"]
-_oimDataTypeArr = ["OI_VIS2", "OI_VIS", "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX"]
+from .oimUtils import hdulistDeepCopy, loadOifitsData, _oimDataTypeArr 
+from .oimDataFilter import oimDataFilter,oimDataFilterComponent
 
 
 def oimDataGetWl(data, arr, dwl=True):
@@ -241,14 +235,8 @@ class oimData(object):
             return self._filteredData
 
     def addData(self, dataOrFilename, prepare=True):
-        if type(dataOrFilename) == type([]):
-            for el in dataOrFilename:
-                self.addData(el, prepare=prepare)
-        else:
-            if type(dataOrFilename) == str :
-                self._data.append(fits.open(dataOrFilename))
-            else:
-                self._data.append(dataOrFilename)
+        
+        self._data.extend(loadOifitsData(dataOrFilename))
         
         self.prepared = False
         self._filteredDataReady = False
@@ -262,6 +250,13 @@ class oimData(object):
         self.prepareData()
 
     def setFilter(self, filt=None, useFilter=True):
+        
+        #check type of filt
+        if isinstance(filt,oimDataFilterComponent) or isinstance(filt,list):
+            filt=oimDataFilter(filt)
+
+        
+        
         self._filter = filt
         self._filteredDataReady = False
         self.useFilter = useFilter
