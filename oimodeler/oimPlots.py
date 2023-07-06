@@ -6,13 +6,20 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
+import matplotlib.gridspec as gridspec
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerLineCollection
 from astropy.io import fits
+import astropy.units as u
 
 from .oimData import oimData
-from .oimUtils import getBaselineName, getBaselineLengthAndPA, getConfigName, getSpaFreq
-
+from .oimUtils import getBaselineName, getBaselineLengthAndPA, getConfigName, \
+                      getSpaFreq, getWlFromOifits,loadOifitsData,get2DSpaFreq,\
+                      getDataArrname
+                      
+#might be usefull as unit cycles is not defined but cycle is                     
+#u.add_enabled_units(u.def_unit("cycles",u.cycle))
 
 def _errorplot(axe, X, Y, dY, smooth=1, **kwargs):
     Ys = Y
@@ -72,9 +79,152 @@ def _colorPlot(axe, x, y, z, setlim=False, **kwargs):
     return res
 
 
+
+# TODO: Move global variables somewhere else and make their name in capital letters
+# (python standard)
+oimPlotParamName = np.array(["LENGTH", "PA", "UCOORD", "VCOORD", "SPAFREQ", "EFF_WAVE",
+                             "VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA", "MJD"])
+oimPlotParamError = np.array(["", "", "", "", "", "EFF_BAND", "VIS2ERR", "VISAMPERR",
+                              "VISPHIERR", "T3AMPERR", "T3PHIERR", "FLUXERR", ""])
+oimPlotParamArr = np.array(["", "", "", "", "", "OI_WAVELENGTH", "OI_VIS2", "OI_VIS",
+                            "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX", ""])
+oimPlotParamLabel = np.array(["Baseline Length", "Baseline Orientation", "U", "V",
+                              "Spatial Frequency", "Wavelength", "Square Visibility",
+                             "Differential Visibility", "Differential Phase",
+                              "CLosure Amplitude", "Closure Phase", "Flux", "MJD"])
+oimPlotParamLabelShort = np.array(["B", "PA", "U", "V", "B/$\lambda$", "$\lambda$",
+                                   "V$^2$", "V$_{diff}$", "$\phi_{diff}$", "Clos. Amp.", "CP", "Flux", "MJD"])
+oimPlotParamUnit0 = np.array([u.m, u.deg, u.m, u.m, u.Unit("cycle/rad"), u.m, u.one, u.one, u.deg,
+                              u.one, u.deg, u.one, u.day])
+oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+
+oimPlotParamColorCycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+
+def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline", color=None, maxi=None,
+              grid=True, gridcolor="k", fontsize=None, xytitle=[True, True],
+              colorTab=None, axe=None, title=None,cunit=u.m,legendkwargs={}, **kwargs):
+    
+    if not (axe):
+        fig, axe = plt.subplots(nrows=1, ncols=1)   
+        
+    oifitsList = loadOifitsData(oifitsList)
+    nfiles = len(oifitsList)
+    
+    unit = u.Unit(unit)
+    cunit= u.Unit(cunit)
+
+    if colorTab == None:
+        colorTab = oimPlotParamColorCycle
+
+    try:
+        if not ("by" in color):
+            colorTab = [color]
+    except:
+        pass
+
+    try:
+        label0 = kwargs.pop("label")
+    except:
+        label0 = ""
+
+    ucoord = []
+    vcoord = []
+    wl = []
+    
+    try:
+        if not ("by" in color):
+            colorTab = [color]
+    except:
+        pass
+
+
+    if colorTab == None:
+        colorTab = oimPlotParamColorCycle
+
+    try:
+        if not ("by" in color):
+            colorTab = [color]
+    except:
+        pass
+
+    ncol = len(colorTab)
+
+    colorIdx, ColorNames = getColorIndices(oifitsList, color, arrname,"UCOORD",flatten=True)
+   
+    for datai in oifitsList:
+    
+        _,_, ui,vi = getBaselineLengthAndPA(datai, squeeze=False, returnUV=True)
+        for iext in range(len(ui)):
+            wlii = getWlFromOifits(datai,arr=arrname,extver=iext+1)
+            nB=ui[iext].size
+            ucoord.extend(ui[iext])
+            vcoord.extend(vi[iext]) 
+            for iB in range(nB):
+                wl.append(wlii)
+                
+    ucoord=np.array(ucoord)
+    vcoord=np.array(vcoord)
+    
+    if unit.is_equivalent(u.m):
+        ucoord*=u.m.to(unit)
+        vcoord*=u.m.to(unit)
+        
+        for icol in np.unique(colorIdx):
+            idx = np.where(colorIdx == icol)
+            axe.scatter(ucoord[idx], vcoord[idx],color=colorTab[icol%ncol],label=label0+ColorNames[icol], **kwargs)
+            axe.scatter(-ucoord[idx], -vcoord[idx],color=colorTab[icol%ncol], **kwargs)   
+    
+        if not (maxi):
+            maxi = 1.1*np.max(np.abs(np.array([ucoord, vcoord])))
+        
+    elif unit.is_equivalent(u.Unit("cycle/rad")):
+         maxii=[]
+         
+         for ui,vi,wli in zip(ucoord,vcoord,wl):
+             spfu=ui/wli*u.Unit("cycle/rad").to(unit)
+             spfv=vi/wli*u.Unit("cycle/rad").to(unit)
+
+             maxii.append(np.max(np.sqrt(spfu**2+spfv**2)))
+             
+             res=_colorPlot(axe,spfu , spfv, wli*u.m.to(cunit),label=label0, setlim=True, **kwargs)
+             _colorPlot(axe,-spfu , -spfv, wli*u.m.to(cunit), setlim=True, **kwargs)
+             if not (maxi):
+                 maxi = 1.1*np.max(maxii)
+
+    else:
+         raise TypeError("invalid unit") 
+            
+                  
+   
+    
+    if grid:
+        axe.plot([-maxi, maxi], [0, 0], linewidth=1, color=gridcolor, zorder=5)
+        axe.plot([0, 0], [-maxi, maxi], linewidth=1, color=gridcolor, zorder=5)
+    axe.set_aspect('equal', 'box')
+    axe.set_xlim([maxi, -maxi])
+    axe.set_ylim([-maxi, maxi])
+    xyunittext=unit.to_string(stringunitformat)
+    if xytitle[0]:
+        axe.set_xlabel(f'u ({xyunittext})', fontsize=fontsize)
+    if xytitle[1]:
+        axe.set_ylabel(f'v ({xyunittext})', fontsize=fontsize)
+    if title:
+        axe.set_title(title)
+    
+    axe.legend(**legendkwargs)
+    if unit.is_equivalent(u.Unit("cycle/rad")):
+        plt.colorbar(res, ax=axe,label=f"$\\lambda$ ({cunit:latex})")
+
+    return axe
+    
+
+
+"""
 def uvPlot(oifits, extension="OI_VIS2", marker="o", facecolors='red',
            edgecolors='k', size=10, axe=None, maxi=None, xytitle=[True, True],
            title=None, gridcolor="k", grid=True, fontsize=None, **kwargs):
+    
     if isinstance(oifits, oimData):
         oifits = oifits.data
 
@@ -84,8 +234,8 @@ def uvPlot(oifits, extension="OI_VIS2", marker="o", facecolors='red',
             kwargs2[key] = kwargs[key]
 
     data = []
-    u = np.array([])
-    v = np.array([])
+    ucoord = np.array([])
+    vcoord = np.array([])
     if type(oifits) == type(""):
         data.append(fits.open(oifits))
     elif type(oifits) == type([]):
@@ -102,18 +252,18 @@ def uvPlot(oifits, extension="OI_VIS2", marker="o", facecolors='red',
         extnames = np.array([datai[i].name for i in range(len(datai))])
         idx = np.where(extnames == extension)[0]
         for j in idx:
-            u = np.append(u, datai[j].data['UCOORD'])
-            v = np.append(v, datai[j].data['VCOORD'])
+            ucoord = np.append(ucoord, datai[j].data['UCOORD'])
+            vcoord = np.append(vcoord, datai[j].data['VCOORD'])
 
     if not (axe):
         fig, axe = plt.subplots(nrows=1, ncols=1)
-    axe.scatter(u, v, marker=marker, facecolors=facecolors, edgecolors=edgecolors,
+    axe.scatter(ucoord, vcoord, marker=marker, facecolors=facecolors, edgecolors=edgecolors,
                 s=size, zorder=10, lw=1, **kwargs)
 
-    axe.scatter(-u, -v, marker=marker, facecolors=facecolors, edgecolors=edgecolors,
+    axe.scatter(-ucoord, -vcoord, marker=marker, facecolors=facecolors, edgecolors=edgecolors,
                 s=size, zorder=10, lw=1, **kwargs2)
     if not (maxi):
-        maxi = 1.1*np.max(np.abs(np.array([u, v])))
+        maxi = 1.1*np.max(np.abs(np.array([ucoord, vcoord])))
     if grid:
         axe.plot([-maxi, maxi], [0, 0], linewidth=1, color=gridcolor, zorder=5)
         axe.plot([0, 0], [-maxi, maxi], linewidth=1, color=gridcolor, zorder=5)
@@ -127,30 +277,9 @@ def uvPlot(oifits, extension="OI_VIS2", marker="o", facecolors='red',
     if title:
         axe.set_title(title)
     return [axe]
+"""
 
-
-# TODO: Move global variables somewhere else and make their name in capital letters
-# (python standard)
-oimPlotParamName = np.array(["LENGTH", "PA", "UCOORD", "VCOORD", "SPAFREQ", "EFF_WAVE",
-                             "VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA", "MJD"])
-oimPlotParamError = np.array(["", "", "", "", "", "EFF_BAND", "VIS2ERR", "VISAMPERR",
-                              "VISPHIERR", "T3AMPERR", "T3PHIERR", "FLUXERR", ""])
-oimPlotParamArr = np.array(["", "", "", "", "", "OI_WAVELENGTH", "OI_VIS2", "OI_VIS",
-                            "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX", ""])
-oimPlotParamLabel = np.array(["Baseline Length", "Baseline Orientation", "U", "V",
-                              "Spatial Frequency", "Wavelength", "Square Visibility",
-                             "Differential Visibility", "Differential Phase",
-                              "CLosure Amplitude", "Closure Phase", "Flux", "MJD"])
-oimPlotParamLabelShort = np.array(["B", "PA", "U", "V", "B/$\lambda$", "$\lambda$",
-                                   "V$^2$", "V$_{diff}$", "$\phi_{diff}$", "Clos. Amp.", "CP", "Flux", "MJD"])
-oimPlotParamUnit0 = np.array(["m", "$^o$", "m", "m", "cycles/rad", "$\mu$m", "", "", "$^o$",
-                              "", "$^o$", "", "day"])
-oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0])
-
-oimPlotParamColorCycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
-
-def getColorIndices(oifitsList, color, yarr, yname):
+def getColorIndices(oifitsList, color, yarr, yname,flatten=False):
     idx = []
     names = []
     for idata, datai in enumerate(oifitsList):
@@ -210,14 +339,24 @@ def getColorIndices(oifitsList, color, yarr, yname):
                 idxi.append(np.zeros(nB, dtype=int))
                 names.append("")
         idx.append(idxi)
+      
+
+    #flatten version for the uvplot
+    if flatten:          
+        idxf=[]
+   
+        for ifile in range(len(idx)):
+            for iext in range(len(idx[ifile])):
+                    idxf.extend(idx[ifile][iext])
+        idx=idxf
+            
     return idx, names
 
-
-def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
-            yunit=None, yunitmultiplier=1, cname=None, cunit=None, cunitmultiplier=1,
-            xlim=None, ylim=None, xscale=None, yscale=None, shortLabel=True,
-            color=None, colorTab=None, errorbar=False, showFlagged=False,
-            kwargs_error={}, **kwargs):
+def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, yunit=None, 
+            cname=None,cunit=None, xlim=None, ylim=None, xscale=None, 
+            yscale=None, shortLabel=True, color=None, colorTab=None, 
+            errorbar=False, showFlagged=False, colorbar=True,kwargs_error={},
+            **kwargs):
     """
 
     Parameters
@@ -232,18 +371,12 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
         DESCRIPTION. The default is None.
     xunit : TYPE, optional
         DESCRIPTION. The default is None.
-    xunitmultiplier : TYPE, optional
-        DESCRIPTION. The default is 1.
     yunit : TYPE, optional
         DESCRIPTION. The default is None.
-    yunitmultiplier : TYPE, optional
-        DESCRIPTION. The default is 1.
     cname : TYPE, optional
         DESCRIPTION. The default is None.
     cunit : TYPE, optional
         DESCRIPTION. The default is None.
-    cunitmultiplier : TYPE, optional
-        DESCRIPTION. The default is 1.
     xlim : TYPE, optional
         DESCRIPTION. The default is None.
     ylim : TYPE, optional
@@ -276,11 +409,7 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
 
     res = None
 
-    if isinstance(oifitsList, oimData):
-        oifitsList = oifitsList.data
-
-    if type(oifitsList) != type([]):
-        oifitsList = [oifitsList]
+    oifitsList = loadOifitsData(oifitsList)
 
     ndata0 = len(oifitsList)
 
@@ -302,20 +431,25 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
 
     # TODO implement units with astropy
     if xunit:
-        xunit0 = xunit
+        xunit0 = u.Unit(xunit)
+        xunitmultiplier = oimPlotParamUnit0[idxX].to(xunit0)
     else:
         xunit0 = oimPlotParamUnit0[idxX]
+        xunitmultiplier = 1
 
     if yunit:
-        yunit0 = yunit
+        yunit0 =u.Unit(yunit)
+        yunitmultiplier = oimPlotParamUnit0[idxY].to(yunit0)
     else:
         yunit0 = oimPlotParamUnit0[idxY]
+        yunitmultiplier = 1
 
-    if xunit0 != "":
-        xlabel += " ("+xunit0+")"
-    if yunit0 != "":
-        ylabel += " ("+yunit0+")"
-
+    if xunit0 != u.one:
+        xlabel += " ("+f"{xunit0:latex_inline}"+")"
+    if yunit0 != u.one:
+        ylabel += " ("+f"{yunit0:latex_inline}"+")"
+        
+            
     xIsUVcoord = oimPlotParamIsUVcoord[idxX]
     yIsUVcoord = oimPlotParamIsUVcoord[idxY]
 
@@ -366,31 +500,45 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                 xdata.append(np.tile(wl[None, :], (nB, 1)))
 
         elif xname == "SPAFREQ":
-            xdata = getSpaFreq(data, arr=yarr, unit=xunit, squeeze=False)
+            xdata = getSpaFreq(data, arr=yarr,  squeeze=False)
 
         elif xname == "LENGTH":
             B = getBaselineLengthAndPA(data, arr=yarr, squeeze=False)[0]
             xdata = []
-            for idata in range(len(idx_yext)):
+            for i,idata in enumerate(idx_yext):
                 xdata.append(np.transpose(
-                    np.tile(B[idata], (np.shape(data[idata].data[yname])[1], 1))))
+                    np.tile(B[i], (np.shape(data[idata].data[yname])[1], 1))))
 
         elif xname == "PA":
             PA = getBaselineLengthAndPA(data, arr=yarr, squeeze=False)[1]
             xdata = []
-            for idata in range(len(idx_yext)):
+            for i,idata in enumerate(idx_yext):
                 xdata.append(np.transpose(
-                    np.tile(PA[idata], (np.shape(data[idata].data[yname])[1], 1))))
+                    np.tile(PA[i], (np.shape(data[idata].data[yname])[1], 1))))
 
         if cname != None:
 
             idxC = np.where(oimPlotParamName == cname)[0][0]
             cIsUVcoord = oimPlotParamIsUVcoord[idxC]
+            
+            if not(shortLabel):
+                clabel = oimPlotParamLabel[idxC]
+                cunitmultiplier = u.Unit(oimPlotParamUnit0[idxC]).to(u.Unit(cunit))
+            else:
+                clabel = oimPlotParamLabelShort[idxC]
+            
 
             if cunit:
-                cunit0 = cunit
+                cunit0 = u.Unit(cunit)
+                cunitmultiplier = oimPlotParamUnit0[idxC].to(cunit0)
+
             else:
                 cunit0 = oimPlotParamUnit0[idxC]
+                cunitmultiplier = 1
+                
+                
+            if cunit0 != u.one:
+                clabel += " ("+f"{cunit0:latex}"+")"
 
             if cname == "MJD":
                 carr = yarr
@@ -420,21 +568,30 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                     cdata = [data[i].data[cname] for i in idx_yext]
 
             elif cname == "SPAFREQ":
-                cdata = getSpaFreq(data, arr=yarr, unit=cunit, squeez=False)
+                cdata = getSpaFreq(data, arr=yarr, squeez=False)
 
             elif cname == "LENGTH":
                 B = getBaselineLengthAndPA(data, arr=yarr, squeeze=False)[0]
                 cdata = []
-                for idata in range(len(idx_yext)):
+                for i,idata in enumerate(idx_yext):
                     cdata.append(np.transpose(
-                        np.tile(B[idata], (np.shape(data[idata].data[yname])[1], 1))))
+                        np.tile(B[i], (np.shape(data[idata].data[yname])[1], 1))))
 
             elif cname == "PA":
                 PA = getBaselineLengthAndPA(data, arr=yarr, squeeze=False)[1]
                 cdata = []
-                for idata in range(len(idx_yext)):
+                for i,idata in enumerate(idx_yext):
                     cdata.append(np.transpose(
-                        np.tile(PA[idata], (np.shape(data[idata].data[yname])[1], 1))))
+                        np.tile(PA[i], (np.shape(data[idata].data[yname])[1], 1))))
+        
+         
+        for idata in range(len(xdata)):
+            xdata[idata]=xdata[idata]*xunitmultiplier  
+        for idata in range(len(xdata)):
+            ydata[idata]=ydata[idata]*yunitmultiplier             
+        if cunit:
+            for idata in range(len(xdata)):
+                cdata[idata]=cdata[idata]*cunitmultiplier 
 
         # NOTE: Looping through oifits files
         ndata = len(ydata)
@@ -507,17 +664,15 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
 
                             if cname == None:
                                 if (xdata[idata][iB, ilam0:ilam+1]).size == 1:
-                                    axe.scatter(xdata[idata][iB, ilam0:ilam+1] *
-                                                xunitmultiplier, ydata[idata][iB,
-                                                                              ilam0:ilam+1],
+                                    axe.scatter(xdata[idata][iB, ilam0:ilam+1],
+                                                ydata[idata][iB,ilam0:ilam+1],
                                                 color=colorTab[colorIdx[ifile]
                                                                [idata][iB] % ncol],
                                                 label=labeli, **kwargs)
                                 else:
 
-                                    axe.plot(xdata[idata][iB, ilam0:ilam+1] *
-                                             xunitmultiplier, ydata[idata][iB,
-                                                                           ilam0:ilam+1],
+                                    axe.plot(xdata[idata][iB, ilam0:ilam+1],
+                                             ydata[idata][iB,ilam0:ilam+1],
                                              color=colorTab[colorIdx[ifile]
                                                             [idata][iB] % ncol],
                                              label=labeli, **kwargs)
@@ -525,14 +680,12 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
 
                                         if not('color' in kwargs_error):
                                             kwargs_errori = kwargs_error.copy()
-                                            kwargs_errori['color'] = colorTab[colorIdx[ifile]
-                                                                              [idata][iB] % ncol]
+                                            kwargs_errori['color'] = \
+                                            colorTab[colorIdx[ifile][idata][iB] % ncol]
 
-                                        _errorplot(axe, xdata[idata][iB, ilam0:ilam+1]*xunitmultiplier,
-                                                   ydata[idata][iB,
-                                                                ilam0:ilam+1],
-                                                   ydataerr[idata][iB,
-                                                                   ilam0:ilam+1],
+                                        _errorplot(axe, xdata[idata][iB, ilam0:ilam+1],
+                                                   ydata[idata][iB,ilam0:ilam+1],
+                                                   ydataerr[idata][iB,ilam0:ilam+1],
                                                    **kwargs_errori)
 
                             else:
@@ -540,31 +693,29 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
                                 # NOTE: dummy plot with alpha=0 as _colorPLot works
                                 # with collections thus not updating the xlim and ylim
                                 # automatically
-                                axe.plot(xdata[idata][iB, ilam0:ilam+1] *
-                                         xunitmultiplier, ydata[idata][iB,
-                                                                       ilam0:ilam+1],
+                                axe.plot(xdata[idata][iB, ilam0:ilam+1], 
+                                         ydata[idata][iB,ilam0:ilam+1],
                                          color="k", alpha=0)
 
-                                res = _colorPlot(axe, xdata[idata][iB, ilam0:ilam+1] *
-                                                 xunitmultiplier, ydata[idata][iB,
-                                                                               ilam0:ilam+1],
-                                                 cdata[idata][iB, ilam0:ilam+1] *
-                                                 cunitmultiplier,
+                                res = _colorPlot(axe, xdata[idata][iB, ilam0:ilam+1],
+                                                 ydata[idata][iB,ilam0:ilam+1],
+                                                 cdata[idata][iB, ilam0:ilam+1],
                                                  label=labeli, setlim=False, **kwargs)
 
                                 if errorbar == True:
-                                    _errorplot(axe, xdata[idata][iB, ilam0:ilam+1]*xunitmultiplier,
+                                    _errorplot(axe, xdata[idata][iB, ilam0:ilam+1],
                                                ydata[idata][iB, ilam0:ilam+1],
-                                               ydataerr[idata][iB,
-                                                               ilam0:ilam+1],
+                                               ydataerr[idata][iB, ilam0:ilam+1],
                                                **kwargs_error)
 
                 else:
-                    axe.plot(xdata[idata][iB, :]*xunitmultiplier,
-                             ydata[idata][iB, :], color=colorTab[colorIdx[ifile][idata][iB] % ncol])
+                    axe.plot(xdata[idata][iB, :],ydata[idata][iB, :],
+                             color=colorTab[colorIdx[ifile][idata][iB] % ncol])
                     if errorbar == True:
-                        _errorplot(axe, xdata[idata][iB, :]*xunitmultiplier, ydata[idata][iB, :],
-                                   ydataerr[idata][iB, :], color=colorTab[colorIdx[ifile][idata][iB] % ncol], **kwargs_error)
+                        _errorplot(axe, xdata[idata][iB, :], ydata[idata][iB, :],
+                                   ydataerr[idata][iB, :], color=colorTab[
+                                       colorIdx[ifile][idata][iB] % ncol],
+                                   **kwargs_error)
 
     if yscale != None:
         axe.set_yscale(yscale)
@@ -579,7 +730,10 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, xunitmultiplier=1,
 
     axe.set_xlabel(xlabel)
     axe.set_ylabel(ylabel)
-
+    
+    if cname and colorbar:
+        plt.colorbar(res, ax=axe,label=clabel)
+    
     return res
 
 
@@ -596,7 +750,262 @@ class _HandlerColorLineCollection(HandlerLineCollection):
         lc.set_linewidth(artist.get_linewidth())
         return [lc]
 
+###############################################################################
 
+class oimWlTemplatePlots(Figure):
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data=[]
+        self.xunit = u.m
+        
+    def autoShape(self,oifitsList,shape=[["VIS2DATA",None],["VISAMP",None],["VISPHI",None],
+                                       ["T3AMP",None],["T3PHI",None],["FLUXDATA",None]]):  
+        
+        if isinstance(oifitsList, oimData):
+            oifitsList = oifitsList.data
+            
+
+        if type(oifitsList) != type([]):
+            oifitsList = [oifitsList]
+    
+        self.nfiles = len(oifitsList)
+        
+        gs = gridspec.GridSpec(self.nfiles, 1, figure=self)
+        
+        self.datatype=[]
+        for filek in oifitsList:
+            datatypek=[]
+            for shapei in shape:
+                datatypei=[]
+                for shapeij in shapei:
+                    if shapeij!=None:
+                        idx=np.where(oimPlotParamName == shapeij)[0][0]
+                        arrName=oimPlotParamArr[idx]
+                        for hdui in filek:
+                            extver=1
+                            if hdui.name == arrName:
+                                if np.any(hdui.data[shapeij]!=0):
+                                    s=hdui.data[shapeij].shape[0]
+                                    for iB in range(s):
+                                        datatypei.append([extver,iB,shapeij])
+                                extver+=1  
+                if len(datatypei)!=0:                
+                    datatypek.append(datatypei)
+            self.datatype.append(datatypek)
+        self.plotList=[]
+        
+        self.columns_list=[]
+        self.lines_list=[]
+        for k,datatypek in enumerate(self.datatype):
+            
+            ncs=np.array([len(c) for c in datatypek])
+            
+            nc=np.max(ncs)
+            nl=np.size(ncs)
+            
+            self.columns_list.append(nc)
+            self.lines_list.append(nl)
+            
+            plotListk = []
+            gss=gridspec.GridSpecFromSubplotSpec(nl, nc, subplot_spec=gs[k])
+            for il in range(nl):
+                plotListkl = []
+                datatypeil=self.datatype[k][il]
+                nplots_col=len(datatypeil)
+                showXlabel = (k == self.nfiles - 1) and (il == nl - 1 )
+                    
+                datatype_previous = None
+                for ic in range(nc):
+                    self.add_subplot(gss[il,ic])
+                    if ic<nplots_col:
+                        extver,iB,dataType=datatypeil[ic]
+                        if datatype_previous == None:
+                            showYlabel = 1
+                        elif datatype_previous != dataType:
+                            showYlabel = 2
+                        else:
+                            showYlabel = 0
+                        
+                        obj=[self.axes[-1],k,ic,il,extver,iB,dataType,showXlabel,showYlabel]
+                    else:
+                        obj= [self.axes[-1],k,ic,il,None,None,None,False,0]
+                        try:
+                            plotListk[il-1][ic][7] = True
+                        except:
+                            pass
+                        
+                    datatype_previous = dataType
+                        
+                    plotListkl.append(obj)
+                plotListk.append(plotListkl)
+            self.plotList.append(plotListk)
+        
+        self.axes[0].get_shared_x_axes().join(self.axes[0], *self.axes[1:])
+        
+        yaxe_shares=[]
+        yaxe_datatypes=[]
+        for k in range(len(self.plotList)):
+            for l in range(len(self.plotList[k])):
+                for ax,ifile,col,line,extver,iB,dataType,showXlabel,showYlabel in self.plotList[k][l]:
+                    if dataType in yaxe_datatypes:
+                        ax2share = yaxe_shares[yaxe_datatypes.index(dataType)]
+                        ax2share.get_shared_y_axes().join(ax2share,ax)
+                    else:
+                        yaxe_shares.append(ax)
+                        yaxe_datatypes.append(dataType)
+    
+    def plot(self,oifitsList,add=True,plotFunction=plt.Axes.plot,
+             plotFunctionkwarg={}):
+        
+        if isinstance(oifitsList, oimData):
+            oifitsList = oifitsList.data
+        
+        if type(oifitsList) != type([]):
+            oifitsList = [oifitsList]
+            
+        if add:
+            self.data.append(oifitsList)
+        
+        
+        for k in range(len(self.plotList)):
+            for l in range(len(self.plotList[k])):
+                for ax,ifile,col,line,extver,iB,dataType,showXlabel,showYlabel in self.plotList[k][l]:
+                    if dataType:
+
+                        oimSimplePlotWavelength(oifitsList,ifile,dataType,iB,
+                                extver=extver,axe=ax,plotFunction=plotFunction,
+                                xunit = self.xunit,plotFunctionkwarg=plotFunctionkwarg)
+                    else:
+                        ax.axis('off')
+        self.set_xlabels("auto")
+        self.set_ylabels("auto")
+                    
+    
+    def set_xunit(self,xunit):
+        self.xunit = u.Unit(xunit)
+        
+        
+    def set_wllim(self,*arg):
+        for k in range(len(self.plotList)):
+            for l in range(len(self.plotList[k])):
+                for ax,ifile,col,line,extver,iB,dataType,showXlabel,showYlabel in self.plotList[k][l]:
+                    ax.set_xlim(*arg)
+            
+    def set_xlim(self,*arg):
+        self.set_wllim(*arg)
+            
+    def set_ylim(self,dataTypes,*arg):
+        
+        if not(isinstance(dataTypes,list)):
+            dataTypes=[dataTypes]
+        for k in range(len(self.plotList)):
+            for l in range(len(self.plotList[k])):
+                for ax,ifile,col,line,extver,iB,dataType,showXlabel,showYlabel in self.plotList[k][l]:
+                    if dataType in dataTypes:
+                        ax.set_ylim(*arg)
+                    
+    def set_xlabels(self,mode,*arg,**kwargs):
+        if mode=="auto":
+            label = f"$\\lambda$ ({self.xunit:latex})"
+            for k in range(len(self.plotList)):
+                for l in range(len(self.plotList[k])):
+                    for ax,ifile,col,line,extver,iB,dataType,showXlabel,showYlabel in self.plotList[k][l]:
+                        if dataType:
+                            if showXlabel == True:
+        
+                                ax.set_xlabel(label, *arg,**kwargs)
+                            else:
+                                ax.get_xaxis().set_visible(False)
+
+    
+    def set_ylabels(self,mode,*arg):
+        if mode=="auto":
+            for k in range(len(self.plotList)):
+                for l in range(len(self.plotList[k])):
+                    for ax,ifile,col,line,extver,iB,dataType,showXlabel,showYlabel in self.plotList[k][l]:
+                        if dataType:
+                            if showYlabel == 2:
+                                ax.yaxis.set_label_position("right")
+                                ax.yaxis.tick_right()
+                            if showYlabel != 0:
+                                idx = np.where(oimPlotParamName == dataType)[0][0]
+                                label = oimPlotParamLabelShort[idx]
+                                ax.set_ylabel(label,*arg)
+                            else:
+                                ax.get_yaxis().set_visible(False)
+
+               
+    def set_legends(self,*arg,**kwargs):
+        
+        if len(arg) == 2:
+            text0, datatypes = arg
+            x = 0.02
+            y = 0.02
+        elif len(arg) == 4:
+             x, y, text0, datatypes = arg
+        else : 
+            raise TypeError("Wrong number of argument : Should be 2 "\
+                            "(text0, datatypes) or 4 (x, y, text0, datatypes)")
+            
+        if isinstance(datatypes,str):
+            datatypes = [datatypes]
+            
+        for k in range(len(self.plotList)):
+            for l in range(len(self.plotList[k])):
+                for ax,ifile,col,line,extver,iB,dataType,showXlabel,showYlabel in self.plotList[k][l]:
+                    
+                    if  dataType in datatypes :
+                        try :
+                            LENGTH,PA = getBaselineLengthAndPA(
+                                self.data[0][k],arr=getDataArrname(dataType))
+                        except:
+                            pass
+                        BASELINE = getBaselineName(
+                            self.data[0][k],hduname=getDataArrname(dataType))
+
+                        text=text0
+                        if ("$LENGTH$" in text0) :
+                            text = text.replace("$LENGTH$",f"{LENGTH[iB]:.1f}")
+                        if ("$PA$" in text0):
+                            text = text.replace("$PA$",f"{PA[iB]:.1f}")
+                        if ("$BASELINE$") in text0:
+                            text =  text.replace("$BASELINE$",f"{BASELINE[iB]}")
+
+                    
+                        ax.text(x, y, text, transform=ax.transAxes, **kwargs)
+###############################################################################
+    
+def oimSimplePlotWavelength(oifitsList,ifile,dataType,iB,extver=None,axe=None,
+                                plotFunction=plt.Axes.plot,xunit = u.m,
+                                plotFunctionkwarg={}):
+    
+        xmult=u.m.to(xunit)
+
+        idx=np.where(oimPlotParamName == dataType)[0][0]
+        arrName= oimPlotParamArr[idx]
+        errorName=oimPlotParamError[idx]
+        
+        oifitsi=oifitsList[ifile]
+        wl   = getWlFromOifits(oifitsi,arrName,extver=extver)
+        
+       
+        
+        data = oifitsi[arrName,extver].data[dataType][iB,:]
+        err = oifitsi[arrName,extver].data[errorName][iB,:]
+        
+        if axe == None:
+            axe = plt.gca()
+        
+        if plotFunction.__name__ == 'plot':  
+            plotFunction(axe,wl*xmult,data,**plotFunctionkwarg)
+        else:
+            plotFunction(axe,wl*xmult,data,err,**plotFunctionkwarg)
+        
+
+
+
+
+###############################################################################
 class oimAxes(plt.Axes):
     """Class derived from plt.Axes that allows easy plotting of oifits data"""
     name = 'oimAxes'
@@ -649,3 +1058,5 @@ class oimAxes(plt.Axes):
     def set_xscale(self, value, **kwargs):
         super().set_xscale(value, **kwargs)
         self.autoscale_view()
+
+
