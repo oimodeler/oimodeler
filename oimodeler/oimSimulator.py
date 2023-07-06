@@ -5,7 +5,7 @@ import numpy as np
 
 from .oimData import oimData, oimDataType
 from .oimUtils import hdulistDeepCopy
-
+from .oimPlots import oimWlTemplatePlots,_errorplot
 
 def corrFlux2Vis2(vcompl):
     nB = vcompl.shape[0]
@@ -97,14 +97,22 @@ class oimSimulator(object):
         for datai in self.data.data:
             self.simulatedData.addData(hdulistDeepCopy(datai))
 
-    def compute(self, computeChi2=False, computeSimulatedData=False, checkSimulatedData=True):
-        self.vcompl = self.model.getComplexCoherentFlux(self.data.vect_u, self.data.vect_v, self.data.vect_wl, self.data.vect_mjd)
+    def compute(self, computeChi2=False, computeSimulatedData=False, 
+                checkSimulatedData=True, dataTypes = None):
+                 
+        if dataTypes == None:    
+            dataTypes = ["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"]
+            
+            
+        self.vcompl = self.model.getComplexCoherentFlux(self.data.vect_u, 
+                       self.data.vect_v, self.data.vect_wl, self.data.vect_mjd)
 
         nelChi2 = 0
         chi2 = 0
         chi2List = []
 
-        if computeSimulatedData == True and (checkSimulatedData == True or self.simulatedData == None):
+        if computeSimulatedData == True and (checkSimulatedData == True or 
+                                             self.simulatedData == None):
             self.simulatedData = oimData()
             for datai in self.data.data:
                 self.simulatedData.addData(hdulistDeepCopy(datai))
@@ -134,6 +142,7 @@ class oimSimulator(object):
                     idx += nB*nwl
                     quantities = []
                     val = []
+                    
 
                     # NOTE: Computing all observables from complex Coherent Flux
                     if arrType == "OI_VIS2":
@@ -183,27 +192,70 @@ class oimSimulator(object):
                     if computeChi2 == True:
                         for ival in range(len(val)):
                             # NOTE: For phase quantities go to the complex plane
-                            if quantities[ival] in ["VISPHI", "T3PHI"]:
-                                dphi = np.rad2deg(np.angle(np.exp(1j*np.deg2rad(dataVal[ival]))
-                                                           * np.exp(-1j*np.deg2rad((val[ival])))))
-                                chi2i = (dphi*np.logical_not(flag[ival])/dataErr[ival])**2
-
-                            else:
-                                chi2i = ((dataVal[ival]-val[ival])*np.logical_not(flag[ival])/dataErr[ival])**2
-
-                            nelChi2 += np.sum((dataErr[ival] != 0)
-                                              * np.logical_not(flag[ival]))
-                            chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
-                            chi2List.append(chi2i)
+                            if quantities[ival] in dataTypes:
+                                if quantities[ival] in ["VISPHI", "T3PHI"]:
+                                    dphi = np.rad2deg(np.angle(np.exp(1j*np.deg2rad(dataVal[ival]))
+                                                               * np.exp(-1j*np.deg2rad((val[ival])))))
+                                    chi2i = (dphi*np.logical_not(flag[ival])/dataErr[ival])**2
+    
+                                else:
+                                    chi2i = ((dataVal[ival]-val[ival])*np.logical_not(flag[ival])/dataErr[ival])**2
+    
+                                nelChi2 += np.sum((dataErr[ival] != 0)
+                                                  * np.logical_not(flag[ival]))
+                                chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
+                                chi2List.append(chi2i)
 
         if computeChi2 == True:
             self.chi2 = chi2
             self.chi2r = chi2/(nelChi2-len(self.model.getFreeParameters()))
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
+    
+    def plotWlTemplate(self, shape, simulated=True, savefig=None, xunit="m",
+                       plotFuntionData=_errorplot,
+                       plotFunctionSimulatedData = plt.Axes.plot,
+             kwargsData={}, kwargsSimulatedData={},**kwargs):
+    
+    
+            kwargsData0 = dict(color="tab:red", alpha=0.5)
+            
+            kwargsSimulatedData0 = dict(color="tab:blue", lw=2, alpha = 0.7)
+            
+            
+            kwargsData = {**kwargsData0,**kwargsData}
+            kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
+           
+            
+           
+            fig=plt.figure(FigureClass=oimWlTemplatePlots,**kwargs)
+            fig.autoShape(self.data.data,shape=shape)
+            fig.set_xunit(xunit)
+            fig.plot(self.data.data,plotFunction=plotFuntionData, 
+                     plotFunctionkwarg=kwargsData)
+            fig.plot(self.simulatedData.data,plotFunction=plotFunctionSimulatedData,
+                     plotFunctionkwarg=kwargsSimulatedData)
 
-    def plot(self, arr, simulated=True, savefig=None, visLog=False, **kwargs):
+            #fig.set_legends("$LENGTH$m $PA$$^o$","VIS2DATA",fontsize=8)
+            #fig.set_legends(0.1,0.8,"$BASELINE$",["VIS2DATA","VISPHI","T3PHI"],fontweight =1000)
+
+            return fig
+    
+    
+    def plot(self, arr, simulated=True, savefig=None, visLog=False,xunit="cycle/rad", 
+             kwargsData={}, kwargsSimulatedData={}):
+    
         # NOTE: Plotting  data and simulated data
+        
+        kwargsData0 = dict(cname="EFF_WAVE", cunit="micron",lw=2, 
+                           cmap="coolwarm",errorbar=True, label="data")
+        
+        kwargsSimulatedData0 = dict(color="k", ls=":", lw=1, label="model")
+        
+        
+        kwargsData = {**kwargsData0,**kwargsData}
+        kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
+       
 
         if type(arr) != type([]):
             arr = [arr]
@@ -222,14 +274,13 @@ class oimSimulator(object):
         for iax, axi in enumerate(ax):
             # NOTE: Plotting the data with wavelength colorscale + errorbars vs
             # spatial frequencies
-            scale = axi.oiplot(self.data.data, "SPAFREQ", arr[iax], xunit="cycles/mas",
-                               cname="EFF_WAVE", cunitmultiplier=1e6, lw=2, cmap="coolwarm",
-                               errorbar=True, label="data")
+            scale = axi.oiplot(self.data.data, "SPAFREQ", arr[iax],xunit=xunit,
+                               colorbar=False,**kwargsData)
 
             # NOTE: Over-plotting the simulated data as a dotted line vs spatial
             # frequencies
-            axi.oiplot(self.simulatedData.data, "SPAFREQ", arr[iax], xunit="cycles/mas",
-                       color="k", ls=":", lw=1, label="model")
+            axi.oiplot(self.simulatedData.data, "SPAFREQ", arr[iax], 
+                       xunit=xunit,**kwargsSimulatedData)
 
             if axi != ax[-1]:
                 axi.get_xaxis().set_visible(False)
