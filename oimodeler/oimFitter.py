@@ -7,7 +7,6 @@ import emcee
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .oimOptions import oimOptions
 from .oimParam import oimParam
 from .oimSimulator import oimSimulator
 
@@ -93,7 +92,6 @@ class oimFitterEmcee(oimFitter):
 
         moves = [(emcee.moves.DEMove(), 0.8),
                  (emcee.moves.DESnookerMove(), 0.2)]
-        # self.pool = Pool(processes=oimOptions["FittingNCores"])
         self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
                                              self.nfree, self._logProbability,
                                              moves=moves, pool=self.pool, **kwargs)
@@ -130,7 +128,6 @@ class oimFitterEmcee(oimFitter):
 
     def _run(self, **kwargs):
         self.sampler.run_mcmc(self.initialParams, **kwargs)
-        # self.pool.close()
         self.getResults()
 
         return kwargs

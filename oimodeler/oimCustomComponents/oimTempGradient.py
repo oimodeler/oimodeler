@@ -99,6 +99,8 @@ class oimTempGradient(oimComponentRadialProfile):
         -------
         radial_profile : numpy.ndarray
         """
+        wlr = np.unique(wl)
+        r_reduced = r[0, 0].copy()
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
         dist, inner_temp = map(
@@ -210,6 +212,7 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         """The class's constructor."""
         super().__init__(**kwargs)
         self.normalizeImage = False
+        self._unique_wl = None
         self.params["q"] = oimParam(name="q", value=0, unit=u.one,
                                     description="Power-law exponent for the temperature profile")
 
@@ -246,6 +249,11 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         self._t = np.array([0])  # constant value <=> static model
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._eval(**kwargs)
+
+    def _get_unique_wl(self, wl):
+        if self._unique_wl is None:
+            self._unique_wl = np.unique(wl)
+        return self._unique_wl
 
     def _surface_density_profile(self, xx, yy, wl, t):
         """Calculates the surface density profile.
@@ -389,7 +397,7 @@ class oimAsymTempGradient(oimRadialPowerLaw):
         -------
         image : numpy.ndarray
         """
-        wlr = np.unique(wl)
+        wlr = self._get_unique_wl(wl)
         xx_reduced = xx[0, 0, 0].copy()
         xxr, yyr = np.meshgrid(xx_reduced, xx_reduced[None, :])
 
