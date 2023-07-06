@@ -15,7 +15,7 @@ from .oimBasicFourierComponents import *
 from .oimCustomComponents import *
 from .oimComponent import *
 from .oimData import *
-from .oimData import _oimDataType, _oimDataTypeArr, _oimDataTypeErr
+from .oimFluxData import *
 from .oimDataFilter import *
 from .oimFTBackends import numpyFFTBackend, FFTWBackend
 from .oimFitter import *
@@ -26,6 +26,7 @@ from .oimParam import _standardParameters, _interpolators
 from .oimPlots import *
 from .oimSimulator import *
 from .oimUtils import *
+from .oimUtils import  _oimDataType, _oimDataTypeArr, _oimDataTypeErr
 
 np.seterr(invalid='ignore')
 proj.register_projection(oimAxes)
