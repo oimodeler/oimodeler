@@ -23,6 +23,12 @@ class oimFitter(object):
         else:
             raise TypeError("Wrong number of arguments")
 
+
+        try:
+            self.dataTypes = kwargs.pop("dataTypes")
+        except:
+            self.dataTypes = None
+            
         self.data = self.simulator.data
         self.model = self.simulator.model
 
@@ -143,7 +149,7 @@ class oimFitterEmcee(oimFitter):
             if not (low < val < up):
                 return -np.inf
 
-        self.simulator.compute(computeChi2=True)
+        self.simulator.compute(computeChi2=True,dataTypes = self.dataTypes)
         return -0.5 * self.simulator.chi2r
 
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
