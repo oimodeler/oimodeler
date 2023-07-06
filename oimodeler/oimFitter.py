@@ -192,6 +192,13 @@ class oimFitterEmcee(oimFitter):
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
 
+
+        kwargs0 = dict(quantiles=[ 0.16, 0.5, 0.84], show_titles=True, bins=50,
+            smooth=2, smooth1d=2, fontsize=8, title_kwargs={'fontsize': 8},
+            use_math_text=True)
+        
+        kwargs = {**kwargs0,**kwargs}
+
         labels = []
         for namei, uniti in zip(pnames, punits):
             txt = namei
@@ -205,8 +212,7 @@ class oimFitterEmcee(oimFitter):
         idx = np.where(chi2 < chi2limfact*chi2.min())[0]
         c2 = c[idx, :]
 
-        fig = corner.corner(c2, labels=labels, quantiles=[
-                            0.16, 0.5, 0.84], show_titles=True, bins=50, smooth=2, smooth1d=2, fontsize=8, title_kwargs={'fontsize': 8}, use_math_text=True)
+        fig = corner.corner(c2, labels=labels,**kwargs )
 
         if savefig != None:
             plt.savefig(savefig)
