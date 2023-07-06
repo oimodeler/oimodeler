@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 """Data filtering/modifying"""
 import numpy as np
-from .oimData import _oimDataType, _oimDataTypeArr
-from .oimUtils import cutWavelengthRange, getDataArrname,getDataType
+from .oimUtils import cutWavelengthRange,shiftWavelength, spectralSmoothing,\
+    binWavelength, oifitsFlagWithExpression, \
+    computeDifferentialError, setMinimumError, \
+    getDataArrname,getDataType, _oimDataType, _oimDataTypeArr
 
 ###############################################################################
 class oimDataFilterComponent(object):
     """Base class for data filter"""
     name = "Generic Filter"
-    shortname = "Gen filter"
+    shortname = "Genfilt"
     description = "This is the class from which all filters derived"
 
     def __init__(self, **kwargs):
@@ -46,7 +48,7 @@ class oimDataFilterComponent(object):
 class oimRemoveArrayFilter(oimDataFilterComponent):
     """Simple filter removing arrays by type"""
     name = "Remove array by type Filter"
-    shortname = "Remove Arr"
+    shortname = "RemArrFilt"
     description = "Remove array by type Filter"
 
     def __init__(self, **kwargs):
@@ -63,7 +65,7 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
 class oimWavelengthRangeFilter(oimDataFilterComponent):
     """Filter for cutting wavelength range"""
     name = "Wavelength range Filter"
-    shortname = "WlRange Filter"
+    shortname = "WlRgFilt"
     description = "Wavelength range Filter"
 
     def __init__(self, **kwargs):
@@ -80,7 +82,7 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
 class oimDataTypeFilter(oimDataFilterComponent):
     """ """
     name = "Filtering by datatype"
-    shortname = "DataType Filter"
+    shortname = "DTFilt"
     description = "Filtering by datatype : VIS2DATA, VISAMP..."
 
     def __init__(self, **kwargs):
@@ -105,7 +107,7 @@ class oimDataTypeFilter(oimDataFilterComponent):
 class oimKeepDataType(oimDataFilterComponent):
     """ """
     name = "Keep datatype filter"
-    shortname = "KDT"
+    shortname = "KeepDTFilt"
     description = "Keep atatype that are listed: VIS2DATA, VISAMP..."
 
     def __init__(self, **kwargs):
@@ -137,6 +139,118 @@ class oimKeepDataType(oimDataFilterComponent):
                         data[ihdu].data[dataTypeij][:]= 0
         for arr2removei in arr2remove:
             data.pop(arr2removei)    
+
+
+###############################################################################
+class oimWavelengthShiftFilter(oimDataFilterComponent):
+    """Filter for shifting wavelength"""
+    name = "Shift Wavelength Filter"
+    shortname = "WlShFilt"
+    description = "Wavelength Shift Filter"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["wlShift"] = 0
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        shiftWavelength(data, self.params["wlShift"])
+
+
+###############################################################################
+class oimWavelengthSmoothingFilter(oimDataFilterComponent):
+    """Filter for Smoothing wavelength"""
+    name = "Wavelength Smoothing Filter"
+    shortname = "WlSmFilt"
+    description = "Wavelength Smoothing Filter"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["smoothPix"] = 2
+        self.params["normalizeError"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        spectralSmoothing(data, self.params["smoothPix"], 
+                        cols2Smooth=self.params["arr"],
+                        normalizeError=self.params["normalizeError"])
+        
+###############################################################################
+class oimWavelengthBinningFilter(oimDataFilterComponent):
+    """Filter for binning wavelength"""
+    name = "Wavelength binning Filter"
+    shortname = "WlBinFilt"
+    description = "Wavelength binning Filter"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["bin"] = 3
+        self.params["normalizeError"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        binWavelength(data, self.params["bin"],
+                        normalizeError=self.params["normalizeError"])
+
+
+###############################################################################
+class oimFlagWithExpressionFilter(oimDataFilterComponent):
+    """Flaging based on expression """
+    name = "Flag With Expression filter"
+    shortname = "FlagExprFilt"
+    description = "Flaging based on expression"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["expr"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        oifitsFlagWithExpression(data, self.params["arr"],1,self.params["expr"],
+                                 keepOldFlag=self.params["keepOldFlag"])
+
+###############################################################################
+class oimDiffErrFilter(oimDataFilterComponent):
+    """Compute differential error from std of signal inside or outside a range """
+    name = "Differential Error Filter"
+    shortname = "DiffErrFilt"
+    description = "Compute differential error from std of signal inside or outside a range"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["ranges"] = [[0,5]]
+        self.params["rangeType"] = "index"
+        self.params["excludeRange"] = False
+        self.params["dataType"] ="VISPHI"
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+
+        computeDifferentialError(data,ranges=self.params["ranges"],
+                         excludeRange=self.params["excludeRange"],
+                         rangeType=self.params["rangeType"],
+                         dataType=self.params["dataType"],
+                         extver=[None])
+
+###############################################################################
+class oimSetMinErrFilter(oimDataFilterComponent):
+    """Set minimum error on data in % for vis ans deg for phases"""
+    name = "Differential Error Filter"
+    shortname = "DiffErrFilt"
+    description = "Compute differential error from std of signal inside or outside a range"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["values"] = 5
+        self.params["dataType"] ="VISPHI"
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+
+        setMinimumError(data,self.params["dataType"],
+                         self.params["values"], extver=None)
+
 
 ###############################################################################
 class oimDataFilter(object):
