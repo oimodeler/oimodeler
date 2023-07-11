@@ -36,7 +36,7 @@ modular software:
 
   .. note::
 
-    Currently only a simple `emcee <https://emcee.readthedocs.io/en/stable/>`_ fitter is
+    Currently only a simple `emcee <https://emcee.readthedocs.io/en/stable/>`__ fitter is
     implemented.
 
 - The :mod:`oimPlots <oimodeler.oimPlots>` module contains plotting functions for
@@ -127,7 +127,7 @@ oimFitter
 The :mod:`oimFitter <oimodeler.oimFitter>` module is dedicated to model fitting. The
 parent class :func:`oimFitter.oimFitter <oimodeler.oimFitter.oimFitter>` is an abstract
 class that can be inherited from to implement various fitters. Currently. only a simple
-`emcee <https://emcee.readthedocs.io/en/stable>`_-based fitter is implemented
+`emcee <https://emcee.readthedocs.io/en/stable>`__-based fitter is implemented
 with :func:`oimFitter.oimEmceeFitter <oimodeler.oimFitter.oimEmceeFitter>`.
 
 oimPlots

@@ -15,7 +15,7 @@ The ``oimodeler`` package can be installed directly using the pip install comman
     archive for manual download.
 
 
-Alternatively, you can install the complete ``oimodeler `` package (including examples
+Alternatively, you can install the complete ``oimodeler`` package (including examples
 and data) by cloning the `Github repository <https://github.com/oimodeler/oimodeler>`_:
 
 .. code-block:: console
