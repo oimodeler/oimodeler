@@ -16,11 +16,11 @@ import os
 import sys
 from pathlib import Path
 
-#import oimodeler as oim
+import oimodeler as oim
 
 print("Python version")
 print (sys.version)
-#sys.path.insert(0,os.path.abspath('../../'))
+
 sys.path.insert(0,str(Path(__file__).parent.parent.parent / "oimodeler"))
 sys.path.insert(0,str(Path("sphinxext").resolve()))
 
@@ -33,7 +33,7 @@ print(sys.path)
 # -- Project information -----------------------------------------------------
 
 project = 'oimodeler'
-release = "0.8.0" #oim.__version__
+release = oim.__version__
 copyright = '2023, A. Meilland'
 author = 'A. Meilland'
 
