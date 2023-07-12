@@ -87,7 +87,10 @@ html_theme_options = {
     'sticky_navigation': True,
     'navigation_depth': 4,
 }
-html_css_files = ["custom.css"]
+
+html_context = {
+    'css_files': ['_static/custom.css'],
+}
 autodoc_member_order = 'bysource'
 # numpydoc_class_members_toctree = False
 """
@@ -100,3 +103,4 @@ autodoc_default_options = {
     'show-inheritance': False
 }
 """
+
