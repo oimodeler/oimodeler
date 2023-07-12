@@ -13,10 +13,10 @@ jobs:
     - uses: oleksiyrudenko/gha-git-credentials@v2.1.1
       with:
         global: true
-        name: "$GITHUB_ACTOR"
-        email: "$GITHUB_ACTOR@domain.com'
-        actor: "$GITHUB_ACTOR"
-        token: '${{ secrets.GITHUB_TOKEN  }}'
+        name: "${{ GITHUB_ACTOR }}"
+        email: "${{ GITHUB_ACTOR }}@domain.com'
+        actor: "${{ GITHUB_ACTOR }}"
+        token: '${{ secrets.GITHUB_TOKEN }}'
       run: |
         pip install bump2version
         bumpversion patch
