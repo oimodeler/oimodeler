@@ -14,8 +14,9 @@ jobs:
         pip install bump2version
         bumpversion patch
         pwd
-        git config user.name "$GITHUB_ACTOR"
-        git commit
+        git config --global user.email "you@example.com"
+        git config --global user.name "$GITHUB_ACTOR"
+        git commit -m "auto increment version"
         git push 
     - name: Set up Python
       uses: actions/setup-python@v4
