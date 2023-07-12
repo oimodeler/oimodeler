@@ -1,4 +1,4 @@
-name: Publish oimodeler distribution to PyPI and TestPyPI
+name: Publish oimodeler distribution to TestPyPI and PyPI 
 
 on: [push, workflow_dispatch]
 
