@@ -10,9 +10,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: increment package version 
-      run: >-
+      run: |
         pip install bump2version
         bumpversion patch
+        pwd
+        git commit
+        git push
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
