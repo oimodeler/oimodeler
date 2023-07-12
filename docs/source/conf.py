@@ -18,6 +18,9 @@ from pathlib import Path
 
 import oimodeler as oim
 
+
+print("THIS IS A TEST")
+
 print("Python version")
 print (sys.version)
 sys.path.insert(0,str(Path(__file__).parent.parent.parent ))
