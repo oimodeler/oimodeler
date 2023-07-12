@@ -9,16 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: increment package version 
-      uses: oleksiyrudenko/gha-git-credentials@v2-latest
-      with:
-        token: '${{ secrets.GITHUB_TOKEN }}'
-      run: |
-        pip install bump2version
-        bumpversion patch
-        pwd
-        git commit -m "auto increment version"
-        git push 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
