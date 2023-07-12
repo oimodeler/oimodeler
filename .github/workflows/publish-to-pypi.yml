@@ -10,12 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: increment package version 
-    - uses: oleksiyrudenko/gha-git-credentials@v2.1.1
+      uses: oleksiyrudenko/gha-git-credentials@v2-latest
       with:
-        global: true
-        name: "${{ GITHUB_ACTOR }}"
-        email: "${{ GITHUB_ACTOR }}@domain.com'
-        actor: "${{ GITHUB_ACTOR }}"
         token: '${{ secrets.GITHUB_TOKEN }}'
       run: |
         pip install bump2version
