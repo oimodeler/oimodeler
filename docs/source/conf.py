@@ -12,14 +12,12 @@
 #
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+print("THIS IS A TEST")
+
 import os
 import sys
 from pathlib import Path
-
 import oimodeler as oim
-
-
-print("THIS IS A TEST")
 
 print("Python version")
 print (sys.version)
