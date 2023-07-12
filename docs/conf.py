@@ -20,9 +20,11 @@ from pathlib import Path
 
 print("Python version")
 print (sys.version)
-#sys.path.insert(0,os.path.abspath('../../'))
-sys.path.insert(0,str(Path(__file__).parent.parent.parent / "oimodeler"))
-sys.path.insert(0,str(Path("sphinxext").resolve()))
+
+sys.path.append(str(Path(__file__).parent.parent.parent ))
+#sys.path.remove(str(Path(__file__).parent.parent.parent ))
+#sys.path.remove(str(Path(__file__).parent.parent.parent / "docs"))
+#sys.path.insert(0,str(Path("sphinxext").resolve()))
 
 
 print(sys.path)
@@ -49,7 +51,6 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'autodocsumm',
     'sphinx_rtd_theme',
 ]
 
