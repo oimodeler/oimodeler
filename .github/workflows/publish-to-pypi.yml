@@ -10,12 +10,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: increment package version 
+    - uses: oleksiyrudenko/gha-git-credentials@v2.1.1
+      with:
+        global: true
+        name: "$GITHUB_ACTOR"
+        email: "$GITHUB_ACTOR@domain.com'
+        actor: "$GITHUB_ACTOR"
+        token: '${{ secrets.GITHUB_TOKEN  }}'
       run: |
         pip install bump2version
         bumpversion patch
         pwd
-        git config --global user.email "you@example.com"
-        git config --global user.name "$GITHUB_ACTOR"
         git commit -m "auto increment version"
         git push 
     - name: Set up Python
