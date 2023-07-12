@@ -16,15 +16,16 @@ import os
 import sys
 from pathlib import Path
 
-#import oimodeler as oim
+import oimodeler as oim
+
+
+print("THIS IS A TEST")
 
 print("Python version")
 print (sys.version)
-
-sys.path.append(str(Path(__file__).parent.parent.parent ))
-#sys.path.remove(str(Path(__file__).parent.parent.parent ))
-#sys.path.remove(str(Path(__file__).parent.parent.parent / "docs"))
-#sys.path.insert(0,str(Path("sphinxext").resolve()))
+sys.path.insert(0,str(Path(__file__).parent.parent.parent ))
+sys.path.insert(0,str(Path(__file__).parent.parent.parent / "oimodeler"))
+sys.path.insert(0,str(Path("sphinxext").resolve()))
 
 
 print(sys.path)
@@ -35,7 +36,7 @@ print(sys.path)
 # -- Project information -----------------------------------------------------
 
 project = 'oimodeler'
-release = "0.8.0" #oim.__version__
+release = oim.__version__
 copyright = '2023, A. Meilland'
 author = 'A. Meilland'
 
@@ -51,6 +52,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'autodocsumm',
     'sphinx_rtd_theme',
 ]
 
@@ -88,7 +90,10 @@ html_theme_options = {
     'sticky_navigation': True,
     'navigation_depth': 4,
 }
-html_css_files = ["custom.css"]
+
+html_context = {
+    'css_files': ['_static/custom.css'],
+}
 autodoc_member_order = 'bysource'
 # numpydoc_class_members_toctree = False
 """
@@ -101,3 +106,4 @@ autodoc_default_options = {
     'show-inheritance': False
 }
 """
+
