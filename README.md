@@ -19,6 +19,8 @@ Oimodeler is a modular modelling tool for optical interferometry
 ## Features
 ### Modules:
 * **oimModel** : Create models with various components as bricks
+* **oimComponent** : component for building models
+* **oimParam** : Component parameters and parameters interpolators
 * **oimData** :  Handle interferometric, spectroscopic and photometric data
 * **oimDataFilter** : Filtering and modifying data (wavlengths range cut, smoothing, removing flags...)
 * **oimSimulator** : Main class holding evertyhing together and producing final results :plots, tables...
@@ -28,12 +30,15 @@ Oimodeler is a modular modelling tool for optical interferometry
 
 ### :warning: Under Development :warning:
 The following modules have only been partially implemented
-* oimModel: Fourier & image plans components. Chromaticity and time dependence of components and parameters.
-* oimData: only interferometric data
-* oimDataFilter: Wavlengths range cut, datatype selection
+* oimModel:  Basic functionnalities for building model from all kind of components 
+* oimComponent: Many basics Fourier-based components, possiblity to build radial profile and images based components, import of image at fits format and a few advanced components (kinematic disk, fast-rotator)
+* oimParam: Possibility to link parameters, normalize them and various interpolators in wavelength and time
+* oimData: Interferometric data and basic wrapper for photometric/spectroscopic data
+* oimDataFilter: Wavelength range cut and shift, data smoothing and binning, datatype selection, flagging based on criteria
 * oimSimulator: Simulated data and chi2 computation with filtering
-* oimPlot: Basics plots of oifits data (see examples below)
-* oimUtils: mainly helpers for oifits format (get information, create new tables...)
+* oimFitter:  Basic MCMC fitter based on emcee module.
+* oimPlot: Various plots for oifits data (see examples below)
+* oimUtils: Helpers for oifits format: retrieve baselines info, create new tables, manipulated data...
 )
 
 ## Examples
