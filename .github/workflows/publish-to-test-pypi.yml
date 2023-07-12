@@ -1,6 +1,6 @@
 name: Publish oimodeler distribution to PyPI and TestPyPI
 
-on: push    workflow_dispatch
+on: [push, workflow_dispatch]
 
 
 jobs:
