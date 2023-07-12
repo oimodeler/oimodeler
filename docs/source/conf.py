@@ -17,17 +17,16 @@ print("THIS IS A TEST")
 import os
 import sys
 from pathlib import Path
-import oimodeler as oim
+
 
 print("Python version")
 print (sys.version)
 sys.path.insert(0,str(Path(__file__).parent.parent.parent ))
 sys.path.insert(0,str(Path(__file__).parent.parent.parent / "oimodeler"))
 sys.path.insert(0,str(Path("sphinxext").resolve()))
-
-
 print(sys.path)
 
+import oimodeler as oim
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here.
 
