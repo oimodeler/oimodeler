@@ -103,11 +103,12 @@ Table of Contents
 
 .. toctree::
     overview
+    news
     installation
     getting_started
     examples
     api
-    :maxdepth: 4
+    :maxdepth: 2
 
 Index
 =====
