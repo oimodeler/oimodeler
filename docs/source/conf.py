@@ -102,3 +102,7 @@ autodoc_default_options = {
 }
 """
 
+autodoc_default_options = {'autosummary': True,
+                           'autosummary-no-nesting':False}
+
+

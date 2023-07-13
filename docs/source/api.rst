@@ -37,6 +37,31 @@ The oimodeler library contains the following modules:
 | :ref:`oimOptions`                    | Global options of the oimodeler software     |
 +--------------------------------------+----------------------------------------------+
 
-
+.. toctree::
+   :hidden:
+   
+   oimParam
+   oimModel
+   oimComponent
+   oimBasicFourierComponents
+   oimCustomComponents
+   oimFTBackends
+   oimData
+   oimFluxData
+   oimDataFilter
+   oimSimulator
+   oimFitter
+   oimPlots
+   oimUtils
+   oimOptions
+   
+   
+   
+   
+   
+   
+   
+   
+   
 
 
