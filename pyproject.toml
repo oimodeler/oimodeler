@@ -8,7 +8,7 @@ dynamic = ["version"]
 authors = [
     { name = "Anthony meilland", email = "ame@oca.eu" },
 ]
-description = 'Optical interferometry modelling tool'
+description = "Optical interferometry modelling tool"
 keywords = ["optical", "interferometry", "modeling"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -28,14 +28,15 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-    'astropy>=5.2.1',
-    'astroquery>=0.4.6',
-    'corner>=2.2.1',
-    'emcee>=3.1.4',
-    'matplotlib>=3.6.3',
-    'numpy>=1.24.1',
-    'scipy>=1.10.0',
-    'tqdm>=4.64.1'
+    "astropy>=5.2.1",
+    "astroquery>=0.4.6",
+    "corner>=2.2.1",
+    "emcee>=3.1.4",
+    "matplotlib>=3.6.3",
+    "numpy>=1.24.1",
+    "scipy>=1.10.0",
+    "tqdm>=4.64.1",
+    "pyFFTW>=0.13.1",
 ]
 
 [options.extras_require]
