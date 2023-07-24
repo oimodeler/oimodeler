@@ -21,7 +21,22 @@ import pyfftw
 from numpy.typing import ArrayLike
 from scipy import interpolate
 
-from oimOptions import oimOptions
+
+try:
+    # NOTE: Check if `FFTW` backend is properly installed.
+    test_array = pyfftw.empty_aligned(100, dtype="complex128")
+    fft_object = pyfftw.FFTW(test_array, test_array, axes=(0,))
+    transformed = fft_object(test_array)
+    FFTW_CHECK = True
+except Exception:
+    FFTW_CHECK = False
+    def _err() -> None:
+        """Import error function that gets called when the FFTWBackend
+        dependendy pyfftw has not been properly imported."""
+        raise ImportError("This `FFTWBackend`-class has not been defined for "
+                          "`oimodeler`. This means that the `FFTW` library is "
+                          "either missing or has not been properly "
+                          "installed.")
 
 
 class numpyFFTBackend:
@@ -163,15 +178,6 @@ class numpyFFTBackend:
         return real+imag*1j
 
 
-def _err() -> None:
-    """Import error function that gets called when the FFTWBackend
-    dependendy pyfftw has not been properly imported."""
-    raise ImportError("This `FFTWBackend`-class has not been defined for "
-                      "`oimodeler`. This means that the `FFTW` library is "
-                      "either missing or has not been properly "
-                      "installed.")
-
-
 class FFTWBackend:
     """FFT backend based on the python implementation of FFTW library.
 
@@ -224,7 +230,7 @@ class FFTWBackend:
         bool
             In the case of the numpy FFT backend it is always equal to True.
         """
-        if oimOptions["FTfftw"]:
+        if not FFTW_CHECK:
             _err()
             return
         try:
@@ -271,7 +277,7 @@ class FFTWBackend:
             IN and OUT arrays at `pyfftw.empty_aligned` and its transform
             as `pyfftw.FFTW`.
         """
-        if oimOptions["FTfftw"]:
+        if not FFTW_CHECK:
             _err()
             return
         nwl, nt, dim = wlin.size, tin.size, im.shape[3]
@@ -306,7 +312,7 @@ class FFTWBackend:
            proper spatial, spectral and temporal coordinates.
 
         """
-        if oimOptions["FTfftw"]:
+        if not FFTW_CHECK:
             _err()
             return
 
