@@ -99,8 +99,20 @@ class oimFitterEmcee(oimFitter):
         moves = [(emcee.moves.DEMove(), 0.8),
                  (emcee.moves.DESnookerMove(), 0.2)]
 
-        self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
-                                             self.nfree, self._logProbability, moves=moves, **kwargs)
+        if not ('samplerFile' in kwargs):
+            samplerFile = None
+        else : 
+            samplerFile = kwargs.pop('samplerFile')
+        
+        if  samplerFile == None:
+            self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
+                                 self.nfree, self._logProbability, moves=moves, 
+                                      **kwargs)
+        else :
+            backend = emcee.backends.HDFBackend(samplerFile)
+            self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
+                     self.nfree, self._logProbability, moves=moves, 
+                            backend=backend, **kwargs)
         return kwargs
 
     def _initGaussian(self):
