@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Model parameter and parameter interpolators."""
 import sys
-from typing import Union, Optional, Dict
+from typing import Union, Dict
 
 import astropy.units as u
 import astropy.constants as const
@@ -792,8 +792,8 @@ class oimParamLinearStarWl(oimParamInterpolator):
         """
         if self._stellar_angular_radius is None:
             distance = self.dist.value*self.dist.unit
-            self._stellar_angular_radius = (self.stellar_radius.to(u.m) \
-                                            / distance.to(u.m)*u.rad).to(u.mas)
+            self._stellar_angular_radius =\
+                    self.stellar_radius.to(u.m)*distance.to(u.m)*u.rad
         return self._stellar_angular_radius
 
     def _getParams(self):
@@ -816,7 +816,7 @@ class oimParamLinearStarWl(oimParamInterpolator):
             The star's flux.
         """
         plancks_law = models.BlackBody(temperature=self.temp.value*self.temp.unit)
-        return plancks_law(wl).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2))
+        return plancks_law(wl).to(u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
 
     def _interpFunction(self, wl: np.ndarray, t: np.ndarray) -> np.ndarray:
         """Calculates the stellar flux from its distance and radius and

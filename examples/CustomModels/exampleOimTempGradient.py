@@ -15,34 +15,45 @@ f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
 data.setFilter(oim.oimDataFilter([f1, f2]))
 
+# NOTE: Grid can be changed from 'linear' to 'logarithmic'.
+oim.oimOptions["GridType"] = "linear"
+
+# NOTE: The padding of the 1D-grid can be set (Multiplies to outer radius at
+# grid creation). Default is 'None/1' and doesn't pad.
+oim.oimOptions["FTBinningFactor"] = 2
+
 # NOTE: Specifying the parameter space
-tg = oim.oimTempGradient(dim=128, dist=140, kappa_abs=276, Tin=1500,
+tg = oim.oimTempGradient(dim=128, dist=140, kappa_abs=276, inner_temp=1500,
                          rin=0.5, rout=1, p=0.5, q=0.5,
-                         Mdust=0.11, pa=30, elong=2, f=0.8)
+                         dust_mass=0.11, pa=30, elong=2, f=0.8)
 
 tg.params["rin"].set(min=0, max=20)
 tg.params["rout"].set(min=10, max=20)
 tg.params["q"].set(min=0, max=1)
 tg.params["p"].set(min=0, max=1)
-tg.params["Mdust"].set(min=0, max=3)
+tg.params["dust_mass"].set(min=0, max=3)
 tg.params["elong"].set(min=1, max=50)
 tg.params["pa"].set(min=0, max=360)
 tg.params["f"].free = False
 
+# NOTE: Set the wavelengths to be fitted.
+# Needs to be the same for all components.
+tg._wl = [8e-6, 10e-6]
+
 # NOTE: Model creation
 model = oim.oimModel([tg])
 
-# sim = oim.oimSimulator(data=data, model=model)
-# sim.compute(computeChi2=True, computeSimulatedData=True)
-#
-# # NOTE: Perfoming the model-fitting
+sim = oim.oimSimulator(data=data, model=model)
+sim.compute(computeChi2=True, computeSimulatedData=True)
+
+# NOTE: Perfoming the model-fitting
 # fit = oim.oimFitterEmcee(data, model, nwalkers=25)
 # fit.prepare(init="random")
 # fit.run(nsteps=100, progress=True)
-#
+
 # figWalkers, axeWalkers = fit.walkersPlot()
 # fig0, ax0 = sim.plot(["VIS2DATA", "T3PHI"])
-#
+
 # best, err_l, err_u, err = fit.getResults(mode='best', discard=10)
 #
 # NOTE: Plotting images of the model

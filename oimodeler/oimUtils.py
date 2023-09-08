@@ -2,7 +2,8 @@
 """Various utilities for optical interferometry"""
 from typing import Optional, Union
 
-import astropy.units as units
+import astropy.units as u
+import astropy.constants as const
 import numpy as np
 from astropy.coordinates import Angle
 from astropy.io import fits
@@ -12,29 +13,30 @@ from astropy.modeling import models
 from .oimOptions import oimOptions
 
 
-def reshape_and_fill(array: np.ndarray, wavelengths: np.ndarray) -> np.ndarray:
-    """Reshapes an array that is independent of time and wavelength to the
-    (nt, nwl, ndim, ndim) shape.
+def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
+    """Planck's law with output in cgs.
 
     Parameters
     ----------
-    array : np.ndarray
-        An array of the shape
-    wavelenghts : np.ndarray
-        The wavelenghts of the shape (nt, nwl, ndim, ndim).
+    wavelength : np.ndarray
+        The wavelength [cm].
+    temperature ſ np.ndarray
+        The temperature [K].
 
     Returns
     -------
-    reshaped_array : np.ndarray
+    blackbody : np.ndarray
+        The blackbody [erg/(cm² s Hz sr)].
     """
-    new_array = np.zeros((*wavelengths.shape[:2], *array.shape))
-    new_array[:, :] = array
-    return new_array
+    frequencies = (const.c.cgs/(wavelength*u.m).to(u.cm))[:, np.newaxis]
+    temperature = temperature[np.newaxis, :]*u.K
+    breakpoint()
+    return ((2*const.h.cgs*frequencies**3/const.c.cgs**2)\
+            * (1/(np.exp(const.h.cgs*frequencies/(const.k_B.cgs*temperature))-1))).value
 
-# TODO: Maybe even optimize calculation time further in the future
-# Got it down from 3.5s to 0.66s for 3 wavelengths. It is 0.19s per wl.
-def calculate_intensity(wavelengths: units.um,
-                        temp_profile: units.K,
+
+def calculate_intensity(wavelengths: u.um,
+                        temp_profile: u.K,
                         pixel_size: Optional[float] = None) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
@@ -54,20 +56,13 @@ def calculate_intensity(wavelengths: units.um,
     intensity : numpy.ndarray
         Intensity per pixel.
     """
-    plancks_law = models.BlackBody(temperature=temp_profile*units.K)
+    plancks_law = models.BlackBody(temperature=temp_profile*u.K)
     spectral_profile = []
-    pixel_size *= units.rad
-    for wavelength in wavelengths*units.m:
+    pixel_size *= u.rad
+    for wavelength in wavelengths*u.m:
         spectral_radiance = plancks_law(wavelength).to(
-            units.erg/(units.cm**2*units.Hz*units.s*units.rad**2))
-
-        if oimOptions["ModelOutput"] == "corr_flux":
-            if pixel_size is None:
-                raise ValueError("'pixSize' needs to be directly or indirectly"
-                                 " (via the 'fov'-parameter) set by the user!")
-            spectral_profile.append((spectral_radiance*pixel_size**2).to(units.Jy).value)
-        else:
-            spectral_profile.append(spectral_radiance.value)
+                u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
+        spectral_profile.append((spectral_radiance*pixel_size**2).to(u.Jy).value)
     return np.array(spectral_profile)
 
 
@@ -155,11 +150,10 @@ def get_next_power_of_two(number: Union[int, float]) -> int:
     return int(2**np.ceil(np.log2(number)))
 
 
-def convert_radial_profile_to_meter(radius: Union[float, np.ndarray],
-                                    distance: float,
-                                    rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
-    """Converts the distance from mas to meters for a radial profile around
-    a star via the angular diameter small angle approximation.
+def convert_angle_to_distance(radius: Union[float, np.ndarray],
+                              distance: float,
+                              rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
+    """Converts an angle from milliarcseconds to meters.
 
     Parameters
     ----------
@@ -168,8 +162,8 @@ def convert_radial_profile_to_meter(radius: Union[float, np.ndarray],
     distance : float
         The star's distance to the observer [pc].
     rvalue : bool, optional
-        If toggled, returns the value witout units else returns
-        an astropy.units.Quantity object. The default is False.
+        If toggled, returns the value witout u.else returns
+        an astropy.u.Quantity object. The default is False.
 
     Returns
     -------
@@ -185,8 +179,41 @@ def convert_radial_profile_to_meter(radius: Union[float, np.ndarray],
     where d is the distance from the star and D is the distance from the star
     to the observer and ..math::`\\delta` is the angular diameter.
     """
-    radius = ((radius*units.mas).to(units.arcsec).value*distance*units.au).to(units.m)
-    return radius.value if rvalue else radius
+    radius = ((radius*u.mas).to(u.arcsec).value*distance*u.pc).to(u.m)
+    return radius if rvalue else radius.value
+
+
+def convert_distance_to_angle(radius: Union[float, np.ndarray],
+                              distance: float,
+                              rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
+    """Converts a distance from meters to an angle in milliarcseconds.
+
+    Parameters
+    ----------
+    radius : float or numpy.ndarray
+        The radius of the object around the star [au].
+    distance : float
+        The star's distance to the observer [pc].
+    rvalue : bool, optional
+        If toggled, returns the value witout u.else returns
+        an astropy.u.Quantity object. The default is False.
+
+    Returns
+    -------
+    radius : float or numpy.ndarray
+        The radius of the object around the star [m].
+
+    Notes
+    -----
+    The formula for the angular diameter small angle approximation is
+
+    .. math:: \\delta = \\frac{d}{D}
+
+    where d is the distance from the star and D is the distance from the star
+    to the observer and ..math::`\\delta` is the angular diameter.
+    """
+    radius = (((radius*u.au).to(u.m)/(distance*u.pc).to(u.m))*u.rad).to(u.mas)
+    return radius if rvalue else radius.value
 
 
 def getBaselineName(oifits, hduname="OI_VIS2", length=False, angle=False,
@@ -411,9 +438,9 @@ def getSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
     wl_insnames = np.array([data[i].header['INSNAME'] for i in idx_wlarr])
 
     if unit == "cycles/mas":
-        mult = units.mas.to(units.rad)
+        mult = u.mas.to(u.rad)
     elif unit == "cycles/arcsec":
-        mult = units.arcsec.to(units.rad)
+        mult = u.arcsec.to(u.rad)
     elif unit == "Mlam":
         mult = 1/(1e6)
     else:
@@ -526,7 +553,7 @@ def getWlFromFitsImageCube(header, outputUnit=None):
     Returns
     -------
     wl: float
-        The wavelength in the given unit of the fits cube or the units specified
+        The wavelength in the given unit of the fits cube or the u.specified
         by the user if outputUnit is set
 
     """
@@ -541,9 +568,9 @@ def getWlFromFitsImageCube(header, outputUnit=None):
 
     if outputUnit:
         if "CUNIT3" in header:
-            unit0 = units.Unit(header["CUNIT3"])
+            unit0 = u.Unit(header["CUNIT3"])
         else:
-            unit0 = units.m
+            unit0 = u.m
         wl*unit0.to(outputUnit)
 
     return wl
@@ -626,14 +653,14 @@ def createOiTargetFromSimbad(names):
     ntargets = len(names)
     rad = Angle(data['RA'], unit="hourangle").deg
     dec = Angle(data['DEC'], unit="deg").deg
-    ra_err = (data['COO_ERR_MAJA'].data*units.mas).to_value(unit='deg')
-    dec_err = (data['COO_ERR_MINA'].data*units.mas).to_value(unit='deg')
-    pmra = (data['PMRA'].data*units.mas).to_value(unit='deg')
-    pmdec = (data['PMDEC'].data*units.mas).to_value(unit='deg')
-    pmra_err = (data['PM_ERR_MAJA'].data*units.mas).to_value(unit='deg')
-    pmdec_err = (data['PM_ERR_MINA'].data*units.mas).to_value(unit='deg')
-    plx_value = (data['PLX_VALUE'].data*units.mas).to_value(unit='deg')
-    plx_error = (data['PLX_ERROR'].data*units.mas).to_value(unit='deg')
+    ra_err = (data['COO_ERR_MAJA'].data*u.mas).to_value(unit='deg')
+    dec_err = (data['COO_ERR_MINA'].data*u.mas).to_value(unit='deg')
+    pmra = (data['PMRA'].data*u.mas).to_value(unit='deg')
+    pmdec = (data['PMDEC'].data*u.mas).to_value(unit='deg')
+    pmra_err = (data['PM_ERR_MAJA'].data*u.mas).to_value(unit='deg')
+    pmdec_err = (data['PM_ERR_MINA'].data*u.mas).to_value(unit='deg')
+    plx_value = (data['PLX_VALUE'].data*u.mas).to_value(unit='deg')
+    plx_error = (data['PLX_ERROR'].data*u.mas).to_value(unit='deg')
 
     target_id = fits.Column(name="TARGET_ID", format="I",
                             array=np.arange(1, ntargets+1))

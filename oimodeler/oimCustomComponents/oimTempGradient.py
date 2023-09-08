@@ -1,14 +1,10 @@
 import astropy.units as u
-import astropy.constants as const
 import numpy as np
 
-from line_profiler import LineProfiler
-
 from ..oimComponent import oimComponentRadialProfile
+from ..oimOptions import oimOptions
 from ..oimParam import oimParam
-from ..oimUtils import convert_radial_profile_to_meter,\
-    calculate_intensity, reshape_and_fill
-from .oimRadialPowerLaw import oimRadialPowerLaw
+from ..oimUtils import blackbody, convert_distance_to_angle
 
 
 class oimTempGradient(oimComponentRadialProfile):
@@ -57,6 +53,7 @@ class oimTempGradient(oimComponentRadialProfile):
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
+        self.static_radius, self.unique_wl = None, None
         self.params["rin"] = oimParam(name="rin", value=0, unit=u.au,
                                       description="Inner radius of the disk")
         self.params["rout"] = oimParam(name="rout", value=0, unit=u.au,
@@ -65,11 +62,11 @@ class oimTempGradient(oimComponentRadialProfile):
                                     description="Power-law exponent for the temperature profile")
         self.params["p"] = oimParam(name="p", value=0, unit=u.one,
                                     description="Power-law exponent for the dust surface density profile")
-        self.params["Mdust"] = oimParam(name="Mdust", value=0, unit=u.M_sun,
-                                        description="Mass of the dusty disk")
-        self.params["Tin"] = oimParam(name="Tin", value=0,
-                                      unit=u.K, free=False,
-                                      description="Inner radius temperature")
+        self.params["dust_mass"] = oimParam(name="dust_mass", value=0, unit=u.M_sun,
+                                            description="Mass of the dusty disk")
+        self.params["inner_temp"] = oimParam(name="inner_temp", value=0,
+                                             unit=u.K, free=False,
+                                             description="Inner radius temperature")
         self.params["kappa_abs"] = oimParam(name="kappa_abs", value=0,
                                             unit=u.cm**2/u.g, free=False,
                                             description="Dust mass absorption coefficient")
@@ -77,9 +74,13 @@ class oimTempGradient(oimComponentRadialProfile):
                                        unit=u.pc, free=False,
                                        description="Distance of the star")
 
-        self._t = np.array([0])  # constant value <=> static model
-        self._wl = None  # None value <=> All wavelengths (from Data)
         self._eval(**kwargs)
+
+    def get_unique_wl(self, wl: np.ndarray) -> np.ndarray:
+        """Gets the unique wavelengths for faster calculation."""
+        if self.unique_wl is None:
+            self.unique_wl = np.unique(wl)
+        return self.unique_wl
 
     def _radialProfileFunction(self, r: np.ndarray,
                                wl: np.ndarray, t: np.ndarray) -> np.ndarray:
@@ -99,459 +100,47 @@ class oimTempGradient(oimComponentRadialProfile):
         -------
         radial_profile : numpy.ndarray
         """
-        wlr = np.unique(wl)
-        r_reduced = r[0, 0].copy()
+        wl = self.get_unique_wl(wl)
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
         dist, inner_temp = map(
-            lambda x: self.params[x](wl, t), ["dist", "Tin"])
-        dust_mass = self.params["Mdust"](wl, t)*const.M_sun.value*1e3
+            lambda x: self.params[x](wl, t), ["dist", "inner_temp"])
+        dust_mass = self.params["dust_mass"](wl, t)\
+                * self.params["dust_mass"].unit.to(u.g)
         kappa_abs = self.params["kappa_abs"](wl, t)
 
         rin_mas, rout_mas = map(lambda x: 1e3*x/dist, [rin, rout])
-        rin_cm, rout_cm = map(
-            lambda x: x*self.params["rin"].unit.to(u.cm), [rin, rout])
 
-        # NOTE: Temperature radial profile
+        # NOTE: Temperature profile.
         temp_profile = inner_temp*(r / rin_mas)**(-q)
 
-        # NOTE: Surface density radial profile
+        # NOTE: Surface density profile.
+        rin_cm, rout_cm = map(
+            lambda x: x*self.params["rin"].unit.to(u.cm), [rin, rout])
         if p == 2:
             sigma_in = dust_mass/(2.*np.pi*np.log(rout_cm/rin_cm)*rin_cm**2)
         else:
             f = ((rout_cm/rin_cm)**(2-p)-1)/(2-p)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
         sigma_profile = sigma_in*(r / rin_mas)**(-p)
-        spectral_density = (2*const.h.value*const.c.value**2/wl**5)*np.divide(
-            1., np.exp((const.h.value*const.c.value)/(wl*const.k_B.value*temp_profile))-1)
-        spectral_density *= 1-np.exp(-sigma_profile*kappa_abs)
+
+        # NOTE: Spectral density.
+        spectral_density = blackbody(wl, temp_profile)*(1-np.exp(-sigma_profile*kappa_abs))
         return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
 
     @property
     def _r(self):
         """Gets the radial profile [mas]."""
-        if False:
-            rout = self.params["rout"](self._wl, self._t)
-        else:
-            rout = self.params["rout"](self._wl, 1e99)
-        rmax = 4*rout
-        r = np.linspace(0, 1, self.params["dim"](self._wl, self._t))*1e+3*rmax / \
-            self.params["dist"](self._wl, self._t)
-        return r
+        rout = convert_distance_to_angle(
+                self.params["rout"].value, self.params["dist"].value)
+        binning =  1 if oimOptions["FTbinningFactor"] is None\
+                else oimOptions["FTbinningFactor"]
+        rmax = binning*rout
+        if oimOptions["GridType"] == "linear":
+            return np.linspace(0, 1, self.params["dim"].value)*rmax
+        return np.logspace(0.0, np.log10(rmax), self.params["dim"].value)
 
     @_r.setter
     def _r(self, value):
         """Sets the radial profile [mas]."""
         return
-
-
-class oimAsymTempGradient(oimRadialPowerLaw):
-    """A ring defined by a radial temperature profile in r^q
-    that is multiplied by an azimuthal modulation. 
-    and an asymmetric
-    radial dust surface density profile in r^p.
-
-    Parameters
-    ----------
-    rin : float
-        Inner radius of the disk [mas].
-    rout : float
-        Outer radius of the disk [mas].
-    Tin : float
-        Inner radius temperature [K].
-    Mdust : float
-        Mass of the dusty disk [M_sun].
-    a : float
-        Azimuthal modulation amplitude.
-    phi : float
-        Azimuthal modulation angle [deg].
-    q : float
-        Power-law exponent for the temperature profile.
-    p : float
-        Power-law exponent for the dust surface density profile.
-    kappa_abs : float or oimInterp
-        Dust mass absorption coefficient [cm2.g-1].
-    dist : float
-        Distance of the star [pc].
-    fov: float
-        The field of view [mas].
-    pa : float
-        Positional angle [deg].
-    elong : float
-        Elongation of the disk.
-    dim : float
-        Dimension of the image.
-
-    Attributes
-    ----------
-    params : dict with keys of str and values of oimParam
-        Dictionary of parameters.
-    pixSize : float
-        Pixel size [mas].
-    _t : numpy.ndarray
-        Array of time values [second].
-    _wl : numpy.ndarray
-        Array of wavelength values [micron].
-
-    Methods
-    -------
-    _imageFunction(xx, yy, wl, t)
-        Calculates a 2D-image from a dust-surface density- and
-        temperature profile.
-    """
-    name = "Asymmetric Temperature Gradient"
-    shortname = "AsymTempGrad"
-    elliptic = True
-    asymmetric = True
-    asymmetric_image = True
-    asymmetric_surface_density = False
-    const_temperature = False
-    continuum_contribution = False
-
-    def __init__(self, **kwargs):
-        """The class's constructor."""
-        super().__init__(**kwargs)
-        self.normalizeImage = False
-        self._unique_wl = None
-        self.params["q"] = oimParam(name="q", value=0, unit=u.one,
-                                    description="Power-law exponent for the temperature profile")
-
-        if self.const_temperature:
-            self.params["q"].free = False
-
-        self.params["p"].description = "Power-law exponent for the dust surface density profile"
-        self.params["Mdust"] = oimParam(name="Mdust", value=0, unit=u.M_sun,
-                                        description="Mass of the dusty disk")
-        self.params["Tin"] = oimParam(name="Tin", value=0,
-                                      unit=u.K, free=False,
-                                      description="Inner radius temperature")
-        self.params["kappa_abs"] = oimParam(name="kappa_abs", value=0,
-                                            unit=u.cm**2/u.g, free=False,
-                                            description="Dust mass absorption coefficient")
-        self.params["dist"] = oimParam(name="dist", value=0,
-                                       unit=u.pc, free=False,
-                                       description="Distance of the star")
-        self.params["Teff"] = oimParam(name="Teff", value=0,
-                                       unit=u.K, free=False,
-                                       description="The star's effective Temperature")
-        self.params["lum"] = oimParam(name="lum", value=0,
-                                      unit=u.Lsun, free=False,
-                                      description="The star's luminosity")
-
-        if self.continuum_contribution:
-            self.params["cont_weight"] = oimParam(name="cont_weight", value=0,
-                                                  unit=u.one, free=True,
-                                                  description="Dust mass continuum absorption coefficient's weight")
-            self.params["kappa_cont"] = oimParam(name="kappa_cont", value=0,
-                                                 unit=u.cm**2/u.g, free=False,
-                                                 description="Continuum dust mass absorption coefficient")
-
-        self._t = np.array([0])  # constant value <=> static model
-        self._wl = None  # None value <=> All wavelengths (from Data)
-        self._eval(**kwargs)
-
-    def _get_unique_wl(self, wl):
-        if self._unique_wl is None:
-            self._unique_wl = np.unique(wl)
-        return self._unique_wl
-
-    def _surface_density_profile(self, xx, yy, wl, t):
-        """Calculates the surface density profile.
-
-        This can be azimuthally varied if so specified.
-
-        Parameters
-        ----------
-        xx : numpy.ndarray
-            The x-coordinate grid [mas].
-        yy : numpy.ndarray
-            The y-coordinate grid [mas].
-        wl : numpy.ndarray
-            Wavelengths [micron].
-        t : numpy.ndarray
-            Times [second].
-
-        Returns
-        -------
-        surface_density_profile : np.ndarray
-            The surface density profile [g/cm^2].
-        """
-        dist = self.params["dist"](wl, t)
-        rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
-        rin_cm = convert_radial_profile_to_meter(rin, dist).to(u.cm).value
-        rout_cm = convert_radial_profile_to_meter(rout, dist).to(u.cm).value
-
-        p = self.params["p"](wl, t)
-        dust_mass = self.params["Mdust"](wl, t)*const.M_sun.value*1e3
-        if p == 2:
-            sigma_in = dust_mass/(2.*np.pi*np.log(rout_cm/rin_cm)*rin_cm**2)
-        else:
-            f = ((rout_cm/rin_cm)**(2-p)-1)/(2-p)
-            sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
-
-        sigma_profile = sigma_in*(np.sqrt(xx**2+yy**2) / rin)**(-p)
-        if self.asymmetric_surface_density:
-            return sigma_profile*(1+self._azimuthal_modulation(xx, yy, wl, t))
-        return sigma_profile
-
-    def _optical_depth(self, xx, yy, wl, t):
-        """Calculates and returns the optical depth
-
-        Parameters
-        ----------
-        xx : numpy.ndarray
-            The x-coordinate grid [mas].
-        yy : numpy.ndarray
-            The y-coordinate grid [mas].
-        wl : numpy.ndarray
-            Wavelengths [micron].
-        t : numpy.ndarray
-            Times [second].
-
-        Returns
-        -------
-        optical_depth : np.ndarray
-            The optical depth.
-        """
-        sigma_profile = self._surface_density_profile(xx, yy, wl, t)
-        if self.continuum_contribution:
-            opacities = self.params["kappa_abs"](wl, t) +\
-                        self.params["cont_weight"](wl, t) *\
-                        self.params["kappa_cont"](wl, t)
-        else:
-            opacities = self.params["kappa_abs"](wl, t)
-
-        optical_depth = []
-        for opacity in opacities:
-            optical_depth.append(-sigma_profile*opacity)
-        return np.array(optical_depth)
-
-    def _temperature_profile(self, r, wl, t):
-        """Calculates the temperature profile.
-
-        Can be specified to be either as a r^q power law or an a
-        constant/idealised temperature profile derived from the star's
-        luminosity and the observer's distance to the star and contingent
-        only on those values.
-
-        Parameters
-        ----------
-        r : numpy.ndarray
-            Radial grid [mas].
-        wl : numpy.ndarray
-            Wavelengths [micron].
-        t : numpy.ndarray
-            Times [second].
-
-        Returns
-        -------
-        temperature_profile : numpy.ndarray
-            The temperature profile [K].
-
-        Notes
-        -----
-        In case of a radial power law the formula is
-
-        .. math:: T = T_0 * (1+\\frac{r}{R_0})^\\q.
-
-        In case of a constant grey body profile the stellar radius is
-        calculated from its lumionsity via
-
-        .. math:: R_* = \\sqrt{\\frac{L_*}{4\\pi\\sigma_sb\\T_*^4}}.
-
-        And with this the individual grain's temperature profile is
-
-        .. math:: T_{grain} = \\sqrt{\\frac{R_*}{2r}}\\cdot T_*.
-        """
-        if self.const_temperature:
-            radius = convert_radial_profile_to_meter(r, self.params["dist"](wl, t))
-            luminosity = (self.params["lum"](wl, t) *
-                          self.params["lum"].unit).to(u.W)
-            stellar_temperature = self.params["Teff"](
-                wl, t)*self.params["Teff"].unit
-            stellar_radius = np.sqrt(
-                luminosity/(4*np.pi*const.sigma_sb*stellar_temperature**4))
-            return (np.sqrt(stellar_radius/(2*radius))*stellar_temperature).value
-        q, inner_temp = map(lambda x: self.params[x](wl, t), ["q", "Tin"])
-        return inner_temp*(r / self.params["rin"](wl, t))**(-q)
-
-    def _image(self, xx: np.ndarray, yy: np.ndarray,
-               wl: np.ndarray, t: np.ndarray) -> np.ndarray:
-        """Combines the various radial profiles into an image.
-
-        If physical output is specified, the model will produce Jansky per
-        pixel else unitless intensity.
-
-        Parameters
-        ----------
-        xx : numpy.ndarray
-            The x-coordinate grid [mas].
-        yy : numpy.ndarray
-            The y-coordinate grid [mas].
-        wl : numpy.ndarray
-            Wavelengths [micron].
-        t : numpy.ndarray
-            Times [second].
-
-        Returns
-        -------
-        image : numpy.ndarray
-        """
-        wlr = self._get_unique_wl(wl)
-        xx_reduced = xx[0, 0, 0].copy()
-        xxr, yyr = np.meshgrid(xx_reduced, xx_reduced[None, :])
-
-        r = np.sqrt(xxr**2+yyr**2)
-        rin, rout = map(lambda x: self.params[x](wlr, t), ["rin", "rout"])
-
-        radial_profile = reshape_and_fill(np.logical_and(r > rin, r < rout).astype(int), wl)
-        temperature_profile = self._temperature_profile(r, wlr, t)
-        optical_depth = self._optical_depth(xxr, yyr, wlr, t).reshape(*wl.shape)
-        spectral_density = calculate_intensity(wlr, temperature_profile, self._pixSize).reshape(*wl.shape)
-        return np.nan_to_num(radial_profile * spectral_density *
-                             (1 - np.exp(self._optical_depth(xxr, yyr, wlr, t))), nan=0)
-
-    def _imageFunction(self, xx: np.ndarray, yy: np.ndarray,
-                       wl: np.ndarray, t: np.ndarray) -> np.ndarray:
-        """Calculates a 2D-image from a dust-surface density- and
-        temperature profile.
-
-        Parameters
-        ----------
-        xx : numpy.ndarray
-            The x-coordinate grid
-        yy : numpy.ndarray
-            The y-coordinate grid
-        wl : numpy.ndarray
-            Wavelengths.
-        t : numpy.ndarray
-            Times.
-
-        Returns
-        -------
-        image : numpy.ndarray
-        """
-        lp = LineProfiler()
-        lp_wrapper = lp(self._image)
-        if self.asymmetric_image:
-            img = lp_wrapper(xx, yy, wl, t) * \
-                (1+self._azimuthal_modulation(xx, yy, wl, t))
-        else:
-            img = lp_wrapper(xx, yy, wl, t)
-        lp.print_stats()
-        return img
-
-
-class oimAsymSDTempGradient(oimAsymTempGradient):
-    """A ring defined by a radial temperature profile in r^q
-    and an asymmetric radial dust surface density profile in r^p.
-
-    Parameters
-    ----------
-    rin : float
-        Inner radius of the disk [mas].
-    rout : float
-        Outer radius of the disk [mas].
-    Tin : float
-        Inner radius temperature [K].
-    Mdust : float
-        Mass of the dusty disk [M_sun].
-    a : float
-        Azimuthal modulation amplitude.
-    phi : float
-        Azimuthal modulation angle [deg].
-    q : float
-        Power-law exponent for the temperature profile.
-    p : float
-        Power-law exponent for the dust surface density profile.
-    kappa_abs : float or oimInterp
-        Dust mass absorption coefficient [cm2.g-1].
-    dist : float
-        Distance of the star [pc].
-    fov: float
-        The field of view [mas].
-    pa : float
-        Positional angle [deg].
-    elong : float
-        Elongation of the disk.
-    dim : float
-        Dimension of the image.
-
-    Attributes
-    ----------
-    params : dict with keys of str and values of oimParam
-        Dictionary of parameters.
-    pixSize : float
-        Pixel size [mas].
-    _t : numpy.ndarray
-        Array of time values [second].
-    _wl : numpy.ndarray
-        Array of wavelength values [micron].
-
-    Methods
-    -------
-    _imageFunction(xx, yy, wl, t)
-        Calculates a 2D-image from a dust-surface density- and
-        temperature profile.
-    """
-    name = "Asymmetric Surface Density Temperature Gradient"
-    shortname = "AsymSDTempGrad"
-    asymmetric_image = False
-    asymmetric_surface_density = True
-
-
-class oimAsymSDGreyBody(oimAsymSDTempGradient):
-    """A disk defined by a grain grey body temperature profile and
-    and an asymmetric radial dust surface density profile in r^p
-    with opacity curves for the dust surface density profile.
-
-    Parameters
-    ----------
-    rin : float
-        Inner radius of the disk [mas].
-    rout : float
-        Outer radius of the disk [mas].
-    Tin : float
-        Inner radius temperature [K].
-    Mdust : float
-        Mass of the dusty disk [M_sun].
-    a : float
-        Azimuthal modulation amplitude.
-    phi : float
-        Azimuthal modulation angle [deg].
-    p : float
-        Power-law exponent for the dust surface density profile.
-    kappa_abs : float or oimInterp
-        Dust mass absorption coefficient [cm2.g-1].
-    dist : float
-        Distance of the star [pc].
-    fov: float
-        The field of view [mas].
-    pa : float
-        Positional angle [deg].
-    elong : float
-        Elongation of the disk.
-    dim : float
-        Dimension of the image.
-
-    Attributes
-    ----------
-    params : dict with keys of str and values of oimParam
-        Dictionary of parameters.
-    pixSize : float
-        Pixel size [mas].
-    _t : numpy.ndarray
-        Array of time values [second].
-    _wl : numpy.ndarray
-        Array of wavelength values [micron].
-
-    Methods
-    -------
-    _imageFunction(xx, yy, wl, t)
-        Calculates a 2D-image from a dust-surface density- and
-        temperature profile.
-    """
-    name = "Asymmetric Surface Density Grey Body"
-    shortname = "AsymSDGreyBody"
-    const_temperature = True
-    continuum_contribution = True

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Components defined in Fourier or image planes"""
+from typing import Any
+
 import numpy as np
+import astropy.units as u
 from astropy.io import fits
 from astropy import units as units
 from scipy import interpolate, integrate
@@ -62,6 +65,9 @@ class oimComponent(object):
         All components have at least three parameters the position
         x and y and their flux f
         """
+        self._wl = None    # None value <=> All wavelengths (from Data) 
+        self._t = [0]      # This component is static
+
         self.params={}
         self.params["x"]=oimParam(**_standardParameters["x"])
         self.params["y"]=oimParam(**_standardParameters["y"])
@@ -70,6 +76,51 @@ class oimComponent(object):
         
        
         self._eval(**kwargs)
+
+    @property
+    def _wl(self) -> np.ndarray:
+        """Gets the wavelengths."""
+        return self.__wl
+
+    @_wl.setter
+    def _wl(self, value: Any) -> np.ndarray:
+        """Sets the wavelengths."""
+        if value is None:
+            self.__wl = None
+            return
+
+        if isinstance(value, (np.ndarray, tuple, list)):
+            value = value
+        elif isinstance(value, u.Quantity):
+            if not isinstance(
+                    value.value, (np.ndarray, tuple, list)):
+                value = [value]
+        else:
+            value = [value]
+        self.__wl = np.array(value)
+
+    @property
+    def _t(self) -> np.ndarray:
+        """Gets the times."""
+        return self.__t
+
+    @_t.setter
+    def _t(self, value: Any) -> np.ndarray:
+        """Sets the times."""
+        if value is None:
+            self.__t = None
+            return
+
+        if isinstance(value, (np.ndarray, tuple, list)):
+            value = value
+        elif isinstance(value, u.Quantity):
+            if not isinstance(
+                    value.value, (np.ndarray, tuple, list)):
+                value = [value]
+        else:
+            value = [value]
+        self.__t = np.array(value)
+        
 
     def _eval(self, **kwargs):
         for key, value in kwargs.items():
@@ -261,8 +312,6 @@ class oimComponentImage(oimComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._wl = None
-        self._t = None
         self._pixSize = 0 # NOTE: In rad
         self._allowExternalRotation = True
         self.normalizeImage = True
@@ -464,12 +513,9 @@ class oimComponentRadialProfile(oimComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._r = None
         self.normalizeImage = True
         self.hankel = self.fht
-
-        self._t = None
-        self._wl = None
-        self._r = None
 
         # NOTE: Add ellipticity
         if self.elliptic == True:
@@ -477,6 +523,59 @@ class oimComponentRadialProfile(oimComponent):
             self.params["elong"] = oimParam(**_standardParameters["elong"])
 
         self._eval(**kwargs)
+
+    def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
+        if self._wl is None:
+            wl0 = np.sort(np.unique(wl))
+        else:
+            wl0 = self._wl
+
+        if self._t is None:
+            t0 = np.sort(np.unique(t))
+        else:
+            t0 = self._t
+
+        if self._r is None:
+            pix = self._pixSize*units.rad.to(units.mas)
+            r = np.linspace(0, self.params["dim"].value-1, self.params["dim"].value)*pix
+        else:
+            r = self._r
+
+        if simple == True:
+            return r, wl, t
+        else:
+            nt = np.array(t0).flatten().size
+            nwl = np.array(wl0).flatten().size
+            nr = r.flatten().size
+
+            r_arr = np.tile(r[None, None, :], (nt, nwl, 1))
+            wl_arr = np.tile(wl[None, :, None], (nt, 1, nr))
+            t_arr = np.tile(t[:, None, None],  (1, nwl, nr))
+
+            if flatten == True:
+                return t_arr.flatten(), wl_arr.flatten(), r_arr.flatten()
+            else:
+                return t_arr, wl_arr, r_arr
+
+    def _internalRadialProfile(self):
+        return None
+
+    def _radialProfileFunction(self, r=None, wl=None, t=None):
+        return 0
+
+    def getInternalRadialProfile(self, wl, t):
+        res = self._internalRadialProfile()
+
+        if res is None:
+            t_arr, wl_arr, r_arr = self._getInternalGrid(
+                simple=False, wl=wl, t=t)
+            res = self._radialProfileFunction(r_arr, wl_arr, t_arr)
+        breakpoint()
+        for it in range(res.shape[0]):
+            for iwl in range(res.shape[1]):
+                res[it, iwl, :] = res[it, iwl, :]/np.sum(res[it, iwl, :])
+
+        return res
 
     @staticmethod
     def fht(Ir, r, wlin, tin, sfreq, wl, t):
@@ -510,95 +609,6 @@ class oimComponentRadialProfile(oimComponent):
         imag=interpolate.interpn(grid,np.imag(res0),coord,bounds_error=False,fill_value=None)
         vc=real+imag*1j
         return vc
-
-    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-        if wl is None:
-            wl = ucoord*0
-        if t is None:
-            t = ucoord*0
-
-        if self.elliptic == True:
-            pa_rad = (self.params["pa"](wl, t)) * \
-                self.params["pa"].unit.to(units.rad)
-            co = np.cos(pa_rad)
-            si = np.sin(pa_rad)
-            fxp = ucoord*co-vcoord*si
-            fyp = ucoord*si+vcoord*co
-            vcoord = fyp
-            ucoord = fxp/self.params["elong"](wl, t)
-
-        spf = np.sqrt(ucoord**2+vcoord**2)
-
-        if self._wl is None:
-            wl0 = np.sort(np.unique(wl))
-        else:
-            wl0 = self._wl
-
-        if self._t is None:
-            t0 = np.sort(np.unique(t))
-        else:
-            t0 = self._t
-
-        Ir = self.getInternalRadialProfile(wl0, t0)
-
-        vc = self.hankel(Ir, self._r*units.mas.to(units.rad),
-                         wl0, t0, spf, wl, t)
-        return vc*self._ftTranslateFactor(ucoord, vcoord, wl, t) * \
-            self.params["f"](wl, t)
-
-    def _radialProfileFunction(self, r=None, wl=None, t=None):
-        return 0
-
-    def getInternalRadialProfile(self, wl, t):
-        res = self._internalRadialProfile()
-
-        if res is None:
-            t_arr, wl_arr, r_arr = self._getInternalGrid(
-                simple=False, wl=wl, t=t)
-            res = self._radialProfileFunction(r_arr, wl_arr, t_arr)
-
-        for it in range(res.shape[0]):
-            for iwl in range(res.shape[1]):
-                res[it, iwl, :] = res[it, iwl, :]/np.sum(res[it, iwl, :])
-
-        return res
-
-    def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
-        if self._wl is None:
-            wl0 = np.sort(np.unique(wl))
-        else:
-            wl0 = self._wl
-
-        if self._t is None:
-            t0 = np.sort(np.unique(t))
-        else:
-            t0 = self._t
-
-        if self._r is None:
-            pix = self._pixSize*units.rad.to(units.mas)
-            r = np.linspace(
-                0, (self.params["dim"].value-1)*pix, self.params["dim"].value)
-        else:
-            r = self._r
-
-        if simple == True:
-            return r, wl, t
-        else:
-            nt = np.array(t0).flatten().size
-            nwl = np.array(wl0).flatten().size
-            nr = r.flatten().size
-
-            r_arr = np.tile(r[None, None, :], (nt, nwl, 1))
-            wl_arr = np.tile(wl[None, :, None], (nt, 1, nr))
-            t_arr = np.tile(t[:, None, None],  (1, nwl, nr))
-
-            if flatten == True:
-                return t_arr.flatten(), wl_arr.flatten(), r_arr.flatten()
-            else:
-                return t_arr, wl_arr, r_arr
-
-    def _internalRadialProfile(self):
-        return None
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
@@ -651,6 +661,41 @@ class oimComponentRadialProfile(oimComponent):
 
         return im
 
+    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+        if wl is None:
+            wl = ucoord*0
+        if t is None:
+            t = ucoord*0
+
+        if self.elliptic == True:
+            pa_rad = (self.params["pa"](wl, t)) * \
+                self.params["pa"].unit.to(units.rad)
+            co = np.cos(pa_rad)
+            si = np.sin(pa_rad)
+            fxp = ucoord*co-vcoord*si
+            fyp = ucoord*si+vcoord*co
+            vcoord = fyp
+            ucoord = fxp/self.params["elong"](wl, t)
+
+        spf = np.sqrt(ucoord**2+vcoord**2)
+
+        if self._wl is None:
+            wl0 = np.sort(np.unique(wl))
+        else:
+            wl0 = self._wl
+
+        if self._t is None:
+            t0 = np.sort(np.unique(t))
+        else:
+            t0 = self._t
+
+        Ir = self.getInternalRadialProfile(wl0, t0)
+
+        vc = self.hankel(Ir, self._r*units.mas.to(units.rad),
+                         wl0, t0, spf, wl, t)
+        return vc*self._ftTranslateFactor(ucoord, vcoord, wl, t) * \
+            self.params["f"](wl, t)
+
 
 class oimComponentFitsImage(oimComponentImage):
     """Component load load images or chromatic-cubes from fits files"""
@@ -663,7 +708,6 @@ class oimComponentFitsImage(oimComponentImage):
         self.loadImage(fitsImage, useinternalPA=useinternalPA)
         self.params["pa"] = oimParam(**_standardParameters["pa"])
         self.params["scale"] = oimParam(**_standardParameters["scale"])
-        self._t = np.array([0])  # this component is static
 
         self._eval(**kwargs)
 
