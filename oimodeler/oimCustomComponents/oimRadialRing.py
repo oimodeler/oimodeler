@@ -82,7 +82,7 @@ class oimRadialRing(oimComponentRadialProfile):
     def _r(self):
         """Gets the radial profile [mas]."""
         rout = convert_distance_to_angle(
-                self.params["rout"].value, self.params["dist"].value)
+                self.params["dout"].value/2, self.params["dist"].value)
         # TODO: Check if this is needed here as the hankel transform already pads.
         binning =  1 if oimOptions["FTBinningFactor"] is None\
                 else oimOptions["FTBinningFactor"]
