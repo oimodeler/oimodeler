@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+#p -*- coding: utf-8 -*-
 """
-basic model-components defined in the Fourier plan
+Basic model-components defined in the Fourier plan
 """
 import astropy.units as u
 import numpy as np

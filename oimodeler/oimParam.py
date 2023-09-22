@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Model parameter and parameter interpolators."""
 import sys
-from typing import Union, Dict
+from typing import Union, Optional, Dict
 
 import astropy.units as u
 import astropy.constants as const
@@ -742,24 +742,29 @@ class oimParamLinearStarWl(oimParamInterpolator):
     """
 
     def _init(self, param: oimParam,
-              temperature: Union[int, float, ArrayLike],
-              distance: Union[int, float],
-              luminosity: Union[int, float],
+              temp: Union[int, float, ArrayLike],
+              dist: Union[int, float],
+              lum: Union[int, float],
+              radius: Optional[Union[int, float]] = None,
               **kwargs: Dict) -> None:
         """The subclass's constructor."""
         self._stellar_radius = None
         self._stellar_angular_radius = None
-        self.temp = oimParam(name="T", value=temperature,
+        self.temp = oimParam(name="T", value=temp,
                              unit=u.K, free=False,
                              description="The Temperature")
         self.dist = oimParam(name="dist",
-                             value=distance,
+                             value=dist,
                              unit=u.pc, free=False,
                              description="Distance to the star")
         self.lum = oimParam(name="lum",
-                            value=luminosity,
+                            value=lum,
                             unit=u.Lsun, free=False,
                             description="The star's luminosity")
+        self.radius = oimParam(name="stellar radius",
+                               value=radius,
+                               unit=u.R_sun, free=False,
+                               description="The star's radius")
 
     @property
     def stellar_radius(self) -> u.m:
@@ -770,6 +775,8 @@ class oimParamLinearStarWl(oimParamInterpolator):
         stellar_radius : astropy.units.m
             The star's radius.
         """
+        if self.radius.value is not None:
+            return self.radius.value
         if self._stellar_radius is None:
             luminosity = (self.lum.value*self.lum.unit).to(u.W)
             self._stellar_radius = np.sqrt(luminosity/(4*np.pi*const.sigma_sb*(self.temp.value*self.temp.unit)**4))
@@ -792,8 +799,12 @@ class oimParamLinearStarWl(oimParamInterpolator):
         """
         if self._stellar_angular_radius is None:
             distance = self.dist.value*self.dist.unit
-            self._stellar_angular_radius =\
-                    self.stellar_radius.to(u.m)*distance.to(u.m)*u.rad
+            if self.radius.value is not None:
+                self._stellar_angular_radius =\
+                        (self.radius.value*self.radius.unit).to(u.m)/distance.to(u.m)*u.rad
+            else:
+                self._stellar_angular_radius =\
+                        self.stellar_radius.to(u.m)/distance.to(u.m)*u.rad
         return self._stellar_angular_radius
 
     def _getParams(self):

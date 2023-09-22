@@ -53,7 +53,6 @@ class oimTempGradient(oimComponentRadialProfile):
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
-        self.static_radius, self.unique_wl = None, None
         self.params["rin"] = oimParam(name="rin", value=0, unit=u.au,
                                       description="Inner radius of the disk")
         self.params["rout"] = oimParam(name="rout", value=0, unit=u.au,
@@ -76,12 +75,6 @@ class oimTempGradient(oimComponentRadialProfile):
 
         self._eval(**kwargs)
 
-    def get_unique_wl(self, wl: np.ndarray) -> np.ndarray:
-        """Gets the unique wavelengths for faster calculation."""
-        if self.unique_wl is None:
-            self.unique_wl = np.unique(wl)
-        return self.unique_wl
-
     def _radialProfileFunction(self, r: np.ndarray,
                                wl: np.ndarray, t: np.ndarray) -> np.ndarray:
         """Calculates a radial temperature gradient profile via a dust-surface
@@ -100,19 +93,27 @@ class oimTempGradient(oimComponentRadialProfile):
         -------
         radial_profile : numpy.ndarray
         """
-        wl = self.get_unique_wl(wl)
+        # HACK: Sets the multi wavelength coordinates properly.
+        # Does not account for time, improves computation time.
+        wl = np.unique(wl)
+        kappa_abs = self.params["kappa_abs"](wl, t)
+        if len(r.shape) == 3:
+            r = r[0, 0][np.newaxis, np.newaxis, :]
+            wl, kappa_abs = map(lambda x: x[np.newaxis, :, np.newaxis], [wl, kappa_abs])
+        else:
+            wl, kappa_abs = map(lambda x: x[:, np.newaxis], [wl, kappa_abs])
+            r = r[np.newaxis, :]
+
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
         dist, inner_temp = map(
             lambda x: self.params[x](wl, t), ["dist", "inner_temp"])
         dust_mass = self.params["dust_mass"](wl, t)\
                 * self.params["dust_mass"].unit.to(u.g)
-        kappa_abs = self.params["kappa_abs"](wl, t)
-
         rin_mas, rout_mas = map(lambda x: 1e3*x/dist, [rin, rout])
 
         # NOTE: Temperature profile.
-        temp_profile = inner_temp*(r / rin_mas)**(-q)
+        temp_profile = (inner_temp*(r / rin_mas)**(-q))
 
         # NOTE: Surface density profile.
         rin_cm, rout_cm = map(
@@ -126,13 +127,18 @@ class oimTempGradient(oimComponentRadialProfile):
 
         # NOTE: Spectral density.
         spectral_density = blackbody(wl, temp_profile)*(1-np.exp(-sigma_profile*kappa_abs))
-        return np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
+        image = np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
+
+        if len(r.shape) == 3:
+            return image
+        return image
 
     @property
     def _r(self):
         """Gets the radial profile [mas]."""
         rout = convert_distance_to_angle(
                 self.params["rout"].value, self.params["dist"].value)
+        # TODO: Check if this is needed here as the hankel transform already pads.
         binning =  1 if oimOptions["FTbinningFactor"] is None\
                 else oimOptions["FTbinningFactor"]
         rmax = binning*rout

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 import astropy.units as u
 import astropy.constants as const
@@ -28,15 +28,16 @@ def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
     blackbody : np.ndarray
         The blackbody [erg/(cm² s Hz sr)].
     """
-    frequencies = (const.c.cgs/(wavelength*u.m).to(u.cm))[:, np.newaxis]
-    temperature = temperature[np.newaxis, :]*u.K
-    breakpoint()
+    wavelength *= u.m
+    temperature *= u.K
+
+    frequencies = (const.c.cgs/(wavelength).to(u.cm))
     return ((2*const.h.cgs*frequencies**3/const.c.cgs**2)\
             * (1/(np.exp(const.h.cgs*frequencies/(const.k_B.cgs*temperature))-1))).value
 
 
 def calculate_intensity(wavelengths: u.um,
-                        temp_profile: u.K,
+                        temperature: u.K,
                         pixel_size: Optional[float] = None) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
@@ -56,7 +57,7 @@ def calculate_intensity(wavelengths: u.um,
     intensity : numpy.ndarray
         Intensity per pixel.
     """
-    plancks_law = models.BlackBody(temperature=temp_profile*u.K)
+    plancks_law = models.BlackBody(temperature=temperature*u.K)
     spectral_profile = []
     pixel_size *= u.rad
     for wavelength in wavelengths*u.m:

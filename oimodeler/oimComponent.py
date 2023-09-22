@@ -570,7 +570,6 @@ class oimComponentRadialProfile(oimComponent):
             t_arr, wl_arr, r_arr = self._getInternalGrid(
                 simple=False, wl=wl, t=t)
             res = self._radialProfileFunction(r_arr, wl_arr, t_arr)
-        breakpoint()
         for it in range(res.shape[0]):
             for iwl in range(res.shape[1]):
                 res[it, iwl, :] = res[it, iwl, :]/np.sum(res[it, iwl, :])
@@ -579,7 +578,7 @@ class oimComponentRadialProfile(oimComponent):
 
     @staticmethod
     def fht(Ir, r, wlin, tin, sfreq, wl, t):
-        pad = oimOptions['FTpaddingFactor']
+        pad = 1 if oimOptions['FTpaddingFactor'] is None else oimOptions['FTpaddingFactor']
         nr = r.size
         ntin = tin.size
         nwlin = wlin.size
