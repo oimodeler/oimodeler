@@ -13,9 +13,8 @@ from astroquery.simbad import Simbad
 
 from astropy.modeling import models
 
-from .oimData import oimData
+import oimodeler as oim
 from .oimOptions import oimOptions
-from .oimUtils import getBaselineLengthAndPA, getWlFromOifits
 
 
 _oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
@@ -270,7 +269,7 @@ def loadOifitsData(something, mode="listOfHdlulist"):
         The default is "listOfHdlulist"
     """
     
-    if isinstance(something, oimData):
+    if isinstance(something, oim.oimData):
         if mode =="oimData":
             data = something
         else:    
@@ -299,7 +298,7 @@ def loadOifitsData(something, mode="listOfHdlulist"):
                             " these kind of objects allowed ") 
             
         if mode =="oimData":
-             data = oimData(data)
+             data = oim.oimData(data)
     
     return data
     
