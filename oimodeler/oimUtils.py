@@ -1,13 +1,20 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
-import astropy.units as units
+from os import PathLike
+from typing import Optional, Union
+
+import astropy.units as u
+import astropy.constants as const
 import numpy as np
-from scipy.stats import circstd, circvar
+from scipy.stats import circstd
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
+
+from astropy.modeling import models
+
 import oimodeler as oim
-from os import PathLike
+from .oimOptions import oimOptions
 
 
 _oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
@@ -15,7 +22,8 @@ _oimDataTypeErr = ["VIS2ERR", "VISAMPERR",
                    "VISPHIERR", "T3AMPERR", "T3PHIERR", "FLUXERR"]
 _oimDataTypeArr = ["OI_VIS2", "OI_VIS", "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX"]
 
-_oimDataAnalysisInComplex = [False,False,True,False,True,False]
+_oimDataAnalysisInComplex = [False, False, True, False, True, False]
+
 
 def getDataTypeIsAnalysisComplex(dataType):
     try:
@@ -23,23 +31,227 @@ def getDataTypeIsAnalysisComplex(dataType):
     except:
         raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
         
+        
 def getDataArrname(dataType):
     try:
         return _oimDataTypeArr[_oimDataType.index(dataType)]
     except:
         raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
    
+  
 def getDataType(dataArrname):
     return[ datatypei for datatypei,arrnamei 
            in zip(_oimDataType,_oimDataTypeArr) if arrnamei==dataArrname]
-
+  
+  
 def getDataTypeError(dataArrname):
     return[ datatypei for datatypei,arrnamei 
            in zip(_oimDataTypeErr,_oimDataTypeArr) if arrnamei==dataArrname]
+  
+  
+def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
+    """Planck's law with output in cgs.
+
+    Parameters
+    ----------
+    wavelength : np.ndarray
+        The wavelength [cm].
+    temperature ſ np.ndarray
+        The temperature [K].
+
+    Returns
+    -------
+    blackbody : np.ndarray
+        The blackbody [erg/(cm² s Hz sr)].
+    """
+    wavelength *= u.m
+    temperature *= u.K
+
+    frequencies = (const.c.cgs/(wavelength).to(u.cm))
+    return ((2*const.h.cgs*frequencies**3/const.c.cgs**2)\
+            * (1/(np.exp(const.h.cgs*frequencies/(const.k_B.cgs*temperature))-1))).value
+  
+  
+def calculate_intensity(wavelengths: u.um, temperature: u.K,
+                        pixel_size: Optional[float] = None) -> np.ndarray:
+    """Calculates the blackbody_profile via Planck's law and the
+    emissivity_factor for a given wavelength, temperature- and
+    dust surface density profile.
+
+    Parameters
+    ----------
+    wavelengths : astropy.units.um
+        Wavelength value(s).
+    temp_profile : astropy.units.K
+        Temperature profile.
+    pixSize: float, optional
+        The pixel size [rad].
+
+    Returns
+    -------
+    intensity : numpy.ndarray
+        Intensity per pixel.
+    """
+    plancks_law = models.BlackBody(temperature=temperature*u.K)
+    spectral_profile = []
+    pixel_size *= u.rad
+    for wavelength in wavelengths*u.m:
+        spectral_radiance = plancks_law(wavelength).to(
+                u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
+        spectral_profile.append((spectral_radiance*pixel_size**2).to(u.Jy).value)
+    return np.array(spectral_profile)
+  
+  
+def pad_image(image: np.ndarray):
+    """Pads an image with additional zeros for Fourier transform."""
+    im0 = np.sum(image, axis=(0, 1))
+    dimy = im0.shape[0]
+    dimx = im0.shape[1]
+
+    im0x = np.sum(im0, axis=1)
+    im0y = np.sum(im0, axis=1)
+
+    s0x = np.trim_zeros(im0x).size
+    s0y = np.trim_zeros(im0y).size
+
+    min_sizex = s0x*oimOptions["FTPaddingFactor"]
+    min_sizey = s0y*oimOptions["FTPaddingFactor"]
+
+    min_pow2x = 2**(min_sizex - 1).bit_length()
+    min_pow2y = 2**(min_sizey - 1).bit_length()
+
+    # HACK: If Image has zeros around it already then this does not work -> Rework
+    if min_pow2x < dimx:
+        return image
+
+    padx = (min_pow2x-dimx)//2
+    pady = (min_pow2y-dimy)//2
+
+    return np.pad(image, ((0, 0), (0, 0), (padx, padx), (pady, pady)),
+                  'constant', constant_values=0)
 
 
+def rebin_image(image: np.ndarray,
+                binning_factor: Optional[int] = None,
+                rdim: Optional[bool] = False) -> np.ndarray:
+    """Bins a 2D-image down according.
+
+    The down binning is according to the binning factor
+    in oimOptions["FTBinningFactor"]. Only accounts for
+    square images.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        The image to be rebinned.
+    binning_factor : int, optional
+        The binning factor. The default is 0
+    rdim : bool
+        If toggled, returns the dimension
+
+    Returns
+    -------
+    rebinned_image : numpy.ndarray
+        The rebinned image.
+    dimension : int, optional
+        The new dimension of the image.
+    """
+    if binning_factor is None:
+        return image, image.shape[-1] if rdim else image
+    new_dim = int(image.shape[-1] * 2**-binning_factor)
+    binned_shape = (new_dim, int(image.shape[-1] / new_dim),
+                    new_dim, int(image.shape[-1] / new_dim))
+    if len(image.shape) == 4:
+        shape = (image.shape[0], image.shape[1], *binned_shape)
+    else:
+        shape = binned_shape
+    if rdim:
+        return image.reshape(shape).mean(-1).mean(-2), new_dim
+    return image.reshape(shape).mean(-1).mean(-2)
 
 
+def get_next_power_of_two(number: Union[int, float]) -> int:
+    """Returns the next power of two for an integer or float input.
+
+    Parameters
+    ----------
+    number : int or float
+        An input number.
+
+    Returns
+    -------
+    closest_power_of_two : int
+        The, to the input, closest power of two.
+    """
+    return int(2**np.ceil(np.log2(number)))
+
+
+def convert_angle_to_distance(radius: Union[float, np.ndarray],
+                              distance: float,
+                              rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
+    """Converts an angle from milliarcseconds to meters.
+
+    Parameters
+    ----------
+    radius : float or numpy.ndarray
+        The radius of the object around the star [mas].
+    distance : float
+        The star's distance to the observer [pc].
+    rvalue : bool, optional
+        If toggled, returns the value witout u.else returns
+        an astropy.u.Quantity object. The default is False.
+
+    Returns
+    -------
+    radius : float or numpy.ndarray
+        The radius of the object around the star [m].
+
+    Notes
+    -----
+    The formula for the angular diameter small angle approximation is
+
+    .. math:: \\delta = \\frac{d}{D}
+
+    where d is the distance from the star and D is the distance from the star
+    to the observer and ..math::`\\delta` is the angular diameter.
+    """
+    radius = ((radius*u.mas).to(u.arcsec).value*distance*u.pc).to(u.m)
+    return radius if rvalue else radius.value
+
+
+def convert_distance_to_angle(radius: Union[float, np.ndarray],
+                              distance: float,
+                              rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
+    """Converts a distance from meters to an angle in milliarcseconds.
+
+    Parameters
+    ----------
+    radius : float or numpy.ndarray
+        The radius of the object around the star [au].
+    distance : float
+        The star's distance to the observer [pc].
+    rvalue : bool, optional
+        If toggled, returns the value witout u.else returns
+        an astropy.u.Quantity object. The default is False.
+
+    Returns
+    -------
+    radius : float or numpy.ndarray
+        The radius of the object around the star [m].
+
+    Notes
+    -----
+    The formula for the angular diameter small angle approximation is
+
+    .. math:: \\delta = \\frac{d}{D}
+
+    where d is the distance from the star and D is the distance from the star
+    to the observer and ..math::`\\delta` is the angular diameter.
+    """
+    radius = (((radius*u.au).to(u.m)/(distance*u.pc).to(u.m))*u.rad).to(u.mas)
+    return radius if rvalue else radius.value
+  
+  
 def loadOifitsData(something, mode="listOfHdlulist"):
     """ 
     return the oifits data from either filenames, already opened oifts or a 
@@ -342,9 +554,9 @@ def get2DSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
     wl_insnames = np.array([data[i].header['INSNAME'] for i in idx_wlarr])
 
     if unit == "cycles/mas":
-        mult = units.mas.to(units.rad)
+        mult = u.mas.to(u.rad)
     elif unit == "cycles/arcsec":
-        mult = units.arcsec.to(units.rad)
+        mult = u.arcsec.to(u.rad)
     elif unit == "Mlam":
         mult = 1/(1e6)
     else:
@@ -416,9 +628,9 @@ def getSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
     wl_insnames = np.array([data[i].header['INSNAME'] for i in idx_wlarr])
 
     if unit == "cycles/mas":
-        mult = units.mas.to(units.rad)
+        mult = u.mas.to(u.rad)
     elif unit == "cycles/arcsec":
-        mult = units.arcsec.to(units.rad)
+        mult = u.arcsec.to(u.rad)
     elif unit == "Mlam":
         mult = 1/(1e6)
     else:
@@ -553,7 +765,7 @@ def getWlFromFitsImageCube(header, outputUnit=None):
     Returns
     -------
     wl: float
-        The wavelength in the given unit of the fits cube or the units specified
+        The wavelength in the given unit of the fits cube or the u.specified
         by the user if outputUnit is set
 
     """
@@ -569,11 +781,11 @@ def getWlFromFitsImageCube(header, outputUnit=None):
     if outputUnit:
         if "CUNIT3" in header:
             try:
-                unit0 = units.Unit(header["CUNIT3"])
+                unit0 = u.Unit(header["CUNIT3"])
             except:
-                unit0 = units.m
+                unit0 = u.m
         else:
-            unit0 = units.m
+            unit0 = u.m
         wl*unit0.to(outputUnit)
 
     return wl
@@ -846,14 +1058,14 @@ def createOiTargetFromSimbad(names):
     
     rad = Angle(data['RA'], unit="hourangle").deg
     dec = Angle(data['DEC'], unit="deg").deg
-    ra_err = (data['COO_ERR_MAJA'].data*units.mas).to_value(unit='deg')
-    dec_err = (data['COO_ERR_MINA'].data*units.mas).to_value(unit='deg')
-    pmra = (data['PMRA'].data*units.mas).to_value(unit='deg')
-    pmdec = (data['PMDEC'].data*units.mas).to_value(unit='deg')
-    pmra_err = (data['PM_ERR_MAJA'].data*units.mas).to_value(unit='deg')
-    pmdec_err = (data['PM_ERR_MINA'].data*units.mas).to_value(unit='deg')
-    plx_value = (data['PLX_VALUE'].data*units.mas).to_value(unit='deg')
-    plx_error = (data['PLX_ERROR'].data*units.mas).to_value(unit='deg')
+    ra_err = (data['COO_ERR_MAJA'].data*u.mas).to_value(unit='deg')
+    dec_err = (data['COO_ERR_MINA'].data*u.mas).to_value(unit='deg')
+    pmra = (data['PMRA'].data*u.mas).to_value(unit='deg')
+    pmdec = (data['PMDEC'].data*u.mas).to_value(unit='deg')
+    pmra_err = (data['PM_ERR_MAJA'].data*u.mas).to_value(unit='deg')
+    pmdec_err = (data['PM_ERR_MINA'].data*u.mas).to_value(unit='deg')
+    plx_value = (data['PLX_VALUE'].data*u.mas).to_value(unit='deg')
+    plx_error = (data['PLX_ERROR'].data*u.mas).to_value(unit='deg')
 
     hdu = createOiTarget(target_id=np.arange(1, ntargets+1), target=names,
         raep0=rad, decep0=dec, equinox=np.repeat(2000, ntargets),
@@ -1009,10 +1221,10 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
         
     for arri in arr:
         try:
-            EFF_WAVE, EFF_BAND = oim.getWlFromOifits(data,arr=arri,
-                                                     extver=extver,returnBand=True)
+            EFF_WAVE, EFF_BAND = getWlFromOifits(data,arr=arri,
+                                                 extver=extver,returnBand=True)
             nwl = np.size(EFF_WAVE)
-            LENGTH, PA = oim.getBaselineLengthAndPA(data,arr=arri,extver=extver)
+            LENGTH, PA = getBaselineLengthAndPA(data,arr=arri,extver=extver)
             nB = np.size(LENGTH)
             
             EFF_WAVE = np.tile(EFF_WAVE[None,:],(nB,1))
@@ -1155,7 +1367,3 @@ def setMinimumError(oifits,dataTypes,values,extver=None):
                                 (1 - mask) + mask * vali * \
                                     datai.data[dataTypei] 
                             #print(datai.data[dataTypeiErr])     
-                                
-    
-                        
-

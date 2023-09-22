@@ -4,7 +4,6 @@ import os
 from enum import IntFlag
 
 import numpy as np
-from astropy.io import fits
 from .oimUtils import hdulistDeepCopy, loadOifitsData, _oimDataTypeArr 
 from .oimDataFilter import oimDataFilter,oimDataFilterComponent
 

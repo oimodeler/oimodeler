@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
+from multiprocessing import Pool
+
 import corner
 import emcee
 import matplotlib as mpl
@@ -31,7 +33,7 @@ class oimFitter(object):
 
         self.data = self.simulator.data
         self.model = self.simulator.model
-
+        self.pool = None
         self.isPrepared = False
 
         self._eval(**kwargs)
@@ -98,7 +100,6 @@ class oimFitterEmcee(oimFitter):
 
         if "moves" in kwargs:
             moves = kwargs.pop['moves']
-
         else:
             moves = [(emcee.moves.DEMove(), 0.8),
                      (emcee.moves.DESnookerMove(), 0.2)]
@@ -151,7 +152,6 @@ class oimFitterEmcee(oimFitter):
 
     def _run(self, **kwargs):
         self.sampler.run_mcmc(self.initialParams, **kwargs)
-
         self.getResults()
 
         return kwargs
@@ -163,7 +163,7 @@ class oimFitterEmcee(oimFitter):
         for i, key in enumerate(self.freeParams):
             val = theta[i]
             low, up = self.limits[key]
-            if not (low < val < up):
+            if not low < val < up:
                 return -np.inf
 
         self.simulator.compute(computeChi2=True,dataTypes = self.dataTypes)

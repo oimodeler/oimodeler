@@ -16,7 +16,7 @@ from oimodeler.oimPlots import _errorplot as errorPlot
 # setting the FFT parameters and backend. As the kinematicsDisk model as no
 # outer sharp edge we decide not to zero-pad the images during the FFT process
 # no oder to save time and without noticeable effect on the simulated visibilities
-oim.oimOptions['FTpaddingFactor'] = 1
+oim.oimOptions['FTPaddingFactor'] = 1
 oim.oimOptions['FTBackend'] = oim.FFTWBackend
 
 # In this example we will use an old VLTI/AMBER observation of a classical

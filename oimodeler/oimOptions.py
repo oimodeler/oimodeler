@@ -1,11 +1,21 @@
-# -*- coding: utf-8 -*-
 """Set global options of the oimodeler software."""
 from .oimFTBackends import numpyFFTBackend, FFTWBackend
 
 # NOTE: The dictionary oimOption contains all the customizable option
 # of `oimodeler`.
 oimOptions = {}
-oimOptions["FTpaddingFactor"] = 8
-oimOptions["FTbinningFactor"] = None
+
+# NOTE: Fourier transform settings
+oimOptions["AvailableFTBackends"] = [numpyFFTBackend]
+oimOptions["FTPaddingFactor"] = None
+oimOptions["FTBinningFactor"] = None
 oimOptions["FTBackend"] = numpyFFTBackend
-oimOptions["AvailableFTBackends"] = [numpyFFTBackend, FFTWBackend]
+oimOptions["GridType"] = "linear"
+
+try:
+    # NOTE: Only append the `FFTWBackend` if `fftw` is installed and imported
+    import pyfftw
+    from .oimFTBackends import FFTWBackend
+    oimOptions["AvailableFTBackends"].append(FFTWBackend)
+except ImportError:
+    pass

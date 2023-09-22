@@ -4,9 +4,13 @@
 normalizers and interpolators. 
 """
 import sys
+from typing import Union, Optional, Dict
 
 import astropy.units as u
+import astropy.constants as const
 import numpy as np
+from astropy.modeling import models
+from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
 
@@ -27,12 +31,15 @@ _standardParameters = {
     "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
     "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": u.one, "mini": 0, "maxi": 1},
     "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
-    "pixSize": {"name": "pixSize", "value": 0.1, "description": "Pixel Size", "unit": u.mas, "mini": 0},
+    "pixSize": {"name": "pixSize", "value": 0, "description": "Pixel Size", "unit": u.mas, "free": False, "mini": 0},
     "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": u.one, "free": False, "mini": 1},
     "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": u.m, "mini": 0},
     "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": u.day},
     "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": u.one},
-    'index': {'name': 'index', 'value': 1, 'description': 'Index', 'unit': u.one}
+    "index": {"name": "index", "value": 1, "description": "Index", "unit": u.one},
+    "fov": {"name": "fov", "value": 0, "description": "The interferometric field of view", "unit": u.mas, "free": False, "mini": 0},
+    "amp": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": u.one},
+    "p": {"name": "p", "value": 0, "description": "Power-law Exponent", "unit": u.one},
 }
 
 # NOTE: Sets the available interpolators for oimodeler. If strings are provided,
@@ -44,16 +51,20 @@ _interpolators = {"wl": "oimParamInterpolatorWl",
                   "GaussTime": "oimParamGaussianTime",
                   "mGaussWl": "oimParamMultipleGaussianWl",
                   "mGaussTime": "oimParamMultipleGaussianTime",
+                  "multiParam": "oimParamMultiWl",
                   "cosTime": "oimParamCosineTime",
                   "polyWl": "oimParamPolynomialWl",
                   "polyTime": "oimParamPolynomialTime",
                   "powerlawWl": "oimParamPowerLawWl",
                   "powerlawTime": "oimParamPowerLawTime",
-                  "rangeWl": "oimParamLinearRangeWl"}
+                  "rangeWl": "oimParamLinearRangeWl",
+                  "templateWl": "oimParamLinearTemplateWl",
+                  "tempWl": "oimParamLinearTemperatureWl",
+                  "starWl": "oimParamLinearStarWl"}
 
 
 class oimParam:
-    """Class of model parameters
+    """Class of model parameters.
 
     Parameters
     ----------
@@ -206,7 +217,6 @@ class oimParamNorm:
             res -= p(wl, t)
         return res
 
-
 ###############################################################################
 
 class oimInterp:
@@ -270,6 +280,9 @@ class oimParamInterpolator(oimParam):
     def __call__(self, wl=None, t=None):
         return self._interpFunction(wl, t)
 
+    def _getParams(self):
+        pass
+
     @property
     def params(self):
         params0 = self._getParams()
@@ -330,6 +343,34 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
         params.extend(self.keyvalues)
         return params
 
+
+class oimParamMultiWl(oimParamInterpolatorKeyframes):
+    """Class of model parameters for multiple wavelengths.
+
+    Notes
+    -----
+    The difference of this class to the interpolators is that
+    there will be no interpolation done, but the parameters will be
+    returned for the different wavelengths, at which they are specified.
+    Will raise an error if there are missing wavelengths.
+    """
+
+    def _init(self, param, wl=[], values=[], **kwargs):
+        super()._init(param, dependence="wl", keyframes=wl,
+                      keyvalues=values, **kwargs)
+
+    def _interpFunction(self, wl, t):
+        """Returns the parameter's value for the given wavelength."""
+        keyframes = np.array([param.value for param in self.keyframes])
+        values = np.array([param.value for param in self.keyvalues])
+        new_values = np.zeros(wl.shape)
+        indices = np.where(np.isin(keyframes, np.unique(wl)))[0]
+        for index, value in enumerate(values[indices]):
+            if len(wl.shape) == 1:
+                new_values[index] = value
+            else:
+                new_values[:, index, :, :] = value
+        return new_values
 
 class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
     def _init(self, param, wl=[], values=[], **kwargs):
@@ -624,7 +665,6 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         vals = np.array([vi.value for vi in self.values])
         nwl = vals.size
         wl0 = np.linspace(self.wlmin.value, self.wlmax.value, num=nwl)
-        print(wl0)
         return interp1d(wl0, vals, kind=self.kind, fill_value="extrapolate")(wl)
 
     def _getParams(self):
@@ -633,3 +673,237 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         params.append(self.wlmin)
         params.append(self.wlmax)
         return params
+
+
+class oimParamLinearTemplateWl(oimParamInterpolator):
+    def _init(self, param, wl0=2e-6, dwl=1e-9,
+              f_contrib=1., values=[],  kind="linear", **kwargs):
+        self.kind = kind
+
+        n = len(values)
+        self.wl0 = (oimParam(**_standardParameters["wl"]))
+        self.wl0.name = "wl0"
+        self.wl0.description = "Initial wl of the range"
+        self.wl0.value = wl0
+        self.wl0.free = False
+
+        self.dwl = (oimParam(**_standardParameters["wl"]))
+        self.dwl.name = "dwl"
+        self.dwl.description = "wl step in range"
+        self.dwl.value = dwl
+        self.dwl.free = False
+
+        self.f_contrib = (oimParam(**_standardParameters["f"]))
+        self.f_contrib.name = "f_contrib"
+        self.f_contrib.description = "Flux contribution at the wavelength"\
+            " corresponding to the maximum of the"\
+            " associated emission template"
+        self.f_contrib.value = f_contrib
+        self.f_contrib.free = False
+
+        self.values = []
+
+        for i in range(n):
+            self.values.append(oimParam(name=param.name, value=values[i],
+                                        mini=param.min,maxi=param.max,
+                                        description=param.description,
+                                        unit=param.unit, free=param.free,
+                                        error=param.error))
+
+    def _interpFunction(self, wl, t):
+        vals = np.array([vi.value for vi in self.values])
+        nwl = vals.size
+        wl0 = np.linspace(self.wl0.value, self.wl0.value+self.dwl.value*nwl, num=nwl)
+        interp_template = interp1d(wl0, vals, kind=self.kind, fill_value="extrapolate")(wl)
+        interp_template_norm = interp_template/interp_template.max()
+        return interp_template_norm*self.f_contrib.value
+
+    def _getParams(self):
+        params = []
+        params.append(self.f_contrib)
+        return params
+
+
+class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
+    """Interpolates/Calculates a blackbody distribution
+    for different wavelengths for the input temperatures
+    (via Planck's law).
+
+    Parameters
+    ----------
+    param : oimParam
+        The parameter that is to be calculated/interpolated.
+    temperature : int or float or numpy.ndarray
+        The temperature(s) to be calculated.
+
+    Attributes
+    ----------
+    temp : oimParam
+    """
+
+    def _init(self, param: oimParam,
+              temperature: Union[int, float, ArrayLike],
+              **kwargs) -> None:
+        """The subclass's constructor."""
+        self.temp = oimParam(name="T", value=temperature,
+                             unit=u.K, free=False,
+                             description="The Temperature")
+
+    def _getParams(self):
+        """Gets the parameters of the interpolator."""
+        return [self.temp]
+
+    def _interpFunction(self, wl: np.ndarray, t: np.ndarray):
+        """Calculates a temperature and wavelength dependent blackbody
+        distribution via Planck's law.
+
+        Parameters
+        ----------
+        wl : numpy.ndarray
+            Wavelengths [m].
+        t : numpy.ndarray
+            Times.
+
+        Returns
+        -------
+        blackbody_distribution : astropy.units.Jy
+            The star's flux.
+        """
+        plancks_law = models.BlackBody(temperature=self.temp.value*self.temp.unit)
+        return plancks_law(wl*u.m).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2)).value
+
+
+class oimParamLinearStarWl(oimParamInterpolator):
+    """Interpolates/Calculates the stellar flux for distinct wavelengths.
+
+    Parameters
+    ----------
+    param : oimParam
+        The parameter that is to be calculated/interpolated.
+    temperature : array_like
+        The temperature distribution to be calculated at different wavelengths.
+    distance : int or float
+        The distance to the star [pc].
+    luminostiy : int or float
+        The star's luminosity [Lsun].
+    **kwargs : dict
+
+    Attributes
+    ----------
+    stellar_radius : astropy.units.m
+    stellar_angular_radius : astropy.units.mas
+    dist : oimParam
+        An oimParam containing the distance to the star.
+    lum : oimParam
+        An oimParam containing the star's luminosity.
+    """
+
+    def _init(self, param: oimParam,
+              temp: Union[int, float, ArrayLike],
+              dist: Union[int, float],
+              lum: Union[int, float],
+              radius: Optional[Union[int, float]] = None,
+              **kwargs: Dict) -> None:
+        """The subclass's constructor."""
+        self._stellar_radius = None
+        self._stellar_angular_radius = None
+        self.temp = oimParam(name="T", value=temp,
+                             unit=u.K, free=False,
+                             description="The Temperature")
+        self.dist = oimParam(name="dist",
+                             value=dist,
+                             unit=u.pc, free=False,
+                             description="Distance to the star")
+        self.lum = oimParam(name="lum",
+                            value=lum,
+                            unit=u.Lsun, free=False,
+                            description="The star's luminosity")
+        self.radius = oimParam(name="stellar radius",
+                               value=radius,
+                               unit=u.R_sun, free=False,
+                               description="The star's radius")
+
+    @property
+    def stellar_radius(self) -> u.m:
+        """Calculates the stellar radius.
+
+        Returns
+        -------
+        stellar_radius : astropy.units.m
+            The star's radius.
+        """
+        if self.radius.value is not None:
+            return self.radius.value
+        if self._stellar_radius is None:
+            luminosity = (self.lum.value*self.lum.unit).to(u.W)
+            self._stellar_radius = np.sqrt(luminosity/(4*np.pi*const.sigma_sb*(self.temp.value*self.temp.unit)**4))
+        return self._stellar_radius
+
+    @property
+    def stellar_radius_angular(self) -> u.mas:
+        r"""Calculates the parallax from the stellar radius and the distance to
+        the object.
+
+        Returns
+        -------
+        stellar_radius_angular : astropy.units.mas
+            The parallax of the stellar radius.
+
+        Notes
+        -----
+        The formula for the angular diameter $ \delta = \frac{d}{D} $ is used.
+        This produces an output in radians.
+        """
+        if self._stellar_angular_radius is None:
+            distance = self.dist.value*self.dist.unit
+            if self.radius.value is not None:
+                self._stellar_angular_radius =\
+                        (self.radius.value*self.radius.unit).to(u.m)/distance.to(u.m)*u.rad
+            else:
+                self._stellar_angular_radius =\
+                        self.stellar_radius.to(u.m)/distance.to(u.m)*u.rad
+        return self._stellar_angular_radius
+
+    def _getParams(self):
+        """Gets the parameters of the interpolator."""
+        return [self.temp]
+
+    def _calc_spectral_radiance(self, wl: u.m) -> np.ndarray:
+        """Calculates a temperature and wavelength dependent blackbody
+        distribution via Planck's law.
+
+
+        Parameters
+        ----------
+        wl : astropy.units.m
+            Wavelengths [m].
+
+        Returns
+        -------
+        blackbody_distribution : astropy.units.Jy
+            The star's flux.
+        """
+        plancks_law = models.BlackBody(temperature=self.temp.value*self.temp.unit)
+        return plancks_law(wl).to(u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
+
+    def _interpFunction(self, wl: np.ndarray, t: np.ndarray) -> np.ndarray:
+        """Calculates the stellar flux from its distance and radius and
+        interpolates it to the input wavelengths,
+
+        This function is not time dependent.
+
+        Parameters
+        ----------
+        wl : numpy.ndarray
+            Wavelengths [m].
+        t : numpy.ndarray
+            Times.
+
+        Returns
+        -------
+        stellar_flux : np.ndarray
+            The star's flux [Jy].
+        """
+        spectral_radiance = self._calc_spectral_radiance(wl*u.m)
+        spectral_radiance = (np.pi*spectral_radiance*self.stellar_radius_angular**2).to(u.Jy).value
+        return spectral_radiance

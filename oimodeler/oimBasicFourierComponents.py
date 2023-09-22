@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+#p -*- coding: utf-8 -*-
 """
-basic model-components defined in the Fourier plan
+Basic model-components defined in the Fourier plan
 """
 import astropy.units as u
 import numpy as np
@@ -703,7 +703,6 @@ class oimConvolutor(oimComponentFourier):
         im2=self.component2._imageFunction(xx,yy,wl,t)
         nt,nwl,nx,ny=im1.shape
 
-        print(nt,nwl,nx,ny)
         #TODO : no loop
         imConv=np.ndarray([nt,nwl,nx,ny])
         for iwl in range(nwl):
