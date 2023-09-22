@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
 from os import PathLike
-from typing import Optional, Union, Tuple
+from typing import Optional, Union
 
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
-from scipy.stats import circstd, circvar
+from scipy.stats import circstd
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
 
 from astropy.modeling import models
 
+from .oimData import oimData
 from .oimOptions import oimOptions
+from .oimUtils import getBaselineLengthAndPA, getWlFromOifits
 
 
 _oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
@@ -71,8 +73,7 @@ def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
             * (1/(np.exp(const.h.cgs*frequencies/(const.k_B.cgs*temperature))-1))).value
   
   
-  def calculate_intensity(wavelengths: u.um,
-                        temperature: u.K,
+def calculate_intensity(wavelengths: u.um, temperature: u.K,
                         pixel_size: Optional[float] = None) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
@@ -102,7 +103,7 @@ def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
     return np.array(spectral_profile)
   
   
-  def pad_image(image: np.ndarray):
+def pad_image(image: np.ndarray):
     """Pads an image with additional zeros for Fourier transform."""
     im0 = np.sum(image, axis=(0, 1))
     dimy = im0.shape[0]
@@ -269,7 +270,7 @@ def loadOifitsData(something, mode="listOfHdlulist"):
         The default is "listOfHdlulist"
     """
     
-    if isinstance(something, oim.oimData):
+    if isinstance(something, oimData):
         if mode =="oimData":
             data = something
         else:    
@@ -298,7 +299,7 @@ def loadOifitsData(something, mode="listOfHdlulist"):
                             " these kind of objects allowed ") 
             
         if mode =="oimData":
-             data = oim.oimData(data)
+             data = oimData(data)
     
     return data
     
@@ -554,9 +555,9 @@ def get2DSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
     wl_insnames = np.array([data[i].header['INSNAME'] for i in idx_wlarr])
 
     if unit == "cycles/mas":
-        mult = units.mas.to(units.rad)
+        mult = u.mas.to(u.rad)
     elif unit == "cycles/arcsec":
-        mult = units.arcsec.to(units.rad)
+        mult = u.arcsec.to(u.rad)
     elif unit == "Mlam":
         mult = 1/(1e6)
     else:
@@ -781,9 +782,9 @@ def getWlFromFitsImageCube(header, outputUnit=None):
     if outputUnit:
         if "CUNIT3" in header:
             try:
-                unit0 = units.Unit(header["CUNIT3"])
+                unit0 = u.Unit(header["CUNIT3"])
             except:
-                unit0 = units.m
+                unit0 = u.m
         else:
             unit0 = u.m
         wl*unit0.to(outputUnit)
@@ -1221,10 +1222,10 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
         
     for arri in arr:
         try:
-            EFF_WAVE, EFF_BAND = oim.getWlFromOifits(data,arr=arri,
-                                                     extver=extver,returnBand=True)
+            EFF_WAVE, EFF_BAND = getWlFromOifits(data,arr=arri,
+                                                 extver=extver,returnBand=True)
             nwl = np.size(EFF_WAVE)
-            LENGTH, PA = oim.getBaselineLengthAndPA(data,arr=arri,extver=extver)
+            LENGTH, PA = getBaselineLengthAndPA(data,arr=arri,extver=extver)
             nB = np.size(LENGTH)
             
             EFF_WAVE = np.tile(EFF_WAVE[None,:],(nB,1))
@@ -1367,7 +1368,3 @@ def setMinimumError(oifits,dataTypes,values,extver=None):
                                 (1 - mask) + mask * vali * \
                                     datai.data[dataTypei] 
                             #print(datai.data[dataTypeiErr])     
-                                
-    
-                        
-
