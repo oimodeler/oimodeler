@@ -26,8 +26,8 @@ rr.params["f"].free = False
 # NOTE: Model creation
 model = oim.oimModel([rr])
 
-# sim = oim.oimSimulator(data=data, model=model)
-# sim.compute(computeChi2=True, computeSimulatedData=True)
+sim = oim.oimSimulator(data=data, model=model)
+sim.compute(computeChi2=True, computeSimulatedData=True)
 
 # NOTE: Perfoming the model-fitting
 fit = oim.oimFitterEmcee(data, model, nwalkers=25)
