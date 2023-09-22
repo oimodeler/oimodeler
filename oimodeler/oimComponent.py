@@ -195,18 +195,27 @@ class oimComponent(object):
         y = y-self.params["y"](wl, t)
         return x, y
 
-    def __str__(self):
-        txt = self.name
+    def _paramstr(self):
+        txt = ""
         for name, param in self.params.items():
             if isinstance(param, oimParam):
                 if 'value' in param.__dict__:
                     txt += " {0}={1:.2f}".format(param.name, param.value)
-                elif isinstance(param, oimParamInterpolator):
+                else:
                     # TODO have a string for each oimParamInterpolator
                     txt += " {0}={1}".format(param.name,
                                              param.__class__.__name__)
+        return txt
+        
+    def __str__(self):
+        txt = self.name + self._paramstr()
+        
 
         return txt
+    
+    def __repr__(self):
+        return self.__class__.__name__ + " at " + str(hex(id(self)))+  " : "+ \
+               self._paramstr()
 
 
 class oimComponentFourier(oimComponent):
@@ -237,9 +246,9 @@ class oimComponentFourier(oimComponent):
                 self.params["pa"].unit.to(units.rad)
             co = np.cos(pa_rad)
             si = np.sin(pa_rad)
-            fxp = ucoord*co-vcoord*si
+            fxp = (ucoord*co-vcoord*si)/self.params["elong"](wl, t)
             fyp = ucoord*si+vcoord*co
-            rho = np.sqrt(fxp**2/self.params["elong"](wl, t)**2+fyp**2)
+            rho = np.sqrt(fxp**2+fyp**2)
         else:
             fxp = ucoord
             fyp = vcoord
@@ -315,7 +324,7 @@ class oimComponentImage(oimComponent):
         self._pixSize = 0 # NOTE: In rad
         self._allowExternalRotation = True
         self.normalizeImage = True
-               
+        self.params["dim"] = oimParam(**_standardParameters["dim"])
         self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add ellipticity
@@ -344,7 +353,7 @@ class oimComponentImage(oimComponent):
         pix = self._pixSize
 
         tr = self._ftTranslateFactor(
-            ucoord, vcoord, wl, t)*self.params["f"](wl, t)
+            ucoord, vcoord, wl, t)#♣*self.params["f"](wl, t)
 
         if self._allowExternalRotation == True:
             pa_rad = (self.params["pa"](wl, t)) * \
@@ -455,10 +464,11 @@ class oimComponentImage(oimComponent):
                 simple=False, wl=wl, t=t)
             res = self._imageFunction(x_arr, y_arr, wl_arr, t_arr)
 
-        for it in range(res.shape[0]):
-            for iwl in range(res.shape[1]):
-                res[it, iwl, :, :] = res[it, iwl, :, :] / \
-                    np.sum(res[it, iwl, :, :])
+        if self.normalizeImage == True:
+            for it in range(res.shape[0]):
+                for iwl in range(res.shape[1]):
+                    res[it, iwl, :, :] = res[it, iwl, :, :] / \
+                        np.sum(res[it, iwl, :, :])
 
         return res
 
@@ -517,6 +527,11 @@ class oimComponentRadialProfile(oimComponent):
         self.normalizeImage = True
         self.hankel = self.fht
 
+        self._t = None
+        self._wl = None
+        self._r = None
+
+        # CHECK: Is this not redundant as oimComponent is already ellpitical?
         # NOTE: Add ellipticity
         if self.elliptic == True:
             self.params["pa"] = oimParam(**_standardParameters["pa"])
@@ -740,7 +755,11 @@ class oimComponentFitsImage(oimComponentImage):
             raise TypeError("Current version only works with the same pixels"
                             " scale in x and y dimension")
         if "CUNIT1" in self._header:
-            unit0 = units.Unit(self._header["CUNIT1"])
+            try:
+                unit0 = units.Unit(self._header["CUNIT1"])
+            except:
+                unit0 = units.rad
+                    
         else:
             unit0 = units.rad
         self._pixSize0 = pixX*unit0.to(units.rad)

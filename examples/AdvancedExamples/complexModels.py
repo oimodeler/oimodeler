@@ -5,7 +5,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
 
-path = Path(oim.__file__).parent.parent
+
+path = Path(__file__).parent.parent.parent
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 fromFT = False
 nB = 500  # number of baselines
@@ -29,7 +35,7 @@ mg = oim.oimModel([g])
 
 figGim, axGim, im = mg.showModel(256, 0.1, wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6],
                                  swapAxes=True, figsize=(3.5, 2.5), fromFT=fromFT, normalize=True,
-                                 savefig=path / Path().parent / "images" / "complexModel_chromaticGaussian.png")
+                                 savefig=save_dir / "complexModel_chromaticGaussian.png")
 
 
 # %%
@@ -44,14 +50,14 @@ axGv.set_xlabel("B/$\\lambda$ (cycles/rad)")
 axGv.set_ylabel("Visiblity")
 axGv.margins(0, 0)
 
-plt.savefig(path / Path().parent / "images" / "complexModel_chromaticGaussianVis.png")
+plt.savefig(save_dir / "complexModel_chromaticGaussianVis.png")
 
 # %%
 ud = oim.oimUD(d=0.5, f=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 0.2]))
 m2 = oim.oimModel([ud, g])
 fig2im, ax2im, im2 = m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
                                   swapAxes=True, normPow=0.2, figsize=(3.5, 2.5), fromFT=fromFT, normalize=True,
-                                  savefig=path / Path().parent / "images" / "complexModel_UDAndGauss.png")
+                                  savefig=save_dir / "complexModel_UDAndGauss.png")
 
 vis = np.abs(m2.getComplexCoherentFlux(
     spf, spf*0, wls)).reshape(len(wl), len(B))
@@ -64,7 +70,7 @@ ax2v.set_xlabel("B/$\\lambda$ (cycles/rad)")
 ax2v.set_ylabel("Visiblity")
 ax2v.margins(0, 0)
 ax2v.set_ylim(0, 1)
-plt.savefig(path / Path().parent / "images" / "complexModel_UDAndGaussVis.png")
+plt.savefig(save_dir / "complexModel_UDAndGaussVis.png")
 
 # %%
 eg = oim.oimEGauss(fwhm=oim.oimInterp(
@@ -75,7 +81,7 @@ el = oim.oimEllipse(d=0.5, f=oim.oimInterp(
 m3 = oim.oimModel([el, eg])
 fig3im, ax3im, im3 = m3.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
                                   figsize=(3.5, 2.5), normPow=0.5, fromFT=fromFT, normalize=True,
-                                  savefig=path / Path().parent / "images" / "complexModel_Elong.png")
+                                  savefig=save_dir / "complexModel_Elong.png")
 
 
 # %%
@@ -101,7 +107,7 @@ ax3v[1].set_title("North-South Baselines")
 ax3v[1].set_xlabel("B/$\\lambda$ (cycles/rad)")
 fig3v.colorbar(sc, ax=ax3v.ravel().tolist(), label="$\\lambda$ ($\\mu$m)")
 
-plt.savefig(path / Path().parent / "images" / "complexModel_ElongVis.png")
+plt.savefig(save_dir / "complexModel_ElongVis.png")
 
 # %%
 pprint(m3.getFreeParameters())
@@ -123,7 +129,7 @@ m4 = oim.oimModel([el, eg, er])
 
 fig4im, ax4im, im4 = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
                                   figsize=(3.5, 2.5), normPow=0.5, fromFT=fromFT, normalize=True,
-                                  savefig=path / Path().parent / "images" / "complexModel_link.png")
+                                  savefig=save_dir / "complexModel_link.png")
 
 pprint(m4.getFreeParameters())
 
@@ -133,7 +139,7 @@ el.params['pa'].value = 45
 
 fig5im, ax5im, im = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
                                  figsize=(3.5, 2.5), normPow=0.5, fromFT=fromFT, normalize=True,
-                                 savefig=path / Path().parent / "images" / "complexModel_linkRotScale.png")
+                                 savefig=save_dir / "complexModel_linkRotScale.png")
 
 # %%
 gd1 = oim.oimGauss(fwhm=oim.oimInterp("time", mjd=[0, 1, 3], values=[1, 4, 1]))
@@ -147,4 +153,4 @@ times = [0, 1, 2, 3, 4]
 
 fig5im, ax5im, im5 = m5.showModel(256, 0.04, wl=wls, t=times, legend=True,
                                   figsize=(2.5, 2), fromFT=True, normalize=True,
-                                  savefig=path / Path().parent / "images" / "complexModel_time.png")
+                                  savefig=save_dir / "complexModel_time.png")

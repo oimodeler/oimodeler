@@ -16,7 +16,8 @@ import oimodeler as oim
 
 matplotlib.use('Agg')
 name = "realData"
-path = Path(oim.__file__).parent.parent
+
+path = Path(__file__).parent.parent.parent
 
 fc1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 fc2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
@@ -71,15 +72,15 @@ class baseTest:
 
         fname = prefix+self.name.replace(" ", "_")
 
-        figWalkers, _ = self.fit.walkersPlot(savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_walkers{ext}")
+        figWalkers, _ = self.fit.walkersPlot(savefig=path / "examples" / "testSuite" / "RESULTS" / f"{fname}_walkers{ext}")
         plt.close(figWalkers)
 
         figCorner, _ = self.fit.cornerPlot(discard=self.nstep//2,
-                                                   savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_corner{ext}")
+                                                   savefig=path / "examples" / "testSuite" / "RESULTS" / f"{fname}_corner{ext}")
         plt.close(figCorner)
 
         figSim, _ = self.fit.simulator.plot(["VIS2DATA", "T3PHI"],
-                                                savefig=path / Path().parent / "examples" / "testSuite" / "RESULTS" / f"{fname}_v2CP{ext}")
+                                                savefig=path / "examples" / "testSuite" / "RESULTS" / f"{fname}_v2CP{ext}")
         plt.close(figSim)
 
 
@@ -91,7 +92,7 @@ class matisse75Vir(baseTest):
     chi2r0 = 16.  # and Chi2r is not close to 1
     nwalker = 50
     nstep = 30000
-    pathData = pathData = path / Path().parent / "examples" / "testData" / "RealData" / "MATISSE" / "binary75Vir"
+    pathData = pathData = path / "examples" / "testData" / "RealData" / "MATISSE" / "binary75Vir"
     fdata = "2019-05-23T025507_75Vir_A0G1J2J3_IR-LM_LOW_noChop_cal_oifits_0.fits"
     filt = filt1
 

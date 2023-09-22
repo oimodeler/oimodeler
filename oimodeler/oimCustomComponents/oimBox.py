@@ -6,7 +6,7 @@ from ..oimParam import oimParam
 
 
 class oimBox(oimComponentFourier):
-    name="2D Box"
+    name="Rectangular Box"
     shortname = "BOX"
     def __init__(self,**kwargs): 
          super().__init__(**kwargs)

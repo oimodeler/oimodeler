@@ -18,7 +18,13 @@ import numpy as np
 import oimodeler as oim
 
 
-path = Path(oim.__file__).parent.parent
+path = Path(__file__).parent.parent.parent
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
 
 """
 Example of implementation of a new component defined by formula in Fourier Plan
@@ -79,7 +85,7 @@ m1.showModel(512, 0.2, axe=ax[0], colorbar=False)
 m1.showModel(512, 0.2, axe=ax[1], fromFT=True, colorbar=False)
 ax[0].set_title("Image with _imageFunction")
 ax[1].set_title("Image with FFT of _visFunction")
-fig.savefig(path / Path().parent / "images" / "customCompBox1Image.png")
+fig.savefig(save_dir / "customCompBox1Image.png")
 
 # %%
 b2 = oimBox(dx=2, dy=2, x=-20, y=0, f=0.5)
@@ -87,7 +93,7 @@ b3 = oimBox(dx=10, dy=20, x=30, y=-10, pa=-40, f=10)
 c = oim.oimUD(d=10, x=30, y=10)
 m2 = oim.oimModel([b1, b2, b3, c])
 m2.showModel(512, 0.2, colorbar=False, figsize=(5, 5),
-             savefig=path / Path().parent / "images" / "customCompBoxesImage.png")
+             savefig=save_dir / "customCompBoxesImage.png")
 
 
 # %%
@@ -98,7 +104,7 @@ b4.params['dy'] = oim.oimParamLinker(b4.params['dx'], 'mult', 4)
 m3 = oim.oimModel([b4])
 
 m3.showModel(512, 0.2, wl=[2e-6, 2.2e-6, 2.4e-6], colorbar=False, swapAxes=True,
-             savefig=path / Path().parent / "images" / "customCompChromBoxImages.png")
+             savefig=save_dir / "customCompChromBoxImages.png")
 
 
 # %%
@@ -149,4 +155,4 @@ ax[2, 1].set_xlabel("B/$\\lambda$ (cycles/rad)")
 ax[0, 0].set_title("East-West baselines")
 ax[0, 1].set_title("North-South baselines")
 
-fig.savefig(path / Path().parent / "images" / "customCompMultiBoxesVis.png")
+fig.savefig(save_dir / "customCompMultiBoxesVis.png")

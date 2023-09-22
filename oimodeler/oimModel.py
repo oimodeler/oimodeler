@@ -501,7 +501,7 @@ class oimModel:
             ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
         else:
             ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, t_arr, wl_arr).reshape(dims)
-            
+
         if display_mode == "vis":
             im = np.abs(ft)
             im /= im.max()
@@ -578,3 +578,17 @@ class oimModel:
         if savefig is not None:
             plt.savefig(savefig)
         return fig, axe, im
+    
+    def __str__(self):
+        txt = "Model with "
+        for comp in self.components:
+            txt += "\n" 
+            txt += comp.__str__()
+        return txt
+    
+    def __repr__(self):
+        txt = "oimModel at " + str(hex(id(self))) + " : "
+        for comp in self.components:
+            txt += "\n"             
+            txt += comp.__repr__()
+        return txt

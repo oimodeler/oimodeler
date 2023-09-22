@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Model parameter and parameter interpolators."""
+"""The oimParam.py module contains the definition of main model parameter class 
+:func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers, 
+normalizers and interpolators. 
+"""
 import sys
 from typing import Union, Optional, Dict
 
@@ -76,10 +79,10 @@ class oimParam:
     description: string, optional
         Description of the parameter. The default is "".
     unit: 1 or astropy.unit, optional
-        Unit of the parameter. The default is 1.
+        Unit of the parameter. The default is astropy.units.one
     """
     def __init__(self, name=None, value=None, mini=-1*np.inf, maxi=np.inf,
-                 description="", unit=1, free=True, error=0):
+                 description="", unit=u.one, free=True, error=0):
         """Initialize a new instance of the oimParam class. """
         self.name = name
         self.value = value
@@ -120,7 +123,28 @@ class oimParam:
 
 ###############################################################################
 class oimParamLinker:
+    """ Class to directly link two oimParam.
+
+    """
     def __init__(self, param, operator="add", fact=0):
+        """
+        
+
+        Parameters
+        ----------
+        param : oimParam
+            the oimParam to link with.
+        operator : str, optional
+            the operator to use Current values available are add or mult. The default is "add".
+        fact : float, optional
+            the value to add or multiply to tthe linked oimParam. The default is 0.
+
+        Returns
+        -------
+        None.
+
+        """
+    
         self.param = param
         self.fact = fact
 
@@ -133,6 +157,19 @@ class oimParamLinker:
         return self.param.unit
 
     def _setOperator(self, operator):
+        """
+        
+
+        Parameters
+        ----------
+        operator : the operator to use for linking the oimParam.
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         if operator == "add":
             self.op = self._add
         elif operator == "mult":
@@ -151,6 +188,14 @@ class oimParamLinker:
 
 
 class oimParamNorm:
+    """
+    Class to normalize a list of oimParam
+    
+    Example : 
+    p2 = oimParamNorm([p0,p1)]     
+                     
+    The value of p2 will always be 1-p2-p1      
+    """
     def __init__(self, params, norm=1):
         if type(params) == list:
             self.params = params
@@ -175,8 +220,19 @@ class oimParamNorm:
 ###############################################################################
 
 class oimInterp:
-    """Macro to directly create oimParamInterpolator-derived class in a
-    oimComponent object.
+    """Macro to directly create an oimParamInterpolator
+    
+    Example :
+        
+    .. code-block:: python
+    
+        g = oim.oimGauss(fwhm=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 8]))
+    
+    This will create a gaussiand component and remplace the parameter fwhm by an
+    instance of the oimParamInterpolatorWl class (i.e., the wavelength linear 
+    interpolator. The custom interpolator the reference to the interpolator 
+    need to be added to the  :func:`_interpolators <oimodeler.oimParam._interpolators>`
+    dictionnary.
 
     Parameters
     ----------
@@ -205,6 +261,7 @@ class oimInterp:
         if isinstance(self.type, str):
             self.type = getattr(CURRENT_MODULE, self.type)
 
+###############################################################################
 
 class oimParamInterpolator(oimParam):
     def __init__(self, param, **kwargs):

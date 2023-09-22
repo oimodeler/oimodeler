@@ -1,0 +1,5 @@
+@import 'css/theme.css';
+
+.wy-table-responsive table td {
+white-space: normal;
+}

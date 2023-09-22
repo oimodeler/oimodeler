@@ -15,7 +15,7 @@ from .oimBasicFourierComponents import *
 from .oimCustomComponents import *
 from .oimComponent import *
 from .oimData import *
-from .oimData import _oimDataType, _oimDataTypeArr, _oimDataTypeErr
+from .oimFluxData import *
 from .oimDataFilter import *
 from .oimFTBackends import numpyFFTBackend, FFTWBackend
 from .oimFitter import *
@@ -26,9 +26,12 @@ from .oimParam import _standardParameters, _interpolators
 from .oimPlots import *
 from .oimSimulator import *
 from .oimUtils import *
+from .oimUtils import  _oimDataType, _oimDataTypeArr, _oimDataTypeErr
 
 np.seterr(invalid='ignore')
 proj.register_projection(oimAxes)
+
+__version__ = "0.8.1"
 
 # TODO: After pathlib change of all `oimodeler` modules, remove str here
 __pkg_dir__ = Path(inspect.getfile(inspect.currentframe())).parent

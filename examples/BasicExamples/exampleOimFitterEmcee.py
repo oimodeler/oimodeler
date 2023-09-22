@@ -11,11 +11,16 @@ import oimodeler as oim
 
 
 # Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
-path = Path(oim.__file__).parent.parent
-pathData = path / Path() / "examples" / "testData" / "ASPRO_MATISSE2"
+path = Path(__file__).parent.parent.parent
+data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-files = list(map(str, pathData.glob("*.fits")))
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
+# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
+files = list(map(str, data_dir.glob("*.fits")))
 
 # Building a oimodeler model with the same parameters
 ud = oim.oimUD(d=3, f=0.5)
@@ -53,14 +58,15 @@ sampler = fit.sampler
 chain = fit.sampler.chain
 lnprob = fit.sampler.lnprobability
 
-
 # %%
-figWalkers, axeWalkers = fit.walkersPlot(cmap="plasma_r", savefig=path / Path().parent / "images" / "exampleOimFitterEmceeWalkers.png")
-figCorner, axeCorner = fit.cornerPlot(discard=1000, savefig=path / Path().parent / "images" / "exampleOimFitterEmceeCorner.png")
+figWalkers, axeWalkers = fit.walkersPlot(cmap="plasma_r",
+                                         savefig=save_dir / "exampleOimFitterEmceeWalkers.png")
+figCorner, axeCorner = fit.cornerPlot(discard=1000,
+                                      savefig=save_dir / "exampleOimFitterEmceeCorner.png")
 
 # %%
 median, err_l, err_u, err = fit.getResults(mode='median', discard=1000, chi2limfact=20)
 
 # %%
 fig0, ax0 = fit.simulator.plot(["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],
-                               savefig=path / Path().parent / "images" / "ExampleOimFitterEmcee_fittedData.png")
+                               savefig=save_dir / "ExampleOimFitterEmcee_fittedData.png")

@@ -11,22 +11,16 @@ import numpy as np
 import oimodeler as oim
 
 
-MAS2RAD = u.mas.to(u.rad)
-DIM = 256
-
-
 class oimExpRing(oim.oimComponentRadialProfile):
     name = "A ring with a descreasing exponential profil"
     shortname = "ExpR"
-
     elliptic = True
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["d"] = oim.oimParam(**(oim._standardParameters["d"]))
+        self.params["dim"] =  oim.oimParam(**(oim._standardParameters["dim"]))
         self.params["fwhm"] = oim.oimParam(**(oim._standardParameters["fwhm"]))
-
-        self._dim = DIM
 
         self._t = np.array([0])  # constant value <=> static model
         self._wl = None  # np.array([0.5,1])*1e-6
@@ -52,7 +46,7 @@ class oimExpRing(oim.oimComponentRadialProfile):
             fwhm_max = self.params["fwhm"](1e99)
             r0_max = self.params["d"](1e99)
         rmax = r0_max+8*fwhm_max
-        return np.linspace(0, 1, self._dim)*rmax
+        return np.linspace(0, 1, self.params["dim"].value)*rmax
 
     @_r.setter
     def _r(self, r):
@@ -60,8 +54,8 @@ class oimExpRing(oim.oimComponentRadialProfile):
 
 
 # %% Creating UD model for radial profile
-ring = oimExpRing(d=5, fwhm=oim.oimInterp(
-    "wl", wl=[0.5e-6, 1e-6], values=[0.2, 4]), elong=2, pa=30)
+fwhm = oim.oimInterp("wl", wl=[0.5e-6, 1e-6], values=[0.2, 4])
+ring = oimExpRing(dim=256, d=5, fwhm=fwhm, elong=2, pa=30)
 m = oim.oimModel(ring)
 
 # %% Computing and plotting visibilities for various baselines and walvelengths
@@ -103,11 +97,11 @@ sm = plt.cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax, label="$\\lambda$ ($\\mu$m)")
 
 # %% plttnig images of the models from direct formula and from FT
-pix = 0.15
-DIM = 512
+dim, pix = 512, 0.15
 fig, ax, im = m.showModel(
-    DIM, pix, wl=[wl[0], wl[nwl//2-1], wl[-1]], legend=True, normalize=True)
+    dim, pix, wl=[wl[0], wl[nwl//2-1], wl[-1]], legend=True, normalize=True)
 fig.suptitle("Direct images")
-figFT, axFT, imFT = m.showModel(DIM, pix, wl=[
+figFT, axFT, imFT = m.showModel(dim, pix, wl=[
                                 wl[0], wl[nwl//2-1], wl[-1]], legend=True, normalize=True, fromFT=True)
 figFT.suptitle("Images computed from inverse FT")
+plt.show()

@@ -1,7 +1,8 @@
 """Set global options of the oimodeler software."""
-from .oimFTBackends import numpyFFTBackend
+from .oimFTBackends import numpyFFTBackend, FFTWBackend
 
-# NOTE: The dictionary oimOption contains all the customizable option of oimodeler
+# NOTE: The dictionary oimOption contains all the customizable option
+# of `oimodeler`.
 oimOptions = {}
 
 # NOTE: Fourier transform settings

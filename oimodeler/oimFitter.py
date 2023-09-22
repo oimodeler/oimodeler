@@ -4,7 +4,9 @@ from multiprocessing import Pool
 
 import corner
 import emcee
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
 
 from .oimParam import oimParam
@@ -22,6 +24,12 @@ class oimFitter(object):
             self.simulator = args[0]
         else:
             raise TypeError("Wrong number of arguments")
+
+
+        try:
+            self.dataTypes = kwargs.pop("dataTypes")
+        except:
+            self.dataTypes = None
 
         self.data = self.simulator.data
         self.model = self.simulator.model
@@ -90,11 +98,26 @@ class oimFitterEmcee(oimFitter):
         elif init == "gaussian":
             self.initialParams = self._initGaussian()
 
-        moves = [(emcee.moves.DEMove(), 0.8),
-                 (emcee.moves.DESnookerMove(), 0.2)]
-        self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
-                                             self.nfree, self._logProbability,
-                                             moves=moves, pool=self.pool, **kwargs)
+        if "moves" in kwargs:
+            moves = kwargs.pop['moves']
+        else:
+            moves = [(emcee.moves.DEMove(), 0.8),
+                     (emcee.moves.DESnookerMove(), 0.2)]
+
+        if not ('samplerFile' in kwargs):
+            samplerFile = None
+        else :
+            samplerFile = kwargs.pop('samplerFile')
+
+        if  samplerFile == None:
+            self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
+                                 self.nfree, self._logProbability, moves=moves,
+                                      **kwargs)
+        else :
+            backend = emcee.backends.HDFBackend(samplerFile)
+            self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
+                     self.nfree, self._logProbability, moves=moves,
+                            backend=backend, **kwargs)
         return kwargs
 
     def _initGaussian(self):
@@ -102,8 +125,9 @@ class oimFitterEmcee(oimFitter):
         initialParams = np.ndarray([nw, self.nfree])
 
         for iparam, parami in enumerate(self.freeParams.values()):
-            initialParams[:, iparam] = np.random.normal(parami.value,
-                                                        parami.error, self.params['nwalkers'].value)
+            initialParams[:, iparam] = \
+                np.random.normal(parami.value,parami.error,
+                                 self.params['nwalkers'].value)
         return initialParams
 
     def _initRandom(self):
@@ -142,7 +166,7 @@ class oimFitterEmcee(oimFitter):
             if not low < val < up:
                 return -np.inf
 
-        self.simulator.compute(computeChi2=True)
+        self.simulator.compute(computeChi2=True,dataTypes = self.dataTypes)
         return -0.5 * self.simulator.chi2r
 
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
@@ -177,13 +201,21 @@ class oimFitterEmcee(oimFitter):
             parami.value = res[iparam]
             parami.error = err[iparam]
 
-        self.simulator.compute(computeChi2=True, computeSimulatedData=True)
+        self.simulator.compute(computeChi2=True, computeSimulatedData=True
+                               ,dataTypes=self.dataTypes)
 
         return res, err, err_m, err_p
 
     def cornerPlot(self, discard=0, chi2limfact=20, savefig=None, **kwargs):
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
+
+
+        kwargs0 = dict(quantiles=[ 0.16, 0.5, 0.84], show_titles=True, bins=50,
+            smooth=2, smooth1d=2, fontsize=8, title_kwargs={'fontsize': 8},
+            use_math_text=True)
+
+        kwargs = {**kwargs0,**kwargs}
 
         labels = []
         for namei, uniti in zip(pnames, punits):
@@ -198,15 +230,15 @@ class oimFitterEmcee(oimFitter):
         idx = np.where(chi2 < chi2limfact*chi2.min())[0]
         c2 = c[idx, :]
 
-        fig = corner.corner(c2, labels=labels, quantiles=[
-                            0.16, 0.5, 0.84], show_titles=True, bins=50, smooth=2, smooth1d=2, fontsize=8, title_kwargs={'fontsize': 8}, use_math_text=True)
+        fig = corner.corner(c2, labels=labels,**kwargs )
 
         if savefig != None:
             plt.savefig(savefig)
 
         return fig, fig.axes
 
-    def walkersPlot(self, savefig=None, chi2limfact=20, labelsize=10, **kwargs):
+    def walkersPlot(self, savefig=None, chi2limfact=20, labelsize=10,
+                       ncolors=128, **kwargs):
         fig, ax = plt.subplots(self.nfree, figsize=(10, 7), sharex=True)
         if self.nfree == 1:
             ax = np.array([ax])
@@ -228,10 +260,37 @@ class oimFitterEmcee(oimFitter):
         xf = xf[idx]
         samples = samples.reshape(
             [samples.shape[0]*samples.shape[1], samples.shape[2]])[idx, :]
-        for i in range(self.nfree):
+        """
+        idxCut=np.where(chi2f<chi2limfact*chi2.min())[0]
+        print(idxCut)
 
-            scale = ax[i].scatter(xf, samples[:, i], c=chi2f, marker=".",
-                                  vmin=chi2.min(), vmax=chi2limfact*chi2.min(), s=0.1, **kwargs)
+        print(idxCut.shape)
+        print(chi2f.shape)
+        print(xf.shape)
+
+        chi2f = chi2f[idxCut]
+        xf = xf[idxCut]
+        samples = samples[idxCut, :]
+        """
+        chi2min=chi2f.min()
+        chi2max=chi2limfact*chi2min
+        chi2bins=np.linspace(chi2max,chi2min,ncolors)
+        if 'cmap' in kwargs:
+            cmap=cm.get_cmap(kwargs.pop('cmap'), ncolors)
+        else:
+            cmap=cm.get_cmap(mpl.rcParams['image.cmap'],ncolors)
+
+        for i in range(self.nfree):
+            for icol in range(ncolors):
+                if icol!=0:
+                    idxi=np.where((chi2f>chi2bins[icol]) & (chi2f<=chi2bins[icol-1]))[0]
+                else:
+                    idxi=np.where(chi2f>chi2bins[icol])[0]
+
+                ax[i].scatter(xf[idxi], samples[idxi, i],
+                              color=cmap(ncolors-icol-1),
+                              marker=".", s=0.1, **kwargs)
+
             ax[i].set_xlim(0, np.max(xf))
 
             txt = pnames[i]
@@ -247,7 +306,11 @@ class oimFitterEmcee(oimFitter):
                        backgroundcolor=(1, 1, 1, 0.5))
             ax[i].yaxis.set_label_coords(-0.1, 0.5)
 
-        fig.colorbar(scale, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
+        norm = mpl.colors.Normalize(vmin=chi2min, vmax=chi2max)
+        sm =cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        fig.colorbar(sm,ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
+        #fig.colorbar(scale, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
 
         ax[-1].set_xlabel("step number")
 

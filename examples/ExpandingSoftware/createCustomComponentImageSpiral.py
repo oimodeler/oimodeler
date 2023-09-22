@@ -11,7 +11,13 @@ import numpy as np
 import oimodeler as oim
 from astropy import units as units
 
-path = Path(oim.__file__).parent.parent
+
+path = Path(__file__).parent.parent.parent
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 
 class oimSpiral(oim.oimComponentImage):
@@ -70,8 +76,7 @@ m.showModel(256, 0.1, swapAxes=True, fromFT=True,
 ax[1].get_yaxis().set_visible(False)
 ax[0].set_title("Direct Image")
 ax[1].set_title("From FFT")
-fig.savefig(path / Path().parent / "images" / "customCompImageSpiral.png")
-
+fig.savefig(save_dir / "customCompImageSpiral.png")
 
 # %% Computing and plotting visibilities for various baselines and walvelengths
 nB = 5000
@@ -99,5 +104,4 @@ ax.plot(B/wl/units.rad.to(units.mas),
 ax.set_xlabel("B/$\lambda$ (cycles/mas)")
 ax.set_ylabel("Visibility")
 ax.legend()
-
-fig.savefig(path / Path().parent / "images" / "customCompImageSpiralVis.png")
+fig.savefig(save_dir / "customCompImageSpiralVis.png")

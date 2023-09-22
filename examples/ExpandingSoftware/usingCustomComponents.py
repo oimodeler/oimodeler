@@ -15,7 +15,12 @@ from astropy import units as units
 from oimodeler.oimCustomComponents import oimFastRotator, oimSpiral, oimBox
 
 
-path = Path(oim.__file__).parent.parent
+path = Path(__file__).parent.parent.parent
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 # %% Creating a model
 fastRot = oimFastRotator(dpole=5, dim=128, incl=-70, rot=0.99,
@@ -76,4 +81,4 @@ plt.subplots_adjust(left=0.10, bottom=0.15, right=0.95,
 norm = colors.Normalize(vmin=np.min(wl)*1e6, vmax=np.max(wl)*1e6)
 sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
 fig.colorbar(sm, ax=ax[3], label="$\\lambda$ ($\\mu$m)")
-fig.savefig(path / Path().parent / "images" / "usingCustomComponents.png")
+fig.savefig(save_dir / "usingCustomComponents.png")

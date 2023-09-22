@@ -14,4 +14,5 @@ from .oimKinematicDisk import oimKinematicDisk
 from .oimRadialRing import oimRadialRing
 from .oimSpiral import oimSpiral
 from .oimTempGradient import oimTempGradient
-    
+from .oimKinematicDisk import oimKinematicDisk
+from .oimExpRing import oimExpRing
