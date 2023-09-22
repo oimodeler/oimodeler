@@ -3,7 +3,6 @@ import numpy as np
 from ..oimParam import _standardParameters, oimParam
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import oimOptions
-from ..oimUtils import convert_distance_to_angle
 
 
 class oimRadialRing(oimComponentRadialProfile):
@@ -81,12 +80,10 @@ class oimRadialRing(oimComponentRadialProfile):
     @property
     def _r(self):
         """Gets the radial profile [mas]."""
-        rout = convert_distance_to_angle(
-                self.params["dout"].value/2, self.params["dist"].value)
         # TODO: Check if this is needed here as the hankel transform already pads.
         binning =  1 if oimOptions["FTBinningFactor"] is None\
                 else oimOptions["FTBinningFactor"]
-        rmax = binning*rout
+        rmax = binning*self.params["dout"].value/2
         if oimOptions["GridType"] == "linear":
             return np.linspace(0, 1, self.params["dim"].value)*rmax
         return np.logspace(0.0, np.log10(rmax), self.params["dim"].value)
