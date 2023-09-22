@@ -593,7 +593,7 @@ class oimComponentRadialProfile(oimComponent):
 
     @staticmethod
     def fht(Ir, r, wlin, tin, sfreq, wl, t):
-        pad = 1 if oimOptions['FTpaddingFactor'] is None else oimOptions['FTpaddingFactor']
+        pad = 1 if oimOptions['FTPaddingFactor'] is None else oimOptions['FTPaddingFactor']
         nr = r.size
         ntin = tin.size
         nwlin = wlin.size

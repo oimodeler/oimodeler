@@ -16,7 +16,7 @@ import matplotlib.cm as cm
 # setting the FFT parameters and backend. As the kinematicsDisk model as no 
 # outer sharp edge we decide not to zero-pad the images during the FFT process
 # no oder to save time and without noticeable effect on the simulated visibilities
-oim.oimOptions['FTpaddingFactor']=2
+oim.oimOptions['FTPaddingFactor']=2
 oim.oimOptions['FTBackend']=oim.FFTWBackend
 
 # Global simulation parameters

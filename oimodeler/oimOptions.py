@@ -7,8 +7,8 @@ oimOptions = {}
 
 # NOTE: Fourier transform settings
 oimOptions["AvailableFTBackends"] = [numpyFFTBackend]
-oimOptions["FTpaddingFactor"] = None
-oimOptions["FTbinningFactor"] = None
+oimOptions["FTPaddingFactor"] = None
+oimOptions["FTBinningFactor"] = None
 oimOptions["FTBackend"] = numpyFFTBackend
 oimOptions["GridType"] = "linear"
 

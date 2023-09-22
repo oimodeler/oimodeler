@@ -139,8 +139,8 @@ class oimTempGradient(oimComponentRadialProfile):
         rout = convert_distance_to_angle(
                 self.params["rout"].value, self.params["dist"].value)
         # TODO: Check if this is needed here as the hankel transform already pads.
-        binning =  1 if oimOptions["FTbinningFactor"] is None\
-                else oimOptions["FTbinningFactor"]
+        binning =  1 if oimOptions["FTBinningFactor"] is None\
+                else oimOptions["FTBinningFactor"]
         rmax = binning*rout
         if oimOptions["GridType"] == "linear":
             return np.linspace(0, 1, self.params["dim"].value)*rmax

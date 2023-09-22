@@ -114,8 +114,8 @@ def pad_image(image: np.ndarray):
     s0x = np.trim_zeros(im0x).size
     s0y = np.trim_zeros(im0y).size
 
-    min_sizex = s0x*oimOptions["FTpaddingFactor"]
-    min_sizey = s0y*oimOptions["FTpaddingFactor"]
+    min_sizex = s0x*oimOptions["FTPaddingFactor"]
+    min_sizey = s0y*oimOptions["FTPaddingFactor"]
 
     min_pow2x = 2**(min_sizex - 1).bit_length()
     min_pow2y = 2**(min_sizey - 1).bit_length()
