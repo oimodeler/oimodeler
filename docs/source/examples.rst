@@ -9,7 +9,7 @@ github repository. Before looking at these examples, you might want to check the
 
 .. toctree::
     basicExamples
-    advancedExamples
+    manipulatingOifitsData
+    advancedExamples  
     expandingSoftware
-    performanceTests
     :maxdepth: 2

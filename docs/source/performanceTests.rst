@@ -1,5 +1,0 @@
-..  _performanceTests:
-
-Performance Tests
------------------
-

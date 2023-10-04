@@ -1,4 +1,5 @@
 @import 'css/theme.css';
+@import 'pygments.css';
 
 .wy-table-responsive table td {
 white-space: normal;
