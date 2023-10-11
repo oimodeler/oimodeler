@@ -36,7 +36,7 @@ dependencies = [
     "numpy>=1.24.1",
     "scipy>=1.10.0",
     "tqdm>=4.64.1",
-    "pyfftw>=0.13.1",
+    "pyFFTW>=0.13.1",
 ]
 
 [options.extras_require]

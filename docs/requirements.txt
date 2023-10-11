@@ -6,3 +6,4 @@ astroquery
 emcee
 corner
 autodocsumm
+pyFFTW
