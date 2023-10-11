@@ -49,6 +49,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'autodocsumm',
     'sphinx_rtd_theme',
+    'matplotlib.sphinxext.plot_directive',
 ]
 
 napoleon_google_docstring = False

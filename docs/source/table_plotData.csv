@@ -1,0 +1,14 @@
+Name;Description;Abscissa;Ordinate;Colorscale;unit
+LENGTH;Baseline Length;X;O;X;meters
+PA;Baseline Position Angle;X;O;X;degrees
+UCOORD;U coordinate of the baseline ;X;O;X;meters
+VCOORD;V coordinate of the baseline ;X;O;X;meters
+SPAFREQ;Spatial frequency (B/wl);X;O;X;cycle/rad
+EFF_WAVE;Effective wavelength;X;O;X;meters
+MJD;Modified Julian Day (Time);X;O;X;day
+VIS2DATA;Square visibility from OI_VIS2 table;X;X;X;None
+VISAMP;Visibility from OI_VIS table;X;X;X;None
+VISPHI;(differential) phase from OI_VIS table;X;X;X;meters
+T3AMP;Amplitude of the triple product from OI_T3 table;X;X;X;None
+T3PHI;Closure Phase from OI_T3 table;X;X;X;meters
+FLUXDATA;Flux from OI_FLUX table;X;X;X;Flux density units
