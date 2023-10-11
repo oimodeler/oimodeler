@@ -30,25 +30,25 @@ def getDataTypeIsAnalysisComplex(dataType):
         return _oimDataAnalysisInComplex[_oimDataType.index(dataType)]
     except:
         raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
-        
-        
+
+
 def getDataArrname(dataType):
     try:
         return _oimDataTypeArr[_oimDataType.index(dataType)]
     except:
         raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
-   
-  
+
+
 def getDataType(dataArrname):
-    return[ datatypei for datatypei,arrnamei 
+    return[ datatypei for datatypei,arrnamei
            in zip(_oimDataType,_oimDataTypeArr) if arrnamei==dataArrname]
-  
-  
+
+
 def getDataTypeError(dataArrname):
-    return[ datatypei for datatypei,arrnamei 
+    return[ datatypei for datatypei,arrnamei
            in zip(_oimDataTypeErr,_oimDataTypeArr) if arrnamei==dataArrname]
-  
-  
+
+
 def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
     """Planck's law with output in cgs.
 
@@ -70,8 +70,8 @@ def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
     frequencies = (const.c.cgs/(wavelength).to(u.cm))
     return ((2*const.h.cgs*frequencies**3/const.c.cgs**2)\
             * (1/(np.exp(const.h.cgs*frequencies/(const.k_B.cgs*temperature))-1))).value
-  
-  
+
+
 def calculate_intensity(wavelengths: u.um, temperature: u.K,
                         pixel_size: Optional[float] = None) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
@@ -100,8 +100,8 @@ def calculate_intensity(wavelengths: u.um, temperature: u.K,
                 u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
         spectral_profile.append((spectral_radiance*pixel_size**2).to(u.Jy).value)
     return np.array(spectral_profile)
-  
-  
+
+
 def pad_image(image: np.ndarray):
     """Pads an image with additional zeros for Fourier transform."""
     im0 = np.sum(image, axis=(0, 1))
@@ -250,40 +250,40 @@ def convert_distance_to_angle(radius: Union[float, np.ndarray],
     """
     radius = (((radius*u.au).to(u.m)/(distance*u.pc).to(u.m))*u.rad).to(u.mas)
     return radius if rvalue else radius.value
-  
-  
+
+
 def loadOifitsData(something, mode="listOfHdlulist"):
-    """ 
-    return the oifits data from either filenames, already opened oifts or a 
-    oimData boject as either a list of hdlulist (default) or as a oimData 
-    object using the option mode="oimData". This Function is used in oimData 
+    """
+    return the oifits data from either filenames, already opened oifts or a
+    oimData boject as either a list of hdlulist (default) or as a oimData
+    object using the option mode="oimData". This Function is used in oimData
     and multiple plotting functions
-    
+
     Parameters
     ----------
     something : astropy.io.fits.hdu.hdulist.HDUList, oimodeler.oimData, string, list
-        The data to deal with. Can be a oimData object, a hdulist, a string 
+        The data to deal with. Can be a oimData object, a hdulist, a string
         representing a filename or a list of these kind of object
     mode : str, optional
         The type of the return data, either "listOfHdlulist" or "oimData"
         The default is "listOfHdlulist"
     """
-    
+
     if isinstance(something, oim.oimData):
         if mode =="oimData":
             data = something
-        else:    
-            data = something.data    
-    else: 
-               
+        else:
+            data = something.data
+    else:
+
         if isinstance(something,fits.hdu.hdulist.HDUList) or \
            isinstance(something,PathLike) or \
            isinstance(something,str):
             something=[something]
-            
+
         if isinstance(something,list):
-            data=[] 
-            
+            data=[]
+
             for el in something:
                 if  isinstance(el,fits.hdu.hdulist.HDUList):
                     data.append(el)
@@ -295,13 +295,13 @@ def loadOifitsData(something, mode="listOfHdlulist"):
                                          " valid fits files")
         else:
             raise TypeError("only oimData,hdulist,Path or string, or list of"\
-                            " these kind of objects allowed ") 
-            
+                            " these kind of objects allowed ")
+
         if mode =="oimData":
              data = oim.oimData(data)
-    
+
     return data
-    
+
 
 def getBaselineName(oifits, hduname="OI_VIS2", length=False, angle=False,
                     extver=None, squeeze=True):
@@ -352,7 +352,7 @@ def getBaselineName(oifits, hduname="OI_VIS2", length=False, angle=False,
 
         stanames = data[iarr].data['STA_NAME']
 
-        
+
         staindexes = data[iarr].data['STA_INDEX']
 
         staidx = data[idx[idata]].data['STA_INDEX']
@@ -426,7 +426,7 @@ def getConfigName(oifits, hduname="OI_VIS2", extver=None, squeeze=True):
 
 
 def getBaselineLengthAndPA(oifits, arr="OI_VIS2", extver=None, squeeze=True,
-                           returnUV=False):
+                           returnUV=False,T3Max=False):
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
 
@@ -439,7 +439,7 @@ def getBaselineLengthAndPA(oifits, arr="OI_VIS2", extver=None, squeeze=True,
     arr: str, optional
         The fits extension name. The default is "OI_VIS2".
     returnUV: bool
-        if True also return the u,v coordinates in m 
+        if True also return the u,v coordinates in m
         the default is False
 
     Returns
@@ -451,7 +451,7 @@ def getBaselineLengthAndPA(oifits, arr="OI_VIS2", extver=None, squeeze=True,
     ucoord: numpy.ndarray
         the array containing the u coordinate (in m)(optional)
     ucoord: numpy.ndarray
-        the array containing the u coordinate (in m)(optional)        
+        the array containing the u coordinate (in m)(optional)
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
@@ -474,10 +474,10 @@ def getBaselineLengthAndPA(oifits, arr="OI_VIS2", extver=None, squeeze=True,
         if arr != "OI_T3":
             u = datai.data["UCOORD"]
             v = datai.data["VCOORD"]
-            
+
             ucoord.append(u)
             vcoord.append(v)
-            
+
             B.append(np.sqrt(u**2+v**2))
             PA.append(np.rad2deg(np.arctan2(u, v)))
         else:
@@ -487,26 +487,31 @@ def getBaselineLengthAndPA(oifits, arr="OI_VIS2", extver=None, squeeze=True,
             v2 = datai.data["V2COORD"]
             u3 = u1+u2
             v3 = v1+v2
-            
+
             ucoord.append([u1,u2,u3])
-            vcoord.append([v1,v2,v3])  
-            
+            vcoord.append([v1,v2,v3])
+
             B1 = np.sqrt(u1**2+v1**2)
             B2 = np.sqrt(u2**2+v2**2)
             B3 = np.sqrt(u3**2+v3**2)
-            B.append(np.array([B1, B2, B3]))
             PA1 = np.rad2deg(np.arctan2(u1, v1))
             PA2 = np.rad2deg(np.arctan2(u2, v2))
             PA3 = np.rad2deg(np.arctan2(u3, v3))
-            PA.append(np.array([PA1, PA2, PA3]))
-    
-         
+
+            if T3Max:
+                B.append(np.max(np.array([B1, B2, B3]),axis=0))
+                PA.append(0*PA1) # TODO: what's the PAS of a triangle?
+            else:
+                B.append(np.array([B1, B2, B3]))
+                PA.append(np.array([PA1, PA2, PA3]))
+
+
     if squeeze == True and len(B) == 1:
         B = B[0]
         PA = PA[0]
         ucoord=ucoord[0]
         vcoord=vcoord[0]
-        
+
     if returnUV:
         return B,PA,ucoord,vcoord
     else:
@@ -534,7 +539,7 @@ def get2DSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
     else:
         data = oifits
 
-    _ , _, ucoord, vcoord = getBaselineLengthAndPA(data, arr, extver, 
+    _ , _, ucoord, vcoord = getBaselineLengthAndPA(data, arr, extver,
                                                    squeeze=False, returnUV=True)
 
     if arr == "OI_T3":
@@ -573,7 +578,7 @@ def get2DSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
         nB = np.size(ucoord[iarr])
 
         spaFreqUi = np.ndarray([nB, nlam])
-        spaFreqVi = np.ndarray([nB, nlam])        
+        spaFreqVi = np.ndarray([nB, nlam])
         for iB in range(nB):
             spaFreqUi[iB, :] = ucoord[iarr][iB]/lam*mult
             spaFreqVi[iB, :] = vcoord[iarr][iB]/lam*mult
@@ -582,7 +587,7 @@ def get2DSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
     if squeeze == True and len(spaFreqU) == 1:
         spaFreqU = spaFreqU[0]
         spaFreqV = spaFreqV[0]
-        
+
     return spaFreqU,spaFreqV
 
 
@@ -659,26 +664,26 @@ def getSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
 
 
 def getWlFromOifits(oifits, arr="OI_VIS2",extver=None,returnBand=False):
-    
+
     if isinstance(arr,str):
         arr=oifits[arr,extver]
-        
+
     insname=arr.header['INSNAME']
-    
+
     oiwls = np.array([di for di in oifits if di.name == "OI_WAVELENGTH"])
     oiwls_insname = np.array([oiwli.header['INSNAME'] for oiwli in oiwls])
-    
+
     iwl=np.where(oiwls_insname == insname)[0][0]
     oiwl = oiwls[iwl]
-    
+
     wl  = oiwl.data['EFF_WAVE']
-    
+
     if returnBand:
         dwl = oiwl.data['EFF_BAND']
         return wl,dwl
     else:
         return wl
-    
+
 
 def hdulistDeepCopy(hdulist):
     res = hdulist.copy()
@@ -812,13 +817,13 @@ oi_target_columns=[
     ("PMDEC_ERR","D",    False, "Error of proper motion in Dec","deg/yr"),
     ("PARALLAX", "E",    False, "Parallax","deg"),
     ("PARA_ERR", "E",    False, "Error in parallax ","deg"),
-    ("SPECTYP",  "16A",  False, "Spectral type","deg"),    
-    ("CATEGORY", "3A",   True,  "CAL or SCI",None)]    
+    ("SPECTYP",  "16A",  False, "Spectral type","deg"),
+    ("CATEGORY", "3A",   True,  "CAL or SCI",None)]
 
 oi_array_keywords=[
     ("OI_REVN", False, "Revision number"),
     ("ARRNAME", False, "A Array name, for cross-referencing"),
-    ("FRAME",   False, "A Coordinate frame"),    
+    ("FRAME",   False, "A Coordinate frame"),
     ("ARRAYX",  False, "Array center x coordinates (m)"),
     ("ARRAYY",  False, "Array center y coordinates (m)"),
     ("ARRAYZ",  False, "Array center z coordinates (m)")]
@@ -940,18 +945,18 @@ def _createOiTab(extname,keywords_def,colums_def,dataTypeFromShape,**kwargs):
     for el in kwargs.keys():
         upper=el.upper()
         keys[upper]=kwargs[el]
-        
+
     if "DATE_OBS"  in keys:
         keys["DATE-OBS"] = keys.pop("DATE_OBS")
-        
+
     if "DATEOBS"  in keys:
-        keys["DATE-OBS"] = keys.pop("DATEOBS")        
+        keys["DATE-OBS"] = keys.pop("DATEOBS")
 
     try:
         nb = len(keys["TARGET_ID"])
     except:
         nb=1
-        
+
     shape = np.shape(keys[dataTypeFromShape])
     dim = len(shape)
 
@@ -959,8 +964,8 @@ def _createOiTab(extname,keywords_def,colums_def,dataTypeFromShape,**kwargs):
         keys["TIME"] = np.zeros(nb)
     if not("OI_REVN" in keys):
         keys["OI_REVN"] = 2
-         
-         
+
+
     if (dim == 2):
         nwl = shape[1]
     elif (dim == 1):
@@ -968,36 +973,36 @@ def _createOiTab(extname,keywords_def,colums_def,dataTypeFromShape,**kwargs):
             nwl = 1
         else:
             nwl = shape[0]
-            
+
     cols = []
 
     for colname,form,optional,comment,unit in colums_def:
 
         if not(colname in keys) and optional==False:
-            raise TypeError(f"Missing {colname} column")  
-            
+            raise TypeError(f"Missing {colname} column")
+
         elif colname in keys:
             if "NWL" in form:
                 form= f"{nwl}{form[3:]}"
-        
+
             if unit=="external":
                 try:
                     unit=keys["UNIT"]
                 except:
-                    raise TypeError(f"missing unit for {colname}")   
+                    raise TypeError(f"missing unit for {colname}")
             cols.append(fits.Column(name=colname, format=form,
                                     array=np.array(keys[colname]), unit=unit))
-        
+
     hdu = fits.BinTableHDU.from_columns(cols)
-    
+
     for keyword,optional,comment in keywords_def:
-        
+
         if not(keyword in keys) and optional==False:
             raise TypeError(f"Missing {keyword} keyword")
-            
+
         elif keyword in keys:
             hdu.header[keyword]=(keys[keyword], comment)
-    
+
     hdu.header['EXTNAME'] = extname
     if "EXTVER" in keys:
         hdu.header['EXTVER'] = (keys["EXTVER"], f'ID number of this {extname}')
@@ -1049,13 +1054,13 @@ def createOiFlux(**kwargs):
 def createOiTargetFromSimbad(names):
 
     customSimbad = Simbad()
-    customSimbad.add_votable_fields('plx', 'plx_error', 
+    customSimbad.add_votable_fields('plx', 'plx_error',
                                     'propermotions', 'sptype', 'velocity')
     if type(names) == type(""):
         names = [names]
     data = customSimbad.query_objects(names)
     ntargets = len(names)
-    
+
     rad = Angle(data['RA'], unit="hourangle").deg
     dec = Angle(data['DEC'], unit="deg").deg
     ra_err = (data['COO_ERR_MAJA'].data*u.mas).to_value(unit='deg')
@@ -1070,7 +1075,7 @@ def createOiTargetFromSimbad(names):
     hdu = createOiTarget(target_id=np.arange(1, ntargets+1), target=names,
         raep0=rad, decep0=dec, equinox=np.repeat(2000, ntargets),
         ra_err = ra_err, dec_err = dec_err, sysvel=np.zeros([ntargets]),
-        veltyp = np.repeat("UNKNOWN", ntargets), 
+        veltyp = np.repeat("UNKNOWN", ntargets),
         veldef = np.repeat("OPTICAL", ntargets), pmra = pmra,pmdec = pmdec,
         pmra_err = pmra_err, pmdec_err = pmdec_err, parallax = plx_value,
         para_err = plx_error,spectyp = data['SP_TYPE'])
@@ -1081,7 +1086,7 @@ def createOiTargetFromSimbad(names):
 ###############################################################################
 
 #TODO this current method does not allow to shift baseline of the same oifits
-# individually. 
+# individually.
 
 def shiftWavelength(oifits,shift,verbose=False):
     if type(oifits)==type(""):
@@ -1102,23 +1107,23 @@ def shiftWavelength(oifits,shift,verbose=False):
 ###############################################################################
 #TODO for phases smoothing should be done in complex plan
 def spectralSmoothing(oifits,kernsize,cols2Smooth="all",normalizeError=True):
-    
+
     tableToSmooth=["OI_VIS","OI_VIS2","OI_T3","OI_FLUX"]
-    
+
     if type(oifits)==type(""):
         data=fits.open(oifits)
     else:
         data=oifits
 
     kernel=np.ones(kernsize)/kernsize
-    
+
     if not( isinstance(cols2Smooth,list)):
         cols2Smooth=[cols2Smooth]
-        
+
     if  "all" in cols2Smooth:
         cols2Smooth = ["VIS2DATA","VIS2ERR","VISAMP","VISAMPERR","VISPHI","VISPHIERR",
                      "T3AMP","T3AMPERR","T3PHI","T3PHIERR","FLUXDATA","FLUXDATAERR"]
-        
+
     for i in range(1,len(data)):
         try:
             if data[i].name in tableToSmooth:
@@ -1126,7 +1131,7 @@ def spectralSmoothing(oifits,kernsize,cols2Smooth="all",normalizeError=True):
                 for coli in cols:
                     if coli.name in cols2Smooth:
                         dims=np.shape(data[i].data[coli.name])
-    
+
                         if len(dims)==2:
                             nB=dims[0]
                             for iB in range(nB):
@@ -1135,7 +1140,7 @@ def spectralSmoothing(oifits,kernsize,cols2Smooth="all",normalizeError=True):
                         else:
                               data[i].data[coli.name]=np.convolve(
                                   data[i].data[coli.name],kernel,"same")
-                              
+
                         if normalizeError == True and coli.name in _oimDataTypeErr:
                             data[i].data[coli.name]/=np.sqrt(kernsize)
         except:
@@ -1191,7 +1196,7 @@ def _rebinHdu(hdu,binsize,exception=[]):
 
 #TODO for phases bining should be done in complex plan
 def binWavelength(oifits,binsize,normalizeError=True):
-    
+
 
     if type(oifits)==type(""):
         data=fits.open(oifits)
@@ -1207,18 +1212,18 @@ def binWavelength(oifits,binsize,normalizeError=True):
                 errname=getDataTypeError(data[i].name)
                 for errnamei in errname:
                     data[i].data[errnamei]/=np.sqrt(binsize)
-                
+
 
 ###############################################################################
 
 def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
-    
+
     if not(isinstance(arr,list)):
         arr=[arr]
-    
+
     if arr==['all']:
         arr=["OI_VIS","OI_VIS2","OI_T3","OI_FLUX"]
-        
+
     for arri in arr:
         try:
             EFF_WAVE, EFF_BAND = getWlFromOifits(data,arr=arri,
@@ -1226,80 +1231,80 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
             nwl = np.size(EFF_WAVE)
             LENGTH, PA = getBaselineLengthAndPA(data,arr=arri,extver=extver)
             nB = np.size(LENGTH)
-            
+
             EFF_WAVE = np.tile(EFF_WAVE[None,:],(nB,1))
             EFF_BAND = np.tile(EFF_BAND[None,:],(nB,1))
             LENGTH   = np.tile(LENGTH[:,None],(1,nwl))
-            PA       = np.tile(PA[:,None],(1,nwl))    
-            
-        
+            PA       = np.tile(PA[:,None],(1,nwl))
+
+
             for colname in data[arri].columns:
                 coldata = data[arri].data[colname.name]
                 s = coldata.shape
-                
+
                 if len(s) == 1 and s[0] == nB:
                     coldata = np.tile(LENGTH[:,None],(1,nwl))
-                    
+
                 exec(f"{colname.name}=coldata")
         except:
             pass
-    
+
     f =eval(expr)
     for arri in arr:
         if keepOldFlag ==  True:
             data[arri].data["FLAG"] = np.logical_or(f, data[arri].data["FLAG"])
         else:
             data[arri].data["FLAG"] = f
-        
+
     return f
 
 ###############################################################################
 
 def computeDifferentialError(oifits,ranges=[[0,5]],excludeRange=False,
                              rangeType="index",dataType="VISPHI",extver= [None]):
-    
+
     if rangeType == "index":
         dtype = 'int64'
     else:
         dtype = 'float64'
-        
+
     ranges=np.array(ranges,dtype=dtype)
-    
+
     if ranges.ndim == 1:
         ranges= ranges.reshape(1,ranges.size)
-    
+
     if not(isinstance(dataType,list)):
         dataType=[dataType]
-    
+
     if type(oifits)==type(""):
         data=fits.open(oifits)
     else:
         data=oifits
-        
+
     extnames=np.unique([getDataArrname(dti) for dti in dataType])
-    
+
     for datai in data[1:]:
         if datai.name in extnames:
             if datai.header["EXTVER"] in extver or extver == [None]:
-                
+
                 wl = getWlFromOifits(oifits, arr=datai.name,
                                      extver=datai.header["EXTVER"])
                 nwl=wl.size
                 nB=np.size(datai.data['TARGET_ID'])
-                
-               
-                idx=np.array([],dtype="int64")              
-                for ri in ranges:                    
+
+
+                idx=np.array([],dtype="int64")
+                for ri in ranges:
                     if rangeType == "index":
                         idx = np.append(idx,np.arange(ri[0],ri[1]))
                     else:
                         idxi = np.where( (wl>= ri[0]) & (wl <= ri[1]) )[0]
                         idx = np.append(idx,idxi)
-                        
-                    
+
+
                     if excludeRange == True:
                         idx = np.delete(np.arange(nwl),idx)
-                
+
                 for dataTypei in getDataType(datai.name ):
                     if dataTypei in dataType:
                         #print(dataTypei)
@@ -1320,11 +1325,11 @@ def computeDifferentialError(oifits,ranges=[[0,5]],excludeRange=False,
                                 datai.data[dataTypeiErr][iB,:] = err
                                 #print(err)
 
-                    
-###############################################################################   
-   
+
+###############################################################################
+
 def setMinimumError(oifits,dataTypes,values,extver=None):
-                 
+
     if type(oifits)==type(""):
         data=fits.open(oifits)
     else:
@@ -1332,19 +1337,19 @@ def setMinimumError(oifits,dataTypes,values,extver=None):
 
     if not(isinstance(dataTypes,list)):
         dataTypes=[dataTypes]
-                
+
     if not(isinstance(values,list)):
-        values=[values] 
-    
+        values=[values]
+
     if not(isinstance(extver,list)):
-        extver=[extver]   
-    
+        extver=[extver]
+
     extnames=np.unique([getDataArrname(dti) for dti in dataTypes])
-    
+
     for datai in data[1:]:
         if datai.name in extnames:
             if datai.header["EXTVER"] in extver or extver == [None]:
-                
+
                 for dataTypei in getDataType(datai.name ):
                     if dataTypei in dataTypes:
                         dataTypeiErr = _oimDataTypeErr[_oimDataType.index(dataTypei)]
@@ -1356,7 +1361,7 @@ def setMinimumError(oifits,dataTypes,values,extver=None):
 
                             datai.data[dataTypeiErr] = datai.data[dataTypeiErr] * \
                                          (1 - mask) +  mask * vali
-                            #print(datai.data[dataTypeiErr])                        
+                            #print(datai.data[dataTypeiErr])
                         else:
                             #print(f"Setting a minimum of {vali} to {dataTypeiErr} ")
                             vali = vali / 100
@@ -1365,5 +1370,5 @@ def setMinimumError(oifits,dataTypes,values,extver=None):
                             #print(mask)
                             datai.data[dataTypeiErr] = datai.data[dataTypeiErr] * \
                                 (1 - mask) + mask * vali * \
-                                    datai.data[dataTypei] 
-                            #print(datai.data[dataTypeiErr])     
+                                    datai.data[dataTypei]
+                            #print(datai.data[dataTypeiErr])

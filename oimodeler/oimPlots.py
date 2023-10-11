@@ -179,19 +179,24 @@ def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline"
             maxi = 1.1*np.max(np.abs(np.array([ucoord, vcoord])))
 
     elif unit.is_equivalent(u.Unit("cycle/rad")):
-         maxii=[]
+        maxii=[]
 
-         for ui,vi,wli in zip(ucoord,vcoord,wl):
-             spfu=ui/wli*u.Unit("cycle/rad").to(unit)
-             spfv=vi/wli*u.Unit("cycle/rad").to(unit)
+        for iB,ui,vi,wli in zip(range(len(ucoord)),ucoord,vcoord,wl):
+            spfu=ui/wli*u.Unit("cycle/rad").to(unit)
+            spfv=vi/wli*u.Unit("cycle/rad").to(unit)
 
-             maxii.append(np.max(np.sqrt(spfu**2+spfv**2)))
+            maxii.append(np.max(np.sqrt(spfu**2+spfv**2)))
+            if not(color):
+                res=_colorPlot(axe,spfu , spfv, wli*u.m.to(cunit),label=label0, setlim=True, **kwargs)
+                _colorPlot(axe,-spfu , -spfv, wli*u.m.to(cunit), setlim=True, **kwargs)
 
-             res=_colorPlot(axe,spfu , spfv, wli*u.m.to(cunit),label=label0, setlim=True, **kwargs)
-             _colorPlot(axe,-spfu , -spfv, wli*u.m.to(cunit), setlim=True, **kwargs)
-             if not (maxi):
-                 maxi = 1.1*np.max(maxii)
+            else:
+                icol=colorIdx[iB]
+                axe.plot(spfu , spfv,label=label0+ColorNames[icol],color=colorTab[icol%ncol],**kwargs)
+                axe.plot(-spfu , -spfv,color=colorTab[icol%ncol], **kwargs)
 
+        if not (maxi):
+            maxi = 1.1*np.max(maxii)
     else:
          raise TypeError("invalid unit")
 
@@ -212,7 +217,7 @@ def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline"
     if title:
         axe.set_title(title)
 
-    if unit.is_equivalent(u.Unit("cycle/rad")):
+    if unit.is_equivalent(u.Unit("cycle/rad")) and not(color):
         plt.colorbar(res, ax=axe,label=f"$\\lambda$ ({cunit:latex})")
 
     if showLegend:
@@ -505,14 +510,14 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, yunit=None,
             xdata = getSpaFreq(data, arr=yarr,  squeeze=False)
 
         elif xname == "LENGTH":
-            B = getBaselineLengthAndPA(data, arr=yarr, squeeze=False)[0]
+            B = getBaselineLengthAndPA(data, arr=yarr, squeeze=False,T3Max=True)[0]
             xdata = []
             for i,idata in enumerate(idx_yext):
                 xdata.append(np.transpose(
                     np.tile(B[i], (np.shape(data[idata].data[yname])[1], 1))))
 
         elif xname == "PA":
-            PA = getBaselineLengthAndPA(data, arr=yarr, squeeze=False)[1]
+            PA = getBaselineLengthAndPA(data, arr=yarr, squeeze=False,T3Max=True)[1]
             xdata = []
             for i,idata in enumerate(idx_yext):
                 xdata.append(np.transpose(
@@ -573,14 +578,14 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, yunit=None,
                 cdata = getSpaFreq(data, arr=yarr, squeez=False)
 
             elif cname == "LENGTH":
-                B = getBaselineLengthAndPA(data, arr=yarr, squeeze=False)[0]
+                B = getBaselineLengthAndPA(data, arr=yarr, squeeze=False,T3Max=True)[0]
                 cdata = []
                 for i,idata in enumerate(idx_yext):
                     cdata.append(np.transpose(
                         np.tile(B[i], (np.shape(data[idata].data[yname])[1], 1))))
 
             elif cname == "PA":
-                PA = getBaselineLengthAndPA(data, arr=yarr, squeeze=False)[1]
+                PA = getBaselineLengthAndPA(data, arr=yarr, squeeze=False,T3Max=True)[1]
                 cdata = []
                 for i,idata in enumerate(idx_yext):
                     cdata.append(np.transpose(
