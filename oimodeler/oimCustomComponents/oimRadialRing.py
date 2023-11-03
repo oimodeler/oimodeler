@@ -73,6 +73,9 @@ class oimRadialRing(oimComponentRadialProfile):
         -------
         radial_profile : numpy.ndarray
         """
+        wl = np.unique(wl)
+        if len(r.shape) == 3:
+            r = r[0, 0]
         p = self.params["p"](wl, t)
         rin, rout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
         return np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*(r / rin)**p, nan=0)
@@ -80,10 +83,7 @@ class oimRadialRing(oimComponentRadialProfile):
     @property
     def _r(self):
         """Gets the radial profile [mas]."""
-        # TODO: Check if this is needed here as the hankel transform already pads.
-        binning =  1 if oimOptions["FTBinningFactor"] is None\
-                else oimOptions["FTBinningFactor"]
-        rmax = binning*self.params["dout"].value/2
+        rmax = self.params["dout"].value/2
         if oimOptions["GridType"] == "linear":
             return np.linspace(0, 1, self.params["dim"].value)*rmax
         return np.logspace(0.0, np.log10(rmax), self.params["dim"].value)

@@ -3,7 +3,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import oimodeler as oim
 
-
 # NOTE: Load the simulated data from ASPRO and apply some filter to
 # keep only VIS2DATA and T3PHI for model fitting
 oimodeler_dir = Path(oim.__file__).parent
@@ -20,7 +19,7 @@ oim.oimOptions["GridType"] = "logarithmic"
 
 # NOTE: The padding of the 1D-grid can be set (Multiplies to outer radius at
 # grid creation). Default is 'None/1' and doesn't pad.
-oim.oimOptions["FTBinningFactor"] = 4
+# oim.oimOptions["FTPaddingFactor"] = 4
 
 # NOTE: A multi param that contains different values for different wavelengths.
 kappa_abs = oim.oimInterp("multiParam", values=[276, 300], wl=[8e-6, 10e-6])

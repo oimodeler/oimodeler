@@ -612,17 +612,14 @@ class oimComponentRadialProfile(oimComponent):
         for it in range(ntin):
             for iwl in range(nwlin):
                 res0[it,iwl,:]/= integrate.trapezoid(2.*np.pi*r*Ir[it,iwl,:], r)
-                
                 #res0[it,iwl,:]/=np.sum(r*Ir[it,iwl,:]*dr)
         
         grid=(tin,wlin,sfreq0)  
-        
         coord=np.transpose([t,wl,sfreq])  
        
         real=interpolate.interpn(grid,np.real(res0),coord,bounds_error=False,fill_value=None)
         imag=interpolate.interpn(grid,np.imag(res0),coord,bounds_error=False,fill_value=None)
-        vc=real+imag*1j
-        return vc
+        return real+imag*1j
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
