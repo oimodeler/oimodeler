@@ -665,8 +665,14 @@ def getSpaFreq(oifits, arr="OI_VIS2", unit=None, extver=None, squeeze=True):
 
 def getWlFromOifits(oifits, arr="OI_VIS2",extver=None,returnBand=False):
 
-    if isinstance(arr,str):
-        arr=oifits[arr,extver]
+    try:
+        if isinstance(arr,str):
+            arr=oifits[arr,extver]
+    except:
+        if extver == 1:
+            arr=oifits[arr]
+        else:
+            TypeError(f"No extver in {arr}")
 
     insname=arr.header['INSNAME']
 
