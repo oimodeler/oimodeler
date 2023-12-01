@@ -39,7 +39,7 @@ dependencies = [
     "pyFFTW>=0.13.1",
 ]
 
-[options.extras_require]
+[project.optional-dependencies]
 dev = [
     "pytest >= 7.2.1",
     "pytest-cov >= 4.0.0",
