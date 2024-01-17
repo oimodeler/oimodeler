@@ -135,12 +135,15 @@ class oimTempGradient(oimComponentRadialProfile):
 
     @property
     def _r(self):
-        """Gets the radial profile [mas]."""
+        """Gets the radial profile (mas)."""
+        rin = convert_distance_to_angle(
+                self.params["rin"].value, self.params["dist"].value)
         rout = convert_distance_to_angle(
                 self.params["rout"].value, self.params["dist"].value)
         if oimOptions["GridType"] == "linear":
-            return np.linspace(0, 1, self.params["dim"].value)*rout
-        return np.logspace(0.0, np.log10(rout), self.params["dim"].value)
+            return np.linspace(rin, rout, self.params["dim"].value)
+        return np.logspace(0.0 if rin == 0 else np.log10(rin),
+                           np.log10(rout), self.params["dim"].value)
 
     @_r.setter
     def _r(self, value):
