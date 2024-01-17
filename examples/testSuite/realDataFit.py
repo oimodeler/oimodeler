@@ -38,9 +38,7 @@ class baseTest:
 
     def __init__(self):
         self.setModel()
-
-        # TODO: After pathlib change of all `oimodeler` modules, remove str here
-        self.data = oim.oimData(str((self.pathData / self.fdata).resolve()))
+        self.data = oim.oimData((self.pathData / self.fdata).resolve())
         self.data.setFilter(self.filt)
 
     def setModel(self):

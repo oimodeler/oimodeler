@@ -23,8 +23,7 @@ save_dir = path / "images"
 if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
-files0 = list(map(str, data_dir.glob("*.fits")))
+files0 = list(data_dir.glob("*.fits"))
 
 text = ["Complex Corr Flux only", "Complex Corr Flux + Chi2",
         "Complex Corr Flux + Sim. Data", "Full Computation "]

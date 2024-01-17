@@ -19,8 +19,7 @@ save_dir = path / "images"
 if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
-# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
-files = list(map(str, data_dir.glob("*.fits")))
+files = list(data_dir.glob("*.fits"))
 
 # Building a oimodeler model with the same parameters
 ud = oim.oimUD(d=3, f=1, x=10, y=20)
