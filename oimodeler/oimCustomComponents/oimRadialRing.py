@@ -90,10 +90,11 @@ class oimRadialRing(oimComponentRadialProfile):
     @property
     def _r(self):
         """Gets the radial profile [mas]."""
-        rmax = self.params["dout"].value/2
+        rin, rout = map(lambda x: self.params[x].value/2, ("din", "dout"))
         if oimOptions["GridType"] == "linear":
-            return np.linspace(0, 1, self.params["dim"].value)*rmax
-        return np.logspace(0.0, np.log10(rmax), self.params["dim"].value)
+            return np.linspace(rin, rout, self.params["dim"].value)
+        return np.logspace(0.0 if rin == 0 else np.log10(rin),
+                           np.log10(rout), self.params["dim"].value)
 
     @_r.setter
     def _r(self, r: np.ndarray):
