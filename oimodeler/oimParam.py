@@ -810,12 +810,10 @@ class oimParamLinearStarWl(oimParamInterpolator):
         self.temp = oimParam(name="T", value=temp,
                              unit=u.K, free=False,
                              description="The Temperature")
-        self.dist = oimParam(name="dist",
-                             value=dist,
+        self.dist = oimParam(name="dist", value=dist,
                              unit=u.pc, free=False,
                              description="Distance to the star")
-        self.lum = oimParam(name="lum",
-                            value=lum,
+        self.lum = oimParam(name="lum", value=lum,
                             unit=u.Lsun, free=False,
                             description="The star's luminosity")
         self.radius = oimParam(name="stellar radius",
