@@ -72,6 +72,7 @@ class oimTempGradient(oimComponentRadialProfile):
         self.params["dist"] = oimParam(name="dist", value=0,
                                        unit=u.pc, free=False,
                                        description="Distance of the star")
+        self.params["f"].free = False
 
         self._eval(**kwargs)
 
