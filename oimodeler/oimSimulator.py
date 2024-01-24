@@ -275,7 +275,7 @@ class oimSimulator(object):
             # NOTE: Plotting the data with wavelength colorscale + errorbars vs
             # spatial frequencies
             scale = axi.oiplot(self.data.data, "SPAFREQ", arr[iax],xunit=xunit,
-                               colorbar=False,**kwargsData)
+                               showColorbar=False,**kwargsData)
 
             # NOTE: Over-plotting the simulated data as a dotted line vs spatial
             # frequencies
