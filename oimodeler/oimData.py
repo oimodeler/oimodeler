@@ -193,7 +193,6 @@ def oimDataGetVectCoord(data, arr):
     mjd = np.outer(np.ones(nB), mjd).flatten()
     wl = np.outer(np.ones(nB), wl).flatten()
     dwl = np.outer(np.ones(nB), dwl).flatten()
-
     return u, v, wl, dwl, mjd, nB, nwl
 
 

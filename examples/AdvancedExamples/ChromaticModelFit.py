@@ -42,8 +42,7 @@ img.writeto(product_dir / "skwDisk.fits", overwrite=True)
 
 # %% Load the simulated data from ASPRO and apply some filter to keep only
 # VIS2DATA and T3PHI for model fitting
-# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
-files = list(map(str, data_dir.glob("*.fits")))
+files = list(data_dir.glob("*.fits"))
 data = oim.oimData(files)
 f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])

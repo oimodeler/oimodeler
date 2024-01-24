@@ -28,8 +28,7 @@ if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
 # %% creating the model
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
-c = oim.oimComponentFitsImage(str(file_name))
+c = oim.oimComponentFitsImage(file_name)
 m = oim.oimModel(c)
 
 # %% Plotting the model image

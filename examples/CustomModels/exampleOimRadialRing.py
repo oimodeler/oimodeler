@@ -7,9 +7,8 @@ import oimodeler as oim
 # NOTE: Load the simulated data from ASPRO and apply some filter to
 # keep only VIS2DATA and T3PHI for model fitting
 oimodeler_dir = Path(oim.__file__).parent
-files = (oimodeler_dir / ".." / "examples" /
-         "testData" / "ASPRO_MATISSE2").glob("*.fits")
-files = list(map(str, files))
+files = list((oimodeler_dir / ".." / "examples" /
+         "testData" / "ASPRO_MATISSE2").glob("*.fits"))
 data = oim.oimData(files)
 f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])

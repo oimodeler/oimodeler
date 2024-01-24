@@ -25,9 +25,6 @@ path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "AMBER_AlphaCol"
 files = list(data_dir.glob("*.fits"))
 
-
-
-
 # %% Creating a keplerian rotating disk model
 nwl = 81
 wl0 = 2.1656e-6

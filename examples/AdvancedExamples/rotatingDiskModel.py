@@ -19,9 +19,7 @@ oim.oimOptions['FTBackend'] = oim.FFTWBackend
 # Path to the AMBER oifits files: the classical Be star Alpha Col
 path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "RealData" / "AMBER" / "AlphaCol"
-
-# TODO: After pathlib change of all `oimodeler` modules, remove str casting.
-files = list(map(str, data_dir.glob("*.fits")))
+files = list(data_dir.glob("*.fits"))
 
 # %%
 dim, nwl, wl0 = 256, 51, 2.1656e-6

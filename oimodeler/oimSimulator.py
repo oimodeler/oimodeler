@@ -251,11 +251,9 @@ class oimSimulator(object):
                            cmap="coolwarm",errorbar=True, label="data")
         
         kwargsSimulatedData0 = dict(color="k", ls=":", lw=1, label="model")
-        
-        
+
         kwargsData = {**kwargsData0,**kwargsData}
         kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
-       
 
         if type(arr) != type([]):
             arr = [arr]

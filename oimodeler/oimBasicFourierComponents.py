@@ -157,7 +157,7 @@ class oimGauss(oimComponentFourier):
 
     def _imageFunction(self, xx, yy, wl, t):
         r2 = (xx**2+yy**2)
-        return np.sqrt(4*np.log(2*self.params["fwhm"](wl, t))/np.pi) * \
+        return np.sqrt(4*np.log(2)*self.params["fwhm"](wl, t)/np.pi) * \
             np.exp(-4*np.log(2)*r2/self.params["fwhm"](wl, t)**2)
 
 
