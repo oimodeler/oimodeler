@@ -4,7 +4,7 @@ Basic model-components defined in the Fourier plan
 """
 import astropy.units as u
 import numpy as np
-from scipy.special import j0, j1, jv
+from scipy.special import j0, j1, jv, jn, gamma
 from scipy.signal import convolve2d
 from .oimComponent import oimComponentFourier
 from .oimParam import oimParam, _standardParameters
@@ -596,10 +596,15 @@ class oimLinearLDD(oimComponentFourier):
         diameter of the ring (in mas). The default is 0.
     a: u.dimensionless_unscaled | oimInterp
         linear limb darkening coefficient
+        
+    I(mu)/I(1) = 1  - a(1-mu)
     """
     name = "Linear Limb Darkened Disk "
     shortname = "LLDD"
-
+    
+    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
+    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["d"] = oimParam(**_standardParameters["d"])
@@ -637,8 +642,11 @@ class oimQuadLDD(oimComponentFourier):
         first quadratic limb darkening coefficient
     a2: u.dimensionless_unscaled | oimInterp
         second quadratic limb darkening coefficient
+        
+    I(mu)/I(1) = 1  - a1(1-mu) - a2(1 - mu)**2
     """
-    # NOTE: From Domiciano de Souza 2003 (phd thesis)
+    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
+    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
     name = "Quadratic Limb Darkened Disk "
     shortname = "QLDD"
 
@@ -664,6 +672,101 @@ class oimQuadLDD(oimComponentFourier):
         c3 = 2*np.divide(jv(2., xx), xx**2.)
         s = (6-2*a1-a2)/12
         return np.nan_to_num(((1-a1-a2)*c1+(a1+2*a2)*c2-a2*c3)/s, nan=1)
+
+
+class oimPowerLawLDD(oimComponentFourier):
+    """Power Law Limb Darkened Disk component defined in the fourier space
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d: u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    a: u.dimensionless_unscaled | oimInterp
+        power law limb darkening exponent
+    
+    I(mu)/I(1) = mu**a
+    """
+    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
+    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
+    
+    name="Power Law Limb Darkened Disk "
+    shortname = "PLLDD"
+    
+    def __init__(self,**kwargs): 
+        super().__init__(**kwargs)
+        self.params["d"]=oimParam(**_standardParameters["d"])  
+        self.params["a"]=oimParam(name="a",value=0,description="Power Law LDD coeff",
+                                  unit=u.one,mini=0,maxi=3)
+               
+        self._eval(**kwargs)
+    
+    def _visFunction(self,xp,yp,rho,wl,t):
+               
+        xx=np.pi*self.params["d"](wl,t)* self.params["d"].unit.to(u.rad)*rho
+        
+        a=self.params["a"](wl,t)
+
+        nu = a/2+1
+    
+        return  np.nan_to_num(nu*gamma(nu)*2**nu*jn(nu,xx)/xx**nu,nan=1)
+
+class oimSqrtLDD(oimComponentFourier):
+
+    """Square-root Limb Darkened Disk component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d: u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    a1: u.dimensionless_unscaled | oimInterp
+        first square-root limb darkening coefficient
+    a2: u.dimensionless_unscaled | oimInterp
+        second square-root darkening coefficient
+        
+    I(mu)/I(1) = 1  - a1 (1-mu) - a2 (1 - sqrt(mu))
+    """
+    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
+    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
+    name = "square-root Limb Darkened Disk "
+    shortname = "SLDD"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["d"] = oimParam(**_standardParameters["d"])
+        self.params["a1"] = oimParam(name="a1", value=0, description="1st SLDD coeff",
+                                     unit=u.one, mini=-1, maxi=1)
+        self.params["a2"] = oimParam(name="a2", value=0, description="2nd SLDD coeff",
+                                     unit=u.one, mini=-1, maxi=1)
+
+        self._eval(**kwargs)
+
+    def _visFunction(self, xp, yp, rho, wl, t):
+        xx = np.pi*self.params["d"](wl, t) * \
+            self.params["d"].unit.to(u.rad)*rho
+
+        a1 = self.params["a1"](wl, t)
+        a2 = self.params["a2"](wl, t)
+
+        c1 = np.divide(j1(xx), xx)
+        c2 = gamma(5/2) * (2**(3/2)) * np.divide(jv(1.5,xx),xx**1.5)
+        c3 = (gamma(9/4)) * (2**1.25) * np.divide(jv(1.25,xx),xx**1.25)
+        s = (15-5*a1-3*a2)/30
+        return np.nan_to_num(((1-a1-a2)*c1+(2*a1/6)*c2+(4*a2/10)*c3)/s, nan=1)
+
+
+
+
 
 #TODO check effect of PA of both component
 class oimConvolutor(oimComponentFourier):
