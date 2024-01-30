@@ -83,27 +83,28 @@ def _colorPlot(axe, x, y, z, setlim=False, **kwargs):
 # TODO: Move global variables somewhere else and make their name in capital letters
 # (python standard)
 oimPlotParamName = np.array(["LENGTH", "PA", "UCOORD", "VCOORD", "SPAFREQ", "EFF_WAVE",
-                             "VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA", "MJD"])
+                             "VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA", "MJD","VISDATA"])
 oimPlotParamError = np.array(["", "", "", "", "", "EFF_BAND", "VIS2ERR", "VISAMPERR",
-                              "VISPHIERR", "T3AMPERR", "T3PHIERR", "FLUXERR", ""])
+                              "VISPHIERR", "T3AMPERR", "T3PHIERR", "FLUXERR", "",""])
 oimPlotParamArr = np.array(["", "", "", "", "", "OI_WAVELENGTH", "OI_VIS2", "OI_VIS",
-                            "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX", ""])
+                            "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX", "","OI_VIS2"])
 oimPlotParamLabel = np.array(["Baseline Length", "Baseline Orientation", "U", "V",
                               "Spatial Frequency", "Wavelength", "Square Visibility",
-                             "Differential Visibility", "Differential Phase",
-                              "CLosure Amplitude", "Closure Phase", "Flux", "MJD"])
+                             "Visibility Amplitude", "Phase",
+                              "Closure Amplitude", "Closure Phase", "Flux", "MJD","Visibility"])
 oimPlotParamLabelShort = np.array(["B", "PA", "U", "V", "B/$\lambda$", "$\lambda$",
-                                   "V$^2$", "V$_{diff}$", "$\phi_{diff}$", "Clos. Amp.", "CP", "Flux", "MJD"])
+                                   "V$^2$", "Vis. Amp.", "Vis. Phi.", "Clos. Amp.", "CP", "Flux", "MJD","V"])
 oimPlotParamUnit0 = np.array([u.m, u.deg, u.m, u.m, u.Unit("cycle/rad"), u.m, u.one, u.one, u.deg,
-                              u.one, u.deg, u.one, u.day])
-oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+                              u.one, u.deg, u.one, u.day,u.one])
+oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,0])
 
 oimPlotParamColorCycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 
-def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline", color=None, maxi=None,
-              grid=True, gridcolor="k", fontsize=None, xytitle=[True, True],showLegend=True,
-              colorTab=None, axe=None, title=None,cunit=u.m,legendkwargs={}, **kwargs):
+def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline", 
+           color=None,maxi=None,grid=True, gridcolor="k", fontsize=None, 
+           xytitle=[True, True],showLegend=True,showColorbar=True,colorTab=None,
+           axe=None, title=None,cunit=u.m,legendkwargs={}, **kwargs):
 
     if not (axe):
         fig, axe = plt.subplots(nrows=1, ncols=1)
@@ -154,7 +155,7 @@ def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline"
 
     for datai in oifitsList:
 
-        _,_, ui,vi = getBaselineLengthAndPA(datai, squeeze=False, returnUV=True)
+        _,_, ui,vi = getBaselineLengthAndPA(datai,arr=arrname, squeeze=False, returnUV=True)
         for iext in range(len(ui)):
             wlii = getWlFromOifits(datai,arr=arrname,extver=iext+1)
             nB=ui[iext].size
@@ -179,13 +180,12 @@ def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline"
             maxi = 1.1*np.max(np.abs(np.array([ucoord, vcoord])))
 
     elif unit.is_equivalent(u.Unit("cycle/rad")):
-        maxii=[]
-
+        
         for iB,ui,vi,wli in zip(range(len(ucoord)),ucoord,vcoord,wl):
             spfu=ui/wli*u.Unit("cycle/rad").to(unit)
             spfv=vi/wli*u.Unit("cycle/rad").to(unit)
 
-            maxii.append(np.max(np.sqrt(spfu**2+spfv**2)))
+           
             if not(color):
                 res=_colorPlot(axe,spfu , spfv, wli*u.m.to(cunit),label=label0, setlim=True, **kwargs)
                 _colorPlot(axe,-spfu , -spfv, wli*u.m.to(cunit), setlim=True, **kwargs)
@@ -195,10 +195,29 @@ def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline"
                 axe.plot(spfu , spfv,label=label0+ColorNames[icol],color=colorTab[icol%ncol],**kwargs)
                 axe.plot(-spfu , -spfv,color=colorTab[icol%ncol], **kwargs)
 
-        if not (maxi):
-            maxi = 1.1*np.max(maxii)
     else:
-         raise TypeError("invalid unit")
+          raise TypeError("invalid unit")
+                   
+    if not (maxi):
+
+        xmax   = -1e99
+        ymax   = -1e99
+        for line in axe.lines:
+            x,y = line.get_data()
+            x0=np.max(x)
+            y0=np.max(y)
+            xmax    = max(x0, xmax)
+            ymax    = max(y0, ymax)
+        for collection in axe.collections:
+            datalim = collection.get_datalim(axe.transData)
+            x0=np.max(np.asarray(datalim)[:,0])
+            y0=np.max(np.asarray(datalim)[:,1])
+            xmax    = max(x0, xmax)
+            ymax    = max(y0, ymax)
+
+        maxi = 1.1*max(xmax,ymax)
+            
+  
 
 
 
@@ -217,7 +236,8 @@ def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline"
     if title:
         axe.set_title(title)
 
-    if unit.is_equivalent(u.Unit("cycle/rad")) and not(color):
+    if unit.is_equivalent(u.Unit("cycle/rad")) and not(color) and showColorbar:
+        
         plt.colorbar(res, ax=axe,label=f"$\\lambda$ ({cunit:latex})")
 
     if showLegend:
@@ -225,66 +245,6 @@ def uvPlot(oifitsList,arrname="OI_VIS2",unit=u.m,stringunitformat="latex_inline"
 
     return axe
 
-
-
-"""
-def uvPlot(oifits, extension="OI_VIS2", marker="o", facecolors='red',
-           edgecolors='k', size=10, axe=None, maxi=None, xytitle=[True, True],
-           title=None, gridcolor="k", grid=True, fontsize=None, **kwargs):
-
-    if isinstance(oifits, oimData):
-        oifits = oifits.data
-
-    kwargs2 = {}
-    for key in kwargs:
-        if key != "label":
-            kwargs2[key] = kwargs[key]
-
-    data = []
-    ucoord = np.array([])
-    vcoord = np.array([])
-    if type(oifits) == type(""):
-        data.append(fits.open(oifits))
-    elif type(oifits) == type([]):
-        for item in oifits:
-            if type(item) == type(""):
-                data.append(fits.open(item))
-            else:
-                data.append(item)
-    else:
-        data.append(oifits)
-
-    for datai in data:
-
-        extnames = np.array([datai[i].name for i in range(len(datai))])
-        idx = np.where(extnames == extension)[0]
-        for j in idx:
-            ucoord = np.append(ucoord, datai[j].data['UCOORD'])
-            vcoord = np.append(vcoord, datai[j].data['VCOORD'])
-
-    if not (axe):
-        fig, axe = plt.subplots(nrows=1, ncols=1)
-    axe.scatter(ucoord, vcoord, marker=marker, facecolors=facecolors, edgecolors=edgecolors,
-                s=size, zorder=10, lw=1, **kwargs)
-
-    axe.scatter(-ucoord, -vcoord, marker=marker, facecolors=facecolors, edgecolors=edgecolors,
-                s=size, zorder=10, lw=1, **kwargs2)
-    if not (maxi):
-        maxi = 1.1*np.max(np.abs(np.array([ucoord, vcoord])))
-    if grid:
-        axe.plot([-maxi, maxi], [0, 0], linewidth=1, color=gridcolor, zorder=5)
-        axe.plot([0, 0], [-maxi, maxi], linewidth=1, color=gridcolor, zorder=5)
-    axe.set_aspect('equal', 'box')
-    axe.set_xlim([maxi, -maxi])
-    axe.set_ylim([-maxi, maxi])
-    if xytitle[0]:
-        axe.set_xlabel('u (m)', fontsize=fontsize)
-    if xytitle[1]:
-        axe.set_ylabel('v (m)', fontsize=fontsize)
-    if title:
-        axe.set_title(title)
-    return [axe]
-"""
 
 def getColorIndices(oifitsList, color, yarr, yname,flatten=False):
     idx = []
@@ -362,8 +322,8 @@ def getColorIndices(oifitsList, color, yarr, yname,flatten=False):
 def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, yunit=None,
             cname=None,cunit=None, xlim=None, ylim=None, xscale=None,
             yscale=None, shortLabel=True, color=None, colorTab=None,
-            errorbar=False, showFlagged=False, colorbar=True,kwargs_error={},
-            **kwargs):
+            showColorbar=True, errorbar=False, showFlagged=False, colorbar=True,
+            kwargs_error={},**kwargs):
     """
 
     Parameters
@@ -476,8 +436,11 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, yunit=None,
         pass
 
     ncol = len(colorTab)
-
-    colorIdx, ColorNames = getColorIndices(oifitsList, color, yarr, yname)
+    
+    yname0 = yname
+    if yname=="VISDATA":
+        yname0="VIS2DATA"
+    colorIdx, ColorNames = getColorIndices(oifitsList, color, yarr, yname0)
 
     if 'label' in kwargs:
         label = kwargs.pop('label')
@@ -492,9 +455,17 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, yunit=None,
 
         idx_yext = np.where(extnames == yarr)[0]
         yinsname = np.array([data[i].header['INSNAME'] for i in idx_yext])
-        ydata = [data[i].data[yname] for i in idx_yext]
-        ydataerr = [data[i].data[yerrname] for i in idx_yext]
-        yflag = [data[i].data["FLAG"] for i in idx_yext]
+        
+        #yname can be VISDATA =sqrt(VIS2DATA)
+        if (yname!="VISDATA"):
+            ydata = [data[i].data[yname] for i in idx_yext]
+            ydataerr = [data[i].data[yerrname] for i in idx_yext]
+            yflag = [data[i].data["FLAG"] for i in idx_yext]
+        else:
+            ydata = [np.sqrt(data[i].data["VIS2DATA"]) for i in idx_yext]
+            ydataerr = [data[i].data["VIS2ERR"]/(2*np.sqrt(data[i].data["VIS2DATA"])) for i in idx_yext]
+            yflag = [data[i].data["FLAG"] for i in idx_yext]
+            
         # xname can be LENGTH, SPAFREQ, PA or EFF_WAVE
         if xname == "EFF_WAVE":
             idx_xext = np.where(extnames == xarr)[0]
@@ -738,9 +709,9 @@ def oimPlot(oifitsList, xname, yname, axe=None, xunit=None, yunit=None,
     axe.set_xlabel(xlabel)
     axe.set_ylabel(ylabel)
 
-    if cname and colorbar:
-        plt.colorbar(res, ax=axe,label=clabel)
-
+    
+    if cname and showColorbar:
+        plt.colorbar(res, ax=axe,label=clabel) 
     return res
 
 
@@ -1019,6 +990,7 @@ class oimAxes(plt.Axes):
 
     ytype = None
     xtype = None
+    colorbar = None
 
     def uvplot(self, oifits, **kwargs):
         uvPlot(oifits, axe=self, **kwargs)
