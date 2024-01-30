@@ -311,6 +311,9 @@ class oimComponentFourier(oimComponent):
         return image
 
     def _imageFunction(self, xx, yy, wl, t):
+        raise ValueError(f"image function not implemented for {self.shortname}."
+                         "Use the fromFFT=True option to get a model image"
+                         " from the inverse Fourier Transform")
         image = xx*0+1
         return image
 
