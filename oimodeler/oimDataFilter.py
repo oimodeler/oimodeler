@@ -72,11 +72,27 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
         super().__init__(**kwargs)
         self.params["wlRange"] = []
         self.params["addCut"] = []
+        self.params["method"] = "cut"
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
-        cutWavelengthRange(data, wlRange=self.params["wlRange"],
-                           addCut=self.params["addCut"])
+        if self.params["method"]=="cut":
+            cutWavelengthRange(data, wlRange=self.params["wlRange"], 
+                               addCut=self.params["addCut"])
+        else:         
+            expr = ""
+            wlRange=np.array(self.params["wlRange"])
+            if wlRange.ndim == 1:
+                wlRange = wlRange.reshape((1, len(wlRange)))
+                
+            for wlRangei in wlRange:
+                expr += f"((EFF_WAVE<{wlRangei[0]}) | (EFF_WAVE>{wlRangei[1]})) &"
+            expr=expr[:-1]
+            oifitsFlagWithExpression(data, self.params["arr"],1,expr,keepOldFlag=True)
+                        
+            
+            
+            
 
 ###############################################################################
 class oimDataTypeFilter(oimDataFilterComponent):
@@ -209,7 +225,21 @@ class oimFlagWithExpressionFilter(oimDataFilterComponent):
     def _filteringFunction(self, data):
         oifitsFlagWithExpression(data, self.params["arr"],1,self.params["expr"],
                                  keepOldFlag=self.params["keepOldFlag"])
+  ###############################################################################      
+        
+class oimResetFlags(oimDataFilterComponent):
+    """Unflag all data """
+    name = "Reset flags filter"
+    shortname = "ResFlagsFilt"
+    description = "Set all the flags to False"
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        oifitsFlagWithExpression(data, self.params["arr"],1,"False",keepOldFlag=False)
+        
 ###############################################################################
 class oimDiffErrFilter(oimDataFilterComponent):
     """Compute differential error from std of signal inside or outside a range """
