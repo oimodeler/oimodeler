@@ -28,7 +28,7 @@ try:
     test_array = pyfftw.empty_aligned(100, dtype="complex128")
     fft_object = pyfftw.FFTW(test_array, test_array, axes=(0,))
     transformed = fft_object(test_array)
-    oimOptions["FFTW_Initialized"] = False
+    oimOptions.ft.fftw.initialized = False
 except Exception:
     pass
 
@@ -189,7 +189,7 @@ class FFTWBackend:
     @property
     def initialized(self) -> bool:
         """Checks if the FFTW library is properly initialized."""
-        if not oimOptions["FFTW_Initialized"]:
+        if not oimOptions.ft.fftw.initialized:
             self._err()
             return False
         return True
@@ -336,7 +336,7 @@ class FFTWBackend:
 
 
 # NOTE: Set the FFT backends
-oimOptions["FTBackend"] = numpyFFTBackend
-oimOptions["AvailableFTBackends"] = [numpyFFTBackend]
-if oimOptions["FFTW_Initialized"]:
-    oimOptions["AvailableFTBackends"].append(FFTWBackend)
+oimOptions.ft.backend.active = numpyFFTBackend
+oimOptions.ft.backend.available = [numpyFFTBackend]
+if oimOptions.ft.fftw.initialized:
+    oimOptions.ft.backend.available.append(FFTWBackend)

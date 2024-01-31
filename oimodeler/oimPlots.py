@@ -10,16 +10,15 @@ from matplotlib.figure import Figure
 import matplotlib.gridspec as gridspec
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerLineCollection
-from astropy.io import fits
 import astropy.units as u
 
 from .oimData import oimData
 from .oimUtils import getBaselineName, getBaselineLengthAndPA, getConfigName, \
-                      getSpaFreq, getWlFromOifits,loadOifitsData,get2DSpaFreq,\
+                      getSpaFreq, getWlFromOifits,loadOifitsData, \
                       getDataArrname
 
-#might be usefull as unit cycles is not defined but cycle is
-#u.add_enabled_units(u.def_unit("cycles",u.cycle))
+# might be usefull as unit cycles is not defined but cycle is
+# u.add_enabled_units(u.def_unit("cycles",u.cycle))
 
 def _errorplot(axe, X, Y, dY, smooth=1, **kwargs):
     Ys = Y

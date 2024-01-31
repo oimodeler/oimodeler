@@ -4,8 +4,8 @@ import os
 from enum import IntFlag
 
 import numpy as np
-from .oimUtils import hdulistDeepCopy, loadOifitsData, _oimDataTypeArr 
-from .oimDataFilter import oimDataFilter,oimDataFilterComponent
+from .oimUtils import hdulistDeepCopy, loadOifitsData, _oimDataTypeArr
+from .oimDataFilter import oimDataFilter, oimDataFilterComponent
 
 
 def oimDataGetWl(data, arr, dwl=True):

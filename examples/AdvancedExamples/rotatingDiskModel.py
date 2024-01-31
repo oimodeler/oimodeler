@@ -13,8 +13,8 @@ import oimodeler as oim
 
 
 # as the model as no sharp outer edge, no zero-padding is needed
-oim.oimOptions['FTPaddingFactor'] = 1
-oim.oimOptions['FTBackend'] = oim.FFTWBackend
+oim.oimOptions.ft.padding = 1
+oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 # Path to the AMBER oifits files: the classical Be star Alpha Col
 path = Path(__file__).parent.parent.parent

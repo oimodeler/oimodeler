@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""The oimParam.py module contains the definition of main model parameter class 
-:func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers, 
-normalizers and interpolators. 
+"""The oimParam.py module contains the definition of main model parameter class
+:func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers,
+normalizers and interpolators.
 """
 import sys
 from typing import Union, Optional, Dict

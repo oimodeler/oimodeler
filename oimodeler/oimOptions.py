@@ -1,12 +1,16 @@
 """Set global options of the oimodeler software."""
-# NOTE: The dictionary oimOption contains all the customizable option
-# of `oimodeler`.
-oimOptions = {}
+from types import SimpleNamespace
 
 # NOTE: Fourier transform settings
-oimOptions["AvailableFTBackends"] = []
-oimOptions["FTPaddingFactor"] = None
-oimOptions["FTBinningFactor"] = None
-oimOptions["FTBackend"] = None
-oimOptions["GridType"] = "linear"
-oimOptions["FFTW_Initialized"] = False
+backend = SimpleNamespace(active=None, available=[])
+fftw = SimpleNamespace(initialized=False)
+ft = SimpleNamespace(
+        backend=backend, binning=None,
+        padding=1, fftw=fftw)
+
+grid = SimpleNamespace(type="linear")
+model = SimpleNamespace(grid=grid)
+
+# NOTE: The dictionary oimOption contains all the customizable option
+# of `oimodeler`.
+oimOptions = SimpleNamespace(ft=ft, model=model)

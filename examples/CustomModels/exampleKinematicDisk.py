@@ -8,16 +8,14 @@ from datetime import datetime
 from pathlib import Path
 from pprint import pprint
 
-import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
-from oimodeler.oimPlots import _errorplot as errorPlot
 
 # setting the FFT parameters and backend. As the kinematicsDisk model as no
 # outer sharp edge we decide not to zero-pad the images during the FFT process
 # no oder to save time and without noticeable effect on the simulated visibilities
-oim.oimOptions['FTPaddingFactor'] = 1
-oim.oimOptions['FTBackend'] = oim.FFTWBackend
+oim.oimOptions.ft.padding = 1
+oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 # In this example we will use an old VLTI/AMBER observation of a classical
 # Be star Alpha Col published in Cochetti et al. 2019
