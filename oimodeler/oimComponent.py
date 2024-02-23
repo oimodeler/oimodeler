@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Components defined in Fourier or image planes"""
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import astropy.units as u
@@ -15,7 +15,6 @@ from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParame
 from .oimUtils import getWlFromFitsImageCube, pad_image, rebin_image
 
 
-# TODO: Move somewhere else
 def getFourierComponents():
     """A function to get the list of all available components deriving from the
     oimComponentFourier class
@@ -52,8 +51,6 @@ class oimComponent(object):
         Short name for the component
     description:
         Detailed description of the component
-    params:
-        The dictionary of the component parameters
     """
     name = "Generic component"
     shortname = "Gen comp"
@@ -68,11 +65,10 @@ class oimComponent(object):
         self._wl = None    # None value <=> All wavelengths (from Data) 
         self._t = [0]      # This component is static
 
-        self.params={}
-        self.params["x"]=oimParam(**_standardParameters["x"])
-        self.params["y"]=oimParam(**_standardParameters["y"])
-        self.params["f"]=oimParam(**_standardParameters["f"])
-        self.params["dim"]=oimParam(**_standardParameters["dim"])
+        self.x = oimParam(**_standardParameters["x"])
+        self.y = oimParam(**_standardParameters["y"])
+        self.f = oimParam(**_standardParameters["f"])
+        self.dim = oimParam(**_standardParameters["dim"])
         self._eval(**kwargs)
 
     @property
@@ -120,16 +116,52 @@ class oimComponent(object):
         self.__t = np.array(value)
         
 
+    # TODO: Should the interpolator not take the attributes of the overhead param?
+    # See how to do this…
     def _eval(self, **kwargs):
+        """Evaluates the parameters from the keyword arguments and
+        if the parameter exists for the model it will set its value
+        accordingly.
+        """
         for key, value in kwargs.items():
-            if key in self.params.keys():
+            if hasattr(self, key):
+                attribute = getattr(self, key)
                 if isinstance(value, oimInterp):
-
-                    if not(isinstance(self.params[key], oimParamInterpolator)):
-                        self.params[key] = value.type(
-                            self.params[key], **value.kwargs)
+                    if not isinstance(attribute, oimParamInterpolator):
+                        setattr(self, key, value.type(attribute, **value.kwargs))
                 else:
-                    self.params[key].value = value
+                    attribute.value = value
+
+    # def _paramstr(self):
+    #     txt = ""
+    #     for _, param in self.params.items():
+    #         if isinstance(param, oimParam):
+    #             if 'value' in param.__dict__:
+    #                 txt += " {0}={1:.2f}".format(param.name, param.value)
+    #             else:
+    #                 # TODO: Have a string for each oimParamInterpolator
+    #                 txt += " {0}={1}".format(param.name,
+    #                                          param.__class__.__name__)
+    #     return txt
+
+    # def __str__(self):
+    #     """String representation of the class."""
+    #     return self.name + self._paramstr()
+
+    # def __repr__(self):
+    #     """Console representation of the class."""
+    #     return self.__class__.__name__ + " at " + str(hex(id(self)))\
+    #             + " : " + self._paramstr()
+
+    def _ftTranslateFactor(self, ucoord, vcoord, wl, t):
+        x = self.x(wl, t)*self.x.unit.to(units.rad)
+        y = self.y(wl, t)*self.y.unit.to(units.rad)
+        return np.exp(-2*1j*np.pi*(ucoord*x+vcoord*y))
+
+    def _directTranslate(self, x, y, wl, t):
+        """Translate the x,y coordinates to the direct space
+        (i.e. the image space) using the x and y parameters of the component."""
+        return x-self.x(wl, t), y-self.y(wl, t)
 
     def getComplexCoherentFlux(self, u, v, wl=None, t=None):
         """Compute and return the complex coherent flux for an array of u,v
@@ -183,36 +215,6 @@ class oimComponent(object):
         """
         return np.zeros(dim, dim)
 
-    def _ftTranslateFactor(self, ucoord, vcoord, wl, t):
-        x = self.params["x"](wl, t)*self.params["x"].unit.to(units.rad)
-        y = self.params["y"](wl, t)*self.params["y"].unit.to(units.rad)
-        return np.exp(-2*1j*np.pi*(ucoord*x+vcoord*y))
-
-    def _directTranslate(self, x, y, wl, t):
-        x = x-self.params["x"](wl, t)
-        y = y-self.params["y"](wl, t)
-        return x, y
-
-    def _paramstr(self):
-        txt = ""
-        for _, param in self.params.items():
-            if isinstance(param, oimParam):
-                if 'value' in param.__dict__:
-                    txt += " {0}={1:.2f}".format(param.name, param.value)
-                else:
-                    # TODO: Have a string for each oimParamInterpolator
-                    txt += " {0}={1}".format(param.name,
-                                             param.__class__.__name__)
-        return txt
-
-    def __str__(self):
-        txt = self.name + self._paramstr()
-        return txt
-
-    def __repr__(self):
-        return self.__class__.__name__ + " at " + str(hex(id(self)))\
-                + " : " + self._paramstr()
-
 
 class oimComponentFourier(oimComponent):
     """Class for all component analytically defined in the Fourier plan.
@@ -230,39 +232,34 @@ class oimComponentFourier(oimComponent):
 
         # NOTE: Add ellipticity if either elong or pa is specified in kwargs
         if ("elong" in kwargs) or ("pa" in kwargs) or self.elliptic == True:
-            self.params["elong"] = oimParam(**_standardParameters["elong"])
-            self.params["pa"] = oimParam(**_standardParameters["pa"])
+            self.elong = oimParam(**_standardParameters["elong"])
+            self.pa = oimParam(**_standardParameters["pa"])
             self.elliptic = True
 
         self._eval(**kwargs)
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
         if self.elliptic == True:
-            pa_rad = (self.params["pa"](wl, t)) * \
-                self.params["pa"].unit.to(units.rad)
-            co = np.cos(pa_rad)
-            si = np.sin(pa_rad)
-            fxp = (ucoord*co-vcoord*si)/self.params["elong"](wl, t)
+            pa_rad = (self.pa(wl, t)) * self.pa.unit.to(units.rad)
+            co, si = np.cos(pa_rad), np.sin(pa_rad)
+            fxp = (ucoord*co-vcoord*si)/self.elong(wl, t)
             fyp = ucoord*si+vcoord*co
-            rho = np.sqrt(fxp**2+fyp**2)
+            rho = np.hypot(fxp, fyp)
         else:
-            fxp = ucoord
-            fyp = vcoord
-            rho = np.sqrt(fxp**2+fyp**2)
+            fxp, fyp = ucoord, vcoord
+            rho = np.hypot(fxp, fyp)
 
         vc = self._visFunction(fxp, fyp, rho, wl, t)
 
-        return vc*self._ftTranslateFactor(ucoord, vcoord, wl, t) * \
-            self.params["f"](wl, t)
+        return vc*self._ftTranslateFactor(ucoord, vcoord, wl, t) * self.f(wl, t)
 
     def _visFunction(self, ucoord, vcoord, rho, wl, t):
         return ucoord*0
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         t = np.array(t).flatten()
-        nt = t.size
         wl = np.array(wl).flatten()
-        nwl = wl.size
+        nt, nwl = t.size, wl.size
 
         dims = (nt, nwl, dim, dim)
 
@@ -283,14 +280,12 @@ class oimComponentFourier(oimComponent):
         x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
 
         if self.elliptic:
-
-            pa_rad = (self.params["pa"](wl_arr, t_arr)) * \
-                self.params["pa"].unit.to(units.rad)
+            pa_rad = (self.pa(wl_arr, t_arr)) * self.pa.unit.to(units.rad)
 
             xp = x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
             yp = x_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
 
-            x_arr = xp*self.params["elong"](wl_arr, t_arr)
+            x_arr = xp*self.elong(wl_arr, t_arr)
             y_arr = yp
 
         image = self._imageFunction(x_arr.reshape(dims), y_arr.reshape(dims),
@@ -303,7 +298,7 @@ class oimComponentFourier(oimComponent):
             for iwl, wli in enumerate(wl):
                 if tot[it, iwl] != 0:
                     image[it, iwl, :, :] = image[it, iwl, :, :]  \
-                        / tot[it, iwl]*self.params["f"](wli, ti)
+                        / tot[it, iwl]*self.f(wli, ti)
         return image
 
     def _imageFunction(self, xx, yy, wl, t):
@@ -321,12 +316,13 @@ class oimComponentImage(oimComponent):
         self._pixSize = 0   # NOTE: In rad
         self._allowExternalRotation = True
         self.normalizeImage = True
-        self.params["dim"] = oimParam(**_standardParameters["dim"])
-        self.params["pa"] = oimParam(**_standardParameters["pa"])
+        self.dim = oimParam(**_standardParameters["dim"])
+        self.pa = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add ellipticity
         if self.elliptic:
-            self.params["elong"] = oimParam(**_standardParameters["elong"])
+            self.elong = oimParam(**_standardParameters["elong"])
+
         if 'FTBackend' in kwargs:
             self.FTBackend = kwargs['FTBackend']()
         else:
@@ -352,16 +348,16 @@ class oimComponentImage(oimComponent):
         tr = self._ftTranslateFactor(
             ucoord, vcoord, wl, t)#♣*self.params["f"](wl, t)
 
-        if self._allowExternalRotation == True:
-            pa_rad = (self.params["pa"](wl, t)) * \
-                self.params["pa"].unit.to(units.rad)
-            co = np.cos(pa_rad)
-            si = np.sin(pa_rad)
+        if self._allowExternalRotation:
+            pa_rad = (self.pa(wl, t)) * \
+                self.pa.unit.to(units.rad)
+            co, si = np.cos(pa_rad), np.sin(pa_rad)
             fxp = ucoord*co-vcoord*si
             fyp = ucoord*si+vcoord*co
             vcoord = fyp
+
             if self.elliptic == True:
-                ucoord = fxp/self.params["elong"](wl, t)
+                ucoord = fxp/self.elong(wl, t)
             else:
                 ucoord = fxp
 
@@ -378,13 +374,13 @@ class oimComponentImage(oimComponent):
         if self.FTBackend.check(self.FTBackendData, im, pix, wl0,
                                 t0, ucoord, vcoord, wl, t) == False:
 
-            self.FTBackendData = self.FTBackend.prepare(im, pix, wl0,
-                                                        t0, ucoord, vcoord, wl, t)
+            self.FTBackendData = self.FTBackend.prepare(
+                    im, pix, wl0, t0, ucoord, vcoord, wl, t)
 
         vc = self.FTBackend.compute(self.FTBackendData, im, pix, wl0,
                                     t0, ucoord, vcoord, wl, t)
 
-        return vc*tr*self.params["f"](wl, t)
+        return vc*tr*self.f(wl, t)
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
@@ -393,9 +389,8 @@ class oimComponentImage(oimComponent):
             t = 0
 
         t = np.array(t).flatten()
-        nt = t.size
         wl = np.array(wl).flatten()
-        nwl = wl.size
+        nt, nwl = t.size, wl.size
         dims = (nt, nwl, dim, dim)
 
         v = np.linspace(-0.5, 0.5, dim)
@@ -413,16 +408,15 @@ class oimComponentImage(oimComponent):
 
         x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
 
-        if self._allowExternalRotation == True:
-            pa_rad = (self.params["pa"](wl_arr, t_arr)) * \
-                self.params["pa"].unit.to(units.rad)
+        if self._allowExternalRotation:
+            pa_rad = self.pa(wl_arr, t_arr) * self.pa.unit.to(units.rad)
 
             xp = x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
             yp = x_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
             y_arr = yp
 
-            if self.elliptic == True:
-                x_arr = xp*self.params["elong"](wl_arr, t_arr)
+            if self.elliptic:
+                x_arr = xp*self.elong(wl_arr, t_arr)
             else:
                 x_arr = xp
 
@@ -443,14 +437,14 @@ class oimComponentImage(oimComponent):
 
         im = im.reshape(dims)
 
-        if self.normalizeImage == True:
+        if self.normalizeImage:
             # TODO: No loop for normalization
             tot = np.sum(im, axis=(2, 3))
             for it, ti in enumerate(t):
                 for iwl, wli in enumerate(wl):
                     if tot[it, iwl] != 0:
                         im[it, iwl, :, :] = im[it, iwl, :, :]  \
-                            / tot[it, iwl]*self.params["f"](wli, ti)
+                            / tot[it, iwl]*self.f(wli, ti)
         return im
 
     def getInternalImage(self, wl, t):
@@ -461,7 +455,7 @@ class oimComponentImage(oimComponent):
                 simple=False, wl=wl, t=t)
             res = self._imageFunction(x_arr, y_arr, wl_arr, t_arr)
 
-        if self.normalizeImage == True:
+        if self.normalizeImage:
             for it in range(res.shape[0]):
                 for iwl in range(res.shape[1]):
                     res[it, iwl, :, :] = res[it, iwl, :, :] / \
@@ -487,7 +481,7 @@ class oimComponentImage(oimComponent):
         else:
             t0 = self._t
 
-        dim = self.params["dim"](wl, t)
+        dim = self.dim(wl, t)
 
         pix = self._pixSize*units.rad.to(units.mas)
         v = np.linspace(-0.5, 0.5, dim)
@@ -507,7 +501,7 @@ class oimComponentImage(oimComponent):
             wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
             t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
-            if flatten == True:
+            if flatten:
                 return t_arr.flatten(), wl_arr.flatten(), \
                     x_arr.flatten(), y_arr.flatten()
             else:
@@ -531,8 +525,8 @@ class oimComponentRadialProfile(oimComponent):
         # CHECK: Is this not redundant as oimComponent is already ellpitical?
         # NOTE: Add ellipticity
         if self.elliptic == True:
-            self.params["pa"] = oimParam(**_standardParameters["pa"])
-            self.params["elong"] = oimParam(**_standardParameters["elong"])
+            self.pa = oimParam(**_standardParameters["pa"])
+            self.elong = oimParam(**_standardParameters["elong"])
 
         self._eval(**kwargs)
 
@@ -549,11 +543,11 @@ class oimComponentRadialProfile(oimComponent):
 
         if self._r is None:
             pix = self._pixSize*units.rad.to(units.mas)
-            r = np.linspace(0, self.params["dim"].value-1, self.params["dim"].value)*pix
+            r = np.linspace(0, self.dim.value-1, self.dim.value)*pix
         else:
             r = self._r
 
-        if simple == True:
+        if simple:
             return r, wl, t
         else:
             nt = np.array(t0).flatten().size
@@ -564,7 +558,7 @@ class oimComponentRadialProfile(oimComponent):
             wl_arr = np.tile(wl[None, :, None], (nt, 1, nr))
             t_arr = np.tile(t[:, None, None],  (1, nwl, nr))
 
-            if flatten == True:
+            if flatten:
                 return t_arr.flatten(), wl_arr.flatten(), r_arr.flatten()
             else:
                 return t_arr, wl_arr, r_arr
@@ -647,14 +641,13 @@ class oimComponentRadialProfile(oimComponent):
 
         x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
 
-        if self.elliptic == True:
-            pa_rad = (self.params["pa"](wl_arr, t_arr)) * \
-                self.params["pa"].unit.to(units.rad)
+        if self.elliptic:
+            pa_rad = self.pa(wl_arr, t_arr) * self.pa.unit.to(units.rad)
 
             xp = x_arr*np.cos(pa_rad)-y_arr*np.sin(pa_rad)
             yp = x_arr*np.sin(pa_rad)+y_arr*np.cos(pa_rad)
             y_arr = yp
-            x_arr = xp*self.params["elong"](wl_arr, t_arr)
+            x_arr = xp*self.elong(wl_arr, t_arr)
 
         r_arr = np.sqrt(x_arr**2+y_arr**2)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
@@ -667,7 +660,7 @@ class oimComponentRadialProfile(oimComponent):
                 for iwl, wli in enumerate(wl):
                     if tot[it, iwl] != 0:
                         im[it, iwl, :, :] = im[it, iwl, :, :]  \
-                            / tot[it, iwl]*self.params["f"](wli, ti)
+                            / tot[it, iwl]*self.f(wli, ti)
 
         return im
 
@@ -677,17 +670,15 @@ class oimComponentRadialProfile(oimComponent):
         if t is None:
             t = ucoord*0
 
-        if self.elliptic == True:
-            pa_rad = (self.params["pa"](wl, t)) * \
-                self.params["pa"].unit.to(units.rad)
-            co = np.cos(pa_rad)
-            si = np.sin(pa_rad)
+        if self.elliptic:
+            pa_rad = self.pa(wl, t) * self.pa.unit.to(units.rad)
+            co, si = np.cos(pa_rad), np.sin(pa_rad)
             fxp = ucoord*co-vcoord*si
             fyp = ucoord*si+vcoord*co
             vcoord = fyp
-            ucoord = fxp/self.params["elong"](wl, t)
+            ucoord = fxp/self.elong(wl, t)
 
-        spf = np.sqrt(ucoord**2+vcoord**2)
+        spf = np.hypot(ucoord, vcoord)
 
         if self._wl is None:
             wl0 = np.sort(np.unique(wl))
@@ -703,8 +694,7 @@ class oimComponentRadialProfile(oimComponent):
 
         vc = self.hankel(Ir, self._r*units.mas.to(units.rad),
                          wl0, t0, spf, wl, t)
-        return vc*self._ftTranslateFactor(ucoord, vcoord, wl, t) * \
-            self.params["f"](wl, t)
+        return vc*self._ftTranslateFactor(ucoord, vcoord, wl, t)*self.f(wl, t)
 
 
 class oimComponentFitsImage(oimComponentImage):
@@ -716,8 +706,8 @@ class oimComponentFitsImage(oimComponentImage):
     def __init__(self, fitsImage, useinternalPA=False, **kwargs):
         super().__init__(**kwargs)
         self.loadImage(fitsImage, useinternalPA=useinternalPA)
-        self.params["pa"] = oimParam(**_standardParameters["pa"])
-        self.params["scale"] = oimParam(**_standardParameters["scale"])
+        self.pa = oimParam(**_standardParameters["pa"])
+        self.scale = oimParam(**_standardParameters["scale"])
 
         self._eval(**kwargs)
 
@@ -767,7 +757,7 @@ class oimComponentFitsImage(oimComponentImage):
 
         # TODO: Check units
         if useinternalPA:
-            self.params["pa"].value = pa0
+            self.pa.value = pa0
 
         if dims == 3:
             self._wl = getWlFromFitsImageCube(self._header, units.m)
@@ -778,6 +768,6 @@ class oimComponentFitsImage(oimComponentImage):
             self._image = im.data[None, None, :, :]
 
     def _internalImage(self):
-        self.params["dim"].value = self._dim
-        self._pixSize = self._pixSize0*self.params["scale"].value
+        self.dim.value = self._dim
+        self._pixSize = self._pixSize0*self.scale.value
         return self._image
