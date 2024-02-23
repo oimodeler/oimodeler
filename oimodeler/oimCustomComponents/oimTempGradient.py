@@ -53,26 +53,26 @@ class oimTempGradient(oimComponentRadialProfile):
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
-        self.params["rin"] = oimParam(name="rin", value=0, unit=u.au,
-                                      description="Inner radius of the disk")
-        self.params["rout"] = oimParam(name="rout", value=0, unit=u.au,
-                                       description="Outer radius of the disk")
-        self.params["q"] = oimParam(name="q", value=0, unit=u.one,
-                                    description="Power-law exponent for the temperature profile")
-        self.params["p"] = oimParam(name="p", value=0, unit=u.one,
-                                    description="Power-law exponent for the dust surface density profile")
-        self.params["dust_mass"] = oimParam(name="dust_mass", value=0, unit=u.M_sun,
-                                            description="Mass of the dusty disk")
-        self.params["inner_temp"] = oimParam(name="inner_temp", value=0,
-                                             unit=u.K, free=False,
-                                             description="Inner radius temperature")
-        self.params["kappa_abs"] = oimParam(name="kappa_abs", value=0,
-                                            unit=u.cm**2/u.g, free=False,
-                                            description="Dust mass absorption coefficient")
-        self.params["dist"] = oimParam(name="dist", value=0,
-                                       unit=u.pc, free=False,
-                                       description="Distance of the star")
-        self.params["f"].free = False
+        self.rin = oimParam(name="rin", value=0, unit=u.au,
+                            description="Inner radius of the disk")
+        self.rout = oimParam(name="rout", value=0, unit=u.au,
+                             description="Outer radius of the disk")
+        self.q = oimParam(name="q", value=0, unit=u.one,
+                          description="Power-law exponent for the temperature profile")
+        self.p = oimParam(name="p", value=0, unit=u.one,
+                          description="Power-law exponent for the dust surface density profile")
+        self.dust_mass = oimParam(name="dust_mass", value=0, unit=u.M_sun,
+                                  description="Mass of the dusty disk")
+        self.inner_temp = oimParam(name="inner_temp", value=0,
+                                   unit=u.K, free=False,
+                                   description="Inner radius temperature")
+        self.kappa_abs = oimParam(name="kappa_abs", value=0,
+                                  unit=u.cm**2/u.g, free=False,
+                                  description="Dust mass absorption coefficient")
+        self.dist = oimParam(name="dist", value=0,
+                             unit=u.pc, free=False,
+                             description="Distance of the star")
+        self.f.free = False
 
         self._eval(**kwargs)
 
@@ -97,7 +97,7 @@ class oimTempGradient(oimComponentRadialProfile):
         # HACK: Sets the multi wavelength coordinates properly.
         # Does not account for time, improves computation time.
         wl = np.unique(wl)
-        kappa_abs = self.params["kappa_abs"](wl, t)
+        kappa_abs = self.kappa_abs(wl, t)
         if len(r.shape) == 3:
             r = r[0, 0][np.newaxis, np.newaxis, :]
             wl, kappa_abs = map(lambda x: x[np.newaxis, :, np.newaxis], [wl, kappa_abs])
@@ -105,20 +105,19 @@ class oimTempGradient(oimComponentRadialProfile):
             wl, kappa_abs = map(lambda x: x[:, np.newaxis], [wl, kappa_abs])
             r = r[np.newaxis, :]
 
-        rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
-        q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
-        dist, inner_temp = map(
-            lambda x: self.params[x](wl, t), ["dist", "inner_temp"])
-        dust_mass = self.params["dust_mass"](wl, t)\
-                * self.params["dust_mass"].unit.to(u.g)
+        rin, rout = self.rin(wl, t), self.rout(wl, t)
+        q, p = self.q(wl, t), self,p(wl, t)
+        dist, inner_temp = self.dist(wl, t), self.inner_temp(wl, t)
+        dust_mass = self.dust_mass(wl, t)*self.dust_mass.unit.to(u.g)
         rin_mas, rout_mas = map(lambda x: 1e3*x/dist, [rin, rout])
 
         # NOTE: Temperature profile.
         temp_profile = (inner_temp*(r / rin_mas)**(-q))
 
         # NOTE: Surface density profile.
-        rin_cm, rout_cm = map(
-            lambda x: x*self.params["rin"].unit.to(u.cm), [rin, rout])
+        rin_cm = self.rin(wl, t)*self.rin.unit.to(u.cm)
+        rout_cm = self.rout(wl, t)*self.rin.unit.to(u.cm)
+
         if p == 2:
             sigma_in = dust_mass/(2.*np.pi*np.log(rout_cm/rin_cm)*rin_cm**2)
         else:
@@ -137,14 +136,12 @@ class oimTempGradient(oimComponentRadialProfile):
     @property
     def _r(self):
         """Gets the radial profile (mas)."""
-        rin = convert_distance_to_angle(
-                self.params["rin"].value, self.params["dist"].value)
-        rout = convert_distance_to_angle(
-                self.params["rout"].value, self.params["dist"].value)
+        rin = convert_distance_to_angle(self.rin.value, self.dist.value)
+        rout = convert_distance_to_angle(self.rout.value, self.dist.value)
         if oimOptions.model.grid.type == "linear":
-            return np.linspace(rin, rout, self.params["dim"].value)
+            return np.linspace(rin, rout, self.dim.value)
         return np.logspace(0.0 if rin == 0 else np.log10(rin),
-                           np.log10(rout), self.params["dim"].value)
+                           np.log10(rout), self.dim.value)
 
     @_r.setter
     def _r(self, value):

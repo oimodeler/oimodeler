@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Components defined in Fourier or image planes"""
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import astropy.units as u
@@ -10,8 +10,8 @@ from scipy import interpolate, integrate
 from scipy.special import j0
 
 from . import __dict__ as oimDict
-from .oimOptions import oimOptions
-from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParameters
+from .oimOptions import oimOptions, standard_parameters
+from .oimParam import oimInterp, oimParam, oimParamInterpolator
 from .oimUtils import getWlFromFitsImageCube, pad_image, rebin_image
 
 
@@ -65,10 +65,10 @@ class oimComponent(object):
         self._wl = None    # None value <=> All wavelengths (from Data) 
         self._t = [0]      # This component is static
 
-        self.x = oimParam(**_standardParameters["x"])
-        self.y = oimParam(**_standardParameters["y"])
-        self.f = oimParam(**_standardParameters["f"])
-        self.dim = oimParam(**_standardParameters["dim"])
+        self.x = oimParam(**standard_parameters.x)
+        self.y = oimParam(**standard_parameters.y)
+        self.f = oimParam(**standard_parameters.f)
+        self.dim = oimParam(**standard_parameters.dim)
         self._eval(**kwargs)
 
     @property
@@ -231,15 +231,15 @@ class oimComponentFourier(oimComponent):
         super().__init__(**kwargs)
 
         # NOTE: Add ellipticity if either elong or pa is specified in kwargs
-        if ("elong" in kwargs) or ("pa" in kwargs) or self.elliptic == True:
-            self.elong = oimParam(**_standardParameters["elong"])
-            self.pa = oimParam(**_standardParameters["pa"])
+        if ("elong" in kwargs) or ("pa" in kwargs) or self.elliptic:
+            self.elong = oimParam(**standard_parameters.elong)
+            self.pa = oimParam(**standard_parameters.pa)
             self.elliptic = True
 
         self._eval(**kwargs)
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-        if self.elliptic == True:
+        if self.elliptic:
             pa_rad = (self.pa(wl, t)) * self.pa.unit.to(units.rad)
             co, si = np.cos(pa_rad), np.sin(pa_rad)
             fxp = (ucoord*co-vcoord*si)/self.elong(wl, t)
@@ -316,12 +316,12 @@ class oimComponentImage(oimComponent):
         self._pixSize = 0   # NOTE: In rad
         self._allowExternalRotation = True
         self.normalizeImage = True
-        self.dim = oimParam(**_standardParameters["dim"])
-        self.pa = oimParam(**_standardParameters["pa"])
+        self.dim = oimParam(**standard_parameters.dim)
+        self.pa = oimParam(**standard_parameters.pa)
 
         # NOTE: Add ellipticity
         if self.elliptic:
-            self.elong = oimParam(**_standardParameters["elong"])
+            self.elong = oimParam(**standard_parameters.elong)
 
         if 'FTBackend' in kwargs:
             self.FTBackend = kwargs['FTBackend']()
@@ -522,11 +522,11 @@ class oimComponentRadialProfile(oimComponent):
         self._wl = None
         self._r = None
 
-        # CHECK: Is this not redundant as oimComponent is already ellpitical?
+        # FIXME: Is this not redundant as oimComponent is already ellpitical?
         # NOTE: Add ellipticity
-        if self.elliptic == True:
-            self.pa = oimParam(**_standardParameters["pa"])
-            self.elong = oimParam(**_standardParameters["elong"])
+        if self.elliptic:
+            self.pa = oimParam(**standard_parameters.pa)
+            self.elong = oimParam(**standard_parameters.elong)
 
         self._eval(**kwargs)
 
@@ -706,8 +706,8 @@ class oimComponentFitsImage(oimComponentImage):
     def __init__(self, fitsImage, useinternalPA=False, **kwargs):
         super().__init__(**kwargs)
         self.loadImage(fitsImage, useinternalPA=useinternalPA)
-        self.pa = oimParam(**_standardParameters["pa"])
-        self.scale = oimParam(**_standardParameters["scale"])
+        self.pa = oimParam(**standard_parameters.pa)
+        self.scale = oimParam(**standard_parameters.scale)
 
         self._eval(**kwargs)
 

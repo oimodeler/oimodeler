@@ -4,7 +4,7 @@
 normalizers and interpolators.
 """
 import sys
-from typing import Union, Optional, Dict
+from typing import Union, Optional
 
 import astropy.units as u
 import astropy.constants as const
@@ -13,54 +13,11 @@ from astropy.modeling import models
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
+from .oimOptions import standard_parameters, interpolators
 
-# NOTE: This module so it can retrieve attributes, even if called from outside
+
+# NOTE: Set this module so it can retrieve attributes, even if called from outside
 CURRENT_MODULE = sys.modules[__name__]
-
-
-# NOTE: Here is a list of standard parameters to be used when defining new components
-_standardParameters = {
-    "x": {"name": "x", "value": 0, "description": "x position", "unit": u.mas, "free": False},
-    "y": {"name": "y", "value": 0, "description": "y position", "unit": u.mas, "free": False},
-    "f": {"name": "f", "value": 1, "description": "flux", "unit": u.one, "mini": 0, "maxi": 1},
-    "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": u.mas, "mini": 0},
-    "d": {"name": "d", "value": 0, "description": "Diameter", "unit": u.mas, "mini": 0},
-    "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": u.mas, "mini": 0},
-    "dout": {"name": "dout", "value": 0, "description": "Outer Diameter", "unit": u.mas, "mini": 0},
-    "elong": {"name": "elong", "value": 1, "description": "Elongation Ratio", "unit": u.one, "mini": 1},
-    "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
-    "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": u.one, "mini": 0, "maxi": 1},
-    "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
-    "pixSize": {"name": "pixSize", "value": 0, "description": "Pixel Size", "unit": u.mas, "free": False, "mini": 0},
-    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": u.one, "free": False, "mini": 1},
-    "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": u.m, "mini": 0},
-    "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": u.day},
-    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": u.one},
-    "index": {"name": "index", "value": 1, "description": "Index", "unit": u.one},
-    "fov": {"name": "fov", "value": 0, "description": "The interferometric field of view", "unit": u.mas, "free": False, "mini": 0},
-    "amp": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": u.one},
-    "p": {"name": "p", "value": 0, "description": "Power-law Exponent", "unit": u.one},
-}
-
-# NOTE: Sets the available interpolators for oimodeler. If strings are provided,
-# the `oimInterp` looks through `oimParam` in order to find the class.
-# To overwrite provide class variables
-_interpolators = {"wl": "oimParamInterpolatorWl",
-                  "time": "oimParamInterpolatorTime",
-                  "GaussWl": "oimParamGaussianWl",
-                  "GaussTime": "oimParamGaussianTime",
-                  "mGaussWl": "oimParamMultipleGaussianWl",
-                  "mGaussTime": "oimParamMultipleGaussianTime",
-                  "multiParam": "oimParamMultiWl",
-                  "cosTime": "oimParamCosineTime",
-                  "polyWl": "oimParamPolynomialWl",
-                  "polyTime": "oimParamPolynomialTime",
-                  "powerlawWl": "oimParamPowerLawWl",
-                  "powerlawTime": "oimParamPowerLawTime",
-                  "rangeWl": "oimParamLinearRangeWl",
-                  "templateWl": "oimParamLinearTemplateWl",
-                  "tempWl": "oimParamLinearTemperatureWl",
-                  "starWl": "oimParamLinearStarWl"}
 
 
 class oimParam:
@@ -231,13 +188,13 @@ class oimInterp:
     This will create a gaussiand component and remplace the parameter fwhm by an
     instance of the oimParamInterpolatorWl class (i.e., the wavelength linear 
     interpolator. The custom interpolator the reference to the interpolator 
-    need to be added to the  :func:`_interpolators <oimodeler.oimParam._interpolators>`
+    need to be added to the  :func:`interpolators <oimodeler.oimParam.interpolators>`
     dictionnary.
 
     Parameters
     ----------
     name : str
-        Keyname for the interpolators registered in the _interpolators
+        Keyname for the interpolators registered in the interpolators
         dictionary.
     **kwargs : dict
         Parameters from the create oimParamInterpolator-derived class.
@@ -247,7 +204,7 @@ class oimInterp:
     kwargs : dict
         Parameters from the create oimParamInterpolator-derived class.
     type : oimParamInterpolator
-        A param interpolator contained in the _interpolators dictionary.
+        A param interpolator contained in the interpolators dictionary.
         For the local definition in the `oimParam` module, strings can be used.
         To redefine the dictionary elements from outside, use the class
         variables, otherwise the local definition will be used.
@@ -255,7 +212,7 @@ class oimInterp:
 
     def __init__(self, name, **kwargs):
         self.kwargs = kwargs
-        self.type = _interpolators[name]
+        self.type = getattr(interpolators, name)
 
         # NOTE: Strings are accepted as a local definition within this module
         if isinstance(self.type, str):
@@ -308,7 +265,7 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
         self.keyvalues = []
 
         for kf in keyframes:
-            self.keyframes.append(oimParam(**_standardParameters[dependence]))
+            self.keyframes.append(oimParam(**getattr(standard_parameters, dependence)))
             self.keyframes[-1].value = kf
 
         for kv in keyvalues:
@@ -431,11 +388,11 @@ class oimParamCosineTime(oimParamInterpolator):
 class oimParamGaussian(oimParamInterpolator):
     def _init(self, param, dependence="wl", val0=0, value=0, x0=0, fwhm=0, **kwargs):
         self.dependence = dependence
-        self.x0 = oimParam(**_standardParameters[dependence])
+        self.x0 = oimParam(**getattr(standard_parameters, dependence))
         self.x0.name = "x0"
         self.x0.description = "x0"
         self.x0.value = x0
-        self.fwhm = oimParam(**_standardParameters[dependence])
+        self.fwhm = oimParam(**getattr(standard_parameters, dependence))
         self.fwhm.name = "fwhm"
         self.fwhm.description = "fwhm"
         self.fwhm.value = fwhm
@@ -488,11 +445,11 @@ class oimParamMultipleGaussian(oimParamInterpolator):
         self.fwhm = []
         self.values = []
         for i in range(n):
-            self.x0.append(oimParam(**_standardParameters[dependence]))
+            self.x0.append(oimParam(**getattr(standard_parameters, dependence)))
             self.x0[-1].name = "x0"
             self.x0[-1].description = "x0"
             self.x0[-1].value = x0[i]
-            self.fwhm.append(oimParam(**_standardParameters[dependence]))
+            self.fwhm.append(oimParam(**getattr(standard_parameters, dependence)))
             self.fwhm[-1].name = "fwhm"
             self.fwhm[-1].description = "fwhm"
             self.fwhm[-1].value = fwhm[i]
@@ -590,19 +547,19 @@ class oimParamPowerLaw(oimParamInterpolator):
     def _init(self, param, dependence, x0, A, p, **kwargs):
         self.dependence = dependence
 
-        self.x0 = oimParam(**_standardParameters[dependence])
+        self.x0 = oimParam(**getattr(standard_parameters, dependence))
         self.x0.name = 'x0'
         self.x0.description = 'Power-law reference value (wl0 or t0)'
         self.x0.value = x0
         self.x0.free = False
 
-        self.A = oimParam(**_standardParameters['scale'])
+        self.A = oimParam(**standard_parameters.scale)
         self.A.name = 'A'
         self.A.description = 'Power-law scale factor'
         self.A.value = A
         self.A.free = True
 
-        self.p = oimParam(**_standardParameters['index'])
+        self.p = oimParam(**standard_parameters.index)
         self.p.name = 'p'
         self.p.description = 'Power-law index'
         self.p.value = p
@@ -639,13 +596,13 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         self.kind = kind
 
         n = len(values)
-        self.wlmin = (oimParam(**_standardParameters["wl"]))
+        self.wlmin = oimParam(**standard_parameters.wl)
         self.wlmin.name = "wlmin"
         self.wlmin.description = "Min of wl range"
         self.wlmin.value = wlmin
         self.wlmin.free = False
 
-        self.wlmax = (oimParam(**_standardParameters["wl"]))
+        self.wlmax = oimParam(**standard_parameters.wl)
         self.wlmax.name = "wlmax"
         self.wlmax.description = "Max of the wl range"
         self.wlmax.value = wlmax
@@ -681,19 +638,19 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
         self.kind = kind
 
         n = len(values)
-        self.wl0 = (oimParam(**_standardParameters["wl"]))
+        self.wl0 = oimParam(**standard_parameters.wl)
         self.wl0.name = "wl0"
         self.wl0.description = "Initial wl of the range"
         self.wl0.value = wl0
         self.wl0.free = False
 
-        self.dwl = (oimParam(**_standardParameters["wl"]))
+        self.dwl = oimParam(**standard_parameters.wl)
         self.dwl.name = "dwl"
         self.dwl.description = "wl step in range"
         self.dwl.value = dwl
         self.dwl.free = False
 
-        self.f_contrib = (oimParam(**_standardParameters["f"]))
+        self.f_contrib = oimParam(**standard_parameters.f)
         self.f_contrib.name = "f_contrib"
         self.f_contrib.description = "Flux contribution at the wavelength"\
             " corresponding to the maximum of the"\
@@ -803,7 +760,7 @@ class oimParamLinearStarWl(oimParamInterpolator):
               dist: Union[int, float],
               lum: Union[int, float],
               radius: Optional[Union[int, float]] = None,
-              **kwargs: Dict) -> None:
+              **kwargs) -> None:
         """The subclass's constructor."""
         self._stellar_radius = None
         self._stellar_angular_radius = None

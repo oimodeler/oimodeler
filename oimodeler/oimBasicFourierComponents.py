@@ -7,7 +7,8 @@ import numpy as np
 from scipy.special import j0, j1, jv, jn, gamma
 from scipy.signal import convolve2d
 from .oimComponent import oimComponentFourier
-from .oimParam import oimParam, _standardParameters
+from .oimParam import oimParam
+from .oimOptions import standard_parameters
 
 
 class oimPt(oimComponentFourier):
@@ -90,7 +91,7 @@ class oimUD(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"] = oimParam(**_standardParameters["d"])
+        self.params["d"] = oimParam(**standard_parameters.d)
         self._eval(**kwargs)
 
     def _visFunction(self, ucoord, vcoord, rho, wl, t):
@@ -148,7 +149,7 @@ class oimGauss(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["fwhm"] = oimParam(**_standardParameters["fwhm"])
+        self.params["fwhm"] = oimParam(**standard_parameters.fwhm)
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
@@ -208,7 +209,7 @@ class oimIRing(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"] = oimParam(**_standardParameters["d"])
+        self.params["d"] = oimParam(**standard_parameters.d)
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
@@ -272,8 +273,8 @@ class oimRing(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["din"] = oimParam(**_standardParameters["din"])
-        self.params["dout"] = oimParam(**_standardParameters["dout"])
+        self.params["din"] = oimParam(**standard_parameters.din)
+        self.params["dout"] = oimParam(**standard_parameters.dout)
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
@@ -315,8 +316,8 @@ class oimRing2(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"] = oimParam(**_standardParameters["d"])
-        self.params["w"] = oimParam(**_standardParameters["d"])
+        self.params["d"] = oimParam(**standard_parameters.d)
+        self.params["w"] = oimParam(**standard_parameters.d)
         self.params["w"].name = "w"
         self.params["w"].description = "width of the ring"
         self._eval(**kwargs)
@@ -421,9 +422,9 @@ class oimESKIRing(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"] = oimParam(**_standardParameters["d"])
-        self.params["skw"] = oimParam(**_standardParameters["skw"])
-        self.params["skwPa"] = oimParam(**_standardParameters["skwPa"])
+        self.params["d"] = oimParam(**standard_parameters.d)
+        self.params["skw"] = oimParam(**standard_parameters.skw)
+        self.params["skwPa"] = oimParam(**standard_parameters.skwPa)
         self._eval(**kwargs)
 
 
@@ -475,10 +476,10 @@ class oimESKRing(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["din"] = oimParam(**_standardParameters["din"])
-        self.params["dout"] = oimParam(**_standardParameters["dout"])
-        self.params["skw"] = oimParam(**_standardParameters["skw"])
-        self.params["skwPa"] = oimParam(**_standardParameters["skwPa"])
+        self.params["din"] = oimParam(**standard_parameters.din)
+        self.params["dout"] = oimParam(**standard_parameters.dout)
+        self.params["skw"] = oimParam(**standard_parameters.skw)
+        self.params["skwPa"] = oimParam(**standard_parameters.skwPa)
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
@@ -534,7 +535,7 @@ class oimLorentz(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["fwhm"] = oimParam(**_standardParameters["fwhm"])
+        self.params["fwhm"] = oimParam(**standard_parameters.fwhm)
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
@@ -607,7 +608,7 @@ class oimLinearLDD(oimComponentFourier):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"] = oimParam(**_standardParameters["d"])
+        self.params["d"] = oimParam(**standard_parameters.d)
         self.params["a"] = oimParam(name="a", value=0, description="Linear LDD coeff",
                                     unit=u.one, mini=-1, maxi=1)
 
@@ -652,7 +653,7 @@ class oimQuadLDD(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"] = oimParam(**_standardParameters["d"])
+        self.params["d"] = oimParam(**standard_parameters.d)
         self.params["a1"] = oimParam(name="a1", value=0, description="1st QLDD coeff",
                                      unit=u.one, mini=-1, maxi=1)
         self.params["a2"] = oimParam(name="a2", value=0, description="2nd QLDD coeff",
@@ -699,7 +700,7 @@ class oimPowerLawLDD(oimComponentFourier):
     
     def __init__(self,**kwargs): 
         super().__init__(**kwargs)
-        self.params["d"]=oimParam(**_standardParameters["d"])  
+        self.params["d"]=oimParam(**standard_parameters.d)  
         self.params["a"]=oimParam(name="a",value=0,description="Power Law LDD coeff",
                                   unit=u.one,mini=0,maxi=3)
                
@@ -743,7 +744,7 @@ class oimSqrtLDD(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"] = oimParam(**_standardParameters["d"])
+        self.params["d"] = oimParam(**standard_parameters.d)
         self.params["a1"] = oimParam(name="a1", value=0, description="1st SLDD coeff",
                                      unit=u.one, mini=-1, maxi=1)
         self.params["a2"] = oimParam(name="a2", value=0, description="2nd SLDD coeff",

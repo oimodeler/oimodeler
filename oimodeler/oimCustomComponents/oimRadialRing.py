@@ -1,8 +1,8 @@
 import numpy as np
 
-from ..oimParam import _standardParameters, oimParam
+from ..oimParam import oimParam
 from ..oimComponent import oimComponentRadialProfile
-from ..oimOptions import oimOptions
+from ..oimOptions import oimOptions, standard_parameters
 
 
 class oimRadialRing(oimComponentRadialProfile):
@@ -48,9 +48,9 @@ class oimRadialRing(oimComponentRadialProfile):
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
-        self.params["din"] = oimParam(**_standardParameters["din"])
-        self.params["dout"] = oimParam(**_standardParameters["dout"])
-        self.params["p"] = oimParam(**_standardParameters["p"])
+        self.din = oimParam(**_standard_parameters.din)
+        self.dout = oimParam(**_standard_parameters.dout)
+        self.p = oimParam(**_standard_parameters.p)
 
         self._t = np.array([0])  # constant value <=> static model
         self._wl = None
@@ -76,25 +76,25 @@ class oimRadialRing(oimComponentRadialProfile):
         # HACK: Sets the multi wavelength coordinates properly.
         # Does not account for time, improves computation time.
         wl = np.unique(wl)
-        p = self.params["p"](wl, t)
-        rin, rout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
+        p, rin, rout = self.p(wl, t), self.din(wl, t)/2, self.dout(wl, t)/2
 
         if len(r.shape) == 3:
             r = r[0, 0][np.newaxis, np.newaxis, :]
             wl = wl[np.newaxis, :, np.newaxis]
         else:
             r, wl = r[np.newaxis, :], wl[np.newaxis, :]
+
         image = np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*(r / rin)**p, nan=0)
         return image*np.ones_like(wl)
 
     @property
     def _r(self):
         """Gets the radial profile [mas]."""
-        rin, rout = map(lambda x: self.params[x].value/2, ("din", "dout"))
+        rin, rout = self.din(wl, t)/2, self.dout(wl, t)/2
         if oimOptions.model.grid.type == "linear":
-            return np.linspace(rin, rout, self.params["dim"].value)
+            return np.linspace(rin, rout, self.dim.value)
         return np.logspace(0.0 if rin == 0 else np.log10(rin),
-                           np.log10(rout), self.params["dim"].value)
+                           np.log10(rout), self.dim.value)
 
     @_r.setter
     def _r(self, r: np.ndarray):

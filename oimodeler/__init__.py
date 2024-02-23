@@ -20,9 +20,8 @@ from .oimDataFilter import *
 from .oimFTBackends import numpyFFTBackend, FFTWBackend
 from .oimFitter import *
 from .oimModel import *
-from .oimOptions import oimOptions
+from .oimOptions import oimOptions, standard_parameters, interpolators
 from .oimParam import *
-from .oimParam import _standardParameters, _interpolators
 from .oimPlots import *
 from .oimSimulator import *
 from .oimUtils import *

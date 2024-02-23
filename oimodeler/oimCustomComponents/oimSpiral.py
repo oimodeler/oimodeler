@@ -8,7 +8,8 @@ import numpy as np
 from astropy import units as units
 
 from ..oimComponent import oimComponentImage
-from ..oimParam import oimParam, _standardParameters
+from ..oimParam import oimParam
+from ..oimOptions import standard_parameters
 
 
 class oimSpiral(oimComponentImage):
@@ -24,13 +25,12 @@ class oimSpiral(oimComponentImage):
 
         # Component parameters. Note that as it inherits from the oimComponentImage class it already has
         # x,y,f and dim as parameters
-        self.params["fwhm"] = oimParam(**_standardParameters["fwhm"])
-        self.params["P"] = oimParam(
-            name="P", value=1, description="Period in mas", unit=units.mas)
-        self.params["width"] = oimParam(
+        self.fwhm = oimParam(**standard_parameters.fwhm)
+        self.P = oimParam(name="P", value=1,
+                          description="Period in mas", unit=units.mas)
+        self.width = oimParam(
             name="width", value=0.01,
-            description="Width as filling factor",
-            unit=units.one)
+            description="Width as filling factor", unit=units.one)
 
         self._pixSize = 0.05 * units.mas.to(units.rad)
 
@@ -46,9 +46,9 @@ class oimSpiral(oimComponentImage):
         r = np.sqrt(xx**2 + yy**2)
         phi = np.arctan2(yy, xx)
 
-        p = self.params["P"](wl, t)
-        sig = self.params["fwhm"](wl, t) / 2.35
-        w = self.params["width"](wl, t)
+        p = self.P(wl, t)
+        sig = self.fwhm(wl, t) / 2.35
+        w = self.width(wl, t)
 
         im = 1 + np.cos(-phi - 2 * np.pi * np.log(r / p + 1))
         im = (im < 2 * w) * np.exp(-(r**2) / (2 * sig**2))
