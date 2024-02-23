@@ -30,13 +30,10 @@ from .oimUtils import  _oimDataType, _oimDataTypeArr, _oimDataTypeErr
 np.seterr(invalid='ignore')
 proj.register_projection(oimAxes)
 
-__version__ = "0.8.1"
-
-# TODO: After pathlib change of all `oimodeler` modules, remove str here
+__version__ = "0.9.0"
 __pkg_dir__ = Path(inspect.getfile(inspect.currentframe())).parent
 
 if split(__pkg_dir__)[-1] == "":
-    __git_dir__ = str(Path(split(__pkg_dir__)[0]).parent)
+    __git_dir__ = Path(split(__pkg_dir__)[0]).parent
 else:
-    __git_dir__ = str(split(__pkg_dir__)[0])
-__pkg_dir__ = str(__pkg_dir__)
+    __git_dir__ = Path(split(__pkg_dir__)[0])
