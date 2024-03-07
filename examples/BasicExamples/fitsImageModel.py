@@ -36,7 +36,7 @@ c = oim.oimComponentFitsImage(im)
 m = oim.oimModel(c)
 
 # %% Plotting the model image
-m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", figsize=(7, 5.5),
+m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, figsize=(7, 5.5),
             savefig=save_dir / "FitsImage_Disco_image.png")
 
 # %%
