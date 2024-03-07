@@ -592,3 +592,10 @@ class oimModel:
             txt += "\n"             
             txt += comp.__repr__()
         return txt
+
+    @property
+    def shortname(self):
+        txt=""
+        for icomp, compi in enumerate(self.components):
+            txt+=f"{compi.shortname} + "
+        return txt[:-3]

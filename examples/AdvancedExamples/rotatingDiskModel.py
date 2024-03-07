@@ -32,8 +32,8 @@ m = oim.oimModel(c)
 # %% Showing 5 images in narrow bands through the disk
 dwl, nwl = 32e-10, 5
 wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
-m.showModel(dim, 0.05, wl=wl, legend=True, normalize=True,
-            fromFT=False, normPow=0.5, colorbar=False, cmap="hot")
+fig0, _, _ = m.showModel(dim, 0.05, wl=wl, legend=True, normalize=True,
+            fromFT=False, normPow=0.2, colorbar=False)
 
 # %% Simulating data and comparing data and model of the disk around the
 # classical Be star Alpha Col
