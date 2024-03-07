@@ -48,10 +48,9 @@ median, err_l, err_u, err = fit.getResults(mode='median', discard=100)
 fig, ax = plt.subplots(1, 1, subplot_kw=dict(
     projection='oimAxes'), figsize=(8, 8))
 timecol = ax.oiplot(fit.simulator.data, "SPAFREQ", "VIS2DATA",
-                    xunit="cycles/mas", label="Data", cname="MJD", lw=4)
+                    xunit="cycle/mas", label="Data", cname="MJD", lw=4)
 ax.oiplot(fit.simulator.simulatedData, "SPAFREQ", "VIS2DATA",
-          xunit="cycles/mas", color="k", ls=":", label="Model")
-fig.colorbar(timecol, ax=ax, label="MJD (days)")
+          xunit="cycle/mas", color="k", ls=":", label="Model")
 ax.legend()
 plt.savefig(save_dir / "complexModel_timeDependentFit.png")
 
