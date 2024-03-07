@@ -25,10 +25,9 @@ class oimFitter(object):
         else:
             raise TypeError("Wrong number of arguments")
 
-
         try:
             self.dataTypes = kwargs.pop("dataTypes")
-        except:
+        except Exception:
             self.dataTypes = None
 
         self.data = self.simulator.data
@@ -106,18 +105,19 @@ class oimFitterEmcee(oimFitter):
 
         if not ('samplerFile' in kwargs):
             samplerFile = None
-        else :
+        else:
             samplerFile = kwargs.pop('samplerFile')
 
-        if  samplerFile == None:
-            self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
-                                 self.nfree, self._logProbability, moves=moves,
-                                      **kwargs)
-        else :
+        if samplerFile == None:
+            self.sampler = emcee.EnsembleSampler(
+                    self.params["nwalkers"].value, self.nfree,
+                    self._logProbability, moves=moves, **kwargs)
+        else:
             backend = emcee.backends.HDFBackend(samplerFile)
-            self.sampler = emcee.EnsembleSampler(self.params["nwalkers"].value,
-                     self.nfree, self._logProbability, moves=moves,
-                            backend=backend, **kwargs)
+            self.sampler = emcee.EnsembleSampler(
+                    self.params["nwalkers"].value, self.nfree,
+                    self._logProbability, moves=moves,
+                    backend=backend, **kwargs)
         return kwargs
 
     def _initGaussian(self):
@@ -126,7 +126,7 @@ class oimFitterEmcee(oimFitter):
 
         for iparam, parami in enumerate(self.freeParams.values()):
             initialParams[:, iparam] = \
-                np.random.normal(parami.value,parami.error,
+                np.random.normal(parami.value, parami.error,
                                  self.params['nwalkers'].value)
         return initialParams
 
@@ -166,7 +166,7 @@ class oimFitterEmcee(oimFitter):
             if not low < val < up:
                 return -np.inf
 
-        self.simulator.compute(computeChi2=True,dataTypes = self.dataTypes)
+        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
         return -0.5 * self.simulator.chi2r
 
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
@@ -201,8 +201,8 @@ class oimFitterEmcee(oimFitter):
             parami.value = res[iparam]
             parami.error = err[iparam]
 
-        self.simulator.compute(computeChi2=True, computeSimulatedData=True
-                               ,dataTypes=self.dataTypes)
+        self.simulator.compute(computeChi2=True, computeSimulatedData=True,
+                               dataTypes=self.dataTypes)
 
         return res, err, err_m, err_p
 
@@ -210,12 +210,10 @@ class oimFitterEmcee(oimFitter):
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
 
-
-        kwargs0 = dict(quantiles=[ 0.16, 0.5, 0.84], show_titles=True, bins=50,
-            smooth=2, smooth1d=2, fontsize=8, title_kwargs={'fontsize': 8},
-            use_math_text=True)
-
-        kwargs = {**kwargs0,**kwargs}
+        kwargs0 = dict(quantiles=[0.16, 0.5, 0.84], show_titles=True,
+                       bins=50, smooth=2, smooth1d=2, fontsize=8,
+                       title_kwargs={'fontsize': 8}, use_math_text=True)
+        kwargs = {**kwargs0, **kwargs}
 
         labels = []
         for namei, uniti in zip(pnames, punits):
@@ -230,7 +228,7 @@ class oimFitterEmcee(oimFitter):
         idx = np.where(chi2 < chi2limfact*chi2.min())[0]
         c2 = c[idx, :]
 
-        fig = corner.corner(c2, labels=labels,**kwargs )
+        fig = corner.corner(c2, labels=labels, **kwargs)
 
         if savefig != None:
             plt.savefig(savefig)
@@ -272,20 +270,21 @@ class oimFitterEmcee(oimFitter):
         xf = xf[idxCut]
         samples = samples[idxCut, :]
         """
-        chi2min=chi2f.min()
-        chi2max=chi2limfact*chi2min
-        chi2bins=np.linspace(chi2max,chi2min,ncolors)
+        chi2min = chi2f.min()
+        chi2max = chi2limfact*chi2min
+        chi2bins = np.linspace(chi2max, chi2min, ncolors)
         if 'cmap' in kwargs:
-            cmap=cm.get_cmap(kwargs.pop('cmap'), ncolors)
+            cmap = cm.get_cmap(kwargs.pop('cmap'), ncolors)
         else:
-            cmap=cm.get_cmap(mpl.rcParams['image.cmap'],ncolors)
+            cmap = cm.get_cmap(mpl.rcParams['image.cmap'], ncolors)
 
         for i in range(self.nfree):
             for icol in range(ncolors):
-                if icol!=0:
-                    idxi=np.where((chi2f>chi2bins[icol]) & (chi2f<=chi2bins[icol-1]))[0]
+                if icol != 0:
+                    idxi = np.where((chi2f > chi2bins[icol])
+                                    & (chi2f <= chi2bins[icol-1]))[0]
                 else:
-                    idxi=np.where(chi2f>chi2bins[icol])[0]
+                    idxi = np.where(chi2f > chi2bins[icol])[0]
 
                 ax[i].scatter(xf[idxi], samples[idxi, i],
                               color=cmap(ncolors-icol-1),
@@ -302,15 +301,15 @@ class oimFitterEmcee(oimFitter):
             ax[i].set_ylabel(unit_txt)
 
             c = (np.max(samples[:, i])+np.min(samples[:, i]))/2
-            ax[i].text(0.02*np.max(xf), c, txt, va="center", ha="left", fontsize=labelsize,
-                       backgroundcolor=(1, 1, 1, 0.5))
+            ax[i].text(0.02*np.max(xf), c, txt, va="center", ha="left",
+                       fontsize=labelsize, backgroundcolor=(1, 1, 1, 0.5))
             ax[i].yaxis.set_label_coords(-0.1, 0.5)
 
         norm = mpl.colors.Normalize(vmin=chi2min, vmax=chi2max)
-        sm =cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm = cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
-        fig.colorbar(sm,ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
-        #fig.colorbar(scale, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
+        fig.colorbar(sm, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
+        # fig.colorbar(scale, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
 
         ax[-1].set_xlabel("step number")
 

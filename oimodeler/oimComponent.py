@@ -73,8 +73,6 @@ class oimComponent(object):
         self.params["y"]=oimParam(**_standardParameters["y"])
         self.params["f"]=oimParam(**_standardParameters["f"])
         self.params["dim"]=oimParam(**_standardParameters["dim"])
-        
-       
         self._eval(**kwargs)
 
     @property
@@ -197,25 +195,23 @@ class oimComponent(object):
 
     def _paramstr(self):
         txt = ""
-        for name, param in self.params.items():
+        for _, param in self.params.items():
             if isinstance(param, oimParam):
                 if 'value' in param.__dict__:
                     txt += " {0}={1:.2f}".format(param.name, param.value)
                 else:
-                    # TODO have a string for each oimParamInterpolator
+                    # TODO: Have a string for each oimParamInterpolator
                     txt += " {0}={1}".format(param.name,
                                              param.__class__.__name__)
         return txt
-        
+
     def __str__(self):
         txt = self.name + self._paramstr()
-        
-
         return txt
-    
+
     def __repr__(self):
-        return self.__class__.__name__ + " at " + str(hex(id(self)))+  " : "+ \
-               self._paramstr()
+        return self.__class__.__name__ + " at " + str(hex(id(self)))\
+                + " : " + self._paramstr()
 
 
 class oimComponentFourier(oimComponent):
@@ -314,8 +310,6 @@ class oimComponentFourier(oimComponent):
         raise ValueError(f"image function not implemented for {self.shortname}."
                          "Use the fromFFT=True option to get a model image"
                          " from the inverse Fourier Transform")
-        image = xx*0+1
-        return image
 
 
 class oimComponentImage(oimComponent):
@@ -324,7 +318,7 @@ class oimComponentImage(oimComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._pixSize = 0 # NOTE: In rad
+        self._pixSize = 0   # NOTE: In rad
         self._allowExternalRotation = True
         self.normalizeImage = True
         self.params["dim"] = oimParam(**_standardParameters["dim"])
@@ -334,9 +328,9 @@ class oimComponentImage(oimComponent):
         if self.elliptic:
             self.params["elong"] = oimParam(**_standardParameters["elong"])
         if 'FTBackend' in kwargs:
-            self.FTBackend = kwargs['FTBackend']
+            self.FTBackend = kwargs['FTBackend']()
         else:
-            self.FTBackend = oimOptions['FTBackend']
+            self.FTBackend = oimOptions.ft.backend.active()
 
         self.FTBackendData = None
         self._eval(**kwargs)
@@ -349,8 +343,8 @@ class oimComponentImage(oimComponent):
 
         im = self.getInternalImage(wl, t)
 
-        if oimOptions["FTBinningFactor"] is not None:
-            im = rebin_image(im, oimOptions["FTBinningFactor"])
+        if oimOptions.ft.binning is not None:
+            im = rebin_image(im, oimOptions.ft.binning)
 
         im = pad_image(im)
         pix = self._pixSize
@@ -596,7 +590,7 @@ class oimComponentRadialProfile(oimComponent):
 
     @staticmethod
     def fht(Ir, r, wlin, tin, sfreq, wl, t):
-        pad = 1 if oimOptions['FTPaddingFactor'] is None else oimOptions['FTPaddingFactor']
+        pad = oimOptions.ft.padding
         nr = r.size
         ntin = tin.size
         nwlin = wlin.size

@@ -5,7 +5,8 @@ import numpy as np
 
 from .oimData import oimData, oimDataType
 from .oimUtils import hdulistDeepCopy
-from .oimPlots import oimWlTemplatePlots,_errorplot
+from .oimPlots import oimWlTemplatePlots, _errorplot
+
 
 def corrFlux2Vis2(vcompl):
     nB = vcompl.shape[0]
@@ -97,14 +98,12 @@ class oimSimulator(object):
         for datai in self.data.data:
             self.simulatedData.addData(hdulistDeepCopy(datai))
 
-    def compute(self, computeChi2=False, computeSimulatedData=False, 
-                checkSimulatedData=True, dataTypes = None):
-                 
+    def compute(self, computeChi2=False, computeSimulatedData=False,
+                checkSimulatedData=True, dataTypes=None):
         if dataTypes == None:    
-            dataTypes = ["VIS2DATA","VISAMP","VISPHI","T3AMP","T3PHI","FLUXDATA"]
-            
-            
-        self.vcompl = self.model.getComplexCoherentFlux(self.data.vect_u, 
+            dataTypes = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
+
+        self.vcompl = self.model.getComplexCoherentFlux(self.data.vect_u,
                        self.data.vect_v, self.data.vect_wl, self.data.vect_mjd)
 
         nelChi2 = 0
@@ -142,7 +141,6 @@ class oimSimulator(object):
                     idx += nB*nwl
                     quantities = []
                     val = []
-                    
 
                     # NOTE: Computing all observables from complex Coherent Flux
                     if arrType == "OI_VIS2":
@@ -180,7 +178,7 @@ class oimSimulator(object):
                         quantities.append("FLUXDATA")
 
                     # NOTE: Filling the simulatedData astropy array with the computed values
-                    if computeSimulatedData == True:
+                    if computeSimulatedData:
                         for ival in range(len(val)):
                             try:
                                 self.simulatedData.data[ifile][arrNum].data[quantities[ival]] = val[ival]
@@ -197,10 +195,9 @@ class oimSimulator(object):
                                     dphi = np.rad2deg(np.angle(np.exp(1j*np.deg2rad(dataVal[ival]))
                                                                * np.exp(-1j*np.deg2rad((val[ival])))))
                                     chi2i = (dphi*np.logical_not(flag[ival])/dataErr[ival])**2
-    
                                 else:
                                     chi2i = ((dataVal[ival]-val[ival])*np.logical_not(flag[ival])/dataErr[ival])**2
-    
+
                                 nelChi2 += np.sum((dataErr[ival] != 0)
                                                   * np.logical_not(flag[ival]))
                                 chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
@@ -211,48 +208,39 @@ class oimSimulator(object):
             self.chi2r = chi2/(nelChi2-len(self.model.getFreeParameters()))
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
-    
+
     def plotWlTemplate(self, shape, simulated=True, savefig=None, xunit="m",
                        plotFuntionData=_errorplot,
-                       plotFunctionSimulatedData = plt.Axes.plot,
-             kwargsData={}, kwargsSimulatedData={},**kwargs):
-    
-    
+                       plotFunctionSimulatedData=plt.Axes.plot,
+                       kwargsData={}, kwargsSimulatedData={}, **kwargs):
             kwargsData0 = dict(color="tab:red", alpha=0.5)
-            
             kwargsSimulatedData0 = dict(color="tab:blue", lw=2, alpha = 0.7)
-            
-            
-            kwargsData = {**kwargsData0,**kwargsData}
-            kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
-           
-            
-           
-            fig=plt.figure(FigureClass=oimWlTemplatePlots,**kwargs)
-            fig.autoShape(self.data.data,shape=shape)
+            kwargsData = {**kwargsData0, **kwargsData}
+            kwargsSimulatedData = {**kwargsSimulatedData0,
+                                   **kwargsSimulatedData}
+
+            fig=plt.figure(FigureClass=oimWlTemplatePlots, **kwargs)
+            fig.autoShape(self.data.data, shape=shape)
             fig.set_xunit(xunit)
-            fig.plot(self.data.data,plotFunction=plotFuntionData, 
+            fig.plot(self.data.data, plotFunction=plotFuntionData,
                      plotFunctionkwarg=kwargsData)
-            fig.plot(self.simulatedData.data,plotFunction=plotFunctionSimulatedData,
+            fig.plot(self.simulatedData.data,
+                     plotFunction=plotFunctionSimulatedData,
                      plotFunctionkwarg=kwargsSimulatedData)
 
-            #fig.set_legends("$LENGTH$m $PA$$^o$","VIS2DATA",fontsize=8)
-            #fig.set_legends(0.1,0.8,"$BASELINE$",["VIS2DATA","VISPHI","T3PHI"],fontweight =1000)
+            # fig.set_legends("$LENGTH$m $PA$$^o$","VIS2DATA",fontsize=8)
+            # fig.set_legends(0.1,0.8,"$BASELINE$",["VIS2DATA","VISPHI","T3PHI"],fontweight =1000)
 
             return fig
     
     
     def plot(self, arr, simulated=True, savefig=None, visLog=False,xunit="cycle/rad", 
              kwargsData={}, kwargsSimulatedData={}):
-    
         # NOTE: Plotting  data and simulated data
-        
-        kwargsData0 = dict(cname="EFF_WAVE", cunit="micron",lw=2, 
-                           cmap="coolwarm",errorbar=True, label="data")
-        
+        kwargsData0 = dict(cname="EFF_WAVE", cunit="micron", lw=2,
+                           cmap="coolwarm", errorbar=True, label="data")
         kwargsSimulatedData0 = dict(color="k", ls=":", lw=1, label="model")
-
-        kwargsData = {**kwargsData0,**kwargsData}
+        kwargsData = {**kwargsData0, **kwargsData}
         kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
 
         if type(arr) != type([]):
@@ -272,13 +260,13 @@ class oimSimulator(object):
         for iax, axi in enumerate(ax):
             # NOTE: Plotting the data with wavelength colorscale + errorbars vs
             # spatial frequencies
-            scale = axi.oiplot(self.data.data, "SPAFREQ", arr[iax],xunit=xunit,
-                               showColorbar=False,**kwargsData)
+            scale = axi.oiplot(self.data.data, "SPAFREQ", arr[iax],
+                               xunit=xunit, showColorbar=False, **kwargsData)
 
             # NOTE: Over-plotting the simulated data as a dotted line vs spatial
             # frequencies
-            axi.oiplot(self.simulatedData.data, "SPAFREQ", arr[iax], 
-                       xunit=xunit,**kwargsSimulatedData)
+            axi.oiplot(self.simulatedData.data, "SPAFREQ", arr[iax],
+                       xunit=xunit, **kwargsSimulatedData)
 
             if axi != ax[-1]:
                 axi.get_xaxis().set_visible(False)
@@ -307,7 +295,7 @@ class oimSimulator(object):
 
         # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
         fig.colorbar(scale, ax=ax.ravel().tolist(),
-                     label="$\\lambda$ ($\mu$m)")
+                     label=r"$\lambda$ ($\mu$m)")
 
         if savefig != None:
             plt.savefig(savefig)

@@ -16,8 +16,8 @@ from matplotlib import pyplot as plt
 
 # NOTE: You can change FFT option, for instance reduce the standard
 # zero-padding factor from 8 to 2 or use FFTW backend instead of the
-# standard numpy FFT module oim.oimOptions['FTpaddingFactor']=2
-# oim.oimOptions['FTBackend']=oim.FFTWBackend
+# standard numpy FFT module oim.oimOptions.ft.padding = 2
+# oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 path = Path(__file__).parent.parent.parent
 file_name = path / "examples" / "AdvancedExamples" / "KinematicsBeDiskModel.fits"

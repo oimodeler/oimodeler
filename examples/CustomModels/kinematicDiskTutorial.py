@@ -13,11 +13,11 @@ import astropy.units as u
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 
-# setting the FFT parameters and backend. As the kinematicsDisk model as no 
+# setting the FFT parameters and backend. As the kinematicsDisk model as no
 # outer sharp edge we decide not to zero-pad the images during the FFT process
 # no oder to save time and without noticeable effect on the simulated visibilities
-oim.oimOptions['FTPaddingFactor']=2
-oim.oimOptions['FTBackend']=oim.FFTWBackend
+oim.oimOptions.ft.padding = 2
+oim.oimOptions.ft.backend.active = oim.FFTWBackend()
 
 # Global simulation parameters
 dim   = 256	            # size of the simulation in pixel

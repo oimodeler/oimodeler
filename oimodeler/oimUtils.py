@@ -28,25 +28,27 @@ _oimDataAnalysisInComplex = [False, False, True, False, True, False]
 def getDataTypeIsAnalysisComplex(dataType):
     try:
         return _oimDataAnalysisInComplex[_oimDataType.index(dataType)]
-    except:
+    except Exception:
         raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
 
 
 def getDataArrname(dataType):
     try:
         return _oimDataTypeArr[_oimDataType.index(dataType)]
-    except:
+    except Exception:
         raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
 
 
 def getDataType(dataArrname):
-    return[ datatypei for datatypei,arrnamei
-           in zip(_oimDataType,_oimDataTypeArr) if arrnamei==dataArrname]
+    return [datatypei for datatypei, arrnamei
+            in zip(_oimDataType, _oimDataTypeArr)
+            if arrnamei == dataArrname]
 
 
 def getDataTypeError(dataArrname):
-    return[ datatypei for datatypei,arrnamei
-           in zip(_oimDataTypeErr,_oimDataTypeArr) if arrnamei==dataArrname]
+    return [datatypei for datatypei, arrnamei
+            in zip(_oimDataTypeErr, _oimDataTypeArr)
+            if arrnamei == dataArrname]
 
 
 def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
@@ -114,8 +116,8 @@ def pad_image(image: np.ndarray):
     s0x = np.trim_zeros(im0x).size
     s0y = np.trim_zeros(im0y).size
 
-    min_sizex = s0x*oimOptions["FTPaddingFactor"]
-    min_sizey = s0y*oimOptions["FTPaddingFactor"]
+    min_sizex = s0x*oimOptions.ft.padding
+    min_sizey = s0y*oimOptions.ft.padding
 
     min_pow2x = 2**(min_sizex - 1).bit_length()
     min_pow2y = 2**(min_sizey - 1).bit_length()
@@ -137,7 +139,7 @@ def rebin_image(image: np.ndarray,
     """Bins a 2D-image down according.
 
     The down binning is according to the binning factor
-    in oimOptions["FTBinningFactor"]. Only accounts for
+    in oimOptions.ft.binning. Only accounts for
     square images.
 
     Parameters

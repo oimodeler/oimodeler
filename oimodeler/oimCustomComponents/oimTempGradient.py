@@ -141,7 +141,7 @@ class oimTempGradient(oimComponentRadialProfile):
                 self.params["rin"].value, self.params["dist"].value)
         rout = convert_distance_to_angle(
                 self.params["rout"].value, self.params["dist"].value)
-        if oimOptions["GridType"] == "linear":
+        if oimOptions.model.grid.type == "linear":
             return np.linspace(rin, rout, self.params["dim"].value)
         return np.logspace(0.0 if rin == 0 else np.log10(rin),
                            np.log10(rout), self.params["dim"].value)

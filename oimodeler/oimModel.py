@@ -328,7 +328,7 @@ class oimModel:
         normalize : bool, optional
             If True normalizes the image.
         rebin : bool, optional
-            If True rebin the image according to oimOptions["FTBinningFactor"].
+            If True rebin the image according to oimOptions.ft.binning.
         **kwargs : dict
             Arguments to be passed to the plt.imshow function.
 

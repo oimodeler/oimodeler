@@ -17,11 +17,11 @@ f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
 data.setFilter(oim.oimDataFilter([f1, f2]))
 
 # NOTE: Grid can be changed from 'linear' to 'logarithmic'
-oim.oimOptions["GridType"] = "logarithmic"
+oim.oimOptions.model.grid.type = "logarithmic"
 
 # NOTE: The padding of the 1D-grid can be set (Multiplies to outer radius at
 # grid creation). Default is 'None/1' and doesn't pad
-# oim.oimOptions["FTPaddingFactor"] = 4
+oim.oimOptions.ft.padding = 4
 
 # NOTE: A multi param that contains different values for different wavelengths
 kappa_abs = oim.oimInterp(
