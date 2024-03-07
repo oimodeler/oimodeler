@@ -14,11 +14,17 @@ import oimodeler as oim
 
 # as the model as no sharp outer edge, no zero-padding is needed
 oim.oimOptions.ft.padding = 1
-oim.oimOptions.ft.backend.active = oim.FFTWBackend
+#oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 # Path to the AMBER oifits files: the classical Be star Alpha Col
 path = Path(__file__).parent.parent.parent
 data_dir = path / "examples" / "testData" / "RealData" / "AMBER" / "AlphaCol"
+
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+
 files = list(data_dir.glob("*.fits"))
 
 # %%
@@ -33,52 +39,31 @@ m = oim.oimModel(c)
 dwl, nwl = 32e-10, 5
 wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
 fig0, _, _ = m.showModel(dim, 0.05, wl=wl, legend=True, normalize=True,
-            fromFT=False, normPow=0.2, colorbar=False)
+            fromFT=False, normPow=0.2, colorbar=False,
+            savefig=save_dir / "ExampleRotatingDiskModel_Model_images.png")
 
 # %% Simulating data and comparing data and model of the disk around the
 # classical Be star Alpha Col
 sim = oim.oimSimulator(files, m)
 pprint(f"chi2: {sim.chi2r}")
 
-# %% Plotting the data/model comparison (V² phi diff. and CP) for the 6 baselines
-fig, ax = plt.subplots(nrows=4, ncols=4, sharex=True, figsize=(12, 7))
-for k in range(2):
-    lam = sim.data.data[k]['OI_WAVELENGTH'].data['EFF_WAVE']
-    B, PA = oim.getBaselineLengthAndPA(sim.data.data[k])
-    for i in range(3):
-        ax[0+2*k][i].errorbar(lam*1e6, sim.data.data[k]['OI_VIS2'].data['VIS2DATA'][i, :],
-                              sim.data.data[k]['OI_VIS2'].data['VIS2ERR'][i, :], color="tab:red", alpha=0.5)
-        ax[0+2*k][i].plot(lam*1e6, sim.simulatedData.data[k]['OI_VIS2'].data['VIS2DATA'][i, :],
-                          color="tab:blue")
-        ax[0+2*k][i].set_ylim(0.3, 1.1)
-        ax[0+2*k][i].text(wl0*1e6, 0.05, "B={0:.0f}m PA={1:.0f}$^o$".format(
-            B[i], PA[i]), horizontalalignment="center")
-        ax[0+2*k][i].set_ylim(0, 1.2)
-
-        ax[1+2*k][i].errorbar(lam*1e6, sim.data.data[k]['OI_VIS'].data['VISPHI'][i, :],
-                              sim.data.data[k]['OI_VIS'].data['VISPHIERR'][i, :], color="tab:red", alpha=0.5)
-        ax[1+2*k][i].plot(lam*1e6, sim.simulatedData.data[k]
-                          ['OI_VIS'].data['VISPHI'][i, :], color="tab:blue")
-        ax[1+2*k][i].set_ylim(-30, 30)
-
-        if k == 1:
-            ax[1+2*k][i].set_xlabel("$\\lambda$ ($\mu$m)")
-
-    ax[0+2*k][0].set_ylabel("V$^2$")
-    ax[1+2*k][0].set_ylabel("$\\varphi$ ($^o$)")
-
-    ax[0+2*k][3].axis('off')
-
-    ax[1+2*k][3].errorbar(lam*1e6, sim.data.data[k]['OI_T3'].data['T3PHI'][0, :],
-                          sim.data.data[k]['OI_T3'].data['T3PHIERR'][0, :], color="tab:red", alpha=0.5)
-    ax[1+2*k][3].plot(lam*1e6, sim.simulatedData.data[k]
-                      ['OI_T3'].data['T3PHI'][0, :], color="tab:blue")
-    ax[1+2*k][3].set_ylim(-30, 30)
-    ax[1+2*k][3].yaxis.set_label_position("right")
-    ax[1+2*k][3].set_ylabel("CP  ($^o$)")
-
+#%%
+fig=plt.figure(FigureClass=oim.oimWlTemplatePlots,figsize=(12, 7))
+fig.autoShape(sim.data.data,shape=[["VIS2DATA",None],["VISPHI","T3PHI"]])
+fig.set_xunit("micron")
+fig.plot(sim.data.data,plotFunction=plt.Axes.errorbar,
+         plotFunctionkwarg=dict(color="tab:red",alpha=0.5))
+fig.plot(sim.simulatedData.data,plotFunctionkwarg=dict(color="tab:blue"))
+fig.set_ylim(["VISPHI","T3PHI"],-25,25)
+fig.set_ylim(["VIS2DATA"],0,1.2)
+fig.set_xlim(2.1624,2.1688)
+fig.set_legends(0.5,0.1,"$BASELINE$ $LENGTH$m $PA$$^o$",["VIS2DATA","VISPHI"],
+                fontsize=12,ha="center")
+fig.set_legends(0.5,0.1,"$BASELINE$",["T3PHI"],fontsize=12,ha="center")
 title = f"$\\alpha$ Col AMBER data + Kinematic disk model: chi$^2_r$= {sim.chi2r:.1f}"
 fig.suptitle(title)
-ax[0, 0].set_xlim(1e6*(wl0-dwl), 1e6*(wl0+dwl))
+
 fig.tight_layout()
-plt.show()
+
+plt.savefig(save_dir / "ExampleRotatingDiskModel_data_model.png")
+
