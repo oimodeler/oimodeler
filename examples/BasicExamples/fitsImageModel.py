@@ -15,8 +15,9 @@ from matplotlib import pyplot as plt
 
 # NOTE: You can change FFT option, for instance reduce the standard
 # zero-padding factor from 8 to 2 or use FFTW backend instead of the
-# standard numpy FFT module oim.oimOptions.ft.padding = 2
-# oim.oimOptions.ft.backend.active = oim.FFTWBackend
+# standard numpy FFT module 
+oim.oimOptions.ft.padding = 8
+#oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 path = Path(__file__).parent.parent.parent
 file_name = path / "examples" / "BasicExamples" / "BeDISCO.fits"
@@ -36,8 +37,8 @@ c = oim.oimComponentFitsImage(im)
 m = oim.oimModel(c)
 
 # %% Plotting the model image
-m.showModel(512, 0.05, legend=True, normalize=True, normPow=1,  figsize=(7, 5.5),
-            savefig=save_dir / "FitsImage_Disco_image.png")
+m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", 
+            figsize=(7, 5.5),savefig=save_dir / "FitsImage_Disco_image.png")
 
 # %%
 # Create some spatial frequencies (Baselines from 0 to 120m at 1.5 microns)
@@ -72,8 +73,8 @@ pprint(m.getParameters())
 c.params['pa'].value = 40
 c.params['scale'].value = 0.8
 
-m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", figsize=(7, 5.5),
-            savefig=save_dir / "FitsImage_Disco_image2.png")
+m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", 
+            figsize=(7, 5.5),savefig=save_dir / "FitsImage_Disco_image2.png")
 
 # %%Adding a companion
 
