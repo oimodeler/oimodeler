@@ -376,13 +376,13 @@ class oimComponentImage(oimComponent):
         else:
             t0 = self._t
 
-        if self.FTBackend.check(self.FTBackend,self.FTBackendData, im, pix, wl0,
+        if self.FTBackend.check(self.FTBackendData, im, pix, wl0,
                                 t0, ucoord, vcoord, wl, t) == False:
 
-            self.FTBackendData = self.FTBackend.prepare(self.FTBackend,im, pix, wl0,
+            self.FTBackendData = self.FTBackend.prepare(im, pix, wl0,
                                                         t0, ucoord, vcoord, wl, t)
 
-        vc = self.FTBackend.compute(self.FTBackend,self.FTBackendData, im, pix, wl0,
+        vc = self.FTBackend.compute(self.FTBackendData, im, pix, wl0,
                                     t0, ucoord, vcoord, wl, t)
 
         return vc*tr*self.params["f"](wl, t)
