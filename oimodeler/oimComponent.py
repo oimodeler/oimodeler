@@ -8,6 +8,7 @@ from astropy.io import fits
 from astropy import units as units
 from scipy import interpolate, integrate
 from scipy.special import j0
+from pathlib import Path
 
 from . import __dict__ as oimDict
 from .oimOptions import oimOptions
@@ -723,7 +724,7 @@ class oimComponentFitsImage(oimComponentImage):
         self._eval(**kwargs)
 
     def loadImage(self, fitsImage, useinternalPA=False):
-        if isinstance(fitsImage, str):
+        if isinstance(fitsImage, str) or isinstance(fitsImage,Path) :
             try:
                 im = fits.open(fitsImage)[0]
             except:
