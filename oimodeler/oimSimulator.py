@@ -203,7 +203,7 @@ class oimSimulator(object):
                                 chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
                                 chi2List.append(chi2i)
 
-        if computeChi2 == True:
+        if computeChi2:
             self.chi2 = chi2
             self.chi2r = chi2/(nelChi2-len(self.model.getFreeParameters()))
             self.chi2List = chi2List

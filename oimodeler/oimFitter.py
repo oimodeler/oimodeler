@@ -43,6 +43,7 @@ class oimFitter(object):
         for key in self.params.keys():
             if key in kwargs.keys():
                 self.params[key].value = kwargs.pop(key)
+
         return kwargs
 
     def prepare(self, **kwargs):

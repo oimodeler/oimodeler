@@ -74,8 +74,8 @@ def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
             * (1/(np.exp(const.h.cgs*frequencies/(const.k_B.cgs*temperature))-1))).value
 
 
-def calculate_intensity(wavelengths: u.um, temperature: u.K,
-                        pixel_size: Optional[float] = None) -> np.ndarray:
+def compute_intensity(wavelengths: u.um, temperature: u.K,
+                      pixel_size: Optional[float] = None) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
     dust surface density profile.
@@ -102,6 +102,37 @@ def calculate_intensity(wavelengths: u.um, temperature: u.K,
                 u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
         spectral_profile.append((spectral_radiance*pixel_size**2).to(u.Jy).value)
     return np.array(spectral_profile)
+
+
+def compute_photometric_slope(
+        data: np.ndarray, temperature: float) -> np.ndarray:
+    """Computes the photometric slope of the data from
+    the effective temperature of the star.
+
+    Parameters
+    ----------
+    data : oimData.oimData
+        The observed data.
+    temperature : float
+        The effective temperature of the star.
+
+    Returns
+    -------
+    photometric_slope : numpy.ndarray
+    """
+    temperature = u.Quantity(temperature, u.K)
+    wavelength = (np.unique(data.struct_wl)*u.m).to(u.um)
+
+    x = np.arange(wavelength.size)
+    p_linear = np.polyfit(x, wavelength, 1)
+    poly_linear = np.poly1d(p_linear)
+    wavelength = np.append(wavelength.value,
+                           poly_linear(np.arange(x.size, x.size+1)))*u.um
+
+    freq = (const.c / wavelength.to(u.m)).to(u.Hz).value
+    bb = models.BlackBody(temperature=temperature)(wavelength)
+    wavelength = (wavelength.to(u.m)).value[:-1]
+    return wavelength, np.diff(np.log(bb.value))/np.diff(np.log(freq))
 
 
 def pad_image(image: np.ndarray):
