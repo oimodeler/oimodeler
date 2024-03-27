@@ -33,6 +33,7 @@ class oimAEIRing(oimComponentFourier):
 
     def _imageFunction(self, xx, yy, wl, t):
         a, phi = self.params["a"](wl, t), self.params["phi"](wl, t)
+        phi *= self.params["phi"].unit.to(u.rad)
         c, s, polar_angle = a*np.cos(phi), a*np.sin(phi), np.arctan2(yy, xx)
 
         rin, radius = self.params["rin"](wl, t), np.hypot(xx, yy)

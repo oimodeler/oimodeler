@@ -1,7 +1,6 @@
 import astropy.units as u
 import numpy as np
 
-
 from ..oimBasicFourierComponents import oimEGauss
 from ..oimParam import _standardParameters, oimParam
 
@@ -9,6 +8,7 @@ from ..oimParam import _standardParameters, oimParam
 class oimGaussLorentz(oimEGauss):
     name = "Gauss-Lorentzian component"
     shorname = "gaussLor"
+    elliptic = True
 
     def __init__(self, **kwargs):
         super(). __init__(**kwargs)
@@ -19,12 +19,16 @@ class oimGaussLorentz(oimEGauss):
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
-        vis_gauss = super()._visFunction(xp, yp, rho, wl, t)
-        xx = self.params["fwhm"](wl, t)*self.params["fwhm"].unit.to(u.rad)*rho/2
-        vis_lor = np.exp(-2*np.pi*xx/np.sqrt(3))
-        return (1-self.params["flor"](wl, t))*vis_gauss + self.params["flor"](wl, t)*vis_lor
+        flor = self.params["flor"](wl, t)
+        fwhm = self.params["fwhm"](wl, t)*self.params["fwhm"].unit.to(u.rad)
+        vis_gauss = np.exp(-(np.pi*fwhm*rho)**2/(4*np.log(2)))
+        vis_lor = np.exp(-np.pi*fwhm*rho/np.sqrt(3))
+        return (1-flor)*vis_gauss + flor*vis_lor
 
-    # def _imageFunction(self, xx, yy, wl, t):
-    #     image_gauss = self.gauss._imageFunction(xx, yy, wl, t)
-    #     image_lor = self.lor._imageFunction(xx, yy, wl, t)
-    #     return (1-self.params["flor"](wl, t))*image_gauss + self.params["flor"](wl, t)*image_lor
+    def _imageFunction(self, xx, yy, wl, t):
+        fwhm, radius = self.params["fwhm"](wl, t), np.hypot(xx, yy)
+        flor = self.params["flor"](wl, t)
+        image_gauss = np.sqrt(4*np.log(2)*fwhm/np.pi)\
+            * np.exp(-4*np.log(2)*radius**2/fwhm**2)
+        image_lor = fwhm/(4*np.pi*np.sqrt(3))*(fwhm**2/12+radius**2)**(-1.5)
+        return (1-flor)*image_gauss + flor*image_lor

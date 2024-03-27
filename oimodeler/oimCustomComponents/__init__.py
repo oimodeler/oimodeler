@@ -16,6 +16,6 @@ from .oimGaussLorentz import oimGaussLorentz
 from .oimKinematicDisk import oimKinematicDisk
 from .oimRadialRing import oimRadialRing
 from .oimSpiral import oimSpiral
-from .oimStarHaloDisk import oimStarHaloGaussLorentz, oimStarHaloRing
+from .oimStarHaloDisk import oimStarHaloGaussLorentz, oimStarHaloIRing, oimStarHaloRing
 from .oimTempGradient import oimTempGradient
 from .oimKinematicDisk import oimKinematicDisk

@@ -10,8 +10,8 @@ from scipy.stats import circstd
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
-
 from astropy.modeling import models
+
 
 import oimodeler as oim
 from .oimOptions import oimOptions
@@ -51,27 +51,33 @@ def getDataTypeError(dataArrname):
             if arrnamei == dataArrname]
 
 
-def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
+def blackbody(temperature: u.K, wavelength: u.m = None,
+              frequency: u.Hz = None) -> np.ndarray:
     """Planck's law with output in cgs.
 
     Parameters
     ----------
-    wavelength : np.ndarray
-        The wavelength [cm].
-    temperature ſ np.ndarray
+    temperature : astrophy.units.K
         The temperature [K].
+    wavelength : astrpy.units.m, optional
+        The wavelength [cm].
+    frequency : astropy.units.Hz, optional
+        The frequency [Hz].
 
     Returns
     -------
     blackbody : np.ndarray
         The blackbody [erg/(cm² s Hz sr)].
     """
-    wavelength *= u.m
-    temperature *= u.K
+    if wavelength is not None:
+        wavelength = u.Quantity(wavelength, u.m)
+        frequency = (const.c.cgs/(wavelength).to(u.cm))
+    else:
+        frequency = u.Quantity(frequency, u.Hz)
 
-    frequencies = (const.c.cgs/(wavelength).to(u.cm))
-    return ((2*const.h.cgs*frequencies**3/const.c.cgs**2)\
-            * (1/(np.exp(const.h.cgs*frequencies/(const.k_B.cgs*temperature))-1))).value
+    temperature = u.Quantity(temperature, u.K)
+    return ((2*const.h.cgs*frequency**3/const.c.cgs**2)\
+            * (1/(np.exp(const.h.cgs*frequency/(const.k_B.cgs*temperature))-1))).value
 
 
 def compute_intensity(wavelengths: u.um, temperature: u.K,
@@ -105,7 +111,7 @@ def compute_intensity(wavelengths: u.um, temperature: u.K,
 
 
 def compute_photometric_slope(
-        data: np.ndarray, temperature: float) -> np.ndarray:
+        data: np.ndarray, temperature: u.K) -> np.ndarray:
     """Computes the photometric slope of the data from
     the effective temperature of the star.
 
@@ -113,7 +119,7 @@ def compute_photometric_slope(
     ----------
     data : oimData.oimData
         The observed data.
-    temperature : float
+    temperature : astropy.units.K
         The effective temperature of the star.
 
     Returns
@@ -121,18 +127,16 @@ def compute_photometric_slope(
     photometric_slope : numpy.ndarray
     """
     temperature = u.Quantity(temperature, u.K)
-    wavelength = (np.unique(data.struct_wl)*u.m).to(u.um)
+    struct_wl = [item for sublist in data.struct_wl for item in sublist]
+    wl = (np.unique(np.hstack(struct_wl))*u.m).to(u.um)
+    nu = (const.c/wl.to(u.m)).to(u.Hz)
+    blackbody = models.BlackBody(temperature)
 
-    x = np.arange(wavelength.size)
-    p_linear = np.polyfit(x, wavelength, 1)
-    poly_linear = np.poly1d(p_linear)
-    wavelength = np.append(wavelength.value,
-                           poly_linear(np.arange(x.size, x.size+1)))*u.um
-
-    freq = (const.c / wavelength.to(u.m)).to(u.Hz).value
-    bb = models.BlackBody(temperature=temperature)(wavelength)
-    wavelength = (wavelength.to(u.m)).value[:-1]
-    return wavelength, np.diff(np.log(bb.value))/np.diff(np.log(freq))
+    delta_nu = (nu * 1e-5)
+    bb_upper, bb_lower = map(lambda x: blackbody(x), (nu+delta_nu, nu-delta_nu))
+    bb_diff = (bb_upper-bb_lower) / (2 * delta_nu)
+    photometric_slope = (nu / blackbody(nu)) * bb_diff
+    return wl.to(u.m).value, photometric_slope.value
 
 
 def pad_image(image: np.ndarray):

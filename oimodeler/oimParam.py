@@ -81,7 +81,7 @@ class oimParam:
     unit: 1 or astropy.unit, optional
         Unit of the parameter. The default is astropy.units.one
     """
-    def __init__(self, name=None, value=None, mini=-1*np.inf, maxi=np.inf,
+    def __init__(self, name=None, value=None, mini=-np.inf, maxi=np.inf,
                  description="", unit=u.one, free=True, error=0):
         """Initialize a new instance of the oimParam class. """
         self.name = name
