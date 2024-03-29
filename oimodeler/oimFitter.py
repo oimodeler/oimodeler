@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
-from multiprocessing import Pool
+# from multiprocessing import Pool
 
 import corner
 import emcee
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import numpy as np
+from matplotlib import cm
 from scipy.optimize import minimize
+from dynesty import DynamicNestedSampler, NestedSampler
+from dynesty import plotting as dyplot
 
 from .oimParam import oimParam
 from .oimSimulator import oimSimulator
 
 
-class oimFitter(object):
+class oimFitter:
     params = {}
 
     def __init__(self, *args, **kwargs):
@@ -43,6 +45,7 @@ class oimFitter(object):
         for key in self.params.keys():
             if key in kwargs.keys():
                 self.params[key].value = kwargs.pop(key)
+
         return kwargs
 
     def prepare(self, **kwargs):
@@ -69,6 +72,15 @@ class oimFitter(object):
 
     def getResults(self,**kwargs):
         return 0
+
+    def printResults(self,format=".5f",**kwargs):
+    
+        res=self.getResults(**kwargs)
+        chi2r=self.simulator.chi2r
+        pm=u'\xb1'
+        for iparam,parami in enumerate(self.freeParams):
+            print(f"{parami} = {res[0][iparam]:{format}} {pm} {res[3][iparam]:{format}} {self.freeParams[parami].unit}")
+        print(f"chi2r = {chi2r:{format}}")
 
     def _prepare(self, **kwargs):
         return kwargs
@@ -157,6 +169,8 @@ class oimFitterEmcee(oimFitter):
 
         return kwargs
 
+    # TODO: Maybe make it possible for end-user to input their own
+    # parametrisation
     def _logProbability(self, theta):
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = theta[iparam]
@@ -308,17 +322,167 @@ class oimFitterEmcee(oimFitter):
             plt.savefig(savefig)
 
         return fig, ax
-
-
-    def printResults(self,format=".5f",**kwargs):
-    
-        res=self.getResults(**kwargs)
-        chi2r=self.simulator.chi2r
-        pm=u'\xb1'
-        for iparam,parami in enumerate(self.freeParams):
-            print(f"{parami} = {res[0][iparam]:{format}} {pm} {res[3][iparam]:{format}} {self.freeParams[parami].unit}")
-        print(f"chi2r = {chi2r:{format}}")
         
+
+class oimFitterDynesty(oimFitter):
+    """A multinested fitter that has generally a better coverage of the 
+    global (than MCMC) parameter space."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "method" not in kwargs:
+            self.method = "dynamic"
+        else:
+            self.method = kwargs.pop("method")
+
+        samplers = {"dynamic": DynamicNestedSampler, "static": NestedSampler}
+        self.sampler = samplers[self.method]
+
+    def _prepare(self, **kwargs):
+        """Prepares the dynesty fitter."""
+        del kwargs["init"]
+
+        if not ('samplerFile' in kwargs):
+            samplerFile = None
+        else:
+            samplerFile = kwargs.pop('samplerFile')
+
+        if "nlive" not in kwargs:
+            nlive = 1000
+        else:
+            nlive = kwargs.pop("nlive")
+
+        if "sample" not in kwargs:
+            sample = "rwalk"
+        else:
+            sample = kwargs.pop("sample")
+
+        if "bound" not in kwargs:
+            bound = "multi"
+        else:
+            bound = kwargs.pop("bound")
+
+        # TODO: Implement the loading of the sampler
+        if samplerFile is None:
+            self.sampler = self.sampler(
+                    self._logProbability, self._ptform, self.nfree,
+                    nlive=nlive, sample=sample, bound=bound,
+                    update_interval=self.nfree, **kwargs)
+        else:
+            ...
+
+        return kwargs
+
+    def _run(self, **kwargs):
+        if "progress" not in kwargs:
+            print_progress = False
+        else:
+            print_progress = kwargs.pop("progress")
+
+        if "dlogz" not in kwargs:
+            dlogz = 0.010
+        else:
+            dlogz = kwargs.pop("dlogz")
+
+        sampler_kwargs = {"dlogz": dlogz, "print_progress": print_progress}
+
+        if self.method == "dynamic":
+            del sampler_kwargs["dlogz"]
+
+        # TODO: Implement checkpoint file here
+        self.sampler.run_nested(**sampler_kwargs, **kwargs)
+        self.getResults()
+
+        return kwargs
+
+    # TODO: Maybe make it possible for end-user to input their own
+    # parametrisation
+    def _ptform(self, uniform_samples: np.ndarray) -> np.ndarray:
+        """The transformation for uniform sampled values to the
+        uniform parameter space."""
+        priors = np.array([(param.min, param.max) for param in self.freeParams.values()])
+        return priors[:, 0] + (priors[:, 1] - priors[:, 0])*uniform_samples
+
+    def _logProbability(self, theta: np.ndarray) -> float:
+        """The log probability."""
+        for iparam, parami in enumerate(self.freeParams.values()):
+            parami.value = theta[iparam]
+
+        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
+        return -0.5 * self.simulator.chi2r
+
+    def getResults(self, mode="median", **kwargs):
+        if mode == "median":
+            samples = self.sampler.results.samples
+            quantiles = np.percentile(samples, [10, 50, 84], axis=0)
+            res = quantiles[1]
+            err_m, err_p = np.diff(quantiles, axis=0)
+        else:
+            raise NameError("'mode' should be either 'best', 'mean' or 'median'")
+
+        err = 0.5*(err_m+err_p)
+
+        for iparam, parami in enumerate(self.freeParams.values()):
+            parami.value = res[iparam]
+            parami.error = err[iparam]
+
+        self.simulator.compute(computeChi2=True, computeSimulatedData=True,
+                               dataTypes=self.dataTypes)
+
+        return res, err, err_m, err_p
+
+    def cornerPlot(self, savefig=None, **kwargs):
+        pnames = list(self.freeParams.keys())
+        punits = [p.unit for p in list(self.freeParams.values())]
+
+        kwargs0 = dict(quantiles=[0.16, 0.5, 0.84], show_titles=True,
+                       title_quantiles=[0.16, 0.5, 0.84],
+                       use_math_text=True, max_n_ticks=3)
+
+        kwargs = {**kwargs0, **kwargs}
+
+        labels = []
+        for namei, uniti in zip(pnames, punits):
+            txt = namei
+            if uniti.to_string() != "":
+                txt += " ("+uniti.to_string()+")"
+            labels.append(txt)
+
+        results = self.sampler.results
+        fig, _ = dyplot.cornerplot(results, color='blue',
+                                   truths=np.zeros(len(pnames)),
+                                   labels=labels, truth_color='black', **kwargs)
+
+
+        if savefig is not None:
+            plt.savefig(savefig)
+
+        return fig, fig.axes
+
+    def walkersPlot(self, savefig=None, **kwargs):
+        pnames = list(self.freeParams.keys())
+        punits = [p.unit for p in list(self.freeParams.values())]
+
+        kwargs0 = dict(quantiles=[0.16, 0.5, 0.84], show_titles=True, use_math_text=True)
+        kwargs = {**kwargs0, **kwargs}
+
+        labels = []
+        for namei, uniti in zip(pnames, punits):
+            txt = namei
+            if uniti.to_string() != "":
+                txt += " ("+uniti.to_string()+")"
+            labels.append(txt)
+
+        results = self.sampler.results
+        fig, ax = dyplot.traceplot(results, labels=labels,
+                                   truths=np.zeros(len(labels)),
+                                   truth_color='black', connect=True,
+                                   trace_cmap='viridis',
+                                   connect_highlight=range(5), **kwargs)
+        if savefig is not None:
+            plt.savefig(savefig)
+
+        return fig, ax
         
 
 class oimFitterMinimize(oimFitter):
@@ -360,18 +524,3 @@ class oimFitterMinimize(oimFitter):
                                ,dataTypes=self.dataTypes)
         
         return values, errors
-    
-    def printResults(self,format=".5f",**kwargs):
-    
-        res=self.getResults(**kwargs)
-        chi2r=self.simulator.chi2r
-        pm=u'\xb1'
-        nfree = len(self.freeParams)
-        print(f"Model : {self.model.shortname}")
-        print(f"{nfree} free parameters fitted:")
-        for iparam,parami in enumerate(self.freeParams):
-            print(f"{parami} = {res[0][iparam]:{format}} {pm} {res[1][iparam]:{format}} {self.freeParams[parami].unit}")
-        print(f"chi2r = {chi2r:{format}}")
-        
-        
-        

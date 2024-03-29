@@ -22,7 +22,7 @@ CURRENT_MODULE = sys.modules[__name__]
 _standardParameters = {
     "x": {"name": "x", "value": 0, "description": "x position", "unit": u.mas, "free": False},
     "y": {"name": "y", "value": 0, "description": "y position", "unit": u.mas, "free": False},
-    "f": {"name": "f", "value": 1, "description": "flux", "unit": u.one, "mini": 0, "maxi": 1},
+    "f": {"name": "f", "value": 1, "description": "flux", "unit": u.one, "mini": 0, "maxi": 1, "free": True},
     "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": u.mas, "mini": 0},
     "d": {"name": "d", "value": 0, "description": "Diameter", "unit": u.mas, "mini": 0},
     "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": u.mas, "mini": 0},
@@ -81,7 +81,7 @@ class oimParam:
     unit: 1 or astropy.unit, optional
         Unit of the parameter. The default is astropy.units.one
     """
-    def __init__(self, name=None, value=None, mini=-1*np.inf, maxi=np.inf,
+    def __init__(self, name=None, value=None, mini=-np.inf, maxi=np.inf,
                  description="", unit=u.one, free=True, error=0):
         """Initialize a new instance of the oimParam class. """
         self.name = name
@@ -364,12 +364,15 @@ class oimParamMultiWl(oimParamInterpolatorKeyframes):
         keyframes = np.array([param.value for param in self.keyframes])
         values = np.array([param.value for param in self.keyvalues])
         new_values = np.zeros(wl.shape)
-        indices = np.where(np.isin(keyframes, np.unique(wl)))[0]
-        for index, value in enumerate(values[indices]):
-            if len(wl.shape) == 1:
-                new_values[index] = value
-            else:
-                new_values[:, index, :, :] = value
+        
+        for index, wavelength in enumerate(wl):
+            if wavelength in keyframes:
+                value_index = np.where(wavelength == keyframes)[0][0]
+                if len(wl.shape) == 1:
+                    new_values[index] = values[value_index]
+                else:
+                    new_values[:, index, :, :] = values[value_index]
+
         return new_values
 
 class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):

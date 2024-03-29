@@ -152,8 +152,8 @@ class oimGauss(oimComponentFourier):
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
-        return np.exp(-1*(np.pi*self.params["fwhm"](wl, t) *
-                          self.params["fwhm"].unit.to(u.rad)*rho)**2/(4*np.log(2)))
+        xx = self.params["fwhm"](wl, t)*self.params["fwhm"].unit.to(u.rad)*rho
+        return np.exp(-(np.pi*xx)**2/(4*np.log(2)))
 
     def _imageFunction(self, xx, yy, wl, t):
         r2 = (xx**2+yy**2)

@@ -239,19 +239,16 @@ class oimComponentFourier(oimComponent):
         self._eval(**kwargs)
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-        if self.elliptic == True:
+        if self.elliptic:
             pa_rad = (self.params["pa"](wl, t)) * \
                 self.params["pa"].unit.to(units.rad)
-            co = np.cos(pa_rad)
-            si = np.sin(pa_rad)
+            co, si = np.cos(pa_rad), np.sin(pa_rad)
             fxp = (ucoord*co-vcoord*si)/self.params["elong"](wl, t)
             fyp = ucoord*si+vcoord*co
-            rho = np.sqrt(fxp**2+fyp**2)
         else:
-            fxp = ucoord
-            fyp = vcoord
-            rho = np.sqrt(fxp**2+fyp**2)
+            fxp, fyp = ucoord, vcoord
 
+        rho = np.sqrt(fxp**2+fyp**2)
         vc = self._visFunction(fxp, fyp, rho, wl, t)
 
         return vc*self._ftTranslateFactor(ucoord, vcoord, wl, t) * \
@@ -357,12 +354,12 @@ class oimComponentImage(oimComponent):
         if self._allowExternalRotation == True:
             pa_rad = (self.params["pa"](wl, t)) * \
                 self.params["pa"].unit.to(units.rad)
-            co = np.cos(pa_rad)
-            si = np.sin(pa_rad)
+            co, si = np.cos(pa_rad), np.sin(pa_rad)
             fxp = ucoord*co-vcoord*si
             fyp = ucoord*si+vcoord*co
             vcoord = fyp
-            if self.elliptic == True:
+
+            if self.elliptic:
                 ucoord = fxp/self.params["elong"](wl, t)
             else:
                 ucoord = fxp

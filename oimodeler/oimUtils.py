@@ -10,8 +10,8 @@ from scipy.stats import circstd
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
-
 from astropy.modeling import models
+
 
 import oimodeler as oim
 from .oimOptions import oimOptions
@@ -51,31 +51,37 @@ def getDataTypeError(dataArrname):
             if arrnamei == dataArrname]
 
 
-def blackbody(wavelength: np.ndarray, temperature: np.ndarray) -> np.ndarray:
+def blackbody(temperature: u.K, wavelength: u.m = None,
+              frequency: u.Hz = None) -> np.ndarray:
     """Planck's law with output in cgs.
 
     Parameters
     ----------
-    wavelength : np.ndarray
-        The wavelength [cm].
-    temperature ſ np.ndarray
+    temperature : astrophy.units.K
         The temperature [K].
+    wavelength : astrpy.units.m, optional
+        The wavelength [cm].
+    frequency : astropy.units.Hz, optional
+        The frequency [Hz].
 
     Returns
     -------
     blackbody : np.ndarray
         The blackbody [erg/(cm² s Hz sr)].
     """
-    wavelength *= u.m
-    temperature *= u.K
+    if wavelength is not None:
+        wavelength = u.Quantity(wavelength, u.m)
+        frequency = (const.c.cgs/(wavelength).to(u.cm))
+    else:
+        frequency = u.Quantity(frequency, u.Hz)
 
-    frequencies = (const.c.cgs/(wavelength).to(u.cm))
-    return ((2*const.h.cgs*frequencies**3/const.c.cgs**2)\
-            * (1/(np.exp(const.h.cgs*frequencies/(const.k_B.cgs*temperature))-1))).value
+    temperature = u.Quantity(temperature, u.K)
+    return ((2*const.h.cgs*frequency**3/const.c.cgs**2)\
+            * (1/(np.exp(const.h.cgs*frequency/(const.k_B.cgs*temperature))-1))).value
 
 
-def calculate_intensity(wavelengths: u.um, temperature: u.K,
-                        pixel_size: Optional[float] = None) -> np.ndarray:
+def compute_intensity(wavelengths: u.um, temperature: u.K,
+                      pixel_size: Optional[float] = None) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
     dust surface density profile.
@@ -102,6 +108,35 @@ def calculate_intensity(wavelengths: u.um, temperature: u.K,
                 u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
         spectral_profile.append((spectral_radiance*pixel_size**2).to(u.Jy).value)
     return np.array(spectral_profile)
+
+
+def compute_photometric_slope(
+        data: np.ndarray, temperature: u.K) -> np.ndarray:
+    """Computes the photometric slope of the data from
+    the effective temperature of the star.
+
+    Parameters
+    ----------
+    data : oimData.oimData
+        The observed data.
+    temperature : astropy.units.K
+        The effective temperature of the star.
+
+    Returns
+    -------
+    photometric_slope : numpy.ndarray
+    """
+    temperature = u.Quantity(temperature, u.K)
+    struct_wl = [item for sublist in data.struct_wl for item in sublist]
+    wl = (np.unique(np.hstack(struct_wl))*u.m).to(u.um)
+    nu = (const.c/wl.to(u.m)).to(u.Hz)
+    blackbody = models.BlackBody(temperature)
+
+    delta_nu = (nu * 1e-5)
+    bb_upper, bb_lower = map(lambda x: blackbody(x), (nu+delta_nu, nu-delta_nu))
+    bb_diff = (bb_upper-bb_lower) / (2 * delta_nu)
+    photometric_slope = (nu / blackbody(nu)) * bb_diff
+    return wl.to(u.m).value, photometric_slope.value
 
 
 def pad_image(image: np.ndarray):
