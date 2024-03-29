@@ -146,3 +146,4 @@ examples/testData/TEMP_Binary/Aspro2_alpha_Ara_VLTI_MATISSE_LM_2.86542-4.18239-6
 *.DS_Store
 oimodeler.code-workspace
 tests/*
+oimodelerTODO.txt
