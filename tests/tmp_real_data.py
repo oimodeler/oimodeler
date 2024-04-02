@@ -90,7 +90,7 @@ class matisse75Vir(baseTest):
     chi2r0 = 16.  # and Chi2r is not close to 1
     nwalker = 50
     nstep = 30000
-    pathData = pathData = path / "examples" / "testData" / "RealData" / "MATISSE" / "binary75Vir"
+    pathData = pathData = path / "examples" / "data" / "RealData" / "MATISSE" / "binary75Vir"
     fdata = "2019-05-23T025507_75Vir_A0G1J2J3_IR-LM_LOW_noChop_cal_oifits_0.fits"
     filt = filt1
 

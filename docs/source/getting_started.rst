@@ -9,7 +9,7 @@ script from `here <https://github.com/oimodeler/oimodeler/tree/main/examples/Bas
 .. note::
    
    For this example we will use some OIFITS files located in the
-   `examples/testData/ASPRO_MATISSE2  <https://github.com/oimodeler/oimodeler/tree/main/examples/testData/ASPRO_MATISSE2>`_
+   `examples/data/ASPRO_MATISSE2  <https://github.com/oimodeler/oimodeler/tree/main/examples/data/ASPRO_MATISSE2>`_
    subdirectory of the ``oimodeler`` `Github repository <https://github.com/oimodeler/oimodeler>`_.
 
    If you did not clone the github repository, you will need to manually download the
@@ -34,7 +34,7 @@ paths/directories.
 
 
     path = Path(__file__).parent.parent.parent
-    data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
+    data_dir = path / "examples" / "data" / "ASPRO_MATISSE2"
     save_dir = path / "images"
     if not save_dir.exists():
         save_dir.mkdir(parents=True)

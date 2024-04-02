@@ -28,7 +28,7 @@ def _logProbability(self, theta: np.ndarray) -> float:
 # keep only VIS2DATA and T3PHI for model fitting
 oimodeler_dir = Path(oim.__file__).parent
 files = list((oimodeler_dir / ".." / "examples" /
-         "testData" / "PIONIER" / "nChannels3").glob("*.fits"))
+         "data" / "RealData" / "PIONIER" / "nChannels3").glob("*.fits"))
 data = oim.oimData(files)
 f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])

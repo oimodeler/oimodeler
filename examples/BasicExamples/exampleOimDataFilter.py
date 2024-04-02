@@ -12,7 +12,7 @@ import oimodeler as oim
 
 # Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
 path = Path(__file__).parent.parent.parent
-data_dir = path / "examples" / "testData" / "FSCMa_MATISSE"
+data_dir = path / "data" / "FSCMa_MATISSE"
 
 # NOTE: Change this path if you want to save the products at another location
 save_dir = path / "images"

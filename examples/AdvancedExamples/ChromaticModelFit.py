@@ -12,11 +12,11 @@ import oimodeler as oim
 
 
 path = Path(__file__).parent.parent.parent
-data_dir = path / "examples" / "testData" / "ASPRO_CHROMATIC_SKWDISK"
+data_dir = path / "data" / "ASPRO_CHROMATIC_SKWDISK"
 
 # NOTE: Change these paths if you want to save the products at another location
 save_dir = path / "images"
-product_dir = path / "examples" / "testData" / "IMAGES"
+product_dir = path / "data" / "IMAGES"
 if not save_dir.exists():
     save_dir.mkdir(parents=True)
 if not product_dir.exists():

@@ -806,9 +806,9 @@ Let's first start by importing packages and setting the path to the data directo
 
 
     path = Path(__file__).parent.parent.parent
-    data_dir = path / "examples" / "testData" / "ASPRO_CHROMATIC_SKWDISK"
+    data_dir = path / "examples" / "data" / "ASPRO_CHROMATIC_SKWDISK"
     save_dir = path / "images"
-    product_dir = path / "examples" / "testData" / "IMAGES"
+    product_dir = path / "examples" / "data" / "IMAGES"
     if not save_dir.exists():
         save_dir.mkdir(parents=True)
     if not product_dir.exists():
