@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from oimodeler.oimComponent import oimComponent
 from oimodeler.oimParam import oimParam, oimInterp, oimParamGaussianWl
 

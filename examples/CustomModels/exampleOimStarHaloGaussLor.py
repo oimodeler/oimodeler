@@ -25,9 +25,8 @@ def _logProbability(self, theta: np.ndarray) -> float:
 
 # NOTE: Load the simulated data from ASPRO and apply some filter to
 # keep only VIS2DATA for model fitting
-oimodeler_dir = Path(oim.__file__).parent
-files = list((oimodeler_dir / ".." / "examples" /
-         "data" / "RealData" / "PIONIER" / "nChannels3").glob("*.fits"))
+path = Path(oim.__file__).parent.parent
+files = list((path / "data" / "RealData" / "PIONIER" / "nChannels3").glob("*.fits"))
 data = oim.oimData(files)
 f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX", "OI_T3"])
 data.setFilter(f1)

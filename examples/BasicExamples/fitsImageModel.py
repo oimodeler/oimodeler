@@ -20,7 +20,7 @@ oim.oimOptions.ft.padding = 8
 #oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 path = Path(__file__).parent.parent.parent
-file_name = path / "BasicExamples" / "BeDISCO.fits"
+file_name = path / "examples" / "BasicExamples" / "BeDISCO.fits"
 
 # NOTE: Change this path if you want to save the products at another location
 save_dir = path / "images"

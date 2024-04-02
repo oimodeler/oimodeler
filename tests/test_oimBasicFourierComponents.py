@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from oimodeler import oimBasicFourierComponents as oimFComp
 
 

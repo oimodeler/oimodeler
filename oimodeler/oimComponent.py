@@ -37,7 +37,7 @@ def getFourierComponents():
     return res
 
 
-class oimComponent(object):
+class oimComponent:
     """The OImComponent class is the parent abstract class for all types of
     components that can be added to a OImModel.
 
@@ -73,7 +73,7 @@ class oimComponent(object):
         self.params["x"]=oimParam(**_standardParameters["x"])
         self.params["y"]=oimParam(**_standardParameters["y"])
         self.params["f"]=oimParam(**_standardParameters["f"])
-        
+        self.params["dim"] = oimParam(**_standardParameters["dim"])
         self._eval(**kwargs)
 
     @property
@@ -320,14 +320,14 @@ class oimComponentImage(oimComponent):
         self._pixSize = 0   # NOTE: In rad
         self._allowExternalRotation = True
         self.normalizeImage = True
-        self.params["dim"] = oimParam(**_standardParameters["dim"])
         self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add ellipticity
         if self.elliptic:
             self.params["elong"] = oimParam(**_standardParameters["elong"])
-        if 'FTBackend' in kwargs:
-            self.FTBackend = kwargs['FTBackend']()
+
+        if "FTBackend" in kwargs:
+            self.FTBackend = kwargs["FTBackend"]()
         else:
             self.FTBackend = oimOptions.ft.backend.active()
 

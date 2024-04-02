@@ -1,7 +1,17 @@
-from oimodeler import oimData
+from pathlib import Path
+
+from astropy.io import fits
+
+import oimodeler as oim
 
 
-def test_oimDataGetWl() -> None:
+def test_oimDataGetWl(real_data_dir: Path) -> None:
+    """Tests the oimDataGetWl function."""
+    files = list((real_data_dir / "MATISSE" / "binary75Vir").glob("*"))
+    data = [fits.open(fits_file) for fits_file in files][0]
+    breakpoint()
+    t = oim.oimDataGetWl(data, data[0], False)
+    breakpoint()
     ...
 
 

@@ -17,7 +17,6 @@ from .oimParam import oimParam, oimParamLinker, oimParamInterpolator
 from .oimUtils import rebin_image
 
 
-###############################################################################
 class oimModel:
     """The oimModel class hold a model made of one or more components (derived
     from the oimComponent class).
@@ -596,6 +595,6 @@ class oimModel:
     @property
     def shortname(self):
         txt=""
-        for icomp, compi in enumerate(self.components):
+        for _, compi in enumerate(self.components):
             txt+=f"{compi.shortname} + "
         return txt[:-3]
