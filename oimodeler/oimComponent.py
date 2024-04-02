@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Components defined in Fourier or image planes"""
-from typing import Any
+from typing import Any, Dict
 
 import numpy as np
 import astropy.units as u
@@ -69,12 +69,30 @@ class oimComponent:
         self._wl = None    # None value <=> All wavelengths (from Data) 
         self._t = [0]      # This component is static
 
-        self.params={}
-        self.params["x"]=oimParam(**_standardParameters["x"])
-        self.params["y"]=oimParam(**_standardParameters["y"])
-        self.params["f"]=oimParam(**_standardParameters["f"])
+        self.params = {}
+        self.params["x"] = oimParam(**_standardParameters["x"])
+        self.params["y"] = oimParam(**_standardParameters["y"])
+        self.params["f"] = oimParam(**_standardParameters["f"])
         self.params["dim"] = oimParam(**_standardParameters["dim"])
         self._eval(**kwargs)
+
+    def _paramstr(self):
+        txt = []
+        for _, param in self.params.items():
+            if isinstance(param, oimParam):
+                if isinstance(param, oimParamInterpolator):
+                    # TODO: Have a string for each oimParamInterpolator
+                    txt.append(f"{param.name}={param.__class__.__name__}")
+                else:
+                    txt.append(f"{param.name}={param.value:.2f}")
+        return " ".join(txt)
+
+    def __str__(self):
+        return self.name + self._paramstr() 
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} at "\
+            f"{str(hex(id(self)))} : {self._paramstr()}"
 
     @property
     def _wl(self) -> np.ndarray:
@@ -119,14 +137,12 @@ class oimComponent:
         else:
             value = [value]
         self.__t = np.array(value)
-        
 
     def _eval(self, **kwargs):
         for key, value in kwargs.items():
             if key in self.params.keys():
                 if isinstance(value, oimInterp):
-
-                    if not(isinstance(self.params[key], oimParamInterpolator)):
+                    if not isinstance(self.params[key], oimParamInterpolator):
                         self.params[key] = value.type(
                             self.params[key], **value.kwargs)
                 else:
@@ -182,7 +198,7 @@ class oimComponent:
         astropy.io.fits hdu. image hdu if fits=True.
             The image of the component with given size in pixels and rad
         """
-        return np.zeros(dim, dim)
+        return np.zeros((dim, dim))
 
     def _ftTranslateFactor(self, ucoord, vcoord, wl, t):
         x = self.params["x"](wl, t)*self.params["x"].unit.to(units.rad)
@@ -193,26 +209,6 @@ class oimComponent:
         x = x-self.params["x"](wl, t)
         y = y-self.params["y"](wl, t)
         return x, y
-
-    def _paramstr(self):
-        txt = ""
-        for _, param in self.params.items():
-            if isinstance(param, oimParam):
-                if 'value' in param.__dict__:
-                    txt += " {0}={1:.2f}".format(param.name, param.value)
-                else:
-                    # TODO: Have a string for each oimParamInterpolator
-                    txt += " {0}={1}".format(param.name,
-                                             param.__class__.__name__)
-        return txt
-
-    def __str__(self):
-        txt = self.name + self._paramstr()
-        return txt
-
-    def __repr__(self):
-        return self.__class__.__name__ + " at " + str(hex(id(self)))\
-                + " : " + self._paramstr()
 
 
 class oimComponentFourier(oimComponent):

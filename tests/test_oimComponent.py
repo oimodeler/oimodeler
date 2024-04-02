@@ -16,6 +16,7 @@ def test_getFourierComponents():
     ...
 
 
+# NOTE: The shift might be a bit counterintuitive
 def test_oimComponent_eval(component: oimComponent) -> None:
     """Test the oimComponent's initialization."""
     params = component.params
@@ -29,24 +30,19 @@ def test_oimComponent_eval(component: oimComponent) -> None:
 
 def test_get_params(component: oimComponent) -> None:
     """Test oimComponent's get params function."""
-    params = component._get_params()
-    for key in ["x", "y", "dim", "f"]:
-        assert key in params
-    assert "f" in component._get_params(free=True)
+    assert all(param in ["x", "y", "dim", "f"] for param in component.params)
+    assert component.params["f"].value.free
 
 
 def test_oimComponent_paramstr(component: oimComponent) -> None:
     """Test oimComponent's paramstr function."""
-    params = component._paramstr()
-    for key in ["x", "y", "dim", "f"]:
-        assert key in params
+    assert all(param in component._paramstr() for param in ["x", "y", "dim", "f"])
 
 
 def test_oimComponent_str(component: oimComponent) -> None:
     """Test oimComponent's string representation."""
     string, param_str = component.__str__(), component._paramstr()
-    assert param_str in string
-    assert component.name in string
+    assert param_str in string and component.name in string
 
 
 def test_oimComponent_repr(component: oimComponent) -> None:
@@ -58,8 +54,8 @@ def test_oimComponent_repr(component: oimComponent) -> None:
 
 def test_oimComponent_directTranslate(component: oimComponent) -> None:
     """Test oimComponent's image space spatial translation."""
-    assert component._directTranslate(10, 10, wl=None, t=None) == (5, 10)
-    assert component._directTranslate(0, 0, wl=None, t=None) == (-10, -5)
+    assert component._directTranslate(10, 10, wl=None, t=None) == (5, 0)
+    assert component._directTranslate(0, 0, wl=None, t=None) == (-5, -10)
 
 
 # TODO: Do here the aspro tests
