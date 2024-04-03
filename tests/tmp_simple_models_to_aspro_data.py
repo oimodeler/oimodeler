@@ -4,6 +4,7 @@ Created on Tue Nov 15 11:53:04 2022
 
 @author: Ame
 """
+# TODO: Finish this test in pytest format
 from datetime import datetime
 from pathlib import Path
 from pprint import pprint
@@ -18,7 +19,7 @@ matplotlib.use('Agg')
 name = "simpleASPRO"
 
 path = Path(__file__).parent.parent.parent
-data_dir = path / "examples" / "testData" / "SIMPLE_TESTS"
+data_dir = path / "data" / "SIMPLE_TESTS"
 
 fc1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 fc2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])

@@ -1127,12 +1127,12 @@ class oimAxes(plt.Axes):
         super().legend(legend_hangle.values(), legend_hangle.keys(),
                        handler_map=hmap, **kwargs)
 
-    def set_yscale(self, value, **kwargs):
-        """Set the yscale of the plot."""
-        super().set_yscale(value, **kwargs)
-        self.autoscale_view()
-
     def set_xscale(self, value, **kwargs):
         """Set the xscale of the plot."""
         super().set_xscale(value, **kwargs)
+        self.autoscale_view()
+
+    def set_yscale(self, value, **kwargs):
+        """Set the yscale of the plot."""
+        super().set_yscale(value, **kwargs)
         self.autoscale_view()

@@ -765,9 +765,6 @@ class oimSqrtLDD(oimComponentFourier):
         return np.nan_to_num(((1-a1-a2)*c1+(2*a1/6)*c2+(4*a2/10)*c3)/s, nan=1)
 
 
-
-
-
 #TODO check effect of PA of both component
 class oimConvolutor(oimComponentFourier):
     """

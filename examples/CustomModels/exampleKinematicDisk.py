@@ -15,12 +15,12 @@ import oimodeler as oim
 # outer sharp edge we decide not to zero-pad the images during the FFT process
 # no oder to save time and without noticeable effect on the simulated visibilities
 oim.oimOptions.ft.padding = 1
-oim.oimOptions.ft.backend.active = oim.FFTWBackend()
+oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 # In this example we will use an old VLTI/AMBER observation of a classical
 # Be star Alpha Col published in Cochetti et al. 2019
 path = Path(__file__).parent.parent.parent
-data_dir = path / "examples" / "testData" / "AMBER_AlphaCol"
+data_dir = path / "data" / "AMBER_AlphaCol"
 files = list(data_dir.glob("*.fits"))
 
 # %% Creating a keplerian rotating disk model

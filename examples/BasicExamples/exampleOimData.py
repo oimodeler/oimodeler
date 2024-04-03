@@ -11,7 +11,7 @@ import oimodeler as oim
 
 
 path = Path(__file__).parent.parent.parent
-data_dir = path / "examples" / "testData" / "FSCMa_MATISSE"
+data_dir = path / "data" / "FSCMa_MATISSE"
 
 files = list(data_dir.glob("*.fits"))
 data = oim.oimData(files)

@@ -3,11 +3,6 @@ import pytest
 import oimodeler as oim
 
 
-@pytest.fixture
-def pt():
-    return oim.oimPt(f=0.1)
-
-
 def test_Model():
     ...
 

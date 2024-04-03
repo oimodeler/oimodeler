@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import oimodeler as oim
 
 path = Path(__file__).parent.parent.parent
-data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
+data_dir = path / "data" / "ASPRO_MATISSE2"
 
 # NOTE: Change this path if you want to save the products at another location
 save_dir = path / "images"
@@ -125,7 +125,7 @@ plt.savefig(save_dir / "ExampleOimPlot_multi.png")
 
 # %%
 
-data_path = path / "examples" / "testData" / "AMBER_AlphaCol"
+data_path = path / "data" / "AMBER_AlphaCol"
 files = [
     data_path / "ALPHACOL_2010-01-09T00_58.fits",
     data_path / "ALPHACOL_2010-01-20T10_36.fits",

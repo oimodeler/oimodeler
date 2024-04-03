@@ -20,7 +20,7 @@ from matplotlib import pyplot as plt
 # oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 path = Path(__file__).parent.parent.parent
-file_name = path / "examples" / "AdvancedExamples" / "KinematicsBeDiskModel.fits"
+file_name = path / "examples" / "advancedExamples" / "KinematicsBeDiskModel.fits"
 
 # NOTE: Change this path if you want to save the products at a certain location
 save_dir = path / "images"

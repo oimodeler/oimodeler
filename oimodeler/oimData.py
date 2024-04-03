@@ -2,20 +2,38 @@
 """Data for optical interferometry"""
 import os
 from enum import IntFlag
+from typing import Optional
 
 import numpy as np
+from astropy.io import fits
+
 from .oimUtils import hdulistDeepCopy, loadOifitsData, _oimDataTypeArr
 from .oimDataFilter import oimDataFilter, oimDataFilterComponent
 
 
-def oimDataGetWl(data, arr, dwl=True):
-    insname = arr.header['INSNAME']
-    oiWlArr = [arri for arri in data if (arri.name == "OI_WAVELENGTH"
-                                         and arri.header['INSNAME'] == insname)][0]
-    if dwl == False:
-        return oiWlArr.data["EFF_WAVE"]
-    else:
-        return oiWlArr.data["EFF_WAVE"], oiWlArr.data["EFF_BAND"]
+
+def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
+                 dwl: Optional[bool] = True) -> np.ndarray:
+    """Gets the wavelengths from the data.
+
+    Parameters
+    ----------
+    data : astropy.io.fits.HDUList
+        The data from which to get the wavelengths.
+    array : astropy.io.fits.BinTableHDU
+    dwl : bool, optional
+
+    Returns
+    -------
+    wavelengths : numpy.ndarray
+    """
+    instrument = array.header["INSNAME"]
+    oi_wavelengths = [arri for arri in data
+                      if (arri.name == "OI_WAVELENGTH"
+                          and arri.header["INSNAME"] == instrument)][0]
+    if not dwl:
+        return oi_wavelengths.data["EFF_WAVE"]
+    return oi_wavelengths.data["EFF_WAVE"], oi_wavelengths.data["EFF_BAND"]
 
 
 class oimDataType(IntFlag):

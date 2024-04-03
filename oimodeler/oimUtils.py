@@ -24,6 +24,146 @@ _oimDataTypeArr = ["OI_VIS2", "OI_VIS", "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX"]
 
 _oimDataAnalysisInComplex = [False, False, True, False, True, False]
 
+oi_target_keywords=[
+    ("OI_REVN", False, "Revision number")]
+
+oi_target_columns=[
+    ("TARGET_ID", "I",   False, "Index number. Must be >=1", None),
+    ("TARGET",    "16A", False, "Target name", None),
+    ("RAEP0",     "D",   False, "RA at mean EQUINOX ", "deg"),
+    ("DECEP0",    "D",   False, "Dec at mean EQUINOX", "deg"),
+    ("EQUINOX",   "E",   False, "Equinox", None),
+    ("RA_ERR",    "D",   False, "Error in RA", "deg"),
+    ("DEC_ERR",   "D",   False, "Error in Dec", "deg"),
+    ("SYSVEL",    "D",   False, "Systemic radial velocity", "m/s"),
+    ("VELTYP",   "8A",   False, "Reference for radial velocity:LSR, GEOCENTR...", None),
+    ("VELDEF",   "8A",   False, "Definition of radial velocity:(OPTICAL,RADIO)", None),
+    ("PMRA",     "D",    False, "Proper motion in RA", "deg/yr"),
+    ("PMDEC",    "D",    False, "Proper motion in Dec", "deg/yr"),
+    ("PMRA_ERR", "D",    False, "Error of proper motion in RA", "deg/yr"),
+    ("PMDEC_ERR","D",    False, "Error of proper motion in Dec", "deg/yr"),
+    ("PARALLAX", "E",    False, "Parallax", "deg"),
+    ("PARA_ERR", "E",    False, "Error in parallax ", "deg"),
+    ("SPECTYP",  "16A",  False, "Spectral type", "deg"),
+    ("CATEGORY", "3A",   True,  "CAL or SCI", None)]
+
+oi_array_keywords=[
+    ("OI_REVN", False, "Revision number"),
+    ("ARRNAME", False, "A Array name, for cross-referencing"),
+    ("FRAME",   False, "A Coordinate frame"),
+    ("ARRAYX",  False, "Array center x coordinates (m)"),
+    ("ARRAYY",  False, "Array center y coordinates (m)"),
+    ("ARRAYZ",  False, "Array center z coordinates (m)")]
+
+oi_array_columns=[
+    ("TEL_NAME","16A",False," Telescope name", None),
+    ("STA_NAME","16A",False,"Station name", None),
+    ("STA_INDEX","I",False,"Station number. Must be >=1", None),
+    ("DIAMETER","E",False,"Element diameter", "m"),
+    ("STAXYZ","3D",False,"Station coordinates w.r.t. array center", "m"),
+    ("FOV","D",False," Photometric field of view", "arcsec"),
+    ("FOVTYPE","6A",False,"Model for FOV: FWHM or RADIUS", None)]
+
+oi_wl_keywords=[
+    ("OI_REVN",  False, "Revision number"),
+    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table")]
+
+oi_wl_columns=[("EFF_WAVE","E",False,"Effective wavelength of channel", "m"),
+               ("EFF_BAND","E",False,"Effective bandpass of channel", "m")]
+
+oi_vis2_keywords=[
+    ("OI_REVN",  False, "Revision number"),
+    ("DATE-OBS", False, "UTC start date of observations"),
+    ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
+    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
+    ("CORRNAME", True,  "Identifies corresponding OI_CORR table")]
+
+oi_vis2_columns=[
+  ("TARGET_ID",         "I",    False, "Target number as index into OI_TARGET table", "m"),
+  ("TIME",              "D",    False, "Zero. For backwards compatibility", None),
+  ("MJD",               "D",    False, "Modified Julian day", "day"),
+  ("INT_TIME",          "D",    False, "Integration time", None),
+  ("VIS2DATA",          "NWLD", False, "Squared Visibility", None),
+  ("VIS2ERR",           "NWLD", False, "Error in Squared Visibility", None),
+  ("CORRINDX_VIS2DATA", "J",    True,  "Index into correlation matrix for 1st VIS2DATA element", None),
+  ("UCOORD",            "D",    False, "U coordinate of the data", "m"),
+  ("VCOORD",            "D",    False, "V coordinate of the data", "m"),
+  ("STA_INDEX",         "2I",   False, "Station numbers contributing to the data", None),
+  ("FLAG",              "NWLL", False, "Flag", None)]
+
+oi_vis_keywords=[
+    ("OI_REVN",  False, "Revision number"),
+    ("DATE-OBS", False, "UTC start date of observations"),
+    ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
+    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
+    ("CORRNAME", True,  "Identifies corresponding OI_CORR table"),
+    ("AMPTYP",   True,  "absolute, differential, correlated flux"),
+    ("PHITYP",   True,  "absolute, differential"),
+    ("AMPORDER", True,  "Polynomial fit order for differential chromatic amplitudes"),
+    ("PHIORDER", True,  "Polynomial fit order for differential chromatic phases")]
+
+#TODO implement RIV VISREFMAP ...
+oi_vis_columns=[
+  ("TARGET_ID",       "I",    False, "Target number as index into OI_TARGET table", "m"),
+  ("TIME",            "D",    False, "Zero. For backwards compatibility", None),
+  ("MJD",             "D",    False, "Modified Julian day", "day"),
+  ("INT_TIME",        "D",    False, "Integration time", "s"),
+  ("VISAMP",          "NWLD", False, "Visibility amplitude", None),
+  ("VISAMPERR",       "NWLD", False, "Error in visibility amplitude", None),
+  ("CORRINDX_VISAMP", "J",    True,  "Index into correlation matrix for 1st VISAMP element", None),
+  ("VISPHI",          "NWLD", False, "Visibility phase", "deg"),
+  ("VISPHIERR",       "NWLD", False, "Error in visibility Phase", "deg"),
+  ("CORRINDX_VISPHI", "J",    True,  "Index into correlation matrix for 1st VISPHI element", None),
+  ("UCOORD",          "D",    False, "U coordinate of the data", "m"),
+  ("VCOORD",          "D",    False, "V coordinate of the data", "m"),
+  ("STA_INDEX",       "2I",   False, "Station numbers contributing to the data", None),
+  ("FLAG",            "NWLL", False, "Flag", None)]
+
+oi_t3_keywords=[
+    ("OI_REVN",  False, "Revision number"),
+    ("DATE-OBS", False, "UTC start date of observations"),
+    ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
+    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
+    ("CORRNAME", True,  "Identifies corresponding OI_CORR table")]
+
+oi_t3_columns=[
+  ("TARGET_ID",      "I",    False, "Target number as index into OI_TARGET table", "m"),
+  ("TIME",           "D",    False, "Zero. For backwards compatibility", None),
+  ("MJD",            "D",    False, "Modified Julian day", "day"),
+  ("INT_TIME",       "D",    False, "Integration time", "s"),
+  ("T3AMP",          "NWLD", False, "Triple product amplitude", None),
+  ("T3AMPERR",       "NWLD", False, "Error in triple product amplitude", None),
+  ("CORRINDX_T3AMP", "J",    True,  "Index into correlation matrix for 1st T3AMP element", None),
+  ("T3PHI",          "NWLD", False, "Triple Product Phase", "deg"),
+  ("T3PHIERR",       "NWLD", False, "Error in Triple Product Phase", "deg"),
+  ("CORRINDX_T3PHI", "J",    True,  "Index into correlation matrix for 1st T3PHI element", None),
+  ("U1COORD",        "D",    False, "U coordinate of baseline AB of the triangle", "m"),
+  ("V1COORD",        "D",    False, "V coordinate of baseline AB of the triangle", "m"),
+  ("U2COORD",        "D",    False, "U coordinate of baseline BC of the triangle", "m"),
+  ("V2COORD",        "D",    False, "V coordinate of baseline BC of the triangle", "m"),
+  ("STA_INDEX",      "3I",   False, "Station numbers contributing to the data", None),
+  ("FLAG",           "NWLL", False, "Flag", None)]
+
+oi_flux_keywords=[
+    ("OI_REVN",  False, "Revision number"),
+    ("DATE-OBS", False, "UTC start date of observations"),
+    ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
+    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
+    ("CORRNAME", True,  "Identifies corresponding OI_CORR table"),
+    ("FOV",      True,  "Area on sky over which flux is integrated (arcsec)"),
+    ("FOVTYPE",  True,  "Model for FOV: FWHM or RADIUS"),
+    ("CALSTAT",  True,  "C: Spectrum is calibrated, U: uncalibrated")]
+
+oi_flux_columns=[
+  ("TARGET_ID",         "I",    False, "Target number as index into OI_TARGET table", "m"),
+  ("MJD",               "D",    False, "Modified Julian day", "day"),
+  ("INT_TIME",          "D",    False, "Integration time", "s"),
+  ("FLUXDATA",          "NWLD", False, "Flux in units of TUNITn", "external"),
+  ("FLUXERR",           "NWLD", False, "Corresponding flux error", "external"),
+  ("CORRINDX_FLUXDATA", "J",    True,  "Index into correlation matrix for 1st FLUXDATA element", None),
+  ("STA_INDEX",         "I",   True, "Station number contributing to the data", None),
+  ("FLAG",              "NWLL", False, "Flag", None)]
+
 
 def getDataTypeIsAnalysisComplex(dataType):
     try:
@@ -291,42 +431,39 @@ def convert_distance_to_angle(radius: Union[float, np.ndarray],
 
 def loadOifitsData(something, mode="listOfHdlulist"):
     """
-    return the oifits data from either filenames, already opened oifts or a
+
+    Return the oifits data from either filenames, already opened oifts or a
     oimData boject as either a list of hdlulist (default) or as a oimData
     object using the option mode="oimData". This Function is used in oimData
     and multiple plotting functions
 
     Parameters
     ----------
-    something : astropy.io.fits.hdu.hdulist.HDUList, oimodeler.oimData, string, list
+    something : astropy.io.fits.hdu.hdulist.HDUList or oimodeler.oimData or string or list
         The data to deal with. Can be a oimData object, a hdulist, a string
         representing a filename or a list of these kind of object
     mode : str, optional
         The type of the return data, either "listOfHdlulist" or "oimData"
         The default is "listOfHdlulist"
     """
-
     if isinstance(something, oim.oimData):
-        if mode =="oimData":
+        if mode == "oimData":
             data = something
         else:
             data = something.data
     else:
+        if isinstance(something, (fits.hdu.hdulist.HDUList, str, PathLike)):
+            something = [something]
 
-        if isinstance(something,fits.hdu.hdulist.HDUList) or \
-           isinstance(something,PathLike) or \
-           isinstance(something,str):
-            something=[something]
+        if isinstance(something, list):
+            data = []
 
-        if isinstance(something,list):
-            data=[]
-
-            for el in something:
-                if  isinstance(el,fits.hdu.hdulist.HDUList):
-                    data.append(el)
+            for elem in something:
+                if isinstance(elem, fits.hdu.hdulist.HDUList):
+                    data.append(elem)
                 else:
                     try:
-                        data.append(fits.open(el))
+                        data.append(fits.open(elem))
                     except:
                         raise ValueError("the path does not exist or is not a"\
                                          " valid fits files")
@@ -334,9 +471,8 @@ def loadOifitsData(something, mode="listOfHdlulist"):
             raise TypeError("only oimData,hdulist,Path or string, or list of"\
                             " these kind of objects allowed ")
 
-        if mode =="oimData":
+        if mode == "oimData":
              data = oim.oimData(data)
-
     return data
 
 
@@ -799,7 +935,6 @@ def cutWavelengthRange(oifits, wlRange=None, addCut=[]):
     return data
 
 
-###############################################################################
 def getWlFromFitsImageCube(header, outputUnit=None):
     """Returns the wl law from a chromatic cube image in the fits format
 
@@ -838,149 +973,6 @@ def getWlFromFitsImageCube(header, outputUnit=None):
 
     return wl
 
-
-###############################################################################
-oi_target_keywords=[
-    ("OI_REVN", False, "Revision number")]
-
-oi_target_columns=[
-    ("TARGET_ID", "I",   False, "Index number. Must be >=1", None),
-    ("TARGET",    "16A", False, "Target name",None),
-    ("RAEP0",     "D",   False, "RA at mean EQUINOX ","deg"),
-    ("DECEP0",    "D",   False, "Dec at mean EQUINOX","deg"),
-    ("EQUINOX",   "E",   False, "Equinox",None),
-    ("RA_ERR",    "D",   False, "Error in RA","deg"),
-    ("DEC_ERR",   "D",   False, "Error in Dec","deg"),
-    ("SYSVEL",    "D",   False, "Systemic radial velocity","m/s"),
-    ("VELTYP",   "8A",   False, "Reference for radial velocity:LSR, GEOCENTR...",None),
-    ("VELDEF",   "8A",   False, "Definition of radial velocity:(OPTICAL,RADIO)",None),
-    ("PMRA",     "D",    False, "Proper motion in RA","deg/yr"),
-    ("PMDEC",    "D",    False, "Proper motion in Dec","deg/yr"),
-    ("PMRA_ERR", "D",    False, "Error of proper motion in RA","deg/yr"),
-    ("PMDEC_ERR","D",    False, "Error of proper motion in Dec","deg/yr"),
-    ("PARALLAX", "E",    False, "Parallax","deg"),
-    ("PARA_ERR", "E",    False, "Error in parallax ","deg"),
-    ("SPECTYP",  "16A",  False, "Spectral type","deg"),
-    ("CATEGORY", "3A",   True,  "CAL or SCI",None)]
-
-oi_array_keywords=[
-    ("OI_REVN", False, "Revision number"),
-    ("ARRNAME", False, "A Array name, for cross-referencing"),
-    ("FRAME",   False, "A Coordinate frame"),
-    ("ARRAYX",  False, "Array center x coordinates (m)"),
-    ("ARRAYY",  False, "Array center y coordinates (m)"),
-    ("ARRAYZ",  False, "Array center z coordinates (m)")]
-
-oi_array_columns=[
-    ("TEL_NAME","16A",False," Telescope name", None),
-    ("STA_NAME","16A",False,"Station name",None),
-    ("STA_INDEX","I",False,"Station number. Must be >=1",None),
-    ("DIAMETER","E",False,"Element diameter","m"),
-    ("STAXYZ","3D",False,"Station coordinates w.r.t. array center","m"),
-    ("FOV","D",False," Photometric field of view","arcsec"),
-    ("FOVTYPE","6A",False,"Model for FOV: FWHM or RADIUS",None)]
-
-oi_wl_keywords=[
-    ("OI_REVN",  False, "Revision number"),
-    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table")]
-
-oi_wl_columns=[("EFF_WAVE","E",False,"Effective wavelength of channel", "m"),
-               ("EFF_BAND","E",False,"Effective bandpass of channel","m")]
-
-oi_vis2_keywords=[
-    ("OI_REVN",  False, "Revision number"),
-    ("DATE-OBS", False, "UTC start date of observations"),
-    ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
-    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
-    ("CORRNAME", True,  "Identifies corresponding OI_CORR table")]
-
-oi_vis2_columns=[
-  ("TARGET_ID",         "I",    False, "Target number as index into OI_TARGET table","m"),
-  ("TIME",              "D",    False, "Zero. For backwards compatibility",None),
-  ("MJD",               "D",    False, "Modified Julian day","day"),
-  ("INT_TIME",          "D",    False, "Integration time",None),
-  ("VIS2DATA",          "NWLD", False, "Squared Visibility",None),
-  ("VIS2ERR",           "NWLD", False, "Error in Squared Visibility",None),
-  ("CORRINDX_VIS2DATA", "J",    True,  "Index into correlation matrix for 1st VIS2DATA element",None),
-  ("UCOORD",            "D",    False, "U coordinate of the data","m"),
-  ("VCOORD",            "D",    False, "V coordinate of the data","m"),
-  ("STA_INDEX",         "2I",   False, "Station numbers contributing to the data",None),
-  ("FLAG",              "NWLL", False, "Flag",None)]
-
-oi_vis_keywords=[
-    ("OI_REVN",  False, "Revision number"),
-    ("DATE-OBS", False, "UTC start date of observations"),
-    ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
-    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
-    ("CORRNAME", True,  "Identifies corresponding OI_CORR table"),
-    ("AMPTYP",   True,  "absolute, differential, correlated flux"),
-    ("PHITYP",   True,  "absolute, differential"),
-    ("AMPORDER", True,  "Polynomial fit order for differential chromatic amplitudes"),
-    ("PHIORDER", True,  "Polynomial fit order for differential chromatic phases")]
-
-#TODO implement RIV VISREFMAP ...
-oi_vis_columns=[
-  ("TARGET_ID",       "I",    False, "Target number as index into OI_TARGET table","m"),
-  ("TIME",            "D",    False, "Zero. For backwards compatibility",None),
-  ("MJD",             "D",    False, "Modified Julian day","day"),
-  ("INT_TIME",        "D",    False, "Integration time","s"),
-  ("VISAMP",          "NWLD", False, "Visibility amplitude",None),
-  ("VISAMPERR",       "NWLD", False, "Error in visibility amplitude",None),
-  ("CORRINDX_VISAMP", "J",    True,  "Index into correlation matrix for 1st VISAMP element",None),
-  ("VISPHI",          "NWLD", False, "Visibility phase","deg"),
-  ("VISPHIERR",       "NWLD", False, "Error in visibility Phase","deg"),
-  ("CORRINDX_VISPHI", "J",    True,  "Index into correlation matrix for 1st VISPHI element",None),
-  ("UCOORD",          "D",    False, "U coordinate of the data","m"),
-  ("VCOORD",          "D",    False, "V coordinate of the data","m"),
-  ("STA_INDEX",       "2I",   False, "Station numbers contributing to the data",None),
-  ("FLAG",            "NWLL", False, "Flag",None)]
-
-oi_t3_keywords=[
-    ("OI_REVN",  False, "Revision number"),
-    ("DATE-OBS", False, "UTC start date of observations"),
-    ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
-    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
-    ("CORRNAME", True,  "Identifies corresponding OI_CORR table")]
-
-oi_t3_columns=[
-  ("TARGET_ID",      "I",    False, "Target number as index into OI_TARGET table","m"),
-  ("TIME",           "D",    False, "Zero. For backwards compatibility",None),
-  ("MJD",            "D",    False, "Modified Julian day","day"),
-  ("INT_TIME",       "D",    False, "Integration time","s"),
-  ("T3AMP",          "NWLD", False, "Triple product amplitude",None),
-  ("T3AMPERR",       "NWLD", False, "Error in triple product amplitude",None),
-  ("CORRINDX_T3AMP", "J",    True,  "Index into correlation matrix for 1st T3AMP element",None),
-  ("T3PHI",          "NWLD", False, "Triple Product Phase","deg"),
-  ("T3PHIERR",       "NWLD", False, "Error in Triple Product Phase","deg"),
-  ("CORRINDX_T3PHI", "J",    True,  "Index into correlation matrix for 1st T3PHI element",None),
-  ("U1COORD",        "D",    False, "U coordinate of baseline AB of the triangle","m"),
-  ("V1COORD",        "D",    False, "V coordinate of baseline AB of the triangle","m"),
-  ("U2COORD",        "D",    False, "U coordinate of baseline BC of the triangle","m"),
-  ("V2COORD",        "D",    False, "V coordinate of baseline BC of the triangle","m"),
-  ("STA_INDEX",      "3I",   False, "Station numbers contributing to the data",None),
-  ("FLAG",           "NWLL", False, "Flag",None)]
-
-oi_flux_keywords=[
-    ("OI_REVN",  False, "Revision number"),
-    ("DATE-OBS", False, "UTC start date of observations"),
-    ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
-    ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
-    ("CORRNAME", True,  "Identifies corresponding OI_CORR table"),
-    ("FOV",      True,  "Area on sky over which flux is integrated (arcsec)"),
-    ("FOVTYPE",  True,  "Model for FOV: FWHM or RADIUS"),
-    ("CALSTAT",  True,  "C: Spectrum is calibrated, U: uncalibrated")]
-
-oi_flux_columns=[
-  ("TARGET_ID",         "I",    False, "Target number as index into OI_TARGET table","m"),
-  ("MJD",               "D",    False, "Modified Julian day","day"),
-  ("INT_TIME",          "D",    False, "Integration time","s"),
-  ("FLUXDATA",          "NWLD", False, "Flux in units of TUNITn","external"),
-  ("FLUXERR",           "NWLD", False, "Corresponding flux error","external"),
-  ("CORRINDX_FLUXDATA", "J",    True,  "Index into correlation matrix for 1st FLUXDATA element",None),
-  ("STA_INDEX",         "I",   True, "Station number contributing to the data",None),
-  ("FLAG",              "NWLL", False, "Flag",None)]
-
-###############################################################################
 
 def _createOiTab(extname,keywords_def,colums_def,dataTypeFromShape,**kwargs):
     keys={}
@@ -1051,56 +1043,49 @@ def _createOiTab(extname,keywords_def,colums_def,dataTypeFromShape,**kwargs):
         hdu.header['EXTVER'] = (keys["EXTVER"], f'ID number of this {extname}')
     return hdu,keys
 
-###############################################################################
+
 def createOiTarget(**kwargs):
-    hdu,keys = _createOiTab("OI_TARGET",oi_target_keywords,oi_target_columns,
-                            "TARGET_ID",**kwargs)
-    return hdu
+    return _createOiTab("OI_TARGET", oi_target_keywords,
+                        oi_target_columns, "TARGET_ID",**kwargs)[0]
 
-###############################################################################
+
 def createOiArray(**kwargs):
-    hdu,keys = _createOiTab("OI_ARRAY",oi_array_keywords,oi_array_columns,
-                            "STA_INDEX",**kwargs)
-    return hdu
+    return _createOiTab("OI_ARRAY", oi_array_keywords, 
+                        oi_array_columns, "STA_INDEX", **kwargs)[0]
 
-###############################################################################
+
 def createOiWavelength(**kwargs):
-    hdu,keys = _createOiTab("OI_WAVELENGTH",oi_wl_keywords,oi_wl_columns,
-                            "EFF_WAVE",**kwargs)
-    return hdu
+    return _createOiTab("OI_WAVELENGTH", oi_wl_keywords,
+                        oi_wl_columns, "EFF_WAVE", **kwargs)[0]
 
-###############################################################################
+
 def createOiVis2(**kwargs):
-    hdu,_ = _createOiTab("OI_VIS2",oi_vis2_keywords,oi_vis2_columns,
-                         "VIS2DATA",**kwargs)
-    return hdu
+    return _createOiTab("OI_VIS2", oi_vis2_keywords,
+                        oi_vis2_columns, "VIS2DATA", **kwargs)[0]
 
-###############################################################################
+
 def createOiVis(**kwargs):
-    hdu,_ = _createOiTab("OI_VIS",oi_vis_keywords,oi_vis_columns,
-                         "VISAMP",**kwargs)
-    return hdu
+    return _createOiTab("OI_VIS", oi_vis_keywords,
+                        oi_vis_columns, "VISAMP", **kwargs)[0]
 
-###############################################################################
+
 def createOiT3(**kwargs):
-    hdu,_ = _createOiTab("OI_T3",oi_t3_keywords,oi_t3_columns,
-                         "T3AMP",**kwargs)
-    return hdu
+    return _createOiTab("OI_T3", oi_t3_keywords,
+                        oi_t3_columns, "T3AMP", **kwargs)[0]
 
-###############################################################################
+
 def createOiFlux(**kwargs):
-    hdu,keys = _createOiTab("OI_FLUX",oi_flux_keywords,oi_flux_columns,
-                            "FLUXDATA",**kwargs)
-    return hdu
+    return _createOiTab("OI_FLUX", oi_flux_keywords,
+                        oi_flux_columns, "FLUXDATA", **kwargs)[0]
 
-###############################################################################
+
 def createOiTargetFromSimbad(names):
-
     customSimbad = Simbad()
-    customSimbad.add_votable_fields('plx', 'plx_error',
-                                    'propermotions', 'sptype', 'velocity')
+    customSimbad.add_votable_fields(
+            'plx', 'plx_error', 'propermotions', 'sptype', 'velocity')
     if type(names) == type(""):
         names = [names]
+
     data = customSimbad.query_objects(names)
     ntargets = len(names)
 
@@ -1126,11 +1111,8 @@ def createOiTargetFromSimbad(names):
     return hdu
 
 
-###############################################################################
-
-#TODO this current method does not allow to shift baseline of the same oifits
+# TODO: This current method does not allow to shift baseline of the same oifits
 # individually.
-
 def shiftWavelength(oifits,shift,verbose=False):
     if type(oifits)==type(""):
         data=fits.open(oifits)
@@ -1147,27 +1129,26 @@ def shiftWavelength(oifits,shift,verbose=False):
             print("INSNAME = {0}".format(insname))
         data[i].data['EFF_WAVE']+=shift
 
-###############################################################################
-#TODO for phases smoothing should be done in complex plan
+
+# TODO: For phases smoothing should be done in complex plan
 def spectralSmoothing(oifits,kernsize,cols2Smooth="all",normalizeError=True):
+    tableToSmooth = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
 
-    tableToSmooth=["OI_VIS","OI_VIS2","OI_T3","OI_FLUX"]
-
-    if type(oifits)==type(""):
-        data=fits.open(oifits)
+    if type(oifits) == type(""):
+        data = fits.open(oifits)
     else:
-        data=oifits
+        data = oifits
 
-    kernel=np.ones(kernsize)/kernsize
+    kernel = np.ones(kernsize)/kernsize
 
-    if not( isinstance(cols2Smooth,list)):
-        cols2Smooth=[cols2Smooth]
+    if not isinstance(cols2Smooth, list):
+        cols2Smooth = [cols2Smooth]
 
     if  "all" in cols2Smooth:
-        cols2Smooth = ["VIS2DATA","VIS2ERR","VISAMP","VISAMPERR","VISPHI","VISPHIERR",
-                     "T3AMP","T3AMPERR","T3PHI","T3PHIERR","FLUXDATA","FLUXDATAERR"]
+        cols2Smooth = ["VIS2DATA", "VIS2ERR", "VISAMP", "VISAMPERR", "VISPHI", "VISPHIERR",
+                       "T3AMP", "T3AMPERR", "T3PHI", "T3PHIERR", "FLUXDATA", "FLUXDATAERR"]
 
-    for i in range(1,len(data)):
+    for i in range(1, len(data)):
         try:
             if data[i].name in tableToSmooth:
                 cols = data[i].data.columns
@@ -1189,16 +1170,14 @@ def spectralSmoothing(oifits,kernsize,cols2Smooth="all",normalizeError=True):
         except:
             pass
 
-###############################################################################
-
-def _rebin(arr, binsize,median=True):
+def _rebin(arr, binsize, median=True):
     newsize = (arr.shape[0] // int(binsize)) * binsize
     arr = arr [:newsize]
     shape = (arr.shape[0]// binsize, binsize)
     if median:
-        res=np.median(arr.reshape(shape),axis=-1)
+        res = np.median(arr.reshape(shape),axis=-1)
     else:
-        res=arr.reshape(shape).mean(-1)
+        res = arr.reshape(shape).mean(-1)
     return res
 
 
@@ -1237,10 +1216,8 @@ def _rebinHdu(hdu,binsize,exception=[]):
     return newhdu
 
 
-#TODO for phases bining should be done in complex plan
+# TODO: For phases bining should be done in complex plan
 def binWavelength(oifits,binsize,normalizeError=True):
-
-
     if type(oifits)==type(""):
         data=fits.open(oifits)
     else:
@@ -1257,15 +1234,12 @@ def binWavelength(oifits,binsize,normalizeError=True):
                     data[i].data[errnamei]/=np.sqrt(binsize)
 
 
-###############################################################################
-
 def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
+    if not isinstance(arr, list):
+        arr = [arr]
 
-    if not(isinstance(arr,list)):
-        arr=[arr]
-
-    if arr==['all']:
-        arr=["OI_VIS","OI_VIS2","OI_T3","OI_FLUX"]
+    if arr == ["all"]:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
 
     for arri in arr:
         try:
@@ -1301,11 +1275,9 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
 
     return f
 
-###############################################################################
 
 def computeDifferentialError(oifits,ranges=[[0,5]],excludeRange=False,
                              rangeType="index",dataType="VISPHI",extver= [None]):
-
     if rangeType == "index":
         dtype = 'int64'
     else:
@@ -1369,10 +1341,7 @@ def computeDifferentialError(oifits,ranges=[[0,5]],excludeRange=False,
                                 #print(err)
 
 
-###############################################################################
-
 def setMinimumError(oifits,dataTypes,values,extver=None):
-
     if type(oifits)==type(""):
         data=fits.open(oifits)
     else:

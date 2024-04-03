@@ -132,18 +132,17 @@ dmypy.json
 
 tempTests
 docs/source/other/~$diagram.pptx
-examples/testData/HD50138/2020-02-15T022423_HD50138_A0B2D0C1_IR-LM_LOW_Chop_cal_oifits_0.fits
-examples/testData/HD50138/2020-02-22T023050_HD50138_K0G2D0J3_IR-LM_LOW_Chop_cal_oifits_0.fits
-examples/testData/HD50138/2020-02-29T011347_HD50138_A0G1J2J3_IR-LM_LOW_Chop_cal_oifits_0.fits
-examples/testData/ASPRO_SPICA_LLDD/Aspro2_Zeta_Oph_CHARA_SPICA_0.60249-0.89749-60ch_S1-S2-E1-E2-W1-W2_2023-05-12.fits
-examples/testData/ASPRO_SPICA_QLDD/Aspro2_Zeta_Oph_CHARA_SPICA_0.60249-0.89749-60ch_S1-S2-E1-E2-W1-W2_2023-05-12.fits
-examples/testData/ASPRO_SPICA_QLDD2/Aspro2_Zeta_Oph_CHARA_SPICA_0.60249-0.89749-60ch_S1-S2-E1-E2-W1-W2_2023-05-12.fits
+examples/data/HD50138/2020-02-15T022423_HD50138_A0B2D0C1_IR-LM_LOW_Chop_cal_oifits_0.fits
+examples/data/HD50138/2020-02-22T023050_HD50138_K0G2D0J3_IR-LM_LOW_Chop_cal_oifits_0.fits
+examples/data/HD50138/2020-02-29T011347_HD50138_A0G1J2J3_IR-LM_LOW_Chop_cal_oifits_0.fits
+examples/data/ASPRO_SPICA_LLDD/Aspro2_Zeta_Oph_CHARA_SPICA_0.60249-0.89749-60ch_S1-S2-E1-E2-W1-W2_2023-05-12.fits
+examples/data/ASPRO_SPICA_QLDD/Aspro2_Zeta_Oph_CHARA_SPICA_0.60249-0.89749-60ch_S1-S2-E1-E2-W1-W2_2023-05-12.fits
+examples/data/ASPRO_SPICA_QLDD2/Aspro2_Zeta_Oph_CHARA_SPICA_0.60249-0.89749-60ch_S1-S2-E1-E2-W1-W2_2023-05-12.fits
 
-examples/testData/TEMP_Binary/Aspro2_alpha_Ara_VLTI_MATISSE_LM_2.86542-4.18239-62ch_A0-B2-C1-D0_2022-06-25.fits
-examples/testData/TEMP_Binary/Aspro2_alpha_Ara_VLTI_MATISSE_LM_2.86542-4.18239-62ch_A0-G1-J2-J3_2022-06-25.fits
-examples/testData/TEMP_Binary/Aspro2_alpha_Ara_VLTI_MATISSE_LM_2.86542-4.18239-62ch_D0-G2-J3-K0_2022-06-25.fits
+examples/data/TEMP_Binary/Aspro2_alpha_Ara_VLTI_MATISSE_LM_2.86542-4.18239-62ch_A0-B2-C1-D0_2022-06-25.fits
+examples/data/TEMP_Binary/Aspro2_alpha_Ara_VLTI_MATISSE_LM_2.86542-4.18239-62ch_A0-G1-J2-J3_2022-06-25.fits
+examples/data/TEMP_Binary/Aspro2_alpha_Ara_VLTI_MATISSE_LM_2.86542-4.18239-62ch_D0-G2-J3-K0_2022-06-25.fits
 .vscode/settings.json
 *.DS_Store
 oimodeler.code-workspace
-tests/*
 oimodelerTODO.txt

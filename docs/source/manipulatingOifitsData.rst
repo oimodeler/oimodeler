@@ -26,7 +26,7 @@ Let's start by setting up the project with imports, path, and some data.
 
 
     path = Path(__file__).parent.parent.parent
-    data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
+    data_dir = path / "examples" / "data" / "ASPRO_MATISSE2"
     save_dir = path / "images"
     if not save_dir.exists():
         save_dir.mkdir(parents=True)
@@ -200,7 +200,7 @@ Observation were centered on the BrGamma Emission line.
 
 .. code-block:: python
     
-    data_path = path / "examples" / "testData" / "AMBER_AlphaCol"
+    data_path = path / "examples" / "data" / "AMBER_AlphaCol"
     files = [data_path / "ALPHACOL_2010-01-09T00_58.fits",
               data_path / "ALPHACOL_2010-01-20T10_36.fits"]
     data=oim.oimData(files)
@@ -286,7 +286,7 @@ script.
    :widths: auto
    
 
-Let's first include the required packages and create a list of the OIFITS files from **oimodeler** testData directory. 
+Let's first include the required packages and create a list of the OIFITS files from **oimodeler** data directory. 
 
 .. code-block:: python 
 
@@ -296,7 +296,7 @@ Let's first include the required packages and create a list of the OIFITS files 
     import oimodeler as oim
 
     path = Path(__file__).parent.parent.parent
-    data_dir = path / "examples" / "testData" / "FSCMa_MATISSE"
+    data_dir = path / "examples" / "data" / "FSCMa_MATISSE"
     save_dir = path / "images"
     if not save_dir.exists():
         save_dir.mkdir(parents=True)
