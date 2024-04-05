@@ -49,10 +49,6 @@ def test_convert_distance_to_angle() -> None:
     ...
 
 
-def test_loadOifitsData() -> None:
-    ...
-
-
 def test_getBaselineName() -> None:
     ...
 
