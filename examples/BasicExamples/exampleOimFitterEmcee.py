@@ -36,7 +36,7 @@ pt.params['f'].free = False
 pprint(model.getFreeParameters())
 
 # Create a new fitter with 32 walkers and the list of oifits files and the model
-fit = oim.oimFitterEmcee(files, model, nwalkers=32)
+fit = oim.oimFitterEmcee(files, model, nwalkers=32, ncores=6)
 # pprint(fit._logProbability([0,10,1,5]))
 
 

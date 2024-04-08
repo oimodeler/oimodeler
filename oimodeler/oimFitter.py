@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
-# from multiprocessing import Pool
+from multiprocessing import Pool
 
 import corner
 import emcee
@@ -30,12 +30,18 @@ class oimFitter:
 
         try:
             self.dataTypes = kwargs.pop("dataTypes")
-        except Exception:
+        except KeyError:
             self.dataTypes = None
 
         self.data = self.simulator.data
         self.model = self.simulator.model
-        self.pool = None
+
+        try:
+            self.ncores = kwargs.pop("ncores")
+            self.pool = Pool(processes=self.ncores)
+        except KeyError:
+            self.ncores, self.pool = None, None
+
         self.isPrepared = False
 
         self._eval(**kwargs)
@@ -70,6 +76,13 @@ class oimFitter:
         return kwargs
 
     def getResults(self, **kwargs):
+        """Get the results of the model-fitting and closes the pool if it is not None.
+        """
+        if self.pool is not None:
+            self.pool.close()
+            self.pool.join()
+            self.ncores, self.pool = None, None
+
         return 0
 
     def printResults(self, format=".5f", **kwargs):
@@ -119,13 +132,15 @@ class oimFitterEmcee(oimFitter):
 
         if samplerFile is None:
             self.sampler = emcee.EnsembleSampler(
-                    self.params["nwalkers"].value, self.nfree,
-                    self._logProbability, moves=moves, **kwargs)
+                    self.params["nwalkers"].value,
+                    self.nfree, self._logProbability,
+                    pool=self.pool, moves=moves, **kwargs)
         else:
             backend = emcee.backends.HDFBackend(samplerFile)
             self.sampler = emcee.EnsembleSampler(
-                    self.params["nwalkers"].value, self.nfree,
-                    self._logProbability, moves=moves,
+                    self.params["nwalkers"].value,
+                    self.nfree, self._logProbability,
+                    pool=self.pool, moves=moves,
                     backend=backend, **kwargs)
         return kwargs
 
@@ -179,6 +194,7 @@ class oimFitterEmcee(oimFitter):
         return -0.5 * self.simulator.chi2r
 
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
+        super().getResults()
         chi2 = -2*self.sampler.get_log_prob(discard=discard, flat=True)
         chain = self.sampler.get_chain(discard=discard, flat=True)
 
@@ -358,6 +374,7 @@ class oimFitterDynesty(oimFitter):
             self.sampler = self.sampler(
                     self._logProbability, self._ptform, self.nfree,
                     nlive=nlive, sample=sample, bound=bound,
+                    queue_size=self.ncores, pool=self.pool,
                     update_interval=self.nfree, **kwargs)
         else:
             ...
@@ -402,6 +419,7 @@ class oimFitterDynesty(oimFitter):
         return -0.5 * self.simulator.chi2r
 
     def getResults(self, mode="median", **kwargs):
+        super().getResults()
         if mode == "median":
             samples = self.sampler.results.samples
             quantiles = np.percentile(samples, [10, 50, 84], axis=0)
@@ -442,7 +460,6 @@ class oimFitterDynesty(oimFitter):
         fig, _ = dyplot.cornerplot(results, color="blue",
                                    truths=np.zeros(len(pnames)),
                                    labels=labels, truth_color="black", **kwargs)
-
 
         if savefig is not None:
             plt.savefig(savefig)
