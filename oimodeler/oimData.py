@@ -2,14 +2,14 @@
 """Data for optical interferometry"""
 import os
 from enum import IntFlag
-from typing import Optional
+from pathlib import Path
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 from astropy.io import fits
 
-from .oimUtils import hdulistDeepCopy, loadOifitsData, _oimDataTypeArr
+from .oimUtils import hdulistDeepCopy, _oimDataTypeArr
 from .oimDataFilter import oimDataFilter, oimDataFilterComponent
-
 
 
 def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
@@ -37,6 +37,7 @@ def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
 
 
 class oimDataType(IntFlag):
+    """Data types for the oifits data."""
     NONE = 0
     VIS2DATA = 1
     VISAMP_ABS = 2
@@ -49,110 +50,156 @@ class oimDataType(IntFlag):
     FLUXDATA = 256
 
 
-def oimGetDataValErrAndTypeFlag(arr):
-    dtype = oimDataType(0)
-    val = []
-    err = []
-    flag = []
-    if arr.name == "OI_VIS2":
-        nv2 = np.size(np.where(arr.data["VIS2DATA"] != 0))
+def oimGetDataValErrAndTypeFlag(table: fits.BinTableHDU) -> Tuple[np.ndarray]:
+    """Get the data, error and flag arrays from the oifits data.
+
+    Parameters
+    ----------
+    table : astropy.io.fits.BinTableHDU
+        The table from which to get the data, error and flag arrays.
+
+    Returns
+    -------
+    dtype : oimDataType
+        The type of the data.
+    val : numpy.ndarray
+        The data array.
+    err : numpy.ndarray
+        The error array.
+    flag : numpy.ndarray
+        The flag array.
+    """
+    dtype, val, err, flag = oimDataType(0), [], [], []
+    if table.name == "OI_VIS2":
+        nv2 = np.size(np.where(table.data["VIS2DATA"] != 0))
         if nv2 != 0:
-            val.append(arr.data["VIS2DATA"])
-            err.append(arr.data["VIS2ERR"])
-            flag.append(arr.data["FLAG"])
+            val.append(table.data["VIS2DATA"])
+            err.append(table.data["VIS2ERR"])
+            flag.append(table.data["FLAG"])
             dtype |= oimDataType.VIS2DATA
-    if arr.name == "OI_VIS":
-        nvamp = np.size(np.where(arr.data["VISAMP"] != 0))
+
+    if table.name == "OI_VIS":
+        nvamp = np.size(np.where(table.data["VISAMP"] != 0))
         if nvamp != 0:
-            val.append(arr.data["VISAMP"])
-            err.append(arr.data["VISAMPERR"])
-            flag.append(arr.data["FLAG"])
+            val.append(table.data["VISAMP"])
+            err.append(table.data["VISAMPERR"])
+            flag.append(table.data["FLAG"])
             try:
-                if arr.header["AMPTYP"].lower() == "absolute":
+                if table.header["AMPTYP"].lower() == "absolute":
                     dtype |= oimDataType.VISAMP_ABS
-                elif arr.header["AMPTYP"].lower() == "differential":
+                elif table.header["AMPTYP"].lower() == "differential":
                     dtype |= oimDataType.VISAMP_DIF
                 else:
                     dtype |= oimDataType.VISAMP_COR
             except:
                 dtype |= oimDataType.VISAMP_ABS
-        nvphi = np.size(np.where(arr.data["VISPHI"] != 0))
+
+        nvphi = np.size(np.where(table.data["VISPHI"] != 0))
         if nvphi != 0:
-            val.append(arr.data["VISPHI"])
-            err.append(arr.data["VISPHIERR"])
-            flag.append(arr.data["FLAG"])
+            val.append(table.data["VISPHI"])
+            err.append(table.data["VISPHIERR"])
+            flag.append(table.data["FLAG"])
             try:
-                if arr.header["PHITYP"].lower() == "absolute":
+                if table.header["PHITYP"].lower() == "absolute":
                     dtype |= oimDataType.VISPHI_ABS
                 else:
                     dtype |= oimDataType.VISPHI_DIF
             except:
                 dtype |= oimDataType.VISPHI_DIF
-    if arr.name == "OI_T3":
-        t3amp = np.size(np.where(arr.data["T3AMP"] != 0))
+
+    if table.name == "OI_T3":
+        t3amp = np.size(np.where(table.data["T3AMP"] != 0))
         if t3amp != 0:
-            val.append(arr.data["T3AMP"])
-            err.append(arr.data["T3AMPERR"])
-            flag.append(arr.data["FLAG"])
+            val.append(table.data["T3AMP"])
+            err.append(table.data["T3AMPERR"])
+            flag.append(table.data["FLAG"])
             dtype |= oimDataType.T3AMP
-        t3phi = np.size(np.where(arr.data["T3PHI"] != 0))
+        t3phi = np.size(np.where(table.data["T3PHI"] != 0))
         if t3phi != 0:
-            val.append(arr.data["T3PHI"])
-            err.append(arr.data["T3PHIERR"])
-            flag.append(arr.data["FLAG"])
+            val.append(table.data["T3PHI"])
+            err.append(table.data["T3PHIERR"])
+            flag.append(table.data["FLAG"])
             dtype |= oimDataType.T3PHI
-    if arr.name == "OI_FLUX":
+
+    if table.name == "OI_FLUX":
         try:
-            nflx = np.size(np.where(arr.data["FLUXDATA"] != 0))
+            nflx = np.size(np.where(table.data["FLUXDATA"] != 0))
             if nflx != 0:
-                val.append(arr.data["FLUXDATA"])
-                err.append(arr.data["FLUXERR"])
-                flag.append(arr.data["FLAG"])
+                val.append(table.data["FLUXDATA"])
+                err.append(table.data["FLUXERR"])
+                flag.append(table.data["FLAG"])
                 dtype |= oimDataType.FLUXDATA
         except:
-            nflx = np.size(np.where(arr.data["FLUX"] != 0))
+            nflx = np.size(np.where(table.data["FLUX"] != 0))
             if nflx != 0:
-                val.append(arr.data["FLUX"])
-                err.append(arr.data["FLUXERR"])
-                flag.append(arr.data["FLAG"])
+                val.append(table.data["FLUX"])
+                err.append(table.data["FLUXERR"])
+                flag.append(table.data["FLAG"])
                 dtype |= oimDataType.FLUXDATA
     return dtype, val, err, flag
 
 
-def oimDataCheckData(arr):
+def oimDataCheckData(table: fits.BinTableHDU) -> List[str]:
     cdata = []
-    if np.size(np.where(arr.data["FLAG"] == False)) != 0:
-        if arr.name == "OI_VIS2":
-            nv2 = np.size(np.where(arr.data["VIS2DATA"] != 0))
+    if np.size(np.where(table.data["FLAG"] == False)) != 0:
+        if table.name == "OI_VIS2":
+            nv2 = np.size(np.where(table.data["VIS2DATA"] != 0))
             if nv2 != 0:
                 cdata.append("VIS2DATA")
-        if arr.name == "OI_VIS":
-            nvamp = np.size(np.where(arr.data["VISAMP"] != 0))
+
+        if table.name == "OI_VIS":
+            nvamp = np.size(np.where(table.data["VISAMP"] != 0))
             if nvamp != 0:
                 cdata.append("VISAMP")
-            nvphi = np.size(np.where(arr.data["VISPHI"] != 0))
+            nvphi = np.size(np.where(table.data["VISPHI"] != 0))
             if nvphi != 0:
                 cdata.append("VISPHI")
-        if arr.name == "OI_T3":
-            t3amp = np.size(np.where(arr.data["T3AMP"] != 0))
+
+        if table.name == "OI_T3":
+            t3amp = np.size(np.where(table.data["T3AMP"] != 0))
             if t3amp != 0:
                 cdata.append("T3AMP")
-            t3phi = np.size(np.where(arr.data["T3PHI"] != 0))
+            t3phi = np.size(np.where(table.data["T3PHI"] != 0))
             if t3phi != 0:
                 cdata.append("T3PHI")
-        if arr.name == "OI_FLUX":
+
+        if table.name == "OI_FLUX":
             try:
-                nflx = np.size(np.where(arr.data["FLUXDATA"] != 0))
+                nflx = np.size(np.where(table.data["FLUXDATA"] != 0))
                 if nflx != 0:
                     cdata.append("FLUXDATA")
             except:
-                nflx = np.size(np.where(arr.data["FLUX"] != 0))
+                nflx = np.size(np.where(table.data["FLUX"] != 0))
                 if nflx != 0:
                     cdata.append("FLUX")
     return cdata
 
 
-def oimDataGetVectCoord(data, arr):
+def oimDataGetVectCoord(data: fits.HDUList, arr: fits.BinTableHDU) -> Tuple[np.ndarray]:
+    """Get the (u, v)-coordinates from the data.
+
+    Parameters
+    ----------
+    data : astropy.io.fits.HDUList
+        The data from which to get the (u, v)-coordinates.
+
+    Returns
+    -------
+    u : numpy.ndarray
+        The u-coordinates.
+    v : numpy.ndarray
+        The v-coordinates.
+    wl : numpy.ndarray
+        The wavelengths.
+    dwl : numpy.ndarray
+        The wavelength bandwidths.
+    mjd : numpy.ndarray
+        The modified Julian dates.
+    nB : int
+        The number of baselines.
+    nwl : int
+        The number of wavelengths.
+    """
     wl, dwl = oimDataGetWl(data, arr)
     nwl = np.size(wl)
 
@@ -170,21 +217,12 @@ def oimDataGetVectCoord(data, arr):
 
     if arr.name == "OI_T3":
         nB = np.shape(arr.data["T3PHI"])[0]*3+1
-        um1 = arr.data["U1COORD"]
-        vm1 = arr.data["V1COORD"]
-        um2 = arr.data["U2COORD"]
-        vm2 = arr.data["V2COORD"]
-        um3 = arr.data["U1COORD"]+arr.data["U2COORD"]
-        vm3 = arr.data["V1COORD"]+arr.data["V2COORD"]
+        um1, um2 = map(lambda x: arr.data[f"U{x}COORD"], (1, 2))
+        vm1, vm2 = map(lambda x: arr.data[f"V{x}COORD"], (1, 2))
+        um3, vm3 = um1+um2, vm1+vm2
 
-        u1 = np.outer(um1, 1./wl).flatten()
-        v1 = np.outer(vm1, 1./wl).flatten()
-        u2 = np.outer(um2, 1./wl).flatten()
-        v2 = np.outer(vm2, 1./wl).flatten()
-        u3 = np.outer(um3, 1./wl).flatten()
-
-        v3 = np.outer(vm3, 1./wl).flatten()
-
+        u1, u2, u3 = map(lambda x: np.outer(x, 1./wl).flatten(), (um1, um2, um3))
+        v1, v2, v3 = map(lambda x: np.outer(x, 1./wl).flatten(), (vm1, vm2, vm3))
         u = np.concatenate((u1, u2, u3))
         v = np.concatenate((v1, v2, v3))
 
@@ -197,12 +235,9 @@ def oimDataGetVectCoord(data, arr):
         v = np.zeros(nB*nwl)
 
     else:
-        um = arr.data["UCOORD"]
-        vm = arr.data["VCOORD"]
+        um, vm = arr.data["UCOORD"], arr.data["VCOORD"]
         nB = np.size(um)+1
-
-        u = np.outer(um, 1./wl).flatten()
-        v = np.outer(vm, 1./wl).flatten()
+        u, v = map(lambda x: np.outer(x, 1./wl).flatten(), (um, vm))
 
     if arr.name != "OI_FLUX":
         u = np.concatenate((uv0, u))
@@ -214,9 +249,77 @@ def oimDataGetVectCoord(data, arr):
     return u, v, wl, dwl, mjd, nB, nwl
 
 
+class oimData:
+    def __init__(self, data: Any) -> None:
+        self.data = data
+
+
+def loadOifitsData(input: Union[str, Path, List[str],
+                                List[Path], fits.HDUList, oimData],
+                   mode: Optional[str] = "listOfHdlulist") -> oimData:
+    """Return the oifits data from either filenames, already opened oifts or a
+    oimData boject as either a list of hdlulist (default) or as a oimData
+    object using the option mode="oimData".
+
+    Parameters
+    ----------
+    input : string or pathlib.Path or list of str or list of pathlib.Path
+            or astropy.io.fits.hdu.hdulist.HDUList or oimodeler.oimData
+        The data to deal with. Can be a oimData object, a hdulist, a string
+        representing a filename or a list of these kind of object
+    mode : str, optional
+        The type of the return data, either "listOfHdlulist" or "oimData"
+        The default is "listOfHdlulist"
+
+    Returns
+    -------
+    data : .oimData
+    """
+    if isinstance(input, oimData):
+        if mode == "oimData":
+            data = input
+        else:
+            data = input.data
+    else:
+        if isinstance(input, (fits.hdu.hdulist.HDUList, str, Path)):
+            input = [input]
+
+        if isinstance(input, list):
+            data = []
+
+            for elem in input:
+                if isinstance(elem, fits.hdu.hdulist.HDUList):
+                    data.append(elem)
+                else:
+                    try:
+                        data.append(fits.open(elem))
+                    except:
+                        raise ValueError("The path does not exist or is not a"\
+                                         " valid fits files")
+        else:
+            raise TypeError("Only oimData, hdulist, Path or string, or list of"\
+                            " these kind of objects allowed ")
+
+        if mode == "oimData":
+             data = oimData(data)
+    return data
+
+
 class oimData(object):
-    """A class to hold and manipulate data"""
-    def __init__(self, dataOrFilename=None, filt=None):
+    """A class to hold and manipulate data
+
+    Parameters
+    ----------
+    dataOrFilename : any
+        The data to add. Can be a filename, a list of filenames, a hdulist
+        or a list of hdulist.
+    filt : oimDataFilter, optional
+        The filter to use. The default is None.
+    """
+
+    def __init__(self, dataOrFilename: Optional[Any] = None,
+                 filt: Optional[oimDataFilter] = None) -> None:
+        """Initialize the class with the data and the filter to use."""
         self._data = []
         self.dataInfo = []
         self.vect_u = None
@@ -234,24 +337,51 @@ class oimData(object):
 
         if dataOrFilename:
             self.addData(dataOrFilename)
-            
         
-        if filt != None:
+        if filt is not None:
             self.setFilter(filt)
 
         self.prepareData()
 
+    def __str__(self):
+        """Return a string representation of the class."""
+        txt = f"oimData containing {np.size(self.data)} file(s)\n"
+        for ifile, fi in enumerate(self.dataInfo):
+            try:
+                fname = Path(self.data[ifile].filename()).name
+            except:
+                fname = "None:"
+
+            txt += f"{fname}\n"
+            for di in fi:
+                shapetxt = f"({di['nB'][0]}, {di['nB'][1]})"
+                txt += f"\t{di['arr']}{shapetxt}\n"
+
+                for ddi in di['data']:
+                    txt += f"\t\t{ddi}\n"
+        return txt
+
     @property
-    def data(self):
-        if self._useFilter == False or self._filter == None:
+    def data(self) -> None:
+        """Return the data."""
+        if not self._useFilter or self._filter is None:
             return self._data
         else:
-            if self._filteredDataReady == False:
+            if not self._filteredDataReady:
                 self.applyFilter()
             return self._filteredData
 
-    def addData(self, dataOrFilename, prepare=True):
-        
+    def addData(self, dataOrFilename, prepare: Optional[bool] = True) -> None:
+        """Add data to the class.
+
+        Parameters
+        ----------
+        dataOrFilename : any
+            The data to add. Can be a filename, a list of filenames, a hdulist
+            or a list of hdulist.
+        prepare : bool, optional
+            Whether to prepare the data or not. The default is True.
+        """
         self._data.extend(loadOifitsData(dataOrFilename))
         
         self.prepared = False
@@ -260,24 +390,41 @@ class oimData(object):
         if prepare == True:
             self.prepareData()
 
-    def removeData(self, dataOrIndex):
+    # TODO: Make it possible to selectively remove data
+    def removeData(self, dataOrIndex: Any) -> None:
+        """Remove either all data or specified data from the class.
+
+        Parameters
+        ----------
+        dataOrIndex : any
+            The data to remove. Can be a hdulist, a filename, a list of these
+            or an index to remove.
+        """
         self._prepared = False
         self._filteredDataReady = False
         self.prepareData()
 
-    def setFilter(self, filt=None, useFilter=True):
-        
-        #check type of filt
-        if isinstance(filt,oimDataFilterComponent) or isinstance(filt,list):
-            filt=oimDataFilter(filt)
+    def setFilter(self, filt: Optional[oimDataFilter] = None,
+                  useFilter: Optional[bool] = True) -> None:
+        """Set the filter to use.
 
-        
+        Parameters
+        ----------
+        filt : oimDataFilter, optional
+            The filter to use. The default is None.
+        useFilter : bool, optional
+            Whether to use the filter or not. The default is True.
+        """
+        # NOTE: Check type of filter
+        if isinstance(filt, (list, oimDataFilterComponent)):
+            filt = oimDataFilter(filt)
         
         self._filter = filt
         self._filteredDataReady = False
         self.useFilter = useFilter
 
-    def applyFilter(self):
+    def applyFilter(self) -> None:
+        """Apply the used filter(s) to the data."""
         self._filteredData = []
 
         for data in self._data:
@@ -290,24 +437,33 @@ class oimData(object):
         self.prepareData()
 
     @property
-    def useFilter(self):
+    def useFilter(self) -> None:
+        """Return whether the filter is used or not."""
         return self._useFilter
 
     @useFilter.setter
-    def useFilter(self, val):
+    def useFilter(self, val) -> None:
+        """Set whether to use the filter or not."""
         self._useFilter = val
-        if val == True:
-            if self._filteredDataReady == False:
+        if val:
+            if not self._filteredDataReady:
                 self.applyFilter()
 
-    def _analyzeOIFitFile(self, data):
+    def _analyzeOIFitFile(self, data: List[fits.HDUList]) -> None:
+        """Analyze the oifits file and get the data info.
+
+        Parameters
+        ----------
+        data : list of astropy.io.fits.HDUList
+            The data to analyze.
+        """
         dataInfo = []
         for datai in data :
             dataInfoi=[]
             for iarr, arri in enumerate(datai):
                 info = None
                 if arri.name in _oimDataTypeArr:
-                    info = {'arr': arri.name, 'idx': iarr}
+                    info = {"arr": arri.name, "idx": iarr}
                     if arri.name == "OI_VIS2":
                         nB=np.shape(arri.data["VIS2DATA"])
                     if arri.name == "OI_VIS":
@@ -326,7 +482,8 @@ class oimData(object):
             dataInfo.append(dataInfoi)
         self.dataInfo = dataInfo
 
-    def prepareData(self):
+    def prepareData(self) -> None:
+        """Prepare the data for further analysis."""
         self._analyzeOIFitFile(self.data)
         self.vect_u = np.array([])
         self.vect_v = np.array([])
@@ -348,9 +505,7 @@ class oimData(object):
         self.struct_arrType = []
         self.struct_dataType = []
 
-        for idata, datai in enumerate(self.data):
-            # print("File {}".format(idata))
-
+        for _, datai in enumerate(self.data):
             self.struct_u.append([])
             self.struct_v.append([])
             self.struct_wl.append([])
@@ -364,18 +519,15 @@ class oimData(object):
             self.struct_val.append([])
             self.struct_err.append([])
             self.struct_flag.append([])
+
             for iarr, arri in enumerate(datai):
                 if arri.name in _oimDataTypeArr:
-
-                    # print("arr {} : type={}".format(iarr,arri.name))
-                    dataTypeFlag, val, err, flag = oimGetDataValErrAndTypeFlag(
-                        arri)
+                    dataTypeFlag, val, err, flag = oimGetDataValErrAndTypeFlag(arri)
 
                     if dataTypeFlag != oimDataType.NONE:
                         u, v, wl, dwl, mjd, nB, nwl = oimDataGetVectCoord(
                             datai, arri)
 
-                        # print(np.shape(u))
                         self.vect_u = np.concatenate((self.vect_u, u))
                         self.vect_v = np.concatenate((self.vect_v, v))
                         self.vect_wl = np.concatenate((self.vect_wl, wl))
@@ -407,41 +559,34 @@ class oimData(object):
                     self.struct_flag[-1].append(flag)
         self._prepared = True
 
-    def writeto(self, filename=None, overwrite=False, directory=None):
+    def writeto(self, filename: Optional[Union[str, Path]] = None,
+                overwrite: Optional[bool] = False,
+                directory: Optional[Union[str, Path]] = None) -> None:
+        """Write the data to a file.
+
+        Parameters
+        ----------
+        filename : str or pathlib.Path, optional
+            The filename to write the data to. The default is None.
+        overwrite : bool, optional
+            Whether to overwrite the file or not. The default is False.
+        directory : str or pathlib.Path, optional
+            The directory to write the data to. The default is None.
+        """
         ndata = len(self.data)
         for idata, datai in enumerate(self.data):
-            if filename != None:
+            if filename is not None:
                 if ndata == 1:
-                    filenamei = filename
-
+                    filenamei = Path(filename)
                 else:
-                    filenamei = "{}_{}.fits".format(
-                        os.path.splitext(filename)[0], idata)
-            elif directory != None and datai.filename() != None:
-                filenamei = os.path.join(
-                    directory, os.path.basename(datai.filename()))
-            elif datai.filename() != None:
-                filenamei = datai.filename()
+                    filenamei = Path(f"{Path(filename).stem}_{idata}.fits")
+            elif directory is not None and datai.filename() is not None:
+                filenamei = Path(directory) / Path(datai.filename()).name
+            elif datai.filename() is not None:
+                filenamei = Path(datai.filename())
             else:
-                raise TypeError("Can't save the data 1")
+                raise TypeError("Can't save the data!")
             try:
                 datai.writeto(filenamei, overwrite=overwrite)
             except:
-                raise TypeError("Can't save the data")
-
-    def __str__(self):
-        nfiles = np.size(self.data)
-        txt = "oimData containing {} file(s)\n".format(nfiles)
-        for ifile, fi in enumerate(self.dataInfo):
-            try:
-                fname = os.path.basename(self.data[ifile].filename())
-            except:
-                fname = "None:"
-            txt += "{}\n".format(fname)
-            for di in fi:
-                shapetxt = "({},{})".format(di["nB"][0], di["nB"][1])
-                txt += "\t"+di["arr"]+shapetxt+"\n"
-
-                for ddi in di["data"]:
-                    txt += "\t\t"+ddi+"\n"
-        return txt
+                raise TypeError("Can't save the data!")

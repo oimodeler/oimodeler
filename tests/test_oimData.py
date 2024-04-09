@@ -28,6 +28,10 @@ def test_oimDataGetVectCoord() -> None:
     ...
 
 
+def test_loadOifitsData() -> None:
+    ...
+
+
 def test_oimData_init() -> None:
     ...
 

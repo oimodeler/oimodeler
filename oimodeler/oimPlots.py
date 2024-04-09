@@ -15,9 +15,9 @@ from matplotlib.figure import Figure
 from matplotlib.collections import Collection, LineCollection
 from matplotlib.legend_handler import HandlerLineCollection
 
-from .oimData import oimData
+from .oimData import loadOifitsData, oimData
 from .oimUtils import getBaselineName, getBaselineLengthAndPA, getConfigName, \
-    getSpaFreq, getWlFromOifits,loadOifitsData, getDataArrname
+    getSpaFreq, getWlFromOifits, getDataArrname
 
 
 # TODO: Move global variables somewhere else and make their name in capital letters
