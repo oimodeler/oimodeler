@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Sep 21 10:59:15 2022
-
-@author: Ame
-"""
 from pathlib import Path
 from pprint import pprint
 
 import oimodeler as oim
 
 
-# Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
+# Path to a mock MATISSE-L-band binary observation (3 oifits) created with ASPRO
 path = Path(__file__).parent.parent.parent
 data_dir = path / "data" / "ASPRO_MATISSE2"
 
@@ -35,21 +30,15 @@ ud.params['f'].set(min=0., max=10.)
 pt.params['f'].free = False
 pprint(model.getFreeParameters())
 
-# Create a new fitter with 32 walkers and the list of oifits files and the model
-fit = oim.oimFitterEmcee(files, model, nwalkers=32, ncores=6)
-# pprint(fit._logProbability([0,10,1,5]))
+# Create a new fitter with 500 live points and the list of oifits files and the model
+fit = oim.oimFitterDynesty(files, model, nlive=500)
 
 # Prepare the fitter. Here we set the intial positions of all walkers to
 # the current parameters values of our model.
-fit.prepare(init="random")
+fit.prepare()
 
-# pprinting the initial values of the walkers
-pprint("Initial values of the free parameters for the {} walkers".format(
-    fit.params["nwalkers"].value))
-pprint(fit.initialParams)
-
-# run a 1000 steps fit with fixed starting inital and 1000 steps
-fit.run(nsteps=2000, progress=True)
+# Perfoming the model-fitting
+fit.run(dlogz=0.010, progress=True)
 
 # %%
 sampler = fit.sampler
@@ -60,11 +49,10 @@ lnprob = fit.sampler.lnprobability
 class_name = fit.__class__.__name__.title()
 figWalkers, axeWalkers = fit.walkersPlot(cmap="plasma_r",
                                          savefig=save_dir / f"example{class_name}Walkers.png")
-figCorner, axeCorner = fit.cornerPlot(discard=1000,
-                                      savefig=save_dir / f"example{class_name}Corner.png")
+figCorner, axeCorner = fit.cornerPlot(savefig=save_dir / f"example{class_name}Corner.png")
 
 # %%
-median, err_l, err_u, err = fit.getResults(mode='median', discard=1000, chi2limfact=20)
+median, err_l, err_u, err = fit.getResults(mode="median")
 
 # %%
 fig0, ax0 = fit.simulator.plot(["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],

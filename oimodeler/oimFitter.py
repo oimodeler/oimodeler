@@ -347,8 +347,6 @@ class oimFitterDynesty(oimFitter):
 
     def _prepare(self, **kwargs):
         """Prepares the dynesty fitter."""
-        del kwargs["init"]
-
         if "samplerFile" not in kwargs:
             samplerFile = None
         else:

@@ -67,7 +67,7 @@ fit = oim.oimFitterDynesty(data, model, nlive=1500)
 # NOTE: Overwrite the existing _logProbability method of the class "fit"
 fit._logProbability = lambda theta: _logProbability(fit, theta)
 
-fit.prepare(init="random")
+fit.prepare()
 fit.run(dlogz=0.010, progress=True)
 
 best, err_l, err_u, err = fit.getResults(mode="median")
