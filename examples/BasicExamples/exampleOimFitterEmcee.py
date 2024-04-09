@@ -28,11 +28,11 @@ model = oim.oimModel([ud, pt])
 
 # Setting limits of the parameter space but also setting x,y of the UD as a
 # free parameters and f of the pt as fixed (to 1)
-ud.params['d'].set(min=0.01, max=20)
-ud.params['x'].set(min=-50, max=50, free=True)
-ud.params['y'].set(min=-50, max=50, free=True)
-ud.params['f'].set(min=0., max=10.)
-pt.params['f'].free = False
+ud.params["d"].set(min=0.01, max=20)
+ud.params["x"].set(min=-50, max=50, free=True)
+ud.params["y"].set(min=-50, max=50, free=True)
+ud.params["f"].set(min=0., max=10.)
+pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
 # Create a new fitter with 32 walkers and the list of oifits files and the model

@@ -188,6 +188,8 @@ def uvPlot(oifitsList: fits.HDUList, arrname: Optional[str] = "OI_VIS2",
     if axe is None:
         _, axe = plt.subplots(nrows=1, ncols=1)
 
+    if isinstance(oifitsList, oimData):
+        oifitsList = oifitsList.data
     oifitsList = loadOifitsData(oifitsList)
     # nfiles = len(oifitsList)
 
@@ -466,6 +468,9 @@ def oimPlot(oifitsList: fits.HDUList,
         DESCRIPTION.
     """
     res = None
+
+    if isinstance(oifitsList, oimData):
+        oifitsList = oifitsList.data
     oifitsList = loadOifitsData(oifitsList)
     # ndata0 = len(oifitsList)
 

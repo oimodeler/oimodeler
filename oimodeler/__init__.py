@@ -14,7 +14,8 @@ import numpy as np
 from .oimBasicFourierComponents import *
 from .oimCustomComponents import *
 from .oimComponent import *
-from .oimData import *
+from .oimData import oimDataGetWl, oimDataType, oimGetDataValErrAndTypeFlag, oimData, \
+    oimDataCheckData, oimDataGetVectCoord, loadOifitsData
 from .oimFluxData import *
 from .oimDataFilter import *
 from .oimFTBackends import numpyFFTBackend, FFTWBackend

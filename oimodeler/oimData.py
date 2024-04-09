@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Data for optical interferometry"""
-import os
 from enum import IntFlag
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
@@ -10,6 +9,7 @@ from astropy.io import fits
 
 from .oimUtils import hdulistDeepCopy, _oimDataTypeArr
 from .oimDataFilter import oimDataFilter, oimDataFilterComponent
+from .oimOptions import oimOptions
 
 
 def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
@@ -36,6 +36,8 @@ def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
     return oi_wavelengths.data["EFF_WAVE"], oi_wavelengths.data["EFF_BAND"]
 
 
+# NOTE: This causes probems for serialisation, therefore, oimData cannot be
+# serialised (maybe should be changed in the future?)
 class oimDataType(IntFlag):
     """Data types for the oifits data."""
     NONE = 0
@@ -249,59 +251,41 @@ def oimDataGetVectCoord(data: fits.HDUList, arr: fits.BinTableHDU) -> Tuple[np.n
     return u, v, wl, dwl, mjd, nB, nwl
 
 
-class oimData:
-    def __init__(self, data: Any) -> None:
-        self.data = data
-
-
-def loadOifitsData(input: Union[str, Path, List[str],
-                                List[Path], fits.HDUList, oimData],
-                   mode: Optional[str] = "listOfHdlulist") -> oimData:
+def loadOifitsData(input: Union[str, Path, List[str], List[Path], fits.HDUList]
+                   ) -> List[fits.HDUList]:
     """Return the oifits data from either filenames, already opened oifts or a
-    oimData boject as either a list of hdlulist (default) or as a oimData
-    object using the option mode="oimData".
+    oimData boject as either a list of hdlulist (default).
 
     Parameters
     ----------
     input : string or pathlib.Path or list of str or list of pathlib.Path
-            or astropy.io.fits.hdu.hdulist.HDUList or oimodeler.oimData
+            or astropy.io.fits.hdu.hdulist.HDUList
         The data to deal with. Can be a oimData object, a hdulist, a string
         representing a filename or a list of these kind of object
-    mode : str, optional
-        The type of the return data, either "listOfHdlulist" or "oimData"
-        The default is "listOfHdlulist"
 
     Returns
     -------
-    data : .oimData
+    data : list of astropy.io.fits.hdu.hdulist.HDUList
     """
-    if isinstance(input, oimData):
-        if mode == "oimData":
-            data = input
-        else:
-            data = input.data
+    if isinstance(input, (fits.hdu.hdulist.HDUList, str, Path)):
+        input = [input]
+
+    if isinstance(input, list):
+        data = []
+
+        for elem in input:
+            if isinstance(elem, fits.hdu.hdulist.HDUList):
+                data.append(elem)
+            else:
+                try:
+                    data.append(fits.open(elem))
+                except:
+                    raise ValueError("The path does not exist or is not a" \
+                                     " valid fits files")
     else:
-        if isinstance(input, (fits.hdu.hdulist.HDUList, str, Path)):
-            input = [input]
+        raise TypeError("Only hdulist, Path or string, or list of" \
+                        " these kind of objects allowed ")
 
-        if isinstance(input, list):
-            data = []
-
-            for elem in input:
-                if isinstance(elem, fits.hdu.hdulist.HDUList):
-                    data.append(elem)
-                else:
-                    try:
-                        data.append(fits.open(elem))
-                    except:
-                        raise ValueError("The path does not exist or is not a"\
-                                         " valid fits files")
-        else:
-            raise TypeError("Only oimData, hdulist, Path or string, or list of"\
-                            " these kind of objects allowed ")
-
-        if mode == "oimData":
-             data = oimData(data)
     return data
 
 
@@ -317,7 +301,7 @@ class oimData(object):
         The filter to use. The default is None.
     """
 
-    def __init__(self, dataOrFilename: Optional[Any] = None,
+    def __init__(self, dataOrFilename: Optional[Union[fits.HDUList, List[Path]]] = None,
                  filt: Optional[oimDataFilter] = None) -> None:
         """Initialize the class with the data and the filter to use."""
         self._data = []
@@ -361,6 +345,25 @@ class oimData(object):
                     txt += f"\t\t{ddi}\n"
         return txt
 
+    # TODO: Finish these two state methods
+    def __getstate__(self) -> object:
+        """Return the state of the class.
+
+        Remove all references to the class 'oimDataType' and those
+        attributes that contain it as it is not serialisable
+        """
+        state = self.__dict__.copy()
+        oimOptions.tmp.data = self.data
+        oimOptions.tmp.dataInfo = self.dataInfo
+        oimOptions.tmp.struct_dataType = self.struct_dataType
+        oimOptions.tmp.struct_arrType = self.struct_arrType
+        del state["_data"]
+        return state
+
+    def __setstate__(self, state: object) -> None:
+        self.__dict__.update(state)
+        self._data = oimOptions.tmp.data
+
     @property
     def data(self) -> None:
         """Return the data."""
@@ -371,23 +374,24 @@ class oimData(object):
                 self.applyFilter()
             return self._filteredData
 
-    def addData(self, dataOrFilename, prepare: Optional[bool] = True) -> None:
+    def addData(self, dataOrFilename: Union[fits.HDUList, List[Path]],
+                prepare: Optional[bool] = True) -> None:
         """Add data to the class.
 
         Parameters
         ----------
-        dataOrFilename : any
+        dataOrFilename : astropy.io.fits.HDUList or list of path
             The data to add. Can be a filename, a list of filenames, a hdulist
             or a list of hdulist.
         prepare : bool, optional
-            Whether to prepare the data or not. The default is True.
+            # Whether to prepare the data or not. The default is True.
         """
         self._data.extend(loadOifitsData(dataOrFilename))
         
         self.prepared = False
         self._filteredDataReady = False
         
-        if prepare == True:
+        if prepare:
             self.prepareData()
 
     # TODO: Make it possible to selectively remove data

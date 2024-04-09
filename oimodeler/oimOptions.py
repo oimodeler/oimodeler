@@ -10,7 +10,8 @@ ft = SimpleNamespace(
 
 grid = SimpleNamespace(type="linear")
 model = SimpleNamespace(grid=grid)
+tmp = SimpleNamespace(data=None)
 
 # NOTE: The dictionary oimOption contains all the customizable option
 # of `oimodeler`.
-oimOptions = SimpleNamespace(ft=ft, model=model)
+oimOptions = SimpleNamespace(ft=ft, model=model, tmp=tmp)
