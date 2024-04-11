@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
-from multiprocessing import Pool
+from typing import Dict
 
 import corner
 import emcee
@@ -28,32 +28,43 @@ class oimFitter:
         else:
             raise TypeError("Wrong number of arguments")
 
-        try:
-            self.dataTypes = kwargs.pop("dataTypes")
-        except KeyError:
-            self.dataTypes = None
-
+        self.ncores, self.pool = None, None
+        self.dataTypes = kwargs.pop("dataTypes", None)
         self.data = self.simulator.data
         self.model = self.simulator.model
-
-        try:
-            self.ncores = kwargs.pop("ncores")
-            self.pool = Pool(processes=self.ncores)
-        except KeyError:
-            self.ncores, self.pool = None, None
 
         self.isPrepared = False
 
         self._eval(**kwargs)
 
-    def _eval(self, **kwargs):
+    def __getstate__(self) -> Dict:
+       """Used for serializing instances.
+
+       Copies the state of the class and removes unpicklable entries.
+       """
+       state = self.__dict__.copy()
+       del state["pool"]
+       return state
+
+    def _eval(self, **kwargs) -> Dict:
+        """Evaluate the parameters of the fitter."""
         for key in self.params.keys():
             if key in kwargs.keys():
                 self.params[key].value = kwargs.pop(key)
 
         return kwargs
 
+    def stop_pool(self):
+        """Stops the pool if it is not None."""
+        if self.pool is not None:
+            self.pool.close()
+            self.pool.join()
+            self.pool = None
+
     def prepare(self, **kwargs):
+        self.pool = kwargs.pop("pool", None)
+        self.ncores = kwargs.pop("ncores", None)
+
         self.freeParams = self.model.getFreeParameters()
         self.nfree = len(self.freeParams)
 
@@ -73,16 +84,12 @@ class oimFitter:
         if not self.isPrepared:
             raise TypeError("Fitter not initialized")
         self._run(**kwargs)
+        self.stop_pool()
         return kwargs
 
     def getResults(self, **kwargs):
         """Get the results of the model-fitting and closes the pool if it is not None.
         """
-        if self.pool is not None:
-            self.pool.close()
-            self.pool.join()
-            self.ncores, self.pool = None, None
-
         return 0
 
     def printResults(self, format=".5f", **kwargs):
@@ -107,11 +114,7 @@ class oimFitterEmcee(oimFitter):
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
-        if "init" not in kwargs:
-            init = "random"
-        else:
-            init = kwargs.pop("init")
-
+        init = kwargs.pop("init", "random")
         if init == "random":
             self.initialParams = self._initRandom()
         elif init == "fixed":
@@ -119,17 +122,11 @@ class oimFitterEmcee(oimFitter):
         elif init == "gaussian":
             self.initialParams = self._initGaussian()
 
-        if "moves" in kwargs:
-            moves = kwargs.pop["moves"]
-        else:
-            moves = [(emcee.moves.DEMove(), 0.8),
-                     (emcee.moves.DESnookerMove(), 0.2)]
+        moves = kwargs.pop("moves",
+                           [(emcee.moves.DEMove(), 0.8),
+                            (emcee.moves.DESnookerMove(), 0.2)])
 
-        if "samplerFile" not in kwargs:
-            samplerFile = None
-        else:
-            samplerFile = kwargs.pop("samplerFile")
-
+        samplerFile = kwargs.pop("samplerFile", None)
         if samplerFile is None:
             self.sampler = emcee.EnsembleSampler(
                     self.params["nwalkers"].value,
@@ -175,7 +172,7 @@ class oimFitterEmcee(oimFitter):
 
     def _run(self, **kwargs):
         self.sampler.run_mcmc(self.initialParams, **kwargs)
-        self.getResults()
+        # TODO: The get results might not work with the pool
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
@@ -193,8 +190,7 @@ class oimFitterEmcee(oimFitter):
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
         return -0.5 * self.simulator.chi2r
 
-    def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
-        super().getResults()
+    def getResults(self, mode="best", discard=0, chi2limfact=20, **kwargs):
         chi2 = -2*self.sampler.get_log_prob(discard=discard, flat=True)
         chain = self.sampler.get_chain(discard=discard, flat=True)
 
@@ -337,36 +333,17 @@ class oimFitterDynesty(oimFitter):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if "method" not in kwargs:
-            self.method = "dynamic"
-        else:
-            self.method = kwargs.pop("method")
-
+        self.method = kwargs.pop("method", "static")
         samplers = {"dynamic": DynamicNestedSampler, "static": NestedSampler}
         self.sampler = samplers[self.method]
 
     def _prepare(self, **kwargs):
         """Prepares the dynesty fitter."""
-        if "samplerFile" not in kwargs:
-            samplerFile = None
-        else:
-            samplerFile = kwargs.pop("samplerFile")
+        nlive = kwargs.pop("nlive", 1000)
+        sample = kwargs.pop("sample", "rwalk")
+        bound = kwargs.pop("bound", "multi")
 
-        if "nlive" not in kwargs:
-            nlive = 1000
-        else:
-            nlive = kwargs.pop("nlive")
-
-        if "sample" not in kwargs:
-            sample = "rwalk"
-        else:
-            sample = kwargs.pop("sample")
-
-        if "bound" not in kwargs:
-            bound = "multi"
-        else:
-            bound = kwargs.pop("bound")
-
+        samplerFile = kwargs.pop("samplerFile", None)
         # TODO: Implement the loading of the sampler
         if samplerFile is None:
             self.sampler = self.sampler(
@@ -380,24 +357,15 @@ class oimFitterDynesty(oimFitter):
         return kwargs
 
     def _run(self, **kwargs):
-        if "progress" not in kwargs:
-            print_progress = False
-        else:
-            print_progress = kwargs.pop("progress")
-
-        if "dlogz" not in kwargs:
-            dlogz = 0.010
-        else:
-            dlogz = kwargs.pop("dlogz")
+        print_progress = kwargs.pop("progress", False)
+        dlogz = kwargs.pop("dlogz", 0.010)
 
         sampler_kwargs = {"dlogz": dlogz, "print_progress": print_progress}
-
         if self.method == "dynamic":
             del sampler_kwargs["dlogz"]
 
         # TODO: Implement checkpoint file here
         self.sampler.run_nested(**sampler_kwargs, **kwargs)
-        self.getResults()
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
@@ -417,7 +385,6 @@ class oimFitterDynesty(oimFitter):
         return -0.5 * self.simulator.chi2r
 
     def getResults(self, mode="median", **kwargs):
-        super().getResults()
         if mode == "median":
             samples = self.sampler.results.samples
             quantiles = np.percentile(samples, [10, 50, 84], axis=0)
@@ -499,12 +466,15 @@ class oimFitterMinimize(oimFitter):
         super().__init__(*args, **kwargs)
     
     def _prepare(self, **kwargs):
+        self.pool = kwargs.pop("pool", None)
+        self.ncores = kwargs.pop("ncores", None)
+
         self.initialParams = []
         if "initialParams" not in kwargs:
             for _, parami in enumerate(self.freeParams.values()):
                 self.initialParams.append(parami.value) 
         else:
-            self.initialParams = kwargs['initialParams']
+            self.initialParams = kwargs["initialParams"]
         return kwargs    
         
     def _getChi2r(self, theta):

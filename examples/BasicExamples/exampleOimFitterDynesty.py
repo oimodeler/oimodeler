@@ -41,14 +41,8 @@ fit.prepare()
 fit.run(dlogz=0.010, progress=True)
 
 # %%
-sampler = fit.sampler
-chain = fit.sampler.chain
-lnprob = fit.sampler.lnprobability
-
-# %%
 class_name = fit.__class__.__name__.title()
-figWalkers, axeWalkers = fit.walkersPlot(cmap="plasma_r",
-                                         savefig=save_dir / f"example{class_name}Walkers.png")
+figWalkers, axeWalkers = fit.walkersPlot(savefig=save_dir / f"example{class_name}Walkers.png")
 figCorner, axeCorner = fit.cornerPlot(savefig=save_dir / f"example{class_name}Corner.png")
 
 # %%

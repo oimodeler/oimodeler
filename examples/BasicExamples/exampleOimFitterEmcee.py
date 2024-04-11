@@ -36,7 +36,7 @@ pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
 # Create a new fitter with 32 walkers and the list of oifits files and the model
-fit = oim.oimFitterEmcee(files, model, nwalkers=32, ncores=6)
+fit = oim.oimFitterEmcee(files, model, nwalkers=32)
 # pprint(fit._logProbability([0,10,1,5]))
 
 # Prepare the fitter. Here we set the intial positions of all walkers to
@@ -44,8 +44,7 @@ fit = oim.oimFitterEmcee(files, model, nwalkers=32, ncores=6)
 fit.prepare(init="random")
 
 # pprinting the initial values of the walkers
-pprint("Initial values of the free parameters for the {} walkers".format(
-    fit.params["nwalkers"].value))
+pprint(f"Initial values of the free parameters for the {fit.params['nwalkers'].value} walkers")
 pprint(fit.initialParams)
 
 # run a 1000 steps fit with fixed starting inital and 1000 steps
@@ -64,7 +63,7 @@ figCorner, axeCorner = fit.cornerPlot(discard=1000,
                                       savefig=save_dir / f"example{class_name}Corner.png")
 
 # %%
-median, err_l, err_u, err = fit.getResults(mode='median', discard=1000, chi2limfact=20)
+median, err_l, err_u, err = fit.getResults(mode="median", discard=1000, chi2limfact=20)
 
 # %%
 fig0, ax0 = fit.simulator.plot(["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],
