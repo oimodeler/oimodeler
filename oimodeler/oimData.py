@@ -304,7 +304,8 @@ class oimData:
     """
 
     def __init__(self, dataOrFilename: Optional[Union[fits.HDUList, List[Path]]] = None,
-                 filt: Optional[oimDataFilter] = None) -> None:
+                 filt: Optional[oimDataFilter] = None,
+                 shared_memory: Optional[bool] = False) -> None:
         """Initialize the class with the data and the filter to use."""
         self._data = []
         self.dataInfo = []
@@ -314,6 +315,7 @@ class oimData:
         self.vect_dwl = None
         self.vect_mjd = None
 
+        self._shared_memory = shared_memory
         self._prepared = False
 
         self._filter = filt
@@ -481,69 +483,37 @@ class oimData:
     def prepareData(self) -> None:
         """Prepare the data for further analysis."""
         self._analyzeOIFitFile(self.data)
-        self.vect_u = np.array([])
-        self.vect_v = np.array([])
-        self.vect_wl = np.array([])
-        self.vect_dwl = np.array([])
-        self.vect_mjd = np.array([])
+        vecs = ["u", "v", "wl", "dwl", "mjd"]
+        structs = ["nB", "nwl", "val", "err", "flag", "arrNum", "arrType", "dataType"]
 
-        self.struct_u = []
-        self.struct_v = []
-        self.struct_wl = []
-        self.struct_dwl = []
-        self.struct_mjd = []
-        self.struct_nB = []
-        self.struct_nwl = []
-        self.struct_val = []
-        self.struct_err = []
-        self.struct_flag = []
-        self.struct_arrNum = []
-        self.struct_arrType = []
-        self.struct_dataType = []
+        for vec in vecs:
+            setattr(self, f"vect_{vec}", np.array([]))
+
+        for struct in (vecs+structs):
+            setattr(self, f"struct_{struct}", [])
 
         for _, datai in enumerate(self.data):
-            self.struct_u.append([])
-            self.struct_v.append([])
-            self.struct_wl.append([])
-            self.struct_dwl.append([])
-            self.struct_mjd.append([])
-            self.struct_nB.append([])
-            self.struct_nwl.append([])
-            self.struct_arrNum.append([])
-            self.struct_arrType.append([])
-            self.struct_dataType.append([])
-            self.struct_val.append([])
-            self.struct_err.append([])
-            self.struct_flag.append([])
+            for struct in (vecs+structs):
+                getattr(self, f"struct_{struct}").append([])
 
             for iarr, arri in enumerate(datai):
                 if arri.name in _oimDataTypeArr:
                     dataTypeFlag, val, err, flag = oimGetDataValErrAndTypeFlag(arri)
 
                     if dataTypeFlag != oimDataType.NONE:
-                        u, v, wl, dwl, mjd, nB, nwl = oimDataGetVectCoord(
-                            datai, arri)
+                        u, v, wl, dwl, mjd, nB, nwl = oimDataGetVectCoord(datai, arri)
 
-                        self.vect_u = np.concatenate((self.vect_u, u))
-                        self.vect_v = np.concatenate((self.vect_v, v))
-                        self.vect_wl = np.concatenate((self.vect_wl, wl))
-                        self.vect_dwl = np.concatenate((self.vect_dwl, dwl))
-                        self.vect_mjd = np.concatenate((self.vect_mjd, mjd))
+                        for vec in (vecs+structs[:2]):
+                            var = locals()[vec]
+                            if hasattr(self, f"vect_{vec}"):
+                                concat = np.concatenate((getattr(self, f"vect_{vec}"), var))
+                                setattr(self, f"vect_{vec}", concat)
 
-                        self.struct_u[-1].append(u)
-                        self.struct_v[-1].append(v)
-                        self.struct_wl[-1].append(wl)
-                        self.struct_dwl[-1].append(dwl)
-                        self.struct_mjd[-1].append(mjd)
-                        self.struct_nB[-1].append(nB)
-                        self.struct_nwl[-1].append(nwl)
-
+                            getattr(self, f"struct_{vec}")[-1].append(var)
                     else:
-                        self.struct_u[-1].append(np.array([]))
-                        self.struct_v[-1].append(np.array([]))
-                        self.struct_wl[-1].append(np.array([]))
-                        self.struct_dwl[-1].append(np.array([]))
-                        self.struct_mjd[-1].append(np.array([]))
+                        for vec in vecs:
+                            getattr(self, f"struct_{vec}")[-1].append(np.array([]))
+
                         self.struct_nB[-1].append(0)
                         self.struct_nwl[-1].append(0)
 

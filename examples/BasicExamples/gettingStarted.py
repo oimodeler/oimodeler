@@ -63,7 +63,7 @@ pprint(fit.initialParams)
 fit.run(nsteps=2000, progress=True)
 
 # Get results from the fit (updates the class internal logic)
-median, err_l, err_u, err = fit.getResults(mode='median', discard=1000)
+median, err_l, err_u, err = fit.getResults(mode="median", discard=1000)
 
 # %%
 figWalkers, axeWalkers = fit.walkersPlot(

@@ -45,9 +45,13 @@ class oimFitter:
     params = {}
 
     def __init__(self, *args, **kwargs):
+        self.pool = kwargs.pop("pool", None)
+        shared_memory = True if self.pool is not None else False
+
         nargs = len(args)
         if nargs == 2:
-            self.simulator = oimSimulator(args[0], args[1])
+            self.simulator = oimSimulator(
+                    args[0], args[1], shared_memory=shared_memory)
         elif nargs == 1:
             self.simulator = args[0]
         else:
@@ -522,6 +526,7 @@ class oimFitterDynesty(oimFitter):
         return kwargs
 
     def _run(self, **kwargs):
+        """Run the model-fitting."""
         print_progress = kwargs.pop("progress", False)
         dlogz = kwargs.pop("dlogz", 0.010)
 

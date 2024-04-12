@@ -110,19 +110,17 @@ class oimSimulator:
         chi2 = 0
         chi2List = []
 
-        if computeSimulatedData == True and (checkSimulatedData == True or 
-                                             self.simulatedData == None):
+        if computeSimulatedData and (checkSimulatedData or self.simulatedData is None):
             self.simulatedData = oimData()
             for datai in self.data.data:
                 self.simulatedData.addData(hdulistDeepCopy(datai))
 
         data = self.data
 
-        if (computeChi2 == True) | (computeSimulatedData == True):
+        if computeChi2 or computeSimulatedData:
             idx = 0
             nfiles = len(data.struct_u)
             for ifile in range(nfiles):
-                # print("Data {}".format(ifile))
                 narr = len(data.struct_arrType[ifile])
                 for iarr in range(narr):
                     arrNum = data.struct_arrNum[ifile][iarr]
