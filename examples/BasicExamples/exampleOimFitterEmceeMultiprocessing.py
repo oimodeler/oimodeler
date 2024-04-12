@@ -5,7 +5,7 @@ Created on Wed Sep 21 10:59:15 2022
 @author: Ame
 """
 import os
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from pprint import pprint
 
@@ -45,21 +45,18 @@ ud.params["f"].set(min=0., max=10.)
 pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
-# Create a new fitter with 32 walkers and the list of oifits files and the model
-# Create it with multiprocessing activated
+# Create a new fitter with a simulator object
 fit = oim.oimFitterEmcee(files, model)
 
 
+# NOTE: Start of the multiprocessing part
 if __name__ == "__main__":
-    # Prepare the fitter. Here we set the intial positions of all walkers to
-    # the current parameters values of our model.
-    ncores = 6
+    # NOTE: Emcee at maximum uses half the number of walkers as cores for multiprocessing
+    ncores = cpu_count() - 2
     with Pool(processes=ncores) as pool:
-        fit.prepare(init="random", nwalkers=32, ncores=ncores, pool=pool)
-
-        # pprinting the initial values of the walkers
-        pprint(f"Initial values of the free parameters for the {fit.params['nwalkers'].value} walkers")
-        pprint(fit.initialParams)
+        # Prepare the fitter. Here we set the intial positions of all walkers to
+        # the current parameters values of our model.
+        fit.prepare(init="random", nwalkers=32, pool=pool)
 
         # Run a 2000 steps fit with fixed starting inital and 1000 burn-in steps
         fit.run(nsteps=2000, progress=True)

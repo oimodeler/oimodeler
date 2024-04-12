@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from pprint import pprint
 
@@ -45,16 +45,18 @@ pprint(model.getFreeParameters())
 fit = oim.oimFitterDynesty(files, model)
 
 
+# NOTE: Start of the multiprocessing part
 if __name__ == "__main__":
     # Prepare the fitter. Here we set the intial positions of all walkers to
     # the current parameters values of our model.
-    ncores = 6
+    ncores = cpu_count() - 2
     with Pool(processes=ncores) as pool:
         fit.prepare(nlive=1000, ncores=ncores, pool=pool)
 
         # Perfoming the model-fitting
         fit.run(dlogz=0.010, progress=True)
 
+    # Get results from the fit (updates the class internal logic)
     median, err_l, err_u, err = fit.getResults(mode="median")
 
     # %%

@@ -9,7 +9,6 @@ from astropy.io import fits
 
 from .oimUtils import hdulistDeepCopy, _oimDataTypeArr
 from .oimDataFilter import oimDataFilter, oimDataFilterComponent
-from .oimOptions import oimOptions
 
 
 def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
@@ -289,7 +288,7 @@ def loadOifitsData(input: Union[str, Path, List[str], List[Path], fits.HDUList]
     return data
 
 
-class oimData(object):
+class oimData:
     """A class to hold and manipulate data
 
     Parameters
@@ -299,6 +298,9 @@ class oimData(object):
         or a list of hdulist.
     filt : oimDataFilter, optional
         The filter to use. The default is None.
+
+    Attributes
+    ----------
     """
 
     def __init__(self, dataOrFilename: Optional[Union[fits.HDUList, List[Path]]] = None,
@@ -319,33 +321,30 @@ class oimData(object):
         self._filteredData = None
         self._filteredDataReady = False
 
-        if dataOrFilename:
+        if dataOrFilename is not None:
             self.addData(dataOrFilename)
         
-        if filt is not None:
-            self.setFilter(filt)
+        if self._filter is not None:
+            self.setFilter(self._filter)
 
         self.prepareData()
 
     def __str__(self):
         """Return a string representation of the class."""
-        txt = f"oimData containing {np.size(self.data)} file(s)\n"
+        txt = [f"oimData containing {np.size(self.data)} file(s)"]
         for ifile, fi in enumerate(self.dataInfo):
             try:
                 fname = Path(self.data[ifile].filename()).name
             except:
                 fname = "None:"
 
-            txt += f"{fname}\n"
+            txt.append(f"{fname}")
             for di in fi:
                 shapetxt = f"({di['nB'][0]}, {di['nB'][1]})"
-                txt += f"\t{di['arr']}{shapetxt}\n"
+                txt.append(f"\t{di['arr']}{shapetxt}")
+                txt.append("\n".join([f"\t\t{d}" for d in di["data"]]))
+        return "\n".join(txt)
 
-                for ddi in di['data']:
-                    txt += f"\t\t{ddi}\n"
-        return txt
-
-    # TODO: Finish these two state methods
     def __getstate__(self) -> object:
         """Return the state of the class.
 
@@ -353,16 +352,9 @@ class oimData(object):
         attributes that contain it as it is not serialisable
         """
         state = self.__dict__.copy()
-        oimOptions.tmp.data = self.data
-        oimOptions.tmp.dataInfo = self.dataInfo
-        oimOptions.tmp.struct_dataType = self.struct_dataType
-        oimOptions.tmp.struct_arrType = self.struct_arrType
         del state["_data"]
+        del state["_filteredData"]
         return state
-
-    def __setstate__(self, state: object) -> None:
-        self.__dict__.update(state)
-        self._data = oimOptions.tmp.data
 
     @property
     def data(self) -> None:

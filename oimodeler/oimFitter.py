@@ -508,8 +508,8 @@ class oimFitterDynesty(oimFitter):
         sample = kwargs.pop("sample", "rwalk")
         bound = kwargs.pop("bound", "multi")
 
-        samplerFile = kwargs.pop("samplerFile", None)
         # TODO: Implement the loading of the sampler
+        samplerFile = kwargs.pop("samplerFile", None)
         if samplerFile is None:
             self.sampler = self.sampler(
                     self._logProbability, self._ptform, self.nfree,

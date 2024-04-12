@@ -62,15 +62,15 @@ fit.prepare(init="random")
 pprint(fit.initialParams)
 fit.run(nsteps=2000, progress=True)
 
+# Get results from the fit (updates the class internal logic)
+median, err_l, err_u, err = fit.getResults(mode='median', discard=1000)
+
 # %%
 figWalkers, axeWalkers = fit.walkersPlot(
     savefig=save_dir / "gettingStarted_Walkers.png")
 
 figCorner, axeCorner = fit.cornerPlot(discard=1000,
                                       savefig=save_dir / "gettingStarted_corner.png")
-
-# %%
-median, err_l, err_u, err = fit.getResults(mode='median', discard=1000)
 
 figSim, axSim = fit.simulator.plot(["VIS2DATA", "T3PHI"],
                                    savefig=save_dir / "gettingStarted_modelFinal.png")

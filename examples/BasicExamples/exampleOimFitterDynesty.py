@@ -40,6 +40,9 @@ fit.prepare(nlive=1000)
 # Perfoming the model-fitting
 fit.run(dlogz=0.010, progress=True)
 
+# Get results from the fit (updates the class internal logic)
+median, err_l, err_u, err = fit.getResults(mode="median")
+
 # %%
 class_name = fit.__class__.__name__
 class_name = class_name[0].upper() + class_name[1:]
@@ -47,7 +50,6 @@ figWalkers, axeWalkers = fit.walkersPlot(savefig=save_dir / f"example{class_name
 figCorner, axeCorner = fit.cornerPlot(savefig=save_dir / f"example{class_name}Corner.png")
 
 # %%
-median, err_l, err_u, err = fit.getResults(mode="median")
 
 # %%
 fig0, ax0 = fit.simulator.plot(["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],

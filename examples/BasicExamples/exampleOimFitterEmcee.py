@@ -44,11 +44,14 @@ fit = oim.oimFitterEmcee(files, model)
 fit.prepare(init="random", nwalkers=32)
 
 # pprinting the initial values of the walkers
-pprint(f"Initial values of the free parameters for the {fit.params['nwalkers'].value} walkers")
+pprint(f"Initial values of the free parameters for the {fit.nwalkers} walkers")
 pprint(fit.initialParams)
 
 # run a 1000 steps fit with fixed starting inital and 1000 steps
 fit.run(nsteps=2000, progress=True)
+
+# Get results from the fit (updates the class internal logic)
+median, err_l, err_u, err = fit.getResults(mode="median", discard=1000, chi2limfact=20)
 
 # %%
 sampler = fit.sampler
@@ -62,9 +65,6 @@ figWalkers, axeWalkers = fit.walkersPlot(cmap="plasma_r",
                                          savefig=save_dir / f"example{class_name}Walkers.png")
 figCorner, axeCorner = fit.cornerPlot(discard=1000,
                                       savefig=save_dir / f"example{class_name}Corner.png")
-
-# %%
-median, err_l, err_u, err = fit.getResults(mode="median", discard=1000, chi2limfact=20)
 
 # %%
 fig0, ax0 = fit.simulator.plot(["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],
