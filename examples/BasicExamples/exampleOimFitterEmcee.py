@@ -36,12 +36,12 @@ pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
 # Create a new fitter with 32 walkers and the list of oifits files and the model
-fit = oim.oimFitterEmcee(files, model, nwalkers=32)
+fit = oim.oimFitterEmcee(files, model)
 # pprint(fit._logProbability([0,10,1,5]))
 
 # Prepare the fitter. Here we set the intial positions of all walkers to
 # the current parameters values of our model.
-fit.prepare(init="random")
+fit.prepare(init="random", nwalkers=32)
 
 # pprinting the initial values of the walkers
 pprint(f"Initial values of the free parameters for the {fit.params['nwalkers'].value} walkers")
@@ -56,7 +56,8 @@ chain = fit.sampler.chain
 lnprob = fit.sampler.lnprobability
 
 # %%
-class_name = fit.__class__.__name__.title()
+class_name = fit.__class__.__name__
+class_name = class_name[0].upper() + class_name[1:]
 figWalkers, axeWalkers = fit.walkersPlot(cmap="plasma_r",
                                          savefig=save_dir / f"example{class_name}Walkers.png")
 figCorner, axeCorner = fit.cornerPlot(discard=1000,

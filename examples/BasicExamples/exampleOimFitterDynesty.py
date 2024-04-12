@@ -31,17 +31,18 @@ pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
 # Create a new fitter with 500 live points and the list of oifits files and the model
-fit = oim.oimFitterDynesty(files, model, nlive=500)
+fit = oim.oimFitterDynesty(files, model)
 
 # Prepare the fitter. Here we set the intial positions of all walkers to
 # the current parameters values of our model.
-fit.prepare()
+fit.prepare(nlive=1000)
 
 # Perfoming the model-fitting
 fit.run(dlogz=0.010, progress=True)
 
 # %%
-class_name = fit.__class__.__name__.title()
+class_name = fit.__class__.__name__
+class_name = class_name[0].upper() + class_name[1:]
 figWalkers, axeWalkers = fit.walkersPlot(savefig=save_dir / f"example{class_name}Walkers.png")
 figCorner, axeCorner = fit.cornerPlot(savefig=save_dir / f"example{class_name}Corner.png")
 

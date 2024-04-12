@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
-from typing import Dict
+from typing import Dict, Optional, Tuple
+from pathlib import Path
 
 import corner
 import emcee
@@ -8,15 +9,39 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from scipy.optimize import minimize
 from dynesty import DynamicNestedSampler, NestedSampler
 from dynesty import plotting as dyplot
 
-from .oimParam import oimParam
 from .oimSimulator import oimSimulator
 
 
 class oimFitter:
+    """A class that fits the model to the data.
+
+    Attributes
+    ----------
+    simulator : .oimSimulator.oimSimulator
+        The simulator object that contains the data and the model.
+    dataTypes : list
+        The list of data types to be used in the computation of the chi2
+    data : .oimData.oimData
+        The data object that contains the data.
+    model : .oimModel.oimModel
+        The model object that will be fitted to the data.
+    isPrepared : bool
+        A boolean that indicates if the fitter has been prepared.
+    params : dict
+        The parameters of the fitter.
+    freeParams : dict
+        A dictionary of the free parameters of the model.
+    nfree : int
+        The number of free parameters of the model.
+    limits : dict
+        The limits of the free parameters.
+    """
     params = {}
 
     def __init__(self, *args, **kwargs):
@@ -28,7 +53,6 @@ class oimFitter:
         else:
             raise TypeError("Wrong number of arguments")
 
-        self.ncores, self.pool = None, None
         self.dataTypes = kwargs.pop("dataTypes", None)
         self.data = self.simulator.data
         self.model = self.simulator.model
@@ -36,15 +60,6 @@ class oimFitter:
         self.isPrepared = False
 
         self._eval(**kwargs)
-
-    def __getstate__(self) -> Dict:
-       """Used for serializing instances.
-
-       Copies the state of the class and removes unpicklable entries.
-       """
-       state = self.__dict__.copy()
-       del state["pool"]
-       return state
 
     def _eval(self, **kwargs) -> Dict:
         """Evaluate the parameters of the fitter."""
@@ -54,17 +69,8 @@ class oimFitter:
 
         return kwargs
 
-    def stop_pool(self):
-        """Stops the pool if it is not None."""
-        if self.pool is not None:
-            self.pool.close()
-            self.pool.join()
-            self.pool = None
-
-    def prepare(self, **kwargs):
-        self.pool = kwargs.pop("pool", None)
-        self.ncores = kwargs.pop("ncores", None)
-
+    def prepare(self, **kwargs) -> Dict:
+        """Prepare the fitter for the model-fitting."""
         self.freeParams = self.model.getFreeParameters()
         self.nfree = len(self.freeParams)
 
@@ -80,11 +86,11 @@ class oimFitter:
         self.isPrepared = True
         return kwargs
 
-    def run(self, **kwargs):
+    def run(self, **kwargs) -> Dict:
+        """Run the model-fitting."""
         if not self.isPrepared:
             raise TypeError("Fitter not initialized")
         self._run(**kwargs)
-        self.stop_pool()
         return kwargs
 
     def getResults(self, **kwargs):
@@ -92,7 +98,14 @@ class oimFitter:
         """
         return 0
 
-    def printResults(self, format=".5f", **kwargs):
+    def printResults(self, format: Optional[str] = ".5f", **kwargs) -> None:
+        """Print the results of the model-fitting.
+
+        Parameters
+        ----------
+        format : str
+            The format of the output.
+        """
         res = self.getResults(**kwargs)
         chi2r = self.simulator.chi2r
         pm = u'\xb1'
@@ -101,19 +114,60 @@ class oimFitter:
         print(f"chi2r = {chi2r:{format}}")
 
     def _prepare(self, **kwargs):
+        """Prepare the fitter for the model-fitting."""
         return kwargs
 
     def _run(self, **kwargs):
+        """Run the model-fitting."""
         return kwargs
 
 
 class oimFitterEmcee(oimFitter):
-    def __init__(self, *args, **kwargs):
-        self.params["nwalkers"] = oimParam(name="nwalkers", value=16, mini=1,
-                                           description="Number of walkers")
-        super().__init__(*args, **kwargs)
+    """The emcee fitter. It uses the emcee package to fit the model to the data.
 
-    def _prepare(self, **kwargs):
+    Attributes
+    ----------
+    simulator : .oimSimulator.oimSimulator
+        The simulator object that contains the data and the model.
+    dataTypes : list
+        The list of data types to be used in the computation of the chi2
+    data : .oimData.oimData
+        The data object that contains the data.
+    model : .oimModel.oimModel
+        The model object that will be fitted to the data.
+    isPrepared : bool
+        A boolean that indicates if the fitter has been prepared.
+    params : dict
+        The parameters of the fitter.
+    freeParams : dict
+        A dictionary of the free parameters of the model.
+    nfree : int
+        The number of free parameters of the model.
+    nwalkers : int
+        The number of walkers.
+    limits : dict
+        The limits of the free parameters.
+    initialParams : np.ndarray
+        The initial parameters of the model.
+    sampler : emcee.EnsembleSampler
+        The emcee sampler.
+    """
+    def _prepare(self, **kwargs) -> Dict:
+        """Prepare the emcee fitter.
+
+        Parameters
+        ----------
+        nwalkers : int, optional
+            The number of walkers. Default is 16.
+        pool : multiprocessing.Pool, optional
+            The pool of workers. Default is None.
+        init : str, optional
+            The initialisation method. It can be either 'random', 'fixed' or 'gaussian'.
+            Default is 'random'.
+        """
+        self.nwalkers = kwargs.pop("nwalkers", 16)
+        pool = kwargs.pop("pool", None)
+
         init = kwargs.pop("init", "random")
         if init == "random":
             self.initialParams = self._initRandom()
@@ -129,55 +183,55 @@ class oimFitterEmcee(oimFitter):
         samplerFile = kwargs.pop("samplerFile", None)
         if samplerFile is None:
             self.sampler = emcee.EnsembleSampler(
-                    self.params["nwalkers"].value,
-                    self.nfree, self._logProbability,
-                    pool=self.pool, moves=moves, **kwargs)
+                    self.nwalkers, self.nfree,
+                    self._logProbability,
+                    pool=pool, moves=moves, **kwargs)
         else:
             backend = emcee.backends.HDFBackend(samplerFile)
             self.sampler = emcee.EnsembleSampler(
-                    self.params["nwalkers"].value,
-                    self.nfree, self._logProbability,
-                    pool=self.pool, moves=moves,
+                    self.nwalkers, self.nfree,
+                    self._logProbability,
+                    pool=pool, moves=moves,
                     backend=backend, **kwargs)
         return kwargs
 
-    def _initGaussian(self):
-        nw = self.params["nwalkers"].value
-        initialParams = np.ndarray([nw, self.nfree])
+    def _initGaussian(self) -> np.ndarray:
+        """Initialise the parameters with a Gaussian distribution."""
+        initialParams = np.ndarray([self.nwalkers, self.nfree])
 
         for iparam, parami in enumerate(self.freeParams.values()):
             initialParams[:, iparam] = \
-                np.random.normal(parami.value, parami.error,
-                                 self.params["nwalkers"].value)
+                np.random.normal(parami.value, parami.error, self.nwalkers)
         return initialParams
 
-    def _initRandom(self):
-        nw = self.params["nwalkers"].value
-        initialParams = np.ndarray([nw, self.nfree])
+    def _initRandom(self) -> np.ndarray:
+        """Initialise the parameters with a random distribution."""
+        initialParams = np.ndarray([self.nwalkers, self.nfree])
 
         for iparam, parami in enumerate(self.freeParams.values()):
             initialParams[:, iparam] = np.random.random(
-                self.params["nwalkers"].value)*(parami.max-parami.min)+parami.min
+                self.nwalkers)*(parami.max-parami.min)+parami.min
 
         return initialParams
 
-    def _initFixed(self):
-        nw = self.params["nwalkers"].value
-        initialParams = np.ndarray([nw, self.nfree])
+    def _initFixed(self) -> np.ndarray:
+        """Initialise the parameters with a fixed distribution."""
+        initialParams = np.ndarray([self.nwalkers, self.nfree])
 
         for iparam, parami in enumerate(self.freeParams.values()):
-            initialParams[:, iparam] = np.ones(nw)*parami.value
+            initialParams[:, iparam] = np.ones(self.nwalkers)*parami.value
 
         return initialParams
 
-    def _run(self, **kwargs):
+    def _run(self, **kwargs) -> Dict:
+        """Run the model-fitting."""
         self.sampler.run_mcmc(self.initialParams, **kwargs)
-        # TODO: The get results might not work with the pool
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
     # parametrisation
-    def _logProbability(self, theta):
+    def _logProbability(self, theta: np.ndarray):
+        """The log probability."""
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = theta[iparam]
 
@@ -190,7 +244,33 @@ class oimFitterEmcee(oimFitter):
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
         return -0.5 * self.simulator.chi2r
 
-    def getResults(self, mode="best", discard=0, chi2limfact=20, **kwargs):
+    def getResults(self, mode: Optional[str] = "best",
+                   discard: Optional[int] = 0,
+                   chi2limfact: Optional[float] = 20.,
+                   **kwargs) -> Tuple[np.ndarray]:
+        """Get the results of the model-fitting.
+
+        Parameters
+        ----------
+        mode : str, optional
+            The mode of the results. It can be either 'best', 'mean' or 'median'.
+            Default is 'best'.
+        discard : int, optional
+            The number of steps to discard. Default is 0.
+        chi2limfact : float, optional
+            The factor of the minimum chi2r to consider. Default is 20.
+
+        Returns
+        -------
+        res : np.ndarray
+            The results of the model-fitting.
+        err : np.ndarray
+            The errors of the results.
+        err_m : np.ndarray
+            The negative errors of the results.
+        err_p : np.ndarray
+            The positive errors of the results.
+        """
         chi2 = -2*self.sampler.get_log_prob(discard=discard, flat=True)
         chain = self.sampler.get_chain(discard=discard, flat=True)
 
@@ -226,7 +306,27 @@ class oimFitterEmcee(oimFitter):
 
         return res, err, err_m, err_p
 
-    def cornerPlot(self, discard=0, chi2limfact=20, savefig=None, **kwargs):
+    def cornerPlot(self, discard: Optional[int] = 0,
+                   chi2limfact: Optional[float] = 20.,
+                   savefig: Optional[Path] = None, **kwargs) -> Tuple[Figure, Axes]:
+        """Make a corner plot of the results.
+
+        Parameters
+        ----------
+        discard : int, optional
+            The number of steps to discard. Default is 0.
+        chi2limfact : float, optional
+            The factor of the minimum chi2r to consider. Default is 20.
+        savefig : str, optional
+            The name of the file to save the figure. Default is None.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+            The figure of the corner plot.
+        ax : matplotlib.axes.Axes
+            The axes of the corner plot.
+        """
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
 
@@ -255,8 +355,30 @@ class oimFitterEmcee(oimFitter):
 
         return fig, fig.axes
 
-    def walkersPlot(self, savefig=None, chi2limfact=20,
-                    labelsize=10, ncolors=128, **kwargs):
+    def walkersPlot(self, savefig: Optional[Path] = None,
+                    chi2limfact: Optional[float] = 20.,
+                    labelsize: Optional[int] = 10,
+                    ncolors: Optional[int] = 128, **kwargs) -> Tuple[Figure, Axes]:
+        """Make a walkers plot of the results.
+
+        Parameters
+        ----------
+        savefig : str, optional
+            The name of the file to save the figure. Default is None.
+        chi2limfact : float, optional
+            The factor of the minimum chi2r to consider. Default is 20.
+        labelsize : int, optional
+            The size of the labels. Default is 10.
+        ncolors : int, optional
+            The number of colors. Default is 128.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+            The figure of the walkers plot.
+        ax : matplotlib.axes.Axes
+            The axes of the walkers plot.
+        """
         fig, ax = plt.subplots(self.nfree, figsize=(10, 7), sharex=True)
         if self.nfree == 1:
             ax = np.array([ax])
@@ -328,17 +450,60 @@ class oimFitterEmcee(oimFitter):
         
 
 class oimFitterDynesty(oimFitter):
-    """A multinested fitter that has generally a better coverage of the 
-    global (than MCMC) parameter space."""
+    """The dynesty fitter. It uses the dynesty package to fit the model to the data.
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    Attributes
+    ----------
+    simulator : .oimSimulator.oimSimulator
+        The simulator object that contains the data and the model.
+    dataTypes : list
+        The list of data types to be used in the computation of the chi2
+    data : .oimData.oimData
+        The data object that contains the data.
+    model : .oimModel.oimModel
+        The model object that will be fitted to the data.
+    isPrepared : bool
+        A boolean that indicates if the fitter has been prepared.
+    params : dict
+        The parameters of the fitter.
+    freeParams : dict
+        A dictionary of the free parameters of the model.
+    nfree : int
+        The number of free parameters of the model.
+    limits : dict
+        The limits of the free parameters.
+    method : str
+        The method used for sampling, either "dynamic" or "static".
+    sampler : dynesty.NestedSampler or dynesty.DynamicNestedSampler
+        The dynesty sampler.
+    """
+    def _prepare(self, **kwargs) -> Dict:
+        """Prepares the dynesty fitter.
+
+        Parameters
+        ----------
+        method : str, optional
+            The method used for sampling, either "dynamic" or "static".
+            Default is "static".
+        ncores : int, optional
+            The number of cores. Default is 1.
+        pool : multiprocessing.Pool, optional
+            The pool of workers. Default is None.
+        nlive : int, optional
+            The number of live points. Default is 1000.
+        sample : str, optional
+            The sample method. Default is "rwalk".
+        bound : str, optional
+            The bound method. Default is "multi".
+        samplerFile : str, optional
+            The name of the sampler file. Default is None.
+        """
         self.method = kwargs.pop("method", "static")
         samplers = {"dynamic": DynamicNestedSampler, "static": NestedSampler}
         self.sampler = samplers[self.method]
 
-    def _prepare(self, **kwargs):
-        """Prepares the dynesty fitter."""
+        ncores = kwargs.pop("ncores", 1)
+        pool = kwargs.pop("pool", None)
         nlive = kwargs.pop("nlive", 1000)
         sample = kwargs.pop("sample", "rwalk")
         bound = kwargs.pop("bound", "multi")
@@ -349,7 +514,7 @@ class oimFitterDynesty(oimFitter):
             self.sampler = self.sampler(
                     self._logProbability, self._ptform, self.nfree,
                     nlive=nlive, sample=sample, bound=bound,
-                    queue_size=self.ncores, pool=self.pool,
+                    queue_size=ncores, pool=pool,
                     update_interval=self.nfree, **kwargs)
         else:
             ...
@@ -384,7 +549,26 @@ class oimFitterDynesty(oimFitter):
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
         return -0.5 * self.simulator.chi2r
 
-    def getResults(self, mode="median", **kwargs):
+    def getResults(self, mode: Optional[str] = "median", **kwargs) -> Tuple[np.ndarray]:
+        """Get the results of the model-fitting.
+
+        Parameters
+        ----------
+        mode : str, optional
+            The mode of the results. It can be either 'best', 'mean' or 'median'.
+            Default is 'median'.
+
+        Returns
+        -------
+        res : np.ndarray
+            The results of the model-fitting.
+        err : np.ndarray
+            The errors of the results.
+        err_m : np.ndarray
+            The negative errors of the results.
+        err_p : np.ndarray
+            The positive errors of the results.
+        """
         if mode == "median":
             samples = self.sampler.results.samples
             quantiles = np.percentile(samples, [10, 50, 84], axis=0)
@@ -404,7 +588,21 @@ class oimFitterDynesty(oimFitter):
 
         return res, err, err_m, err_p
 
-    def cornerPlot(self, savefig=None, **kwargs):
+    def cornerPlot(self, savefig: Optional[Path] = None, **kwargs) -> Tuple[Figure, Axes]:
+        """Make a corner plot of the results.
+
+        Parameters
+        ----------
+        savefig : str, optional
+            The name of the file to save the figure. Default is None.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+            The figure of the corner plot.
+        ax : matplotlib.axes.Axes
+            The axes of the corner plot.
+        """
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
 
@@ -418,7 +616,7 @@ class oimFitterDynesty(oimFitter):
         for namei, uniti in zip(pnames, punits):
             txt = namei
             if uniti.to_string() != "":
-                txt += " ("+uniti.to_string()+")"
+                txt += f" ({uniti.to_string()})"
             labels.append(txt)
 
         results = self.sampler.results
@@ -431,7 +629,21 @@ class oimFitterDynesty(oimFitter):
 
         return fig, fig.axes
 
-    def walkersPlot(self, savefig=None, **kwargs):
+    def walkersPlot(self, savefig: Optional[Path] = None, **kwargs) -> Tuple[Figure, Axes]:
+        """Make a walkers plot of the results.
+
+        Parameters
+        ----------
+        savefig : str, optional
+            The name of the file to save the figure. Default is None.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+            The figure of the walkers plot.
+        ax : matplotlib.axes.Axes
+            The axes of the walkers plot.
+        """
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
 
@@ -459,38 +671,80 @@ class oimFitterDynesty(oimFitter):
         
 
 class oimFitterMinimize(oimFitter):
-    def __init__(self, *args, **kwargs):
+    """The minimize fitter. It uses the scipy.optimize.minimize function
+    to fit the model to the data.
 
-        self.params["method"] = oimParam(name="method", value=None, mini=1,
-                                           description="Number of walkers")
-        super().__init__(*args, **kwargs)
-    
-    def _prepare(self, **kwargs):
-        self.pool = kwargs.pop("pool", None)
-        self.ncores = kwargs.pop("ncores", None)
 
-        self.initialParams = []
-        if "initialParams" not in kwargs:
+    Attributes
+    ----------
+    simulator : .oimSimulator.oimSimulator
+        The simulator object that contains the data and the model.
+    dataTypes : list
+        The list of data types to be used in the computation of the chi2
+    data : .oimData.oimData
+        The data object that contains the data.
+    model : .oimModel.oimModel
+        The model object that will be fitted to the data.
+    isPrepared : bool
+        A boolean that indicates if the fitter has been prepared.
+    params : dict
+        The parameters of the fitter.
+    freeParams : dict
+        A dictionary of the free parameters of the model.
+    nfree : int
+        The number of free parameters of the model.
+    limits : dict
+        The limits of the free parameters.
+    method : str
+        The method used for minimization. Default is None.
+    initialParams : np.ndarray
+        The initial parameters of the model.
+    """
+    def _prepare(self, **kwargs) -> Dict:
+        """Prepare the minimize fitter.
+
+        Parameters
+        ----------
+        method : str, optional
+            The method used for minimization. Default is None.
+        pool : multiprocessing.Pool, optional
+            The pool of workers. Default is None.
+        initialParams : list, optional
+            The initial parameters of the model. Default is [].
+        """
+        self.method = kwargs.pop("method", None)
+        pool = kwargs.pop("pool", None)
+
+        self.initialParams = kwargs.pop("initialParams", [])
+        if self.initialParams:
             for _, parami in enumerate(self.freeParams.values()):
                 self.initialParams.append(parami.value) 
-        else:
-            self.initialParams = kwargs["initialParams"]
         return kwargs    
         
-    def _getChi2r(self, theta):
+    def _getChi2r(self, theta: np.ndarray) -> float:
+        """The chi2r function."""
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = theta[iparam]
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
         return self.simulator.chi2r
             
     def _run(self, **kwargs):
+        """Run the model-fitting."""
         self.res = minimize(self._getChi2r, self.initialParams)
         self.getResults()
         return kwargs
     
-    def getResults(self, **kwargs):
-        values = self.res.x
-        errors = np.diag(self.res.hess_inv)**0.5
+    def getResults(self, **kwargs) -> Tuple[np.ndarray]:
+        """Get the results of the model-fitting.
+
+        Returns
+        -------
+        values : np.ndarray
+            The values of the model's parameters.
+        errors : np.ndarray
+            The errors of the model's parameters.
+        """
+        values, errors = self.res.x, np.diag(self.res.hess_inv)**0.5
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = values[iparam]
             parami.error = errors[iparam]
