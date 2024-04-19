@@ -36,12 +36,12 @@ pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
 # Create a new fitter with 32 walkers and the list of oifits files and the model
-fit = oim.oimFitterEmcee(files, model)
+fit = oim.oimFitterEmcee(files, model, nwalkers=32)
 # pprint(fit._logProbability([0,10,1,5]))
 
 # Prepare the fitter. Here we set the intial positions of all walkers to
 # the current parameters values of our model.
-fit.prepare(init="random", nwalkers=32)
+fit.prepare(init="random")
 
 # pprinting the initial values of the walkers
 pprint(f"Initial values of the free parameters for the {fit.nwalkers} walkers")

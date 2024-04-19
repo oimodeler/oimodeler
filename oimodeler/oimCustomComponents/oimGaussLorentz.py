@@ -28,7 +28,6 @@ class oimGaussLorentz(oimEGauss):
     def _imageFunction(self, xx, yy, wl, t):
         fwhm, radius = self.params["fwhm"](wl, t), np.hypot(xx, yy)
         flor = self.params["flor"](wl, t)
-        image_gauss = np.sqrt(4*np.log(2)*fwhm/np.pi)\
-            * np.exp(-4*np.log(2)*radius**2/fwhm**2)
+        image_gauss = 4*np.log(2)/(np.pi*fwhm**2)*np.exp(-4*(radius/fwhm)**2*np.log(2))
         image_lor = fwhm/(4*np.pi*np.sqrt(3))*(fwhm**2/12+radius**2)**(-1.5)
         return (1-flor)*image_gauss + flor*image_lor

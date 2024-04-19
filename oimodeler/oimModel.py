@@ -43,6 +43,20 @@ class oimModel:
         else:
             self.components = components
 
+    def __str__(self):
+        """Return a string representation of the model"""
+        return "\n".join(["Model with", *[comp.__str__() for comp in self.components]])
+
+    def __repr__(self):
+        """Return a string representation of the model"""
+        return "\n".join([f"oimModel at {str(hex(id(self)))}:",
+                          *[comp.__repr__() for comp in self.components]])
+
+    @property
+    def shortname(self):
+        """Return a short name of the model"""
+        return " + ".join([comp.shortname for comp in self.components])
+
     def getComplexCoherentFlux(self, ucoord: ArrayLike, vcoord: ArrayLike,
                                wl: Optional[ArrayLike] = None,
                                t: Optional[ArrayLike] = None) -> np.ndarray:
@@ -407,7 +421,7 @@ class oimModel:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
 
         if savefig is not None:
-            plt.savefig(savefig)
+            plt.savefig(savefig, dpi=300)
 
         if rebin:
             im = rebin_image(im)
@@ -577,24 +591,3 @@ class oimModel:
         if savefig is not None:
             plt.savefig(savefig)
         return fig, axe, im
-    
-    def __str__(self):
-        txt = "Model with "
-        for comp in self.components:
-            txt += "\n" 
-            txt += comp.__str__()
-        return txt
-    
-    def __repr__(self):
-        txt = "oimModel at " + str(hex(id(self))) + " : "
-        for comp in self.components:
-            txt += "\n"             
-            txt += comp.__repr__()
-        return txt
-
-    @property
-    def shortname(self):
-        txt=""
-        for _, compi in enumerate(self.components):
-            txt+=f"{compi.shortname} + "
-        return txt[:-3]
