@@ -45,19 +45,22 @@ print("Pre-fit Chi2r: ", sim.chi2r)
 # NOTE: Perfoming the model-fitting
 fit = oim.oimFitterEmcee(data, model, nwalkers=32)
 
-# fit.prepare(init="random")
-# fit.run(nsteps=2000, progress=True)
+fit.prepare(init="random")
+fit.run(nsteps=2000, progress=True)
 
-# best, err_l, err_u, err = fit.getResults(mode="median")
-# figWalkers, axeWalkers = fit.walkersPlot(savefig=save_dir / f"ExampleOim{gl.shortname}_walkers.png")
-# figCorner, axeCorner = fit.cornerPlot(savefig=save_dir / f"ExampleOim{gl.shortname}_corner.png")
-# fig0, ax0 = fit.simulator.plot(["VIS2DATA"], savefig=save_dir / f"ExampleOim{gl.shortname}_fit.png")
-# print("Chi2r: ", fit.simulator.chi2r)
-# plt.close()
+best, err_l, err_u, err = fit.getResults(mode="median")
+figWalkers, axeWalkers = fit.walkersPlot(savefig=save_dir / f"ExampleOim{gl.shortname}_walkers.png")
+figCorner, axeCorner = fit.cornerPlot(savefig=save_dir / f"ExampleOim{gl.shortname}_corner.png")
+fig0, ax0 = fit.simulator.plot(["VIS2DATA"], savefig=save_dir / f"ExampleOim{gl.shortname}_fit.png")
+print("Chi2r: ", fit.simulator.chi2r)
+plt.close()
 
 print("Free Parameters: ")
 pprint(fit.simulator.model.getParameters(free=True))
 
 # NOTE: Plotting images of the model
-model.showModel(512, 0.01, swapAxes=True, fromFT=False, normPow=1, colorbar=False)
+model.showModel(512, 0.02, swapAxes=True, fromFT=False, normPow=0.5, colorbar=False)
 plt.savefig(save_dir / f"ExampleOim{gl.shortname}_images.png")
+
+model.showModel(512, 0.02, swapAxes=True, fromFT=True, normPow=0.5, colorbar=False)
+plt.savefig(save_dir / f"ExampleOim{gl.shortname}_images_from_ft.png")

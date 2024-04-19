@@ -68,11 +68,11 @@ fig0, ax0 = sim.plot(["VIS2DATA", "T3PHI"], savefig=save_dir / f"ExampleOim{shgl
 # NOTE: Perfect parameter chi_sqr is a bit higher than Lazareff+2017 (chi_sqr = 1.53)
 print("Pre-fit Chi2r (with Lazareff+2017 best-fit params): ", sim.chi2r)
 
-# NOTE: Perfoming the model-fitting
-fit = oim.oimFitterDynesty(data, model, method="dynamic")
+# # NOTE: Perfoming the model-fitting
+# fit = oim.oimFitterDynesty(data, model, method="dynamic")
 
-# NOTE: Overwrite the existing _logProbability method of the class "fit"
-fit._logProbability = lambda theta: _logProbability(fit, theta)
+# # NOTE: Overwrite the existing _logProbability method of the class "fit"
+# fit._logProbability = lambda theta: _logProbability(fit, theta)
 
 # fit.prepare(nlive=2000)
 # fit.run(progress=True)
@@ -87,6 +87,10 @@ fit._logProbability = lambda theta: _logProbability(fit, theta)
 # pprint(fit.simulator.model.getParameters(free=True))
 
 # NOTE: Plotting images of the model
-model.showModel(128, 0.15, swapAxes=True, fromFT=False,
-                normPow=1, colorbar=False)
+model.showModel(512, 0.02, swapAxes=True, fromFT=False,
+                wl=1.68e-6, normPow=0.5, colorbar=False)
 plt.savefig(save_dir / f"ExampleOim{shglr.shortname}_images.png")
+
+model.showModel(512, 0.02, swapAxes=True, fromFT=True,
+                wl=1.68e-6, normPow=0.5, colorbar=False)
+plt.savefig(save_dir / f"ExampleOim{shglr.shortname}_images_from_ft.png")

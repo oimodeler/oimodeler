@@ -15,41 +15,41 @@ class oimStarHaloGaussLorentz(oimGaussLorentz):
     def __init__(self, **kwargs):
         super(). __init__(**kwargs)
         self.params["fs"] = oimParam(**_standardParameters["f"])
+        self.params["fs"].name = "fs"
         self.params["fc"] = oimParam(**_standardParameters["f"])
+        self.params["fc"].name = "fc"
+        self.params["fh"] = oimParam(**_standardParameters["f"])
+        self.params["fh"].name = "fh"
         self.params["kc"] = oimParam(**_standardParameters["p"])
         self.params["kc"].description = "Photometric slope of the disk component"
-        self.params["fwhm"] = oimParam(**_standardParameters["fwhm"])
-
+        self.params["kc"].name = "kc"
         self.params["ks"] = oimParam(**_standardParameters["p"])
         self.params["ks"].description = "Photometric slope of the star component"
+        self.params["ks"].name = "ks"
         self.params["ks"].free = False
         self.params["wl0"] = oimParam(**_standardParameters["wl"])
+        self.params["wl0"].name = "wl0"
         self.params["wl0"].description = "Central wavelength"
         self.params["wl0"].free = False
-
         self._t = np.array([0])
         self._wl = None
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
         fs, fc = self.params["fs"](wl, t), self.params["fc"](wl, t)
-        fh, kc, ks = 1-(fs+fc), self.params["kc"](wl, t), self.params["ks"](wl, t)
+        fh, kc, ks = self.params["fh"](wl, t), self.params["kc"](wl, t), self.params["ks"](wl, t)
         wavelength_ratio = self.params["wl0"](wl, t)/wl
 
         vis_star = fs*wavelength_ratio**ks
-        divisor = (fh+fs)*wavelength_ratio**ks + fc*wavelength_ratio**kc
-        vis_disk = super()._visFunction(xp, yp, rho, wl, t)
-        vis_comp = fc*vis_disk*wavelength_ratio**kc
+        vis_comp = fc*super()._visFunction(xp, yp, rho, wl, t)*wavelength_ratio**kc
+        divisor = (fs+fh)*wavelength_ratio**ks + fc*wavelength_ratio**kc
         return (vis_star+vis_comp)/divisor
 
-    # TODO: Maybe include the wavelength dependent ratios (with the exponents here)
     def _imageFunction(self, xx, yy, wl, t):
-        fs, fc = self.params["fs"](wl, t), self.params["fc"](wl, t)
-        fh = 1-(fs+fc)
         val = np.abs(xx)+np.abs(yy)
         idx = np.unravel_index(np.argmin(val), np.shape(val))
         image_disk = super()._imageFunction(xx, yy, wl, t)
-        image_disk[idx] += fs+fh
+        image_disk[idx] += self.params["fs"](wl, t) + self.params["fh"](wl, t)
         return image_disk
 
 
@@ -132,7 +132,7 @@ class oimStarHaloIRing(oimGaussLorentz):
         dx = np.max([np.abs(1.*(xx[0, 0, 0, 1]-xx[0, 0, 0, 0])),
                      np.abs(1.*(yy[0, 0, 1, 0]-yy[0, 0, 0, 0]))])
 
-        radial_profile = (radius <= rin) & (radius >= rin+dx)
+        radial_profile = (radius >= rin) & (radius <= rin+dx)
         image_ring = 1/(2*np.pi)*radius*radial_profile
         image_ring *= 1 + c*np.cos(polar_angle) + s*np.sin(polar_angle)
         image_disk = fftconvolve(image_gausslor, image_ring, mode="same")
@@ -140,7 +140,7 @@ class oimStarHaloIRing(oimGaussLorentz):
         return image_disk
 
 
-class oimStarHaloRing(oimGaussLorentz):
+class oimStarHaloRing(oimStarHaloIRing):
     name = "Star and Halo component with Gauss-Lorentzian ring convolved disk"
     shortname = "SHGLR"
     thin = False
