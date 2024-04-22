@@ -38,11 +38,15 @@ wl, ks = oim.compute_photometric_slope(data, 7500)
 ks = oim.oimInterp('multiParam', values=ks, wl=wl)
 
 # NOTE: Specifying the parameter space (best-fit parameters from Lazareff+2017)
-shglr = oim.oimStarHaloIRing(fs=0.45, fc=0.53,
-                             pa=2.84*u.rad.to(u.deg), elong=1/0.5,
-                             rin=0.6381143066747668, fwhm=2*0.8607925145549679,
-                             flor=0.58, ks=ks, a=0.04, phi=180,
-                             kc=-4.18, wl0=1.68*u.um.to(u.m))
+shglr = oim.oimStarHaloIRing(fs=0.55, fc=0.34, flor=1,
+                             pa=2.66*u.rad.to(u.deg),
+                             elong=1/0.69,
+                             rin=2.25288818328784,
+                             fwhm=1.3574993711937327,
+                             ks=ks, kc=-2.43,
+                             a=0.2404163056034262,
+                             phi=-135,
+                             wl0=1.68e-06)
 
 shglr.params["kc"].set(min=-10, max=10)
 shglr.params["rin"].set(min=0, max=32)
