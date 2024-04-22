@@ -116,8 +116,6 @@ class oimStarHaloIRing(oimGaussLorentz):
         vis_comp = fc*vis_gausslor*vis_ring*wavelength_ratio**kc
         return (vis_star+vis_comp)/divisor
 
-    # TODO: Maybe include the wavelength dependent ratios (with the exponents here)
-    # FIXME:Right now not quite correctly implemented
     def _imageFunction(self, xx, yy, wl, t):
         fs, fc = self.params["fs"](wl, t), self.params["fc"](wl, t)
         fh, rin = 1-(fs+fc), self.params["rin"](wl, t)
