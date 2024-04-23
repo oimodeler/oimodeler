@@ -316,9 +316,7 @@ class oimRing2(oimComponentFourier):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["d"] = oimParam(**_standardParameters["d"])
-        self.params["w"] = oimParam(**_standardParameters["d"])
-        self.params["w"].name = "w"
-        self.params["w"].description = "width of the ring"
+        self.params["w"] = oimParam(**_standardParameters["w"])
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):

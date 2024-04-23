@@ -12,7 +12,7 @@ class oimGaussLorentz(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super(). __init__(**kwargs)
-        self.params["fwhm"] = oimParam(**_standardParameters["fwhm"])
+        self.params["hlr"] = oimParam(**_standardParameters["hlr"])
         self.params["flor"] = oimParam(**_standardParameters["f"])
         self.params["flor"].name = "flor"
         self._t = np.array([0])
@@ -20,13 +20,14 @@ class oimGaussLorentz(oimComponentFourier):
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
+        """The visibility function for the Gauss-Lorentzian model."""
         flor = self.params["flor"](wl, t)
-        xx = np.pi*self.params["fwhm"](wl, t)*self.params["fwhm"].unit.to(u.rad)*rho
-        return (1-flor)*np.exp(-xx**2/(4*np.log(2))) + flor*np.exp(-xx/np.sqrt(3))
+        xx = np.pi*self.params["hlr"](wl, t)*self.params["hlr"].unit.to(u.rad)*rho
+        return (1-flor)*np.exp(-xx**2/np.log(2)) + flor*np.exp(-2*xx/np.sqrt(3))
 
     def _imageFunction(self, xx, yy, wl, t):
-        fwhm, radius = self.params["fwhm"](wl, t), np.hypot(xx, yy)
-        flor = self.params["flor"](wl, t)
-        image_gauss = 4*np.log(2)/(np.pi*fwhm**2)*np.exp(-(radius/fwhm)**2*4*np.log(2))
-        image_lor = fwhm/(4*np.pi*np.sqrt(3))*(fwhm**2/12+radius**2)**(-1.5)
+        hlr, flor = self.params["hlr"](wl, t), self.params["flor"](wl, t)
+        radius = np.hypot(xx, yy)
+        image_gauss = np.log(2)/(np.pi*hlr**2)*np.exp(-(radius/hlr)**2*np.log(2))
+        image_lor = hlr/(2*np.pi*np.sqrt(3))*(hlr**2/3+radius**2)**(-3/2)
         return (1-flor)*image_gauss + flor*image_lor

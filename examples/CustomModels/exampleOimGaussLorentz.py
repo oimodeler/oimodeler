@@ -1,6 +1,7 @@
 from pathlib import Path
 from pprint import pprint
 
+import astropy.units as u
 import matplotlib.pyplot as plt
 import oimodeler as oim
 
@@ -16,16 +17,17 @@ if not save_dir.exists():
 # keep only VIS2DATA for model fitting
 # TODO: Examples files don't fit very well to this model
 path = Path(oim.__file__).parent.parent
-files = list((path / "data" / "RealData" / "PIONIER" / "nChannels3").glob("*.fits"))
+files = list((path / "data" / "RealData" / "PIONIER" / "HD142527").glob("*.fits"))
 data = oim.oimData(files)
 f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX", "OI_T3"])
 data.setFilter(f1)
 
 # NOTE: Specifying the parameter space
-gl = oim.oimGaussLorentz(dim=128, fwhm=2*1.0715, flor=1, pa=162, elong=2)
+gl = oim.oimGaussLorentz(hlr=10**0.06, flor=0.43,
+                         pa=0.12*u.rad.to(u.deg), elong=1/0.83)
 
-gl.params["fwhm"].set(min=0, max=32)
-gl.params["elong"].set(min=1, max=10)
+gl.params["hlr"].set(min=0, max=32)
+gl.params["elong"].set(min=1, max=4)
 gl.params["f"].free = False
 
 # NOTE: Model creation

@@ -1,6 +1,7 @@
 from pathlib import Path
 from pprint import pprint
 
+import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 import oimodeler as oim
@@ -27,7 +28,7 @@ def _logProbability(self, theta: np.ndarray) -> float:
     """The log probability for emcee so it keeps (fs + fc) <= 1"""
     keys_free_params = list(self.freeParams.keys())
     indices = tuple([index for index, element in enumerate(keys_free_params)
-                     if "fs" in element or "fc" in element or "fh" in element])
+                     if "fs" in element or "fc" in element])
 
     for iparam, parami in enumerate(self.freeParams.values()):
         parami.value = theta[iparam]
@@ -47,27 +48,24 @@ def _logProbability(self, theta: np.ndarray) -> float:
 # NOTE: Load the simulated data from ASPRO and apply some filter to
 # keep only VIS2DATA for model fitting
 path = Path(oim.__file__).parent.parent
-files = list((path / "data" / "RealData" / "PIONIER" / "nChannels3").glob("*.fits"))
+files = list((path / "data" / "RealData" / "PIONIER" / "HD142527").glob("*.fits"))
 data = oim.oimData(files)
-f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX", "OI_T3"])
-data.setFilter(f1)
+f1 = oim.oimWavelengthRangeFilter(targets="all", wlRange=[1.58e-6, 1.78e-6])
+f2 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX", "OI_T3"])
+data.setFilter(oim.oimDataFilter([f1, f2]))
 
 # # NOTE: The calculation of the photometric slope from the star's effective temperature
 wl, ks = oim.compute_photometric_slope(data, 7500)
 ks = oim.oimInterp("wl", values=ks, wl=wl, kind="linear", extrapolate=False)
 
 # NOTE: Specifying the parameter space
-shgl = oim.oimStarHaloGaussLorentz(fwhm=2.143038610475213,
-                                   fs=0.44, fc=0.54, fh=0.02,
-                                   flor=0.41, kc=-3.64, ks=ks,
-                                   pa=162.72001381715378,
-                                   elong=2, wl0=1.68e-6)
+shgl = oim.oimStarHaloGaussLorentz(
+        la=0.06, fs=0.41, fc=0.56, flor=0.43,
+        kc=-3.9, ks=ks, pa=-0.12*u.rad.to(u.deg),
+        elong=1/0.83, wl0=1.68e-6)
 
-
-shgl.params["kc"].set(min=-10, max=10)
-shgl.params["fwhm"].set(min=0, max=32)
-shgl.params["pa"].set(min=0, max=180)
-shgl.params["elong"].set(min=1, max=10)
+shgl.params["pa"].set(min=-180, max=180)
+shgl.params["elong"].set(min=1, max=3)
 shgl.params["f"].free = False
 
 
@@ -91,12 +89,16 @@ fit = oim.oimFitterEmcee(data, model, nwalkers=50)
 # NOTE: Overwrite the existing _logProbability method of the class "fit"
 fit._logProbability = lambda theta: _logProbability(fit, theta)
 
+nsteps = 20000
+discard = int(nsteps*0.1)
 fit.prepare(init="random")
-fit.run(nsteps=20000, progress=True)
+fit.run(nsteps=nsteps, progress=True)
 
-best, err_l, err_u, err = fit.getResults(mode="median")
+best, err_l, err_u, err = fit.getResults(discard=discard, mode="median")
+print("Best-fit parameters:", best)
+
 figWalkers, axeWalkers = fit.walkersPlot(savefig=save_dir / f"ExampleOim{shgl.shortname}_walkers.png")
-figCorner, axeCorner = fit.cornerPlot(savefig=save_dir / f"ExampleOim{shgl.shortname}_corner.png")
+figCorner, axeCorner = fit.cornerPlot(discard=discard, savefig=save_dir / f"ExampleOim{shgl.shortname}_corner.png")
 fig0, ax0 = fit.simulator.plot(["VIS2DATA"], savefig=save_dir / f"ExampleOim{shgl.shortname}_fit.png")
 print("Chi2r:", fit.simulator.chi2r)
 plt.close()
