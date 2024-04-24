@@ -63,8 +63,8 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
         val = np.abs(xx) + np.abs(yy)
         idx = np.unravel_index(np.argmin(val), np.shape(val))
         image_disk = self._image_gauss_lorentz(xx, yy, wl, t)
-        image_disk[idx] += self.params["fs"](wl, t) + fh
-        return image_disk
+        image_disk[idx] += self.params["fs"](wl, t)
+        return image_disk + fh
 
 
 class oimStarHaloIRing(oimStarHaloGaussLorentz):
@@ -127,5 +127,5 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         image_disk = fftconvolve(
             self._image_gauss_lorentz(xx, yy, wl, t), image_ring, mode="same"
         )
-        image_disk[idx] += fs + fh
-        return image_disk
+        image_disk[idx] += fs
+        return image_disk + fh
