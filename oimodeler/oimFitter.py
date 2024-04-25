@@ -331,34 +331,20 @@ class oimFitterDynesty(oimFitter):
 
     def _prepare(self, **kwargs):
         """Prepares the dynesty fitter."""
-        del kwargs["init"]
-
-        if "samplerFile" not in kwargs:
-            samplerFile = None
-        else:
-            samplerFile = kwargs.pop("samplerFile")
-
-        if "nlive" not in kwargs:
-            nlive = 1000
-        else:
-            nlive = kwargs.pop("nlive")
-
-        if "sample" not in kwargs:
-            sample = "rwalk"
-        else:
-            sample = kwargs.pop("sample")
-
-        if "bound" not in kwargs:
-            bound = "multi"
-        else:
-            bound = kwargs.pop("bound")
+        samplerFile = kwargs.pop("samplerFile", None)
+        nlive = kwargs.pop("nlive", 1000)
+        sample = kwargs.pop("sample", "rwalk")
+        bound = kwargs.pop("bound", "multi")
+        periodic = kwargs.pop("periodic", None)
+        reflective = kwargs.pop("reflective", None)
 
         # TODO: Implement the loading of the sampler
         if samplerFile is None:
             self.sampler = self.sampler(
-                    self._logProbability, self._ptform, self.nfree,
-                    nlive=nlive, sample=sample, bound=bound,
-                    update_interval=self.nfree, **kwargs)
+                self._logProbability, self._ptform, self.nfree,
+                nlive=nlive, sample=sample, bound=bound,
+                periodic=periodic, reflective=reflective,
+                update_interval=self.nfree, **kwargs)
         else:
             ...
 
