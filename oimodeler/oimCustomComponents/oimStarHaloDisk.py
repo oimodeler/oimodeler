@@ -97,7 +97,7 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
 
         la, lkr = self.params["la"](wl, t), self.params["lkr"](wl, t)
         self.ar = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
-        self.ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
+        self.ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (-2 * lkr)))
         xx = 2 * np.pi * self.ar * u.mas.to(u.rad) * rho
         vis_ring = j0(xx) + -1j * skw * np.cos(baseline_angle - skwPa) * j1(xx)
         vis_gauss_lor = self._vis_gauss_lorentz(xp, yp, rho, wl, t)
