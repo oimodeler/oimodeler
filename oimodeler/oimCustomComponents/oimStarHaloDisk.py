@@ -14,6 +14,7 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.ak = None
         self.params["la"] = oimParam(name="la", value=0, unit=u.one, mini=-1, maxi=1.5,
                                      description="Logarithm of the half-light/-flux radius")
         self.params["flor"] = oimParam(name="flor", value=0, unit=u.one, mini=0, maxi=1,
@@ -34,7 +35,8 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
         self._eval(**kwargs)
 
     def _vis_gauss_lorentz(self, xp, yp, rho, wl, t):
-        flor, hlr = self.params["flor"](wl, t), 10 ** self.params["la"](wl, t)
+        flor = self.params["flor"](wl, t)
+        hlr = 10 ** self.params["la"](wl, t) if self.ak is None else self.ak
         xx = np.pi * hlr * u.mas.to(u.rad) * rho
         vis_gauss = np.exp(-(xx**2) / np.log(2))
         vis_lor = np.exp(-2 * xx / np.sqrt(3))
@@ -52,7 +54,8 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
         return (vis_star + vis_comp) / divisor
 
     def _image_gauss_lorentz(self, xx, yy, wl, t):
-        flor, hlr = self.params["flor"](wl, t), 10 ** self.params["la"](wl, t)
+        flor = self.params["flor"](wl, t)
+        hlr = 10 ** self.params["la"](wl, t) if self.ak is None else self.ak
         radius = np.hypot(xx, yy)
         image_gauss = np.log(2) / (np.pi * hlr**2) * np.exp(-((radius / hlr) ** 2) * np.log(2))
         image_lor = hlr / (2 * np.pi * np.sqrt(3)) * (hlr**2 / 3 + radius**2) ** (-3 / 2)
@@ -89,12 +92,13 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         wavelength_ratio = self.params["wl0"](wl, t) / wl
 
         skw, skwPa = self.params["skw"](wl, t), self.params["skwPa"](wl, t)
-        skwPa *= self.params["skwPa"].unit.to(u.rad)
+        skwPa = (skwPa+90) * self.params["skwPa"].unit.to(u.rad)
         baseline_angle = np.arctan2(yp, xp)
 
         la, lkr = self.params["la"](wl, t), self.params["lkr"](wl, t)
-        rin = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
-        xx = 2 * np.pi * rin * u.mas.to(u.rad) * rho
+        self.ar = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
+        self.ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
+        xx = 2 * np.pi * self.ar * u.mas.to(u.rad) * rho
         vis_ring = j0(xx) + -1j * skw * np.cos(baseline_angle - skwPa) * j1(xx)
         vis_gauss_lor = self._vis_gauss_lorentz(xp, yp, rho, wl, t)
         vis_star = fs * wavelength_ratio**ks
@@ -106,14 +110,16 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         fs, fc = self.params["fs"](wl, t), self.params["fc"](wl, t)
         fh = 1 - (fs + fc)
         skw, skwPa = self.params["skw"](wl, t), self.params["skwPa"](wl, t)
-        skwPa *= self.params["skwPa"].unit.to(u.rad)
+        skwPa = (skwPa+90) * self.params["skwPa"].unit.to(u.rad)
         c, s = skw * np.cos(skwPa), skw * np.sin(skwPa)
         polar_angle = np.arctan2(yy, xx)
 
         la, lkr = self.params["la"](wl, t), self.params["lkr"](wl, t)
-        rin = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
+        self.ar = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
+        self.ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (-2 * lkr)))
         radius, val = np.hypot(xx, yy), np.abs(xx) + np.abs(yy)
         idx = np.unravel_index(np.argmin(val), np.shape(val))
+        
         dx = np.max(
             [
                 np.abs(1.0 * (xx[0, 0, 0, 1] - xx[0, 0, 0, 0])),
@@ -121,11 +127,10 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
             ]
         )
 
-        radial_profile = (radius >= rin) & (radius <= rin + dx)
+        radial_profile = (radius >= self.ar) & (radius <= (self.ar + dx))
         image_ring = 1 / (2 * np.pi) * radius * radial_profile
         image_ring *= 1 + c * np.cos(polar_angle) + s * np.sin(polar_angle)
         image_disk = fftconvolve(
-            self._image_gauss_lorentz(xx, yy, wl, t), image_ring, mode="same"
-        )
+            self._image_gauss_lorentz(xx, yy, wl, t), image_ring, mode="same")
         image_disk[idx] += fs
         return image_disk + fh
