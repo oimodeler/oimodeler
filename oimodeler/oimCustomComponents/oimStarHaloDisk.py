@@ -128,7 +128,7 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         )
 
         radial_profile = (radius >= self.ar) & (radius <= (self.ar + dx))
-        image_ring = 1 / (2 * np.pi) * radius * radial_profile
+        image_ring = 1 / (2 * np.pi) * radial_profile
         image_ring *= 1 + c * np.cos(polar_angle) + s * np.sin(polar_angle)
         image_disk = fftconvolve(
             self._image_gauss_lorentz(xx, yy, wl, t), image_ring, mode="same")
