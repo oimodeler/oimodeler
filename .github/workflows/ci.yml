@@ -15,7 +15,6 @@ jobs:
         os:
         - ubuntu-latest
         - macos-latest
-        - windows-latest
         python-version:
         - '3.8'
         - '3.11'
@@ -37,8 +36,6 @@ jobs:
           sudo apt-get install -y libfftw3-dev
         elif [[ "$RUNNER_OS" == "macOS" ]]; then
           brew install fftw
-        elif [[ "$RUNNER_OS" == "Windows" ]]; then
-          choco install fftw
         fi
       shell: bash
     - name: Setup package
