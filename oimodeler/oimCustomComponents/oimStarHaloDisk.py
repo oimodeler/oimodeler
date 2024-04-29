@@ -14,7 +14,8 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ak = None
+        self._ar, self._ak = None, None
+        self.ar, self.ak = None, None
         self.params["la"] = oimParam(name="la", value=0, unit=u.one, mini=-1, maxi=1.5,
                                      description="Logarithm of the half-light/-flux radius")
         self.params["flor"] = oimParam(name="flor", value=0, unit=u.one, mini=0, maxi=1,
@@ -85,6 +86,28 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         self._wl = None
         self._eval(**kwargs)
 
+    @property
+    def ar(self):
+        la, lkr = self.params["la"].value, self.params["lkr"].value
+        if self._ar is None:
+            self._ar = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
+        return self._ar
+
+    @ar.setter
+    def ar(self, value):
+        self._ar = value
+
+    @property
+    def ak(self):
+        la, lkr = self.params["la"].value, self.params["lkr"].value
+        if self._ak is None:
+            self._ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (-2 * lkr)))
+        return self._ak
+
+    @ak.setter
+    def ak(self, value):
+        self._ak = value
+
     def _visFunction(self, xp, yp, rho, wl, t):
         fs, fc = self.params["fs"](wl, t), self.params["fc"](wl, t)
         fh = 1 - (fs + fc)
@@ -95,9 +118,6 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         skwPa = (skwPa+90) * self.params["skwPa"].unit.to(u.rad)
         baseline_angle = np.arctan2(yp, xp)
 
-        la, lkr = self.params["la"](wl, t), self.params["lkr"](wl, t)
-        self.ar = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
-        self.ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (-2 * lkr)))
         xx = 2 * np.pi * self.ar * u.mas.to(u.rad) * rho
         vis_ring = j0(xx) + -1j * skw * np.cos(baseline_angle - skwPa) * j1(xx)
         vis_gauss_lor = self._vis_gauss_lorentz(xp, yp, rho, wl, t)
@@ -114,9 +134,6 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         c, s = skw * np.cos(skwPa), skw * np.sin(skwPa)
         polar_angle = np.arctan2(yy, xx)
 
-        la, lkr = self.params["la"](wl, t), self.params["lkr"](wl, t)
-        self.ar = np.sqrt(10 ** (2 * la) / (1 + 10 ** (2 * lkr)))
-        self.ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (-2 * lkr)))
         radius, val = np.hypot(xx, yy), np.abs(xx) + np.abs(yy)
         idx = np.unravel_index(np.argmin(val), np.shape(val))
         
