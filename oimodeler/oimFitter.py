@@ -41,7 +41,6 @@ class oimFitter:
         self._eval(**kwargs)
 
     def _eval(self, **kwargs):
-
         for key in self.params.keys():
             if key in kwargs.keys():
                 self.params[key].value = kwargs.pop(key)
@@ -65,19 +64,18 @@ class oimFitter:
         return kwargs
 
     def run(self, **kwargs):
-        if self.isPrepared == False:
+        if not self.isPrepared:
             raise TypeError("Fitter not initialized")
         self._run(**kwargs)
         return kwargs
 
-    def getResults(self,**kwargs):
+    def getResults(self, **kwargs):
         return 0
 
-    def printResults(self,format=".5f",**kwargs):
-    
-        res=self.getResults(**kwargs)
-        chi2r=self.simulator.chi2r
-        pm=u'\xb1'
+    def printResults(self, format=".5f", **kwargs):
+        res = self.getResults(**kwargs)
+        chi2r = self.simulator.chi2r
+        pm = u'\xb1'
         for iparam,parami in enumerate(self.freeParams):
             print(f"{parami} = {res[0][iparam]:{format}} {pm} {res[3][iparam]:{format}} {self.freeParams[parami].unit}")
         print(f"chi2r = {chi2r:{format}}")
@@ -91,18 +89,16 @@ class oimFitter:
 
 class oimFitterEmcee(oimFitter):
     def __init__(self, *args, **kwargs):
-
         self.params["nwalkers"] = oimParam(name="nwalkers", value=16, mini=1,
                                            description="Number of walkers")
-
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
-
-        if not ('init' in kwargs):
-            init = 'random'
+        if "init" not in kwargs:
+            init = "random"
         else:
-            init = kwargs.pop('init')
+            init = kwargs.pop("init")
+
         if init == "random":
             self.initialParams = self._initRandom()
         elif init == "fixed":
@@ -111,17 +107,17 @@ class oimFitterEmcee(oimFitter):
             self.initialParams = self._initGaussian()
 
         if "moves" in kwargs:
-            moves = kwargs.pop['moves']
+            moves = kwargs.pop["moves"]
         else:
             moves = [(emcee.moves.DEMove(), 0.8),
                      (emcee.moves.DESnookerMove(), 0.2)]
 
-        if not ('samplerFile' in kwargs):
+        if "samplerFile" not in kwargs:
             samplerFile = None
         else:
-            samplerFile = kwargs.pop('samplerFile')
+            samplerFile = kwargs.pop("samplerFile")
 
-        if samplerFile == None:
+        if samplerFile is None:
             self.sampler = emcee.EnsembleSampler(
                     self.params["nwalkers"].value, self.nfree,
                     self._logProbability, moves=moves, **kwargs)
@@ -134,28 +130,27 @@ class oimFitterEmcee(oimFitter):
         return kwargs
 
     def _initGaussian(self):
-        nw = self.params['nwalkers'].value
+        nw = self.params["nwalkers"].value
         initialParams = np.ndarray([nw, self.nfree])
 
         for iparam, parami in enumerate(self.freeParams.values()):
             initialParams[:, iparam] = \
                 np.random.normal(parami.value, parami.error,
-                                 self.params['nwalkers'].value)
+                                 self.params["nwalkers"].value)
         return initialParams
 
     def _initRandom(self):
-        nw = self.params['nwalkers'].value
+        nw = self.params["nwalkers"].value
         initialParams = np.ndarray([nw, self.nfree])
 
         for iparam, parami in enumerate(self.freeParams.values()):
             initialParams[:, iparam] = np.random.random(
-                self.params['nwalkers'].value)*(parami.max-parami.min)+parami.min
+                self.params["nwalkers"].value)*(parami.max-parami.min)+parami.min
 
         return initialParams
 
     def _initFixed(self):
-        nw = self.params['nwalkers'].value
-
+        nw = self.params["nwalkers"].value
         initialParams = np.ndarray([nw, self.nfree])
 
         for iparam, parami in enumerate(self.freeParams.values()):
@@ -166,7 +161,6 @@ class oimFitterEmcee(oimFitter):
     def _run(self, **kwargs):
         self.sampler.run_mcmc(self.initialParams, **kwargs)
         self.getResults()
-
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
@@ -191,12 +185,12 @@ class oimFitterEmcee(oimFitter):
         idx = np.where(chi2 <= chi2limfact*chi2.min())[0]
         chain2 = chain[idx, :]
 
-        if mode == 'best':
+        if mode == "best":
             idx = np.argmin(chi2)
             res = chain[idx]
-        elif mode == 'mean':
+        elif mode == "mean":
             res = np.mean(chain2, axis=0)
-        elif mode == 'median':
+        elif mode == "median":
             res = np.median(chain2, axis=0)
         else:
             raise NameError("'mode' should be either 'best', 'mean' or 'median'")
@@ -211,7 +205,6 @@ class oimFitterEmcee(oimFitter):
                 chain2[:, iparam], 0.84)-res[iparam])
 
         err = 0.5*(err_m+err_p)
-
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = res[iparam]
             parami.error = err[iparam]
@@ -234,7 +227,7 @@ class oimFitterEmcee(oimFitter):
         for namei, uniti in zip(pnames, punits):
             txt = namei
             if uniti.to_string() != "":
-                txt += " ("+uniti.to_string()+")"
+                txt += f" ({uniti.to_string()})"
             labels.append(txt)
 
         c = self.sampler.get_chain(discard=discard, flat=True)
@@ -250,8 +243,8 @@ class oimFitterEmcee(oimFitter):
 
         return fig, fig.axes
 
-    def walkersPlot(self, savefig=None, chi2limfact=20, labelsize=10,
-                       ncolors=128, **kwargs):
+    def walkersPlot(self, savefig=None, chi2limfact=20,
+                    labelsize=10, ncolors=128, **kwargs):
         fig, ax = plt.subplots(self.nfree, figsize=(10, 7), sharex=True)
         if self.nfree == 1:
             ax = np.array([ax])
@@ -274,13 +267,13 @@ class oimFitterEmcee(oimFitter):
         samples = samples.reshape(
             [samples.shape[0]*samples.shape[1], samples.shape[2]])[idx, :]
 
-        chi2min=chi2f.min()
-        chi2max=chi2limfact*chi2min
-        chi2bins=np.linspace(chi2max,chi2min,ncolors)
-        if 'cmap' in kwargs:
-            cmap = cm.get_cmap(kwargs.pop('cmap'), ncolors)
+        chi2min = chi2f.min()
+        chi2max = chi2limfact*chi2min
+        chi2bins = np.linspace(chi2max, chi2min, ncolors)
+        if "cmap" in kwargs:
+            cmap = cm.get_cmap(kwargs.pop("cmap"), ncolors)
         else:
-            cmap = cm.get_cmap(mpl.rcParams['image.cmap'], ncolors)
+            cmap = cm.get_cmap(mpl.rcParams["image.cmap"], ncolors)
 
         for i in range(self.nfree):
             for icol in range(ncolors):      
@@ -297,11 +290,9 @@ class oimFitterEmcee(oimFitter):
 
             ax[i].set_xlim(0, np.max(xf))
 
-            txt = pnames[i]
-
-            unit_txt = ""
+            txt, unit_txt = pnames[i], ""
             if punits[i].to_string() != "":
-                unit_txt += " ("+punits[i].to_string()+")"
+                unit_txt += f" ({punits[i].to_string()})"
 
             ax[i].set_ylabel(unit_txt)
 
@@ -313,7 +304,7 @@ class oimFitterEmcee(oimFitter):
         norm = mpl.colors.Normalize(vmin=chi2min, vmax=chi2max)
         sm = cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
-        fig.colorbar(sm, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
+        fig.colorbar(sm, ax=ax.ravel().tolist(), label=r"$\chi^2_r$ ")
         # fig.colorbar(scale, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
 
         ax[-1].set_xlabel("step number")
@@ -340,34 +331,20 @@ class oimFitterDynesty(oimFitter):
 
     def _prepare(self, **kwargs):
         """Prepares the dynesty fitter."""
-        del kwargs["init"]
-
-        if not ('samplerFile' in kwargs):
-            samplerFile = None
-        else:
-            samplerFile = kwargs.pop('samplerFile')
-
-        if "nlive" not in kwargs:
-            nlive = 1000
-        else:
-            nlive = kwargs.pop("nlive")
-
-        if "sample" not in kwargs:
-            sample = "rwalk"
-        else:
-            sample = kwargs.pop("sample")
-
-        if "bound" not in kwargs:
-            bound = "multi"
-        else:
-            bound = kwargs.pop("bound")
+        samplerFile = kwargs.pop("samplerFile", None)
+        nlive = kwargs.pop("nlive", 1000)
+        sample = kwargs.pop("sample", "rwalk")
+        bound = kwargs.pop("bound", "multi")
+        periodic = kwargs.pop("periodic", None)
+        reflective = kwargs.pop("reflective", None)
 
         # TODO: Implement the loading of the sampler
         if samplerFile is None:
             self.sampler = self.sampler(
-                    self._logProbability, self._ptform, self.nfree,
-                    nlive=nlive, sample=sample, bound=bound,
-                    update_interval=self.nfree, **kwargs)
+                self._logProbability, self._ptform, self.nfree,
+                nlive=nlive, sample=sample, bound=bound,
+                periodic=periodic, reflective=reflective,
+                update_interval=self.nfree, **kwargs)
         else:
             ...
 
@@ -392,7 +369,6 @@ class oimFitterDynesty(oimFitter):
         # TODO: Implement checkpoint file here
         self.sampler.run_nested(**sampler_kwargs, **kwargs)
         self.getResults()
-
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
@@ -449,9 +425,9 @@ class oimFitterDynesty(oimFitter):
             labels.append(txt)
 
         results = self.sampler.results
-        fig, _ = dyplot.cornerplot(results, color='blue',
+        fig, _ = dyplot.cornerplot(results, color="blue",
                                    truths=np.zeros(len(pnames)),
-                                   labels=labels, truth_color='black', **kwargs)
+                                   labels=labels, truth_color="black", **kwargs)
 
 
         if savefig is not None:
@@ -463,21 +439,22 @@ class oimFitterDynesty(oimFitter):
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
 
-        kwargs0 = dict(quantiles=[0.16, 0.5, 0.84], show_titles=True, use_math_text=True)
+        kwargs0 = dict(quantiles=[0.16, 0.5, 0.84],
+                       show_titles=True, use_math_text=True)
         kwargs = {**kwargs0, **kwargs}
 
         labels = []
         for namei, uniti in zip(pnames, punits):
             txt = namei
             if uniti.to_string() != "":
-                txt += " ("+uniti.to_string()+")"
+                txt += f" ({uniti.to_string()})"
             labels.append(txt)
 
         results = self.sampler.results
         fig, ax = dyplot.traceplot(results, labels=labels,
                                    truths=np.zeros(len(labels)),
-                                   truth_color='black', connect=True,
-                                   trace_cmap='viridis',
+                                   truth_color="black", connect=True,
+                                   trace_cmap="viridis",
                                    connect_highlight=range(5), **kwargs)
         if savefig is not None:
             plt.savefig(savefig)
@@ -494,8 +471,8 @@ class oimFitterMinimize(oimFitter):
     
     def _prepare(self, **kwargs):
         self.initialParams = []
-        if not ('initialParams' in kwargs):
-            for iparam, parami in enumerate(self.freeParams.values()):
+        if "initialParams" not in kwargs:
+            for _, parami in enumerate(self.freeParams.values()):
                 self.initialParams.append(parami.value) 
         else:
             self.initialParams = kwargs['initialParams']
@@ -504,23 +481,22 @@ class oimFitterMinimize(oimFitter):
     def _getChi2r(self, theta):
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = theta[iparam]
-        self.simulator.compute(computeChi2=True,dataTypes = self.dataTypes)
+        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
         return self.simulator.chi2r
             
     def _run(self, **kwargs):
-        self.res=minimize(self._getChi2r,self.initialParams)
+        self.res = minimize(self._getChi2r, self.initialParams)
         self.getResults()
-
         return kwargs
     
-    def getResults(self,**kwargs):
-        values=self.res.x
-        errors=np.diag(self.res.hess_inv)**0.5
+    def getResults(self, **kwargs):
+        values = self.res.x
+        errors = np.diag(self.res.hess_inv)**0.5
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = values[iparam]
             parami.error = errors[iparam]
 
-        self.simulator.compute(computeChi2=True, computeSimulatedData=True
-                               ,dataTypes=self.dataTypes)
+        self.simulator.compute(computeChi2=True, computeSimulatedData=True,
+                               dataTypes=self.dataTypes)
         
         return values, errors

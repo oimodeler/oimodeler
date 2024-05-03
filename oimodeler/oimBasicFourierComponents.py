@@ -316,9 +316,7 @@ class oimRing2(oimComponentFourier):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["d"] = oimParam(**_standardParameters["d"])
-        self.params["w"] = oimParam(**_standardParameters["d"])
-        self.params["w"].name = "w"
-        self.params["w"].description = "width of the ring"
+        self.params["w"] = oimParam(**_standardParameters["w"])
         self._eval(**kwargs)
 
     def _visFunction(self, xp, yp, rho, wl, t):
@@ -763,9 +761,6 @@ class oimSqrtLDD(oimComponentFourier):
         c3 = (gamma(9/4)) * (2**1.25) * np.divide(jv(1.25,xx),xx**1.25)
         s = (15-5*a1-3*a2)/30
         return np.nan_to_num(((1-a1-a2)*c1+(2*a1/6)*c2+(4*a2/10)*c3)/s, nan=1)
-
-
-
 
 
 #TODO check effect of PA of both component

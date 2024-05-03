@@ -6,7 +6,7 @@ import oimodeler as oim
 
 
 path = Path(__file__).parent.parent.parent
-data_dir = path / "examples" / "testData" / "ASPRO_SPICA_GROWING_UD"
+data_dir = path / "data" / "ASPRO_SPICA_GROWING_UD"
 
 # NOTE: Change this path if you want to save the products at another location
 save_dir = path / "images"

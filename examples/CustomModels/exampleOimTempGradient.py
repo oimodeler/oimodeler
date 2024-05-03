@@ -5,9 +5,8 @@ import oimodeler as oim
 
 # NOTE: Load the simulated data from ASPRO and apply some filter to
 # keep only VIS2DATA and T3PHI for model fitting
-oimodeler_dir = Path(oim.__file__).parent
-files = list((oimodeler_dir / ".." / "examples" /
-              "testData" / "ASPRO_MATISSE2").glob("*.fits"))
+path = Path(__file__).parent.parent.parent
+files = list((path / "data" / "ASPRO_MATISSE2").glob("*.fits"))
 
 wavelengths = [8e-6, 10e-6]
 

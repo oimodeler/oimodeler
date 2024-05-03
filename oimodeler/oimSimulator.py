@@ -66,7 +66,7 @@ def corrFlux2Flux(vcompl):
     return np.abs(vcompl)
 
 
-class oimSimulator(object):
+class oimSimulator:
     """Contains"""
 
     def __init__(self, data=None, model=None, fitter=None, **kwargs):
@@ -119,7 +119,6 @@ class oimSimulator(object):
         data = self.data
 
         if (computeChi2 == True) | (computeSimulatedData == True):
-
             idx = 0
             nfiles = len(data.struct_u)
             for ifile in range(nfiles):
@@ -232,7 +231,6 @@ class oimSimulator(object):
             # fig.set_legends(0.1,0.8,"$BASELINE$",["VIS2DATA","VISPHI","T3PHI"],fontweight =1000)
 
             return fig
-    
     
     def plot(self, arr, simulated=True, savefig=None, visLog=False,xunit="cycle/rad", 
              kwargsData={}, kwargsSimulatedData={}):

@@ -17,7 +17,6 @@ from .oimParam import oimParam, oimParamLinker, oimParamInterpolator
 from .oimUtils import rebin_image
 
 
-###############################################################################
 class oimModel:
     """The oimModel class hold a model made of one or more components (derived
     from the oimComponent class).
@@ -43,6 +42,20 @@ class oimModel:
             self.components = components[0]
         else:
             self.components = components
+
+    def __str__(self):
+        """Return a string representation of the model"""
+        return "\n".join(["Model with", *[comp.__str__() for comp in self.components]])
+
+    def __repr__(self):
+        """Return a string representation of the model"""
+        return "\n".join([f"oimModel at {str(hex(id(self)))}:",
+                          *[comp.__repr__() for comp in self.components]])
+
+    @property
+    def shortname(self):
+        """Return a short name of the model"""
+        return " + ".join([comp.shortname for comp in self.components])
 
     def getComplexCoherentFlux(self, ucoord: ArrayLike, vcoord: ArrayLike,
                                wl: Optional[ArrayLike] = None,
@@ -164,6 +177,7 @@ class oimModel:
         nt, nwl = t.size, wl.size
         dims = (nt, nwl, dim, dim)
 
+        # TODO: The from FFT is not good for all functions
         if fromFT:
             v = np.linspace(-0.5, 0.5, dim)
             vx, vy = np.meshgrid(v, v)
@@ -370,45 +384,45 @@ class oimModel:
                     cb = axe[iwl, it].imshow(im[it, iwl, :, :],
                                              extent=[-dim/2*pixSize, dim/2*pixSize,
                                                      -dim/2*pixSize, dim/2*pixSize],
-                                             origin='lower', **kwargs)
+                                             origin="lower", **kwargs)
                 else:
                     cb = axe[iwl, it].imshow(im[iwl, it, :, :],
                                              extent=[-dim/2*pixSize, dim/2*pixSize,
                                                      -dim/2*pixSize, dim/2*pixSize],
-                                             origin='lower', **kwargs)
+                                             origin="lower", **kwargs)
 
                 axe[iwl, it].set_xlim(dim/2*pixSize, -dim/2*pixSize)
 
                 if iwl == nwl-1:
-                    axe[iwl, it].set_xlabel("$\\alpha$(mas)")
+                    axe[iwl, it].set_xlabel(r"$\alpha$(mas)")
                 if it == 0:
-                    axe[iwl, it].set_ylabel("$\\delta$(mas)")
+                    axe[iwl, it].set_ylabel(r"$\delta$(mas)")
 
                 if legend:
                     txt = ""
                     if not swapAxes:
 
                         if wl[0] is not None:
-                            txt += "wl={:.4f}$\mu$m\n".format(wli*1e6)
+                            txt += f"wl={wli*1e6:.4f}$\\mu$m\n"
                         if t[0] is not None:
-                            txt += "Time={}".format(ti)
-                        if 'color' not in kwargs_legend:
-                            kwargs_legend['color'] = "w"
+                            txt += f"Time={ti}"
+                        if "color" not in kwargs_legend:
+                            kwargs_legend["color"] = "w"
                     else:
                         if t[0] is not None:
-                            txt += "wl={:.4f}$\mu$m\n".format(ti*1e6)
+                            txt += f"wl={ti*1e6:.4f}$\\mu$m\n"
                         if wl[0] is not None:
                             txt += f"Time={wli}"
-                        if 'color' not in kwargs_legend:
-                            kwargs_legend['color'] = "w"
+                        if "color" not in kwargs_legend:
+                            kwargs_legend["color"] = "w"
                     axe[iwl, it].text(0, 0.95*dim/2*pixSize, txt,
-                                      va='top', ha='center', **kwargs_legend)
+                                      va="top", ha="center", **kwargs_legend)
 
         if colorbar:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
 
         if savefig is not None:
-            plt.savefig(savefig)
+            plt.savefig(savefig, dpi=300)
 
         if rebin:
             im = rebin_image(im)
@@ -578,24 +592,3 @@ class oimModel:
         if savefig is not None:
             plt.savefig(savefig)
         return fig, axe, im
-    
-    def __str__(self):
-        txt = "Model with "
-        for comp in self.components:
-            txt += "\n" 
-            txt += comp.__str__()
-        return txt
-    
-    def __repr__(self):
-        txt = "oimModel at " + str(hex(id(self))) + " : "
-        for comp in self.components:
-            txt += "\n"             
-            txt += comp.__repr__()
-        return txt
-
-    @property
-    def shortname(self):
-        txt=""
-        for icomp, compi in enumerate(self.components):
-            txt+=f"{compi.shortname} + "
-        return txt[:-3]

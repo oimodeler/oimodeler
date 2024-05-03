@@ -17,7 +17,7 @@ import matplotlib.cm as cm
 # outer sharp edge we decide not to zero-pad the images during the FFT process
 # no oder to save time and without noticeable effect on the simulated visibilities
 oim.oimOptions.ft.padding = 2
-oim.oimOptions.ft.backend.active = oim.FFTWBackend()
+oim.oimOptions.ft.backend.active = oim.FFTWBackend
 
 # Global simulation parameters
 dim   = 256	            # size of the simulation in pixel

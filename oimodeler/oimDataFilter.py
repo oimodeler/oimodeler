@@ -7,7 +7,7 @@ from .oimUtils import cutWavelengthRange, shiftWavelength, spectralSmoothing, \
     getDataArrname, getDataType, _oimDataType, _oimDataTypeArr
 
 
-class oimDataFilterComponent(object):
+class oimDataFilterComponent:
     """Base class for data filter"""
     name = "Generic Filter"
     shortname = "Genfilt"
@@ -45,6 +45,19 @@ class oimDataFilterComponent(object):
             self._filteringFunction(datai)
 
 
+class oimDataFilter:
+    """Class for data filter stack"""
+
+    def __init__(self, filters=[]):
+        if isinstance(filters, oimDataFilterComponent):
+            filters = [filters]
+        self.filters = filters
+
+    def applyFilter(self, data):
+        for filt in self.filters:
+            filt.applyFilter(data)
+
+
 class oimRemoveArrayFilter(oimDataFilterComponent):
     """Simple filter removing arrays by type"""
     name = "Remove array by type Filter"
@@ -56,7 +69,6 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
-
         for arri in self.params["arr"]:
             while len(np.where(np.array([t.name for t in data]) == arri)[0]) != 0:
                 data.pop(arri)
@@ -250,7 +262,6 @@ class oimDiffErrFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
-
         computeDifferentialError(data, ranges=self.params["ranges"],
                                  excludeRange=self.params["excludeRange"],
                                  rangeType=self.params["rangeType"],
@@ -273,16 +284,3 @@ class oimSetMinErrFilter(oimDataFilterComponent):
     def _filteringFunction(self, data):
         setMinimumError(data, self.params["dataType"],
                         self.params["values"], extver=None)
-
-
-class oimDataFilter(object):
-    """Class for data filter stack"""
-
-    def __init__(self, filters=[]):
-        if isinstance(filters, oimDataFilterComponent):
-            filters = [filters]
-        self.filters = filters
-
-    def applyFilter(self, data):
-        for filt in self.filters:
-            filt.applyFilter(data)

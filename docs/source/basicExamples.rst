@@ -27,7 +27,7 @@ a list of OIFITS files and how the data is organized in an
     import oimodeler as oim
 
     path = Path(__file__).parent.parent.parent
-    data_dir = path / "examples" / "testData" / "FSCMa_MATISSE"
+    data_dir = path / "examples" / "data" / "FSCMa_MATISSE"
     files = list(map(str, data_dir.glob("*.fits")))
 
     data=oim.oimData(files)
@@ -718,7 +718,7 @@ list of the same OIFITS files as in the :ref:`exampleOimData` example.
     import oimodeler as oim
 
     path = Path(__file__).parent.parent.parent
-    data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
+    data_dir = path / "examples" / "data" / "ASPRO_MATISSE2"
     save_dir = path / "images"
     if not save_dir.exists():
         save_dir.mkdir(parents=True)
@@ -818,7 +818,7 @@ We don't need to specify values for the biary parameters as they will be fitted.
 
 
     path = Path(__file__).parent.parent.parent
-    data_dir = path / "examples" / "testData" / "ASPRO_MATISSE2"
+    data_dir = path / "examples" / "data" / "ASPRO_MATISSE2"
     save_dir = path / "images"
     if not save_dir.exists():
         save_dir.mkdir(parents=True)
