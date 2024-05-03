@@ -775,6 +775,7 @@ class oimComponentFitsImage(oimComponentImage):
         else:
             # NOTE: Adding the wl and time dimensions (nt,nwl,ny,nx)
             self._image = im.data[None, None, :, :]
+            self._wl=np.array([0])
 
     def _internalImage(self):
         self.params["dim"].value = self._dim
