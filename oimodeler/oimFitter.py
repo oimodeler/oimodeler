@@ -321,53 +321,43 @@ class oimFitterDynesty(oimFitter):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if "method" not in kwargs:
-            self.method = "dynamic"
-        else:
-            self.method = kwargs.pop("method")
-
         samplers = {"dynamic": DynamicNestedSampler, "static": NestedSampler}
+        self.method = kwargs.pop("method", "dynamic")
         self.sampler = samplers[self.method]
 
     def _prepare(self, **kwargs):
         """Prepares the dynesty fitter."""
         samplerFile = kwargs.pop("samplerFile", None)
-        nlive = kwargs.pop("nlive", 1000)
-        sample = kwargs.pop("sample", "rwalk")
-        bound = kwargs.pop("bound", "multi")
-        periodic = kwargs.pop("periodic", None)
-        reflective = kwargs.pop("reflective", None)
+        sampler_kwargs = {"sample": kwargs.pop("sample", "rwalk"),
+                          "bound": kwargs.pop("bound", "multi"),
+                          "periodic": kwargs.pop("periodic", None),
+                          "reflective": kwargs.pop("reflective", None)}
+
+        if self.method != "dynamic":
+            sampler_kwargs["nlive"] = kwargs.pop("nlive", 1000)
 
         # TODO: Implement the loading of the sampler
         if samplerFile is None:
             self.sampler = self.sampler(
                 self._logProbability, self._ptform, self.nfree,
-                nlive=nlive, sample=sample, bound=bound,
-                periodic=periodic, reflective=reflective,
-                update_interval=self.nfree, **kwargs)
+                update_interval=self.nfree, **sampler_kwargs, **kwargs)
         else:
             ...
 
         return kwargs
 
     def _run(self, **kwargs):
-        if "progress" not in kwargs:
-            print_progress = False
-        else:
-            print_progress = kwargs.pop("progress")
-
-        if "dlogz" not in kwargs:
-            dlogz = 0.010
-        else:
-            dlogz = kwargs.pop("dlogz")
-
-        sampler_kwargs = {"dlogz": dlogz, "print_progress": print_progress}
-
+        print_progress = kwargs.pop("progress", False)
         if self.method == "dynamic":
-            del sampler_kwargs["dlogz"]
+            run_kwargs = {"nlive_batch": kwargs.pop("nlive_batch", 1000),
+                          "maxbatch": kwargs.pop("maxbatch", 100),
+                          "dlogz_init": kwargs.pop("dlogz_init", 0.01),
+                          "nlive_init": kwargs.pop("nlive_init", 1000)}
+        else:
+            run_kwargs = {"dlogz": kwargs.pop("dlogz", 0.01)}
 
         # TODO: Implement checkpoint file here
-        self.sampler.run_nested(**sampler_kwargs, **kwargs)
+        self.sampler.run_nested(print_progress=print_progress, **run_kwargs, **kwargs)
         self.getResults()
         return kwargs
 
