@@ -6,7 +6,7 @@ backend = SimpleNamespace(active=None, available=[])
 fftw = SimpleNamespace(initialized=False)
 ft = SimpleNamespace(
         backend=backend, binning=None,
-        padding=1, fftw=fftw)
+        padding=4, fftw=fftw)
 
 grid = SimpleNamespace(type="linear")
 model = SimpleNamespace(grid=grid)
