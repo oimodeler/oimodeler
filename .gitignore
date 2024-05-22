@@ -129,7 +129,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-
+test/
 tempTests
 docs/source/other/~$diagram.pptx
 examples/data/HD50138/2020-02-15T022423_HD50138_A0B2D0C1_IR-LM_LOW_Chop_cal_oifits_0.fits
