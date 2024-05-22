@@ -1346,9 +1346,9 @@ def binWavelength(oifits: fits.HDUList, binsize: int,
         data = fits.open(oifits)
     else:
         data = oifits
-
+    
     tobin = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
-    for i, _ in enumerate(data, start=1):
+    for i, _ in enumerate(data):
         if data[i].name in tobin:
             data[i] = _rebinHdu(data[i], binsize, exception=["STA_INDEX"])
             if normalizeError:
