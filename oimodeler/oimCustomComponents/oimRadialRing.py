@@ -73,10 +73,8 @@ class oimRadialRing(oimComponentRadialProfile):
         -------
         radial_profile : numpy.ndarray
         """
-        # HACK: Sets the multi wavelength coordinates properly.
-        # Does not account for time, improves computation time.
-        wl = np.unique(wl)
-        p = self.params["p"](wl, t)
+        # HACK: Sets the multi wavelength coordinates properly. Does not account for time, improves computation time.
+        wl, p = np.unique(wl), self.params["p"](wl, t)
         rin, rout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
 
         if len(r.shape) == 3:
@@ -84,8 +82,9 @@ class oimRadialRing(oimComponentRadialProfile):
             wl = wl[np.newaxis, :, np.newaxis]
         else:
             r, wl = r[np.newaxis, :], wl[np.newaxis, :]
-        image = np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int)*(r / rin)**p, nan=0)
-        return image*np.ones_like(wl)
+
+        image = np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int) * (r / rin) ** p, nan=0)
+        return image * np.ones_like(wl)
 
     @property
     def _r(self):
