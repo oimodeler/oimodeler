@@ -26,7 +26,7 @@ model = oim.oimModel([ud, pt])
 ud.params["d"].set(min=0.01, max=20)
 ud.params["x"].set(min=-50, max=50, free=True)
 ud.params["y"].set(min=-50, max=50, free=True)
-ud.params["f"].set(min=0., max=10.)
+ud.params["f"].set(min=0.0, max=10.0)
 pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
@@ -38,8 +38,9 @@ fit = oim.oimFitterDynesty(files, model, method="dynamic")
 fit.prepare()
 
 # Perfoming the model-fitting
-fit.run(dlogz_init=0.010, nlive_init=1000,
-        nlive_batch=1000, maxbatch=100,progress=True)
+fit.run(
+    dlogz_init=0.010, nlive_init=1000, nlive_batch=1000, maxbatch=100, progress=True
+)
 
 # Get results from the fit (updates the class internal logic)
 median, err_l, err_u, err = fit.getResults(mode="median")
@@ -47,11 +48,17 @@ median, err_l, err_u, err = fit.getResults(mode="median")
 # %%
 class_name = fit.__class__.__name__
 class_name = class_name[0].upper() + class_name[1:]
-figWalkers, axeWalkers = fit.walkersPlot(savefig=save_dir / f"example{class_name}Walkers.png")
-figCorner, axeCorner = fit.cornerPlot(savefig=save_dir / f"example{class_name}Corner.png")
+figWalkers, axeWalkers = fit.walkersPlot(
+    savefig=save_dir / f"example{class_name}Walkers.png"
+)
+figCorner, axeCorner = fit.cornerPlot(
+    savefig=save_dir / f"example{class_name}Corner.png"
+)
 
 # %%
 
 # %%
-fig0, ax0 = fit.simulator.plot(["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],
-                               savefig=save_dir / f"Example{class_name}_fittedData.png")
+fig0, ax0 = fit.simulator.plot(
+    ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI"],
+    savefig=save_dir / f"Example{class_name}_fittedData.png",
+)

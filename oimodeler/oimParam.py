@@ -327,13 +327,12 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
         values = np.array([pi() for pi in self.keyvalues])
         keyframes = np.array([pi() for pi in self.keyframes])
 
-        if self.extrapolate == True:
+        if self.extrapolate:
             fill_value = "extrapolate"
             bounds_error = None
         else:
             fill_value = (values[0], values[-1])
             bounds_error = False
-        # return np.interp(var, keyframes, values, left=values[0], right=values[-1])
 
         return interp1d(keyframes, values, fill_value=fill_value,
                         kind=self.kind, bounds_error=bounds_error)(var)

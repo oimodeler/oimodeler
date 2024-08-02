@@ -291,7 +291,7 @@ def compute_photometric_slope(
     wl = (np.unique(np.hstack(struct_wl))*u.m).to(u.um)
     nu = (const.c/wl.to(u.m)).to(u.Hz)
     blackbody = models.BlackBody(temperature)(nu)
-    return wl, np.gradient(np.log(blackbody.value), np.log(nu.value))
+    return wl.to(u.m).value, np.gradient(np.log(blackbody.value), np.log(nu.value))
 
 
 def pad_image(image: np.ndarray) -> np.ndarray:
