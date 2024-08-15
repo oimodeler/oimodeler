@@ -585,35 +585,29 @@ class oimComponentRadialProfile(oimComponent):
 
     @staticmethod
     def fht(Ir, r, wlin, tin, sfreq, wl, t):
-        pad = oimOptions.ft.padding
-        nr = r.size
-        ntin = tin.size
-        nwlin = wlin.size
+        pad, nr = oimOptions.ft.padding, r.size
 
         fov = r[-1]-r[0]
         dsfreq0 = 1/(fov*pad)
         sfreq0 = np.linspace(0, pad*nr-1, pad*nr)*dsfreq0
 
-        r2D = np.tile(r[None, None, :, None], (ntin, nwlin, 1, pad*nr))
-        Ir2D = np.tile(Ir[:, :, :, None], (1, 1, 1, pad*nr))
-        sf2D = np.tile(sfreq0[None, None, None, :], (ntin, nwlin, nr, 1))
+        r, Ir = r[np.newaxis, np.newaxis, :, np.newaxis], Ir[:, :, :, np.newaxis]
+        sfreq0 = sfreq0[np.newaxis, np.newaxis, np.newaxis, :]
 
         res0 = integrate.trapezoid(
-            2.*np.pi*r2D*Ir2D*j0(2.*np.pi*r2D*sf2D), r2D, axis=2)
+            2 * np.pi * r * Ir * j0(2 * np.pi * r * sfreq0), r, axis=2)
+        norm = integrate.trapezoid(2 * np.pi * r.squeeze(-1) * Ir.squeeze(-1), r.squeeze(-1))
+        res0 = res0 / norm[..., np.newaxis]
 
-        for it in range(ntin):
-            for iwl in range(nwlin):
-                res0[it,iwl,:] /= integrate.trapezoid(2.*np.pi*r*Ir[it,iwl,:], r)
-                # res0[it,iwl,:]/=np.sum(r*Ir[it,iwl,:]*dr)
-
-        grid = (tin, wlin, sfreq0)
+        grid = (tin, wlin, sfreq0.flatten())
         coord = np.transpose([t, wl, sfreq])
 
         real = interpolate.interpn(grid, np.real(res0), coord,
                                    bounds_error=False, fill_value=None)
         imag = interpolate.interpn(grid, np.imag(res0), coord,
                                    bounds_error=False, fill_value=None)
-        return real+imag*1j
+
+        return real + imag * 1j
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:

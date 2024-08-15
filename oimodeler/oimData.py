@@ -429,7 +429,7 @@ class oimData(object):
         for data in self._data:
             self._filteredData.append(hdulistDeepCopy(data))
 
-        if self._filter != None:
+        if self._filter is not None:
             self._filter.applyFilter(self._filteredData)
 
         self._filteredDataReady = True
