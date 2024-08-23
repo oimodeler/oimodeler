@@ -587,27 +587,74 @@ class oimComponentRadialProfile(oimComponent):
     def fht(Ir, r, wlin, tin, sfreq, wl, t):
         pad, nr = oimOptions.ft.padding, r.size
 
-        fov = r[-1]-r[0]
-        dsfreq0 = 1/(fov*pad)
-        sfreq0 = np.linspace(0, pad*nr-1, pad*nr)*dsfreq0
-
+        nfreq=len(sfreq)
+        nwl=len(wlin)
+        nuv_per_lambda=nfreq//nwl
         r, Ir = r[np.newaxis, np.newaxis, :, np.newaxis], Ir[:, :, :, np.newaxis]
-        sfreq0 = sfreq0[np.newaxis, np.newaxis, np.newaxis, :]
+        
+        #-------------------------
+        #Fastest implementation
+        #-------------------------
+        sfreq_reshape=np.reshape(sfreq,(nuv_per_lambda,nwl))
+        sfreq_reshape_tr=np.transpose(sfreq_reshape)
+        sfreq_reshape_tr=sfreq_reshape_tr[np.newaxis,:,np.newaxis,:]
+        res0=np.zeros([nfreq],dtype=complex)        
+        num_hankel = integrate.trapezoid(2 * np.pi * r * Ir * j0(2 * np.pi * r * sfreq_reshape_tr), r, axis=2)
+        norm = integrate.trapezoid(2 * np.pi * r * Ir, r, axis=2)
+        res0 = num_hankel / norm
+        res0_tr=np.transpose(res0)
+        res0_tr=np.reshape(res0_tr,(nfreq))
+        return res0_tr
 
-        res0 = integrate.trapezoid(
-            2 * np.pi * r * Ir * j0(2 * np.pi * r * sfreq0), r, axis=2)
-        norm = integrate.trapezoid(2 * np.pi * r.squeeze(-1) * Ir.squeeze(-1), r.squeeze(-1))
-        res0 = res0 / norm[..., np.newaxis]
+        #-------------------------
+        #1st faster implementation
+        #-------------------------        
+        # sfreq_reshape=np.reshape(sfreq,(nuv_per_lambda,nwl))
+        # wl_reshape=np.reshape(wl,(nuv_per_lambda,nwl))
+        # res0=np.zeros([nuv_per_lambda,nwl],dtype=complex)
+        # for ind_wl in range(nwl):
+        #       num_hankel = integrate.trapezoid(2 * np.pi * r * Ir[:,ind_wl,:,:] * j0(2 * np.pi * r * sfreq_reshape[:,ind_wl]), r, axis=2)
+        #       norm = integrate.trapezoid(2 * np.pi * r * Ir[:,ind_wl,:,:], r, axis=2)
+        #       res0[:,ind_wl]=(num_hankel / norm)
+        # res0=np.reshape(res0,(nfreq))
+        # return res0
 
-        grid = (tin, wlin, sfreq0.flatten())
-        coord = np.transpose([t, wl, sfreq])
+        #-------------------------        
+        #2nd faster implementation
+        #-------------------------
+        #res0=np.zeros([nfreq],dtype=complex)
+        # for ind_wl in range(nwl):
+        #     ind=np.where(wl == wlin[ind_wl])
+        #     num_hankel = integrate.trapezoid(2 * np.pi * r * Ir[:,ind_wl,:] * j0(2 * np.pi * r * sfreq[ind]), r, axis=2)
+        #     norm = integrate.trapezoid(2 * np.pi * r * Ir[:,ind_wl,:], r, axis=2)
+        #     res0[ind]=(num_hankel / norm)
+        # return res0
+        
+        #-------------------------
+        #Slow implementation
+        #-------------------------
+        # fov = r[-1]-r[0]
+        # dsfreq0 = 1/(fov*pad)
+        # sfreq0 = np.linspace(0, pad*nr-1, pad*nr)*dsfreq0
 
-        real = interpolate.interpn(grid, np.real(res0), coord,
-                                   bounds_error=False, fill_value=None)
-        imag = interpolate.interpn(grid, np.imag(res0), coord,
-                                   bounds_error=False, fill_value=None)
+        # r, Ir = r[np.newaxis, np.newaxis, :, np.newaxis], Ir[:, :, :, np.newaxis]
+        # sfreq0 = sfreq0[np.newaxis, np.newaxis, np.newaxis, :]
 
-        return real + imag * 1j
+        # res0 = integrate.trapezoid(
+        #     2 * np.pi * r * Ir * j0(2 * np.pi * r * sfreq0), r, axis=2)
+        # norm = integrate.trapezoid(2 * np.pi * r.squeeze(-1) * Ir.squeeze(-1), r.squeeze(-1))
+        # res0 = res0 / norm[..., np.newaxis]
+
+        # grid = (tin, wlin, sfreq0.flatten())
+        # coord = np.transpose([t, wl, sfreq])
+
+        # real = interpolate.interpn(grid, np.real(res0), coord,
+        #                             bounds_error=False, fill_value=None)
+        # imag = interpolate.interpn(grid, np.imag(res0), coord,
+        #                             bounds_error=False, fill_value=None)
+
+        # return real + imag*1j
+    
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
@@ -661,6 +708,7 @@ class oimComponentRadialProfile(oimComponent):
         return im
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+        #print('wl = ',wl)
         if wl is None:
             wl = ucoord*0
         if t is None:
