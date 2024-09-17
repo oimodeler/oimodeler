@@ -294,7 +294,16 @@ class oimParamInterpolator(oimParam):
             if not (pi in params) and not(isinstance(pi, oimParamLinker)):
                 params.append(pi)
         return params
-
+    
+    
+    def  set(self, **kwargs):
+        print("Warning set method is not defined for all interpolators. use getFreeParametezrs instead")
+        for parami in self.params:
+            for key, value in kwargs.items():
+                try:
+                    self.__dict__[key] = value
+                except NameError:
+                    print("Not valid parameter : {}".format(value))
 
 ###############################################################################
 
