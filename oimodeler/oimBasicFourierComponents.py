@@ -447,6 +447,59 @@ class oimESKIRing(oimComponentFourier):
                 (r2 >= (self.params["d"](wl, t)/2-dx/2)**2)).astype(float)*F
 
 
+
+
+
+class oimESKGRing(oimComponentFourier):
+    """Skewed Elliptical Gaussian Ring component defined in the fourier space
+
+    Parameters
+    ----------
+    x: u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y: u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f: u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    fwhm: u.mas | oimInterp
+        outer diameter of the ring (in mas). The default is 0.
+    skw: u.dimensionless_unscaled | oimInterp
+        skew of the ring. The default is 0.
+    skwPa: u.deg | oimInterp
+        elongation of the ring. The default is 1.
+    """
+    name = "Skewed Elliptical Ring"
+    shortname = "SKER"
+    elliptic = True
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["d"] = oimParam(**_standardParameters["d"])
+        self.params["fwhm"] = oimParam(**_standardParameters["fwhm"])
+        self.params["skw"] = oimParam(**_standardParameters["skw"])
+        self.params["skwPa"] = oimParam(**_standardParameters["skwPa"])
+        self._eval(**kwargs)
+
+    def _visFunction(self, xp, yp, rho, wl, t):
+        xx = np.pi*self.params["d"](wl, t) * \
+            self.params["d"].unit.to(u.rad)*rho
+       
+        xx2 = self.params["fwhm"](wl, t)* \
+            self.params["fwhm"].unit.to(u.rad)*rho
+
+
+        phi = (self.params["skwPa"](wl, t)-self.params["pa"](wl, t)) * \
+            self.params["skwPa"].unit.to(u.rad) + np.arctan2(yp, xp)
+
+        res = (j0(xx)-1j*np.sin(phi)*j1(xx)*self.params["skw"](wl, t))  \
+            * np.nan_to_num(np.exp(-(np.pi*xx2)**2/(4*np.log(2))), nan=1)
+
+        return res
+
+
+
 class oimESKRing(oimComponentFourier):
     """Skewed Elliptical Ring component defined in the fourier space
 
@@ -496,17 +549,18 @@ class oimESKRing(oimComponentFourier):
 
         return res
 
-    def _imageFunction(self, xx, yy, wl, t):
-        r2 = (xx**2+yy**2)
+    #def _imageFunction(self, xx, yy, wl, t):
+         
+        # r2 = (xx**2+yy**2)
 
-        phi = (self.params["skwPa"](wl, t)-self.params["pa"](wl, t)) * \
-            self.params["skwPa"].unit.to(u.rad) + np.arctan2(yy, xx)
+        # phi = (self.params["skwPa"](wl, t)-self.params["pa"](wl, t)) * \
+        #     self.params["skwPa"].unit.to(u.rad) + np.arctan2(yy, xx)
 
-        F = (1+self.params["skw"](wl, t)*np.sin(phi)) / \
-            (1+self.params["skw"](wl, t))
+        # F = (1+self.params["skw"](wl, t)*np.sin(phi)) / \
+        #     (1+self.params["skw"](wl, t))
 
-        return ((r2 <= (self.params["dout"](wl, t)/2)**2) &
-                (r2 >= (self.params["din"](wl, t)/2)**2)).astype(float)*F
+        # return ((r2 <= (self.params["dout"](wl, t)/2)**2) &
+        #         (r2 >= (self.params["din"](wl, t)/2)**2)).astype(float)*F
 
 
 
