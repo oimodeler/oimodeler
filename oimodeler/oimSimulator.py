@@ -2,10 +2,11 @@
 """Data/model simulation"""
 import matplotlib.pyplot as plt
 import numpy as np
-
+import astropy.units as u
 from .oimData import oimData, oimDataType
 from .oimUtils import hdulistDeepCopy
-from .oimPlots import oimWlTemplatePlots, _errorplot
+from .oimPlots import oimWlTemplatePlots, _errorplot, oimPlotParamName,\
+                      oimPlotParamLabelShort
 
 
 def corrFlux2Vis2(vcompl):
@@ -122,7 +123,6 @@ class oimSimulator:
             idx = 0
             nfiles = len(data.struct_u)
             for ifile in range(nfiles):
-                # print("Data {}".format(ifile))
                 narr = len(data.struct_arrType[ifile])
                 for iarr in range(narr):
                     arrNum = data.struct_arrNum[ifile][iarr]
@@ -132,11 +132,14 @@ class oimSimulator:
                     nwl = data.struct_nwl[ifile][iarr]
                     vcompli = self.vcompl[idx:idx+nB*nwl]
                     vcompli = np.reshape(vcompli, [nB, nwl])
+                    
 
-                    dataVal = data.struct_val[ifile][iarr]
+                    dataVal =data.struct_val[ifile][iarr]
                     dataErr = data.struct_err[ifile][iarr]
                     flag = data.struct_flag[ifile][iarr]
+                    
 
+                    
                     idx += nB*nwl
                     quantities = []
                     val = []
@@ -174,7 +177,11 @@ class oimSimulator:
 
                     elif arrType == "OI_FLUX":
                         val.append(corrFlux2Flux(vcompli))
-                        quantities.append("FLUXDATA")
+                        #Fucking GRAVITY patch!
+                        if "FLUXDATA" in [c.name for c in data.data[ifile][arrNum].data.columns]:
+                            quantities.append("FLUXDATA")
+                        else:
+                            quantities.append("FLUX")
 
                     # NOTE: Filling the simulatedData astropy array with the computed values
                     if computeSimulatedData:
@@ -188,6 +195,12 @@ class oimSimulator:
                     # NOTE: Computing the chi2
                     if computeChi2 == True:
                         for ival in range(len(val)):
+                            
+                            if nwl == 1 and len(dataVal[ival].shape)==1:   
+                                dataVal[ival] =  dataVal[ival][:,None]
+                                dataErr[ival] =  dataErr[ival][:,None]
+                                flag[ival]    =  flag[ival][:,None]
+
                             # NOTE: For phase quantities go to the complex plane
                             if quantities[ival] in dataTypes:
                                 if quantities[ival] in ["VISPHI", "T3PHI"]:
@@ -201,6 +214,7 @@ class oimSimulator:
                                                   * np.logical_not(flag[ival]))
                                 chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
                                 chi2List.append(chi2i)
+                                #print(chi2i)
 
         if computeChi2:
             self.chi2 = chi2
@@ -237,10 +251,20 @@ class oimSimulator:
         # NOTE: Plotting  data and simulated data
         kwargsData0 = dict(cname="EFF_WAVE", cunit="micron", lw=2,
                            cmap="coolwarm", errorbar=True, label="data")
+        
         kwargsSimulatedData0 = dict(color="k", ls=":", lw=1, label="model")
+        
         kwargsData = {**kwargsData0, **kwargsData}
+        kwargsData["cunit"]= u.Unit(kwargsData["cunit"])
+
+        if "color" in kwargsData:
+            kwargsData.pop("cmap")
+            kwargsData.pop("cname")
+            kwargsData.pop("cunit")
         kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
 
+
+      
         if type(arr) != type([]):
             arr = [arr]
 
@@ -253,7 +277,7 @@ class oimSimulator:
             ax = np.array([ax])
 
         plt.subplots_adjust(left=0.09, top=0.98, right=0.98, hspace=0.14)
-
+   
         # NOTE: Plotting loop: Plotting data and simulated data for each data type in arr
         for iax, axi in enumerate(ax):
             # NOTE: Plotting the data with wavelength colorscale + errorbars vs
@@ -292,8 +316,12 @@ class oimSimulator:
         ax[0].set_xlim(xmin, xmax)
 
         # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
-        fig.colorbar(scale, ax=ax.ravel().tolist(),
-                     label=r"$\lambda$ ($\mu$m)")
+        if "cname" in kwargsData:      
+            idxC = np.where(oimPlotParamName == kwargsData['cname'])[0][0]
+            xlabel = oimPlotParamLabelShort[idxC]
+            cunittext = f"{kwargsData['cunit']:latex_inline}"
+            fig.colorbar(scale, ax=ax.ravel().tolist(),
+                         label=f"{xlabel} ({cunittext})")
 
         if savefig != None:
             plt.savefig(savefig)
