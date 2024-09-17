@@ -74,6 +74,29 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
                 data.pop(arri)
 
 
+class oimRemoveInsnameFilter(oimDataFilterComponent):
+    """Simple filter removing arrays by type"""
+    name = "Remove arrays by insname Filter"
+    shortname = "RemInsFilt"
+    description = "Remove array by insname Filter"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["insname"]=None
+        self._eval(**kwargs)
+        
+    def _filteringFunction(self, data):
+        to_remove=[]
+        for di in data:
+            
+            if "INSNAME" in di.header:
+                if di.header["INSNAME"] == self.params["insname"]:
+                    to_remove.append(di)
+                    
+        for di in to_remove:
+            data.pop(di)
+
+
 class oimWavelengthRangeFilter(oimDataFilterComponent):
     """Filter for cutting wavelength range"""
     name = "Wavelength range Filter"
