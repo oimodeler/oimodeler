@@ -607,7 +607,7 @@ def getBaselineLengthAndPA(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
         else:
             u1, v1 = datai.data["U1COORD"], datai.data["V1COORD"]
             u2, v2 = datai.data["U2COORD"], datai.data["V2COORD"]
-            u3, v3 = u1+u2, v1+v2
+            u3, v3 = -u1-u2, -v1-v2
             u123 = np.array([u1, u2, u3])
             v123 = np.array([v1, v2, v3])
 
@@ -911,7 +911,7 @@ def cutWavelengthRange(oifits: fits.HDUList, wlRange: Optional[List[float]] = No
                     cols = fits.ColDefs(colDefs)
                     hdu = fits.BinTableHDU.from_columns(cols)
                     hdu.header = datai.header
-                    hdu.update()
+                    hdu.update_header()
                     data[idata] = hdu
     return data
 
@@ -1392,10 +1392,10 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
             length, pa = getBaselineLengthAndPA(data, arr=arri, extver=extver)
             nB = np.size(length)
 
-            eff_wave = np.tile(eff_wave[None, :], (nB,1))
-            eff_band = np.tile(eff_band[None, :], (nB,1))
-            length = np.tile(length[:, None], (1, nwl))
-            pa = np.tile(pa[:, None], (1, nwl))
+            EFF_WAVE = np.tile(eff_wave[None, :], (nB,1))
+            EFF_BAND = np.tile(eff_band[None, :], (nB,1))
+            LENGTH = np.tile(length[:, None], (1, nwl))
+            PA = np.tile(pa[:, None], (1, nwl))
 
 
             for colname in data[arri].columns:
@@ -1407,18 +1407,20 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
 
                 # TODO: Remove exec here as it is can be security liability
                 exec(f"{colname.name}=coldata")
+                
+  
+            # TODO: Remove eval here as it is can be security liability
+            flags = eval(expr)
+            if keepOldFlag:
+                data[arri].data["FLAG"] = np.logical_or(flags, data[arri].data["FLAG"])
+            else:
+                data[arri].data["FLAG"] = flags
+       
         except:
             pass
+    
 
-    # TODO: Remove eval here as it is can be security liability
-    flags = eval(expr)
-    for arri in arr:
-        if keepOldFlag:
-            data[arri].data["FLAG"] = np.logical_or(flags, data[arri].data["FLAG"])
-        else:
-            data[arri].data["FLAG"] = flags
-
-    return flags
+    return True
 
 
 def computeDifferentialError(
