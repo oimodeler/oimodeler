@@ -694,6 +694,7 @@ baseline for our binary Be-star model.
 .. image:: ../../images/FitsImage_Disco_visibility2.png
   :alt: Alternative text 
 
+In the next example, we will see how to compare models with real OIFITS data using the oimSimulator class.
 
 .. _createSimulator:
 
@@ -792,8 +793,28 @@ in the OIFITS files.
 .. image:: ../../images/ExampleOimSimulator_model0.png
   :alt: Alternative text  
 
+.. warning::
 
-You can now try to fit the model "by hand", or go to the next example
+    By default the simulator uses all data types to compute the chi2. In the case of our ASPRO simulated data, this is OK as all 
+    datatypes are computed. But for most real interferometric instruments, some data type should be ignore. It is often the case
+    of the closure-ampltiude (T3AMP). For some instruments like MATISSE, one should choose between using VISAMP or VIS2DATA.
+
+We can force the chi2r computation to only a subset of datatype using the dataTypes option of :func:`oimSimulator.compute 
+<oimodeler.oimSimulator.oimSimulator.compute>`  method. For instance, in the following we only compute the chi2r 
+on the square visibliity and closure-phase.
+
+.. code-block::
+
+    sim.compute(computeChi2=True, dataTypes=["VIS2DATA","T3PHI"])
+    pprint(f"Chi2r = {sim.chi2r}")
+
+.. code-block::
+
+    ... Chi2r = 24393.17539459703
+
+We could now try to fit the model "by hand", or by making a loop on some parameters
+ and looking at the chi2r. But oimodeler implement various fitter class to perform automatic 
+ model fitting as shown in the next example
 where we use a fitter from the :mod:`oimFitter <oimodeler.oimFitter>`
 module to automatically find a good fit (and thus well fitting parameters).
 
@@ -807,7 +828,7 @@ determine the values of the parameters of the same binary as in the
 (previous) :ref:`createSimulator` example.
 
 We start by setting up the script with imports, a data list and a binary model.
-We don't need to specify values for the biary parameters as they will be fitted.
+We don't need to specify values for the binary parameters as they will be fitted.
 
 .. code-block:: python
 
@@ -871,6 +892,16 @@ will explore the parameter space.
    If you are not confident with emcee, you should have a look at the documentation
    `here <https://emcee.readthedocs.io/en/stable/>`_.
     
+
+
+Alternatively, like for the `oimSimulator <oimodeler.oimSimulator.oimSimulator>` we can choose 
+which OIFITS data types should de used in the fitting process. This is done using the dataTypes option 
+when creating the fitter.
+	
+.. code-block:: python
+    
+    fit = oim.oimFitterEmcee(files, model, nwalkers=32, dataTypes=["VIS2DATA","T3PHI"])
+	
 
 We need to initialize the fitter using its :func:`oimFitterEmcee.prepare <oimodeler.oimFitter.oimFitterEmcee>`
 method. This is setting the initial values of the walkers.
