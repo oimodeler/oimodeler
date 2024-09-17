@@ -24,7 +24,7 @@ class oimKinematicDisk(oimComponentImage):
     name = "kinematic disk component"
     shorname = "kinDisk"
     elliptic = False
-
+    
     def __init__(self, **kwargs):
         super(). __init__(**kwargs)
         # The many parameters of the rotating disk model
@@ -34,8 +34,8 @@ class oimKinematicDisk(oimComponentImage):
         self.params["dwl"]=oimParam(name="dwl",value=0.9e-10,description="pixel size in wavelength ",unit=units.m,free=False)
         self.params["res"]=oimParam(name="R",value=1.8e-10,description="spectral resolution",unit=units.m,free=False)        
         self.params["nwl"]=oimParam(name="nwl",value=51,description="number of wavelengths",unit=units.one,free=False)        
-        self.params["Rstar"]=oimParam(name="Rstar",value=5,description="Stellar Radius",unit=units.R_sun)
-        self.params["dist"]=oimParam(name="dist",value=100,description="inclination angle",unit=units.pc)
+        self.params["Rstar"]=oimParam(name="Rstar",value=5,description="Stellar Radius",unit=units.R_sun,free=False)
+        self.params["dist"]=oimParam(name="dist",value=100,description="distance in parsec",unit=units.pc,free=False)
         self.params["fwhmCont"]=oimParam(name="fwhmCont",value=5,description="FWHM of the disk in the continuum in DStar",unit=units.one)
         self.params["fwhmLine"]=oimParam(name="fwhmLine",value=2,description="FWHM of the disk in the line in DStar",unit=units.one)
         self.params["fluxDiskCont"]=oimParam(name="fluxDiskCont",value=0.5,description="Flux of the disk in the continuum",unit=units.one)
@@ -43,15 +43,16 @@ class oimKinematicDisk(oimComponentImage):
         self.params["EW"]=oimParam(name="EW",value=40,description="Equivalent width of the line",unit=units.AA)
         self.params["vrot"]=oimParam(name="vrot",value=400,description="rotational velocity at the photosphere",unit=units.km/units.s)
         self.params["beta"]=oimParam(name="beta",value=-0.5,description="exponent of the rotational law",unit=units.one)
-        self.params["v0"]=oimParam(name="v0",value=0,description="expension velocity at the photosphere",unit=units.km/units.s)
-        self.params["vinf"]=oimParam(name="vinf",value=0,description="expension velocity at the infinity ",unit=units.km/units.s)
-        self.params["gamma"]=oimParam(name="vinf",value=0.86,description="exponent of the expansion velocity law",unit=units.one)
+        self.params["v0"]=oimParam(name="v0",value=0,description="expension velocity at the photosphere",unit=units.km/units.s,free=False)
+        self.params["vinf"]=oimParam(name="vinf",value=0,description="expension velocity at the infinity ",unit=units.km/units.s,free=False)
+        self.params["gamma"]=oimParam(name="vinf",value=0.86,description="exponent of the expansion velocity law",unit=units.one,free=False)
 
         self._t = np.array([0]) # constant value <=> static model
 
         # will be set in the _internalImage function
         # self._wl = None
         self._eval(**kwargs)
+       
 
     def _internalImage(self):
         dim=self.params["dim"].value
@@ -106,7 +107,8 @@ class oimKinematicDisk(oimComponentImage):
         # 3 Intensity maps : star, disk in continuum and disk in the line
         sigmaLine=2*fwhmLine/2.3548
         sigmaCont=2*fwhmCont/2.3548
-        mapEnvL=np.exp((-r_incl**2)/(2*sigmaLine**2.))*(r_incl>1)
+        #mapEnvL=np.exp((-r_incl**2)/(2*sigmaLine**2.))*(r_incl>1)
+        mapEnvL=np.exp((-r_incl**2)/(2*sigmaLine**2.))*(r>1)
         mapEnvL=mapEnvL/np.sum(mapEnvL)
         mapEnvC = np.exp((-r_incl**2)/(2*sigmaCont**2.))
         mapEnvC=mapEnvC/np.sum(mapEnvC)
