@@ -703,7 +703,7 @@ def oimPlot(oifitsList: fits.HDUList,
                     nflags, flag0, ilam0 = len(flags), True, 0
                     for ilam, flagi in enumerate(flags):
                         doPlot = False
-                        flagi = True if np.isnan(ydata[idata][iB, ilam]) else False
+                        flagi = True if np.isnan(ydata[idata][iB, ilam]) else flagi
                         if flag0 != flagi:
                             if not flagi:
                                 ilam0 = ilam
@@ -715,7 +715,7 @@ def oimPlot(oifitsList: fits.HDUList,
                             doPlot = True
 
                         if doPlot:
-                            labeli = label + \
+                            labeli = label + " " + \
                                 ColorNames[colorIdx[ifile][idata][iB]]
 
                             if cname is None:
@@ -848,13 +848,13 @@ class oimWlTemplatePlots(Figure):
                         idx = np.where(oimPlotParamName == shapeij)[0][0]
                         arrName = oimPlotParamArr[idx]
                         for hdui in filek:
-                            extver = 1
                             if hdui.name == arrName:
+                                extver = hdui.header["EXTVER"]
                                 if np.any(hdui.data[shapeij]!=0):
                                     s = hdui.data[shapeij].shape[0]
                                     for iB in range(s):
                                         datatypei.append([extver,iB,shapeij])
-                                extver += 1
+ 
                 if len(datatypei) != 0:
                     datatypek.append(datatypei)
 
@@ -883,8 +883,9 @@ class oimWlTemplatePlots(Figure):
                     if ic < nplots_col:
                         extver, iB, dataType = datatypeil[ic]
                         if datatype_previous is None:
+                            datatype_0 = dataType
                             showYlabel = 1
-                        elif datatype_previous != dataType:
+                        elif ic == nc-1 and datatype_0 != dataType:
                             showYlabel = 2
                         else:
                             showYlabel = 0
