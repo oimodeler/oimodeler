@@ -29,9 +29,21 @@ files = list(data_dir.glob("*.fits"))
 
 # %%
 dim, nwl, wl0 = 256, 51, 2.1656e-6
-c = oim.oimKinematicDisk(dim=dim, fov=20, incl=45, Rstar=5.8, dist=80, fwhmCont=2.2,
-                         fluxDiskCont=0.25, EW=10.4, fwhmLine=5.7, nwl=nwl,
-                         vrot=360, beta=-0.5, pa=-83.2, wl0=2.1656e-6, dwl=0.9e-10,
+c = oim.oimKinematicDisk(dim=dim, 
+                         fov=20, 
+                         incl=45, 
+                         Rstar=5.8, 
+                         dist=80, 
+                         fwhmCont=2.2,
+                         fluxDiskCont=0.25, 
+                         EW=10.4, 
+                         fwhmLine=5.7, 
+                         nwl=nwl,
+                         vrot=360, 
+                         beta=-0.5, 
+                         pa=-83.2, 
+                         wl0=2.1656e-6, 
+                         dwl=0.9e-10,
                          res=1.8e-10)
 m = oim.oimModel(c)
 
