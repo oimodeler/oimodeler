@@ -529,7 +529,8 @@ class oimComponentRadialProfile(oimComponent):
         if self.elliptic:
             self.params["pa"] = oimParam(**_standardParameters["pa"])
             self.params["elong"] = oimParam(**_standardParameters["elong"])
-            self.params["dim"] = oimParam(**_standardParameters["dim"])
+            
+        self.params["dim"] = oimParam(**_standardParameters["dim"])
 
         self._eval(**kwargs)
 
