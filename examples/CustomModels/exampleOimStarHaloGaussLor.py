@@ -45,8 +45,9 @@ def _logProbability(self, theta: np.ndarray) -> float:
     return -0.5 * self.simulator.chi2r
 
 
-# NOTE: Load the simulated data from ASPRO and apply some filter to
-# keep only VIS2DATA for model fitting
+# NOTE: Load some PIONIER archive data and apply some filters to it
+# to keep only VIS2DATA and T3PHI
+# TODO: Examples files don't fit very well to this model
 path = Path(oim.__file__).parent.parent
 files = list((path / "data" / "RealData" / "PIONIER" / "HD142527").glob("*.fits"))
 data = oim.oimData(files)
@@ -64,7 +65,11 @@ shgl = oim.oimStarHaloGaussLorentz(
         kc=-3.9, ks=ks, pa=-0.12*u.rad.to(u.deg),
         elong=1/0.83, wl0=1.68e-6)
 
-shgl.params["pa"].set(min=-180, max=180)
+shgl.params["kc"].set(min=-4, max=-2)
+shgl.params["fs"].set(min=0.3, max=0.5)
+shgl.params["fc"].set(min=0.4, max=0.6)
+shgl.params["flor"].set(min=0.3, max=0.5)
+shgl.params["pa"].set(min=-40, max=40)
 shgl.params["elong"].set(min=1, max=3)
 shgl.params["f"].free = False
 
@@ -89,8 +94,8 @@ fit = oim.oimFitterEmcee(data, model, nwalkers=50)
 # NOTE: Overwrite the existing _logProbability method of the class "fit"
 fit._logProbability = lambda theta: _logProbability(fit, theta)
 
-nsteps = 20000
-discard = int(nsteps*0.1)
+nsteps = 10000
+discard = int(nsteps * 0.1)
 fit.prepare(init="random")
 fit.run(nsteps=nsteps, progress=True)
 

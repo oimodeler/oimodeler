@@ -45,14 +45,16 @@ def _logProbability(self, theta: np.ndarray) -> float:
     return -0.5 * self.simulator.chi2r
 
 
-# NOTE: Load the simulated data from ASPRO and apply some filter to
-# keep only VIS2DATA and T3PHI for model fitting
+# NOTE: Load some PIONIER archive data and apply some filters to it
+# to keep only VIS2DATA and T3PHI
+# TODO: Examples files don't fit very well to this model
 path = Path(oim.__file__).parent.parent
 files = list((path / "data" / "RealData" / "PIONIER" / "HD142527").glob("*.fits"))
 data = oim.oimData(files)
-f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
-f2 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
-data.setFilter(oim.oimDataFilter([f1, f2]))
+f1 = oim.oimWavelengthRangeFilter(targets="all", wlRange=[1.58e-6, 1.78e-6])
+f2 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
+f3 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
+data.setFilter(oim.oimDataFilter([f1, f2, f3]))
 
 # NOTE: The calculation of the photometric slope from the star's effective temperature
 wl, ks = oim.compute_photometric_slope(data, 6500)

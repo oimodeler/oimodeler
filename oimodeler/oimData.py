@@ -345,7 +345,7 @@ class oimData(object):
 
     def __str__(self):
         """Return a string representation of the class."""
-        txt = f"oimData containing {np.size(self.data)} file(s)\n"
+        txt = f"oimData containing {len(self.data)} file(s)\n"
         for ifile, fi in enumerate(self.dataInfo):
             try:
                 fname = Path(self.data[ifile].filename()).name
@@ -354,10 +354,9 @@ class oimData(object):
 
             txt += f"{fname}\n"
             for di in fi:
-                shapetxt = f"({di['nB'][0]}, {di['nB'][1]})"
-                txt += f"\t{di['arr']}{shapetxt}\n"
+                txt += f"\t{di['arr']}{di['nB']}\n"
 
-                for ddi in di['data']:
+                for ddi in di["data"]:
                     txt += f"\t\t{ddi}\n"
         return txt
 
@@ -430,7 +429,7 @@ class oimData(object):
         for data in self._data:
             self._filteredData.append(hdulistDeepCopy(data))
 
-        if self._filter != None:
+        if self._filter is not None:
             self._filter.applyFilter(self._filteredData)
 
         self._filteredDataReady = True

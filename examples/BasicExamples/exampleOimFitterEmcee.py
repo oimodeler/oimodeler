@@ -44,7 +44,7 @@ fit = oim.oimFitterEmcee(files, model, nwalkers=32)
 fit.prepare(init="random")
 
 # pprinting the initial values of the walkers
-pprint(f"Initial values of the free parameters for the {fit.nwalkers} walkers")
+pprint(f"Initial values of the free parameters for the {fit.params['nwalkers']} walkers")
 pprint(fit.initialParams)
 
 # run a 1000 steps fit with fixed starting inital and 1000 steps

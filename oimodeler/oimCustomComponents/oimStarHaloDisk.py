@@ -58,7 +58,7 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
         flor = self.params["flor"](wl, t)
         hlr = 10 ** self.params["la"](wl, t) if self.ak is None else self.ak
         radius = np.hypot(xx, yy)
-        image_gauss = np.log(2) / (np.pi * hlr**2) * np.exp(-((radius / hlr) ** 2) * np.log(2))
+        image_gauss = np.log(2) / (np.pi * hlr**2) * np.exp(-(radius / hlr) ** 2 * np.log(2))
         image_lor = hlr / (2 * np.pi * np.sqrt(3)) * (hlr**2 / 3 + radius**2) ** (-3 / 2)
         return (1 - flor) * image_gauss + flor * image_lor
 

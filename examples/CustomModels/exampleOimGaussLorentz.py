@@ -13,14 +13,15 @@ if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
 
-# NOTE: Load the simulated data from ASPRO and apply some filter to
-# keep only VIS2DATA for model fitting
-# TODO: Examples files don't fit very well to this model
+# NOTE: Load some PIONIER archive data and apply some filters to it
+# to keep only the VIS2DATA
+# TODO: Example data is not suited for this fit -> Replace it
 path = Path(oim.__file__).parent.parent
 files = list((path / "data" / "RealData" / "PIONIER" / "HD142527").glob("*.fits"))
 data = oim.oimData(files)
-f1 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX", "OI_T3"])
-data.setFilter(f1)
+f1 = oim.oimWavelengthRangeFilter(targets="all", wlRange=[1.58e-6, 1.78e-6])
+f2 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX", "OI_T3"])
+data.setFilter(oim.oimDataFilter([f1, f2]))
 
 # NOTE: Specifying the parameter space
 gl = oim.oimGaussLorentz(hlr=10**0.06, flor=0.43,

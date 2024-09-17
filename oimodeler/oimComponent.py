@@ -526,7 +526,7 @@ class oimComponentRadialProfile(oimComponent):
 
         # CHECK: Is this not redundant as oimComponent is already ellpitical?
         # NOTE: Add ellipticity
-        if self.elliptic == True:
+        if self.elliptic:
             self.params["pa"] = oimParam(**_standardParameters["pa"])
             self.params["elong"] = oimParam(**_standardParameters["elong"])
             self.params["dim"] = oimParam(**_standardParameters["dim"])
@@ -550,7 +550,7 @@ class oimComponentRadialProfile(oimComponent):
         else:
             r = self._r
 
-        if simple == True:
+        if simple:
             return r, wl, t
         else:
             nt = np.array(t0).flatten().size
@@ -561,7 +561,7 @@ class oimComponentRadialProfile(oimComponent):
             wl_arr = np.tile(wl[None, :, None], (nt, 1, nr))
             t_arr = np.tile(t[:, None, None],  (1, nwl, nr))
 
-            if flatten == True:
+            if flatten:
                 return t_arr.flatten(), wl_arr.flatten(), r_arr.flatten()
             else:
                 return t_arr, wl_arr, r_arr
@@ -587,35 +587,12 @@ class oimComponentRadialProfile(oimComponent):
 
     @staticmethod
     def fht(Ir, r, wlin, tin, sfreq, wl, t):
-        pad = oimOptions.ft.padding
-        nr = r.size
-        ntin = tin.size
-        nwlin = wlin.size
-
-        fov = r[-1]-r[0]
-        dsfreq0 = 1/(fov*pad)
-        sfreq0 = np.linspace(0, pad*nr-1, pad*nr)*dsfreq0
-
-        r2D = np.tile(r[None, None, :, None], (ntin, nwlin, 1, pad*nr))
-        Ir2D = np.tile(Ir[:, :, :, None], (1, 1, 1, pad*nr))
-        sf2D = np.tile(sfreq0[None, None, None, :], (ntin, nwlin, nr, 1))
-
-        res0 = integrate.trapezoid(
-            2.*np.pi*r2D*Ir2D*j0(2.*np.pi*r2D*sf2D), r2D, axis=2)
-
-        for it in range(ntin):
-            for iwl in range(nwlin):
-                res0[it,iwl,:] /= integrate.trapezoid(2.*np.pi*r*Ir[it,iwl,:], r)
-                # res0[it,iwl,:]/=np.sum(r*Ir[it,iwl,:]*dr)
-
-        grid = (tin, wlin, sfreq0)
-        coord = np.transpose([t, wl, sfreq])
-
-        real = interpolate.interpn(grid, np.real(res0), coord,
-                                   bounds_error=False, fill_value=None)
-        imag = interpolate.interpn(grid, np.imag(res0), coord,
-                                   bounds_error=False, fill_value=None)
-        return real+imag*1j
+        nfreq, nwl = len(sfreq), len(wlin)
+        r, Ir = r[np.newaxis, np.newaxis, :, np.newaxis], Ir[:, :, :, np.newaxis]
+        sfreq = sfreq.reshape(nfreq // nwl, nwl).T[np.newaxis, :, np.newaxis, :]
+        num_hankel = integrate.trapezoid(2 * np.pi * r * Ir * j0(2 * np.pi * r * sfreq), r, axis=2)
+        norm = integrate.trapezoid(2 * np.pi * r * Ir, r, axis=2)
+        return (num_hankel / norm).T.reshape(nfreq)
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
@@ -637,14 +614,13 @@ class oimComponentRadialProfile(oimComponent):
         wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
         t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
-        x_arr = (vx_arr*pixSize*dim).flatten()
-        y_arr = (vy_arr*pixSize*dim).flatten()
+        x_arr = (vx_arr * pixSize * dim).flatten()
+        y_arr = (vy_arr * pixSize * dim).flatten()
         wl_arr = wl_arr.flatten()
         t_arr = t_arr.flatten()
 
         x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
-
-        if self.elliptic == True:
+        if self.elliptic:
             pa_rad = (self.params["pa"](wl_arr, t_arr)) * \
                 self.params["pa"].unit.to(units.rad)
 
@@ -657,24 +633,25 @@ class oimComponentRadialProfile(oimComponent):
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
         im = im.reshape(dims)
 
-        if self.normalizeImage == True:
+        if self.normalizeImage:
             # TODO: No loop for normalization
             tot = np.sum(im, axis=(2, 3))
             for it, ti in enumerate(t):
                 for iwl, wli in enumerate(wl):
                     if tot[it, iwl] != 0:
                         im[it, iwl, :, :] = im[it, iwl, :, :]  \
-                            / tot[it, iwl]*self.params["f"](wli, ti)
+                            / tot[it, iwl] * self.params["f"](wli, ti)
 
         return im
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+        #print('wl = ',wl)
         if wl is None:
             wl = ucoord*0
         if t is None:
             t = ucoord*0
 
-        if self.elliptic == True:
+        if self.elliptic:
             pa_rad = (self.params["pa"](wl, t)) * \
                 self.params["pa"].unit.to(units.rad)
             co = np.cos(pa_rad)
@@ -684,8 +661,7 @@ class oimComponentRadialProfile(oimComponent):
             vcoord = fyp
             ucoord = fxp/self.params["elong"](wl, t)
 
-        spf = np.sqrt(ucoord**2+vcoord**2)
-
+        spf = np.hypot(ucoord, vcoord)
         if self._wl is None:
             wl0 = np.sort(np.unique(wl))
         else:
@@ -697,9 +673,9 @@ class oimComponentRadialProfile(oimComponent):
             t0 = self._t
 
         Ir = self.getInternalRadialProfile(wl0, t0)
-
-        vc = self.hankel(Ir, self._r*units.mas.to(units.rad),
+        vc = self.hankel(Ir, self._r * units.mas.to(units.rad),
                          wl0, t0, spf, wl, t)
+
         return vc*self._ftTranslateFactor(ucoord, vcoord, wl, t) * \
             self.params["f"](wl, t)
 

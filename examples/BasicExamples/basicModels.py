@@ -10,7 +10,7 @@ path = Path(__file__).parent.parent.parent
 
 # NOTE: Change these path if you want to save the products at another location
 save_dir = path / "images"
-product_dir = Path()
+product_dir = path / "data"
 if not save_dir.exists():
     save_dir.mkdir(parents=True)
 

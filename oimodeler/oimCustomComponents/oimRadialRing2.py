@@ -5,7 +5,7 @@ from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import oimOptions
 
 
-class oimRadialRing(oimComponentRadialProfile):
+class oimRadialRing2(oimComponentRadialProfile):
     """A ring defined by a radial intensity profile in r^p.
 
     It accounts for elongation and rotation.
@@ -13,9 +13,9 @@ class oimRadialRing(oimComponentRadialProfile):
     Parameters
     ----------
     din : float
-        Inner radius of the disk [mas].
-    dout : float
-        Outer radius of the disk [mas].
+        Inner diameter of the ring [mas].
+    w : float
+        width of the ring [mas].
     p : float
         Power-law exponent for the radial profile.
     pa : float
@@ -41,15 +41,15 @@ class oimRadialRing(oimComponentRadialProfile):
     _radialProfileFunction(xx, yy, wl, t)
         Calculates a radial power law profile.
     """
-    name = "Radial Ring"
-    shortname = "RadRing"
-    elliptic = True
+    name = "Radial Ring2"
+    shortname = "RadRing2"
+    elliptic = False
 
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
         self.params["din"] = oimParam(**_standardParameters["din"])
-        self.params["dout"] = oimParam(**_standardParameters["dout"])
+        self.params["w"] = oimParam(**_standardParameters["w"])
         self.params["p"] = oimParam(**_standardParameters["p"])
 
         self._t = np.array([0])  # constant value <=> static model
@@ -75,7 +75,8 @@ class oimRadialRing(oimComponentRadialProfile):
         """
         # HACK: Sets the multi wavelength coordinates properly. Does not account for time, improves computation time.
         wl, p = np.unique(wl), self.params["p"](wl, t)
-        rin, rout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
+        rin = self.params["din"](wl, t)/2
+        rout = rin+self.params["w"](wl, t)
 
         if len(r.shape) == 3:
             r = r[0, 0][np.newaxis, np.newaxis, :]
@@ -89,7 +90,8 @@ class oimRadialRing(oimComponentRadialProfile):
     @property
     def _r(self):
         """Gets the radial profile [mas]."""
-        rin, rout = map(lambda x: self.params[x].value/2, ("din", "dout"))
+        rin = self.params["din"].value/2
+        rout = rin+self.params["w"].value
         if oimOptions.model.grid.type == "linear":
             return np.linspace(rin, rout, self.params["dim"].value)
         return np.logspace(0.0 if rin == 0 else np.log10(rin),

@@ -5,7 +5,7 @@ import oimodeler as oim
 
 
 # NOTE: Load the simulated data from ASPRO and apply several filters to
-# keep only VIS2DATA and T3PHI, and a narrower wavelength range, for model fitting
+# keep only VIS2DATA and T3PHI and a narrower wavelength range for model fitting
 path = Path(__file__).parent.parent.parent
 files = list((path / "data" / "ASPRO_MATISSE").glob("*.fits"))
 data = oim.oimData(files)
@@ -16,7 +16,7 @@ data.setFilter(oim.oimDataFilter([f1, f2, f3]))
 
 # NOTE: Model creation
 star=oim.oimPt(f=0.6)
-rr = oim.oimRadialRing(dim=128, din=2, dout=5, p=0.5, f=0.8)
+rr = oim.oimRadialRing2(dim=128, din=2, w=10, p=0.5, f=0.8)
 model = oim.oimModel([star,rr])
 
 # NOTE: Simulate and plot the initial model observables and compute the associated reduced Chi2
@@ -27,8 +27,8 @@ print("Chi2r = {}".format(sim.chi2r))
 
 # NOTE: Specifying the parameter space
 star.params["f"].set(min=0,max=1)
-rr.params["din"].set(min=0, max=5)
-rr.params["dout"].set(min=5.01, max=25)
+rr.params["din"].set(min=0, max=10)
+rr.params["w"].set(min=1, max=25)
 rr.params["p"].set(min=-1, max=1)
 rr.params['f'] = oim.oimParamNorm(star.params['f'])
 
@@ -43,7 +43,7 @@ figCorner, axeCorner=fit.cornerPlot(discard=200)
 figSim, axSim=fit.simulator.plot(["VIS2DATA","T3PHI"])
 
 # NOTE: Get the best-fit reduced chi2 and best-fit values of the free parameters (+ their errors)
-best, err_l, err_u, err = fit.getResults(mode='best', discard=10)
+best, err_l, err_u, err = fit.getResults(mode='best', discard=200)
 print("Chi2r = {}".format(fit.simulator.chi2r))
 
 # NOTE: Plotting images of the model
