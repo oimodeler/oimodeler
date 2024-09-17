@@ -64,7 +64,7 @@ plt.legend()
 plt.margins(0)
 
 plt.savefig(save_dir / "FitsImage_Disco_visibility.png")
-plt.close()
+#plt.close()
 
 # %%
 pprint(m.getParameters())
