@@ -8,9 +8,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
-from scipy.optimize import minimize
+from scipy.optimize import minimize,least_squares
 from dynesty import DynamicNestedSampler, NestedSampler
 from dynesty import plotting as dyplot
+from tqdm import tqdm
+import astropy.units as unit
 
 from .oimParam import oimParam
 from .oimSimulator import oimSimulator
@@ -176,7 +178,7 @@ class oimFitterEmcee(oimFitter):
                 return -np.inf
 
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
-        return -0.5 * self.simulator.chi2r
+        return -0.5 * self.simulator.chi2
 
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
         chi2 = -2*self.sampler.get_log_prob(discard=discard, flat=True)
@@ -258,7 +260,7 @@ class oimFitterEmcee(oimFitter):
         samples = self.sampler.get_chain()
 
         xm = np.outer(x, np.ones(chi2.shape[1]))
-        chi2f = chi2.flatten()
+        chi2f = chi2.flatten()/self.simulator.nelChi2
         xf = xm.flatten()
         idx = np.argsort(-1*chi2f)
 
@@ -471,17 +473,26 @@ class oimFitterMinimize(oimFitter):
     def _getChi2r(self, theta):
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = theta[iparam]
+            if theta[iparam]<parami.min or theta[iparam]>parami.max:
+                return np.inf
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
-        return self.simulator.chi2r
+        return self.simulator.chi2
             
     def _run(self, **kwargs):
         self.res = minimize(self._getChi2r, self.initialParams)
+        self.res = least_squares(self._getChi2r, self.initialParams,method="lm")
         self.getResults()
         return kwargs
     
     def getResults(self, **kwargs):
         values = self.res.x
-        errors = np.diag(self.res.hess_inv)**0.5
+        
+        try:
+            errors = np.diag(self.res.hess_inv)**0.5
+        except:
+            cov = np.linalg.inv(self.res.jac.T.dot(self.res.jac))
+            errors = np.sqrt(np.diagonal(cov))
+
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = values[iparam]
             parami.error = errors[iparam]
@@ -490,3 +501,242 @@ class oimFitterMinimize(oimFitter):
                                dataTypes=self.dataTypes)
         
         return values, errors
+    
+    def printResults(self, format=".5f", **kwargs):
+        res = self.getResults(**kwargs)
+        chi2r = self.simulator.chi2r
+        pm = u'\xb1'
+        for iparam,parami in enumerate(self.freeParams):
+            print(f"{parami} = {res[0][iparam]:{format}} {pm} {res[1][iparam]:{format}} {self.freeParams[parami].unit}")
+        print(f"chi2r = {chi2r:{format}}")
+
+class oimFitterRegularGrid(oimFitter):
+    def __init__(self, *args, **kwargs):
+
+       super().__init__(*args, **kwargs)
+    
+    def _prepare(self, **kwargs):
+        
+        if "params" in kwargs:
+            self.gridParams=kwargs['params']
+        else:
+            self.gridParams = list(self.model.getFreeParameters().values())
+    
+        if "max" in kwargs:
+            self.gridMax = kwargs['max']
+        else:
+            self.gridMax = []
+            for parami in self.gridParams:
+                self.gridMax.append(parami.max)
+        if "min" in kwargs:
+            self.gridMin = kwargs['min']
+        else:
+            self.gridMin = []
+            for parami in self.gridParams:
+                self.gridMin.append(parami.min)
+        if "steps" in kwargs:
+            self.gridSteps = kwargs['steps']  
+        else:
+            raise TypeError("steps argument needed in oimFitterGrid")
+            
+        self.grid=[]
+        self.gridSize=[]
+        if len(self.gridParams)== len( self.gridMax) and  \
+           len(self.gridParams)== len( self.gridMin) and  \
+           len(self.gridParams)== len( self.gridSteps):
+               for iparam in range(len(self.gridMax)):
+                   gi = np.arange(self.gridMin[iparam],
+                                  self.gridMax[iparam]+self.gridSteps[iparam],
+                                self.gridSteps[iparam])
+                         
+                   self.gridSize.append(gi.size)
+                   self.grid.append(gi)
+        else:
+
+            raise TypeError("Steps, min, max and gridParams arrays should have the same sizes")
+            
+        return kwargs
+
+    def _run(self, **kwargs):
+        self.chi2rMap = np.zeros(self.gridSize)
+     
+        n=self.chi2rMap.size
+        
+        for i in tqdm(range(n)):
+            igrid=np.unravel_index(i, self.gridSize)
+            for iparam in range(len(igrid)):      
+                self.gridParams[iparam].value =  self.grid[iparam][igrid[iparam]]
+            self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
+            self.chi2rMap[igrid]=self.simulator.chi2r
+        return kwargs
+
+    def getResults(self, **kwargs):
+         
+        idx_best = np.unravel_index(np.argmin(self.chi2rMap),self.gridSize)
+        
+        best=[]
+        for iparam in range(len(idx_best)):
+            self.gridParams[iparam].value = self.grid[iparam][idx_best[iparam]]
+            best.append( self.gridParams[iparam].value )
+
+
+        self.simulator.compute(computeChi2=True, computeSimulatedData=True,
+                               dataTypes=self.dataTypes)
+        
+        return best
+    
+    def printResults(self, format=".5f", **kwargs):
+        res = self.getResults(**kwargs)
+        chi2r = self.simulator.chi2r
+        for iparam,parami in enumerate(self.freeParams):
+            print(f"{parami} = {res[iparam]:{format}} {self.freeParams[parami].unit}")
+        print(f"chi2r = {chi2r:{format}}")
+    
+    
+    def plotMap(self,params=None,fixedValues="best",plotContour=False,
+                plotMinLines=False, plotMin=True, minLines_kwargs={},
+                contour_kwargs={}, clabel_kwargs={}, min_kwargs={}, **kwargs):
+        
+        min_kwargs0    = dict(marker="o",color="r")
+        min_kwargs  = min_kwargs0 | min_kwargs
+        
+        minLines_kwargs0    = dict(ls="--",color="r")
+        minLines_kwargs  = minLines_kwargs0 | minLines_kwargs
+        
+        contour_kwargs0 = dict(colors='r',levels=[2])
+        contour_kwargs  = contour_kwargs0 | contour_kwargs
+        
+        clabel_kwargs0  = dict(inline=True, fmt="%.1f", fontsize=10)
+        clabel_kwargs   = clabel_kwargs0 | clabel_kwargs
+        
+        if not("origin" in kwargs):
+            kwargs["origin"]="lower"
+        if not("aspect" in kwargs):
+            kwargs["aspect"]="auto"
+
+        ndims = len(self.gridSize)
+        print(ndims)
+        
+        min_idx=np.argmin(self.chi2rMap)
+        chi2rmin= np.min(self.chi2rMap)
+        chi2rmax= np.max(self.chi2rMap)
+        if ndims==1:
+            fig, ax = plt.subplots()
+            xmin = self.grid[0][min_idx]
+            
+                    
+            
+            
+            
+            ax.plot(self.grid[0],self.chi2rMap,color="r")
+            if plotMinLines:
+                label=  f"min $\chi^2_r$ = {chi2rmin:.1f}" \
+                        f" at {self.gridParams[0].name}={xmin}"\
+                        f" {self.gridParams[0].unit.to_string(format='latex')} "
+                ax.plot([xmin,xmin],[chi2rmin,chi2rmax],label=label,**min_kwargs)
+                ax.legend()
+            txt = self.gridParams[0].name
+            if self.gridParams[0].unit!=unit.one:
+                txt+=f"({self.gridParams[0].unit.to_string(format='latex')})"
+            ax.set_xlabel(txt)
+            ax.set_ylabel("$\\chi^2_r$" )
+            
+        else:   
+            if len(self.gridSize)!=2 and params==None:
+                raise TypeError("The 2 parameters to plot should be specified "
+                                "when the grid dimension is higher than 2")
+            elif ndims==2 and params==None:
+                
+                im = self.chi2rMap
+                
+                im_params=[self.gridParams[0],self.gridParams[1]]
+                dim1=0
+                dim2=1
+        
+                
+            elif ndims>2 and params!=None:
+                dim1 = np.where(np.array(self.gridParams) == params[0])[0][0]
+                dim2 = np.where(np.array(self.gridParams) == params[1])[0][0]
+    
+                
+                mins=np.unravel_index(np.argmin(self.chi2rMap),self.gridSize)
+                
+                #That is very ugly but I don't know how to programatically select axes
+                txt="self.chi2rMap["
+                for idim in range(ndims):
+                    if idim == dim1:
+                        txt+=":,"
+                    elif idim == dim2:
+                        txt+=":,"
+                    else:
+                        txt+=str(mins[idim])
+                        txt+=","
+                txt=txt[:-1]
+                txt+="]"
+                im=eval(txt)
+                
+                if dim1>dim2:
+                    im=np.transpose(im)
+                    
+                im_params=params
+                
+            
+            min_idx = np.unravel_index(min_idx,self.chi2rMap.shape)
+            
+            
+            fig, ax = plt.subplots()
+            
+            
+            contour_kwargs["levels"]= np.array(contour_kwargs["levels"])*chi2rmin
+            
+            sm = ax.imshow(np.transpose(im),
+                 extent=[self.grid[dim1][0],self.grid[dim1][-1],
+                         self.grid[dim2][0],self.grid[dim2][-1]],
+                                            **kwargs)
+            if plotContour:
+                cs = ax.contour(self.grid[dim1],self.grid[dim2], np.transpose(im),
+                             **contour_kwargs)
+                ax.clabel(cs, cs.levels, **clabel_kwargs )
+
+            xmin=self.grid[dim1][min_idx[0]]
+            ymin=self.grid[dim2][min_idx[1]]
+            
+            
+            if plotMinLines:
+                ax.plot([self.grid[dim1][0],self.grid[dim1][-1]],[ymin,ymin],
+                        **minLines_kwargs)
+                ax.plot([xmin,xmin],[self.grid[dim2][0],self.grid[dim2][-1]],
+                       **minLines_kwargs)
+               
+            
+            if plotMin:
+                
+                label=  f"min $\chi^2_r$ = {chi2rmin:.1f}" \
+                        f" at {im_params[0].name}={xmin:.1f}"\
+                        f" {im_params[0].unit.to_string(format='latex')}" \
+                        f" and {im_params[1].name}={ymin:.1f}"\
+                        f" {im_params[1].unit.to_string(format='latex')}"     
+                ax.scatter(xmin, ymin, label=label, **min_kwargs)
+                ax.legend()
+            
+            xlabel = im_params[0].name
+            if im_params[0].unit!=unit.one:
+                xlabel += " (" + im_params[0].unit.to_string() +")"
+            
+            ylabel = im_params[1].name
+            if im_params[1].unit!=unit.one:
+                ylabel += " (" +im_params[1].unit.to_string() +")"
+          
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)            
+            fig.colorbar(sm, ax=ax, label="$\\chi^2_r$" )
+            
+           
+        return fig,ax    
+                
+                    
+                
+                
+            
+            
+            
