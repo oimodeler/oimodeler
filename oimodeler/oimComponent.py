@@ -73,7 +73,7 @@ class oimComponent:
         self.params["x"] = oimParam(**_standardParameters["x"])
         self.params["y"] = oimParam(**_standardParameters["y"])
         self.params["f"] = oimParam(**_standardParameters["f"])
-        self.params["dim"] = oimParam(**_standardParameters["dim"])
+        #self.params["dim"] = oimParam(**_standardParameters["dim"])
         self._eval(**kwargs)
 
     def _paramstr(self):
@@ -317,6 +317,7 @@ class oimComponentImage(oimComponent):
         self._allowExternalRotation = True
         self.normalizeImage = True
         self.params["pa"] = oimParam(**_standardParameters["pa"])
+        self.params["dim"] = oimParam(**_standardParameters["dim"])
 
         # NOTE: Add ellipticity
         if self.elliptic:
@@ -528,6 +529,7 @@ class oimComponentRadialProfile(oimComponent):
         if self.elliptic == True:
             self.params["pa"] = oimParam(**_standardParameters["pa"])
             self.params["elong"] = oimParam(**_standardParameters["elong"])
+            self.params["dim"] = oimParam(**_standardParameters["dim"])
 
         self._eval(**kwargs)
 
