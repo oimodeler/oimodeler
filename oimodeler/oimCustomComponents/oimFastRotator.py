@@ -51,11 +51,8 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
     rhoin = rin*np.sin(theta)/a/K
 
     dr = (rin/r0-r) >= 0
-    # dr=(rin/(r0*1.5)*1.5-r)>=0
-
+    
     Teff = Tpole*(np.abs(1-rhoin*a)**beta)
-    # TODO : implement a correct limb-darkening law
-    # limb=np.abs((np.cos(np.arctan2(np.sqrt(x**2+y**2),-np.abs(z)))))*0+1
 
     if nlam == 1:
         flx = 1./(np.exp(K1/(lam*Teff))-1)
@@ -64,7 +61,7 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
 
         for iz in range(dim):
             im = im*(im != 0)+(im == 0) * \
-                dr[:, :, iz]*flx[:, :, iz]  # *limb[:,:,iz]
+                dr[:, :, iz]*flx[:, :, iz] 
 
         im = np.rot90(im)
 
