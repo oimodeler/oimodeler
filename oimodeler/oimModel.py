@@ -572,14 +572,14 @@ class oimModel:
                     txt = ""
                     if not swapAxes:
                         if wl[0] is not None:
-                            txt += "wl={:.4f}$\mu$m\n".format(wli*1e6)
+                            txt += r"wl={:.4f}$\mu$m\n".format(wli*1e6)
                         if t[0] is not None:
                             txt += "Time={}".format(ti)
                         if 'color' not in kwargs_legend:
                             kwargs_legend['color'] = "w"
                     else:
                         if t[0] is not None:
-                            txt += "wl={:.4f}$\mu$m\n".format(ti*1e6)
+                            txt += r"wl={:.4f}$\mu$m\n".format(ti*1e6)
                         if wl[0] is not None:
                             txt += f"Time={wli}"
                         if 'color' not in kwargs_legend:

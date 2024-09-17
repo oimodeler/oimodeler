@@ -623,14 +623,10 @@ class oimFitterRegularGrid(oimFitter):
         if ndims==1:
             fig, ax = plt.subplots()
             xmin = self.grid[0][min_idx]
-            
-                    
-            
-            
-            
+
             ax.plot(self.grid[0],self.chi2rMap,color="r")
             if plotMinLines:
-                label=  f"min $\chi^2_r$ = {chi2rmin:.1f}" \
+                label=  rf"min $\chi^2_r$ = {chi2rmin:.1f}" \
                         f" at {self.gridParams[0].name}={xmin}"\
                         f" {self.gridParams[0].unit.to_string(format='latex')} "
                 ax.plot([xmin,xmin],[chi2rmin,chi2rmax],label=label,**min_kwargs)
@@ -711,7 +707,7 @@ class oimFitterRegularGrid(oimFitter):
             
             if plotMin:
                 
-                label=  f"min $\chi^2_r$ = {chi2rmin:.1f}" \
+                label=  rf"min $\chi^2_r$ = {chi2rmin:.1f}" \
                         f" at {im_params[0].name}={xmin:.1f}"\
                         f" {im_params[0].unit.to_string(format='latex')}" \
                         f" and {im_params[1].name}={ymin:.1f}"\

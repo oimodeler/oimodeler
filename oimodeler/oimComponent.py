@@ -593,7 +593,7 @@ class oimComponentRadialProfile(oimComponent):
         sfreq = sfreq.reshape(nfreq // nwl, nwl).T[np.newaxis, :, np.newaxis, :]
         num_hankel = integrate.trapezoid(2 * np.pi * r * Ir * j0(2 * np.pi * r * sfreq), r, axis=2)
         norm = integrate.trapezoid(2 * np.pi * r * Ir, r, axis=2)
-        return (num_hankel / norm).T.reshape(nfreq)
+        return (num_hankel / norm).T.reshape(nfreq).astype(complex)
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
