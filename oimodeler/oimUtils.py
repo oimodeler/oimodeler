@@ -1004,7 +1004,6 @@ def _createOiTab(extname: str, keywords_def: Tuple[Any], colums_def: Tuple[Any],
             nwl = 1
         else:
             nwl = shape[0]
-
     cols = []
     for colname, form, optional, comment, unit in colums_def:
         if colname not in keys and not optional:
@@ -1324,7 +1323,7 @@ def _rebinHdu(hdu: fits.BinTableHDU, binsize: int,
 
     newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(newcols))
     newhdu.header = hdu.header
-    newhdu.update()
+    newhdu.update_header()
     return newhdu
 
 

@@ -18,6 +18,9 @@ class oimFluxData(fits.HDUList):
                  insname="DUMMY", array="DUMMY", dateobs="1980-04-23T20:15:00",
                  mjd=None, int_time=None, sta_index=[0], unit="Jy", flag=None):
         super().__init__()
+        
+        flx=flx[None,:]
+        flxerr=flxerr[None,:]
 
         oi_tar = self._createOiTarget(target)
         oi_arr = self._createOiArray(array)
@@ -71,11 +74,13 @@ class oimFluxData(fits.HDUList):
                       unit="Jy", flag=None, dateobs=None):
         nflx = flx.size
         if not (mjd):
-            mjd = np.zeros(nflx)
+            mjd = [0]
         if not (int_time):
-            int_time = np.zeros(nflx)
+            int_time = [0]
         if not (flag):
-            flag = np.full((nflx), True, dtype=bool)
+            flag = np.full((1,nflx), True, dtype=bool)
+
+
 
         return createOiFlux(
             dateobs=dateobs,
