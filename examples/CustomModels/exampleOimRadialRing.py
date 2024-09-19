@@ -17,20 +17,20 @@ data.setFilter(oim.oimDataFilter([f1, f2, f3]))
 # NOTE: Model creation
 star=oim.oimPt(f=0.6)
 rr = oim.oimRadialRing(dim=128, din=2, dout=5, p=0.5, f=0.8)
-model = oim.oimModel([star,rr])
+model = oim.oimModel([star, rr])
 
 # NOTE: Simulate and plot the initial model observables and compute the associated reduced Chi2
 sim = oim.oimSimulator(data=data, model=model)
 sim.compute(computeChi2=True, computeSimulatedData=True)
 fig0, ax0 = sim.plot(["VIS2DATA", "T3PHI"])
-print("Chi2r = {}".format(sim.chi2r))
+print(f"Chi2r = {sim.chi2r}")
 
 # NOTE: Specifying the parameter space
 star.params["f"].set(min=0,max=1)
 rr.params["din"].set(min=0, max=5)
 rr.params["dout"].set(min=5.01, max=25)
 rr.params["p"].set(min=-1, max=1)
-rr.params['f'] = oim.oimParamNorm(star.params['f'])
+rr.params["f"] = oim.oimParamNorm(star.params["f"])
 
 # NOTE: Perfoming the model-fitting
 fit = oim.oimFitterEmcee(data, model, nwalkers=25)
@@ -40,11 +40,11 @@ fit.run(nsteps=1000, progress=True)
 # NOTE: Plot the walkers path and make the corner plot
 figWalkers, axeWalkers = fit.walkersPlot()
 figCorner, axeCorner=fit.cornerPlot(discard=200)
-figSim, axSim=fit.simulator.plot(["VIS2DATA","T3PHI"])
+figSim, axSim=fit.simulator.plot(["VIS2DATA", "T3PHI"])
 
 # NOTE: Get the best-fit reduced chi2 and best-fit values of the free parameters (+ their errors)
-best, err_l, err_u, err = fit.getResults(mode='best', discard=10)
-print("Chi2r = {}".format(fit.simulator.chi2r))
+best, err_l, err_u, err = fit.getResults(mode="best", discard=10)
+print(f"Chi2r = {fit.simulator.chi2r}")
 
 # NOTE: Plotting images of the model
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
