@@ -78,7 +78,7 @@ class oimFluxData(fits.HDUList):
         if not (int_time):
             int_time = [0]
         if not (flag):
-            flag = np.full((1,nflx), True, dtype=bool)
+            flag = np.full((1,nflx), False, dtype=bool)
 
 
 
