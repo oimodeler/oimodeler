@@ -457,8 +457,8 @@ class oimFitterDynesty(oimFitter):
 class oimFitterMinimize(oimFitter):
     def __init__(self, *args, **kwargs):
 
-        self.params["method"] = oimParam(name="method", value=None, mini=1,
-                                           description="Number of walkers")
+        self.params["method"] = oimParam(name="method", value="trf", mini=1,
+                                           description="minimization method")
         super().__init__(*args, **kwargs)
     
     def _prepare(self, **kwargs):
@@ -479,8 +479,10 @@ class oimFitterMinimize(oimFitter):
         return self.simulator.chi2
             
     def _run(self, **kwargs):
+        
         self.res = minimize(self._getChi2r, self.initialParams)
-        self.res = least_squares(self._getChi2r, self.initialParams,method="lm")
+        #self.res = least_squares(self._getChi2r, self.initialParams,method=
+        #                         self.params["method"].value)
         self.getResults()
         return kwargs
     
