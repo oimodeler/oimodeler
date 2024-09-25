@@ -32,11 +32,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install FFTW
-      run: |
-        if [[ "$RUNNER_OS" == "macOS" ]]; then
-          brew install fftw
-        fi
+    - name: Install FFTW (macOS)
+      if: runner.os == 'macOS'
+      run: brew install fftw
 
     - name: Setup package
       run: |
