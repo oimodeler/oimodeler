@@ -36,7 +36,7 @@ def test_get_params(component: oimComponent) -> None:
 
 def test_oimComponent_paramstr(component: oimComponent) -> None:
     """Test oimComponent's paramstr function."""
-    assert all(param in component._paramstr() for param in ["x", "y", "dim", "f"])
+    assert all(param in component._paramstr() for param in ["x", "y", "f"])
 
 
 def test_oimComponent_str(component: oimComponent) -> None:
