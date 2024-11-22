@@ -16,8 +16,8 @@ from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
 
-def load_toml(toml_file: Path):
-    """Loads a toml file into a namespace."""
+def load_toml(toml_file: Path) -> Dict[str, Any]:
+    """Loads a toml file into a dictionary."""
     with open(toml_file, "r") as file:
         dictionary = toml.load(file)
 
