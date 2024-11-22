@@ -38,6 +38,7 @@ dependencies = [
     "scipy>=1.10.0",
     "tqdm>=4.64.1",
     "pyFFTW>=0.13.1",
+    "toml>=0.10.2",
 ]
 
 [project.optional-dependencies]
