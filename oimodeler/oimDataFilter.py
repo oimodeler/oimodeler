@@ -2,9 +2,9 @@
 """Data filtering/modifying"""
 import numpy as np
 from .oimUtils import cutWavelengthRange, shiftWavelength, spectralSmoothing, \
-    binWavelength, oifitsFlagWithExpression, \
-    computeDifferentialError, setMinimumError, \
-    getDataArrname, getDataType, _oimDataType, _oimDataTypeArr
+    binWavelength, oifitsFlagWithExpression, computeDifferentialError, \
+    setMinimumError, getDataArrname, getDataType, _oimDataType, \
+    _oimDataTypeArr, oifitsKeepBaselines\
 
 
 class oimDataFilterComponent:
@@ -62,7 +62,7 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
     """Simple filter removing arrays by type"""
     name = "Remove array by type Filter"
     shortname = "RemArrFilt"
-    description = "Remove array by type Filter"
+    description = "Removing arrays by type: OI_VIS2, OI_T3..."
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -78,7 +78,7 @@ class oimRemoveInsnameFilter(oimDataFilterComponent):
     """Simple filter removing arrays by type"""
     name = "Remove arrays by insname Filter"
     shortname = "RemInsFilt"
-    description = "Remove array by insname Filter"
+    description = "Remove array by insname"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -101,7 +101,7 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
     """Filter for cutting wavelength range"""
     name = "Wavelength range Filter"
     shortname = "WlRgFilt"
-    description = "Wavelength range Filter"
+    description = "Cutting wavelength range(s)"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -130,7 +130,7 @@ class oimDataTypeFilter(oimDataFilterComponent):
     """ """
     name = "Filtering by datatype"
     shortname = "DTFilt"
-    description = "Filtering by datatype : VIS2DATA, VISAMP..."
+    description = "Filtering by datatype(s) : VIS2DATA, VISAMP..."
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -192,7 +192,7 @@ class oimWavelengthShiftFilter(oimDataFilterComponent):
     """Filter for shifting wavelength"""
     name = "Shift Wavelength Filter"
     shortname = "WlShFilt"
-    description = "Wavelength Shift Filter"
+    description = "Shifting wavelength table"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -207,7 +207,7 @@ class oimWavelengthSmoothingFilter(oimDataFilterComponent):
     """Filter for Smoothing wavelength"""
     name = "Wavelength Smoothing Filter"
     shortname = "WlSmFilt"
-    description = "Wavelength Smoothing Filter"
+    description = "Spectral smoothing "
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -225,7 +225,7 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
     """Filter for binning wavelength"""
     name = "Wavelength binning Filter"
     shortname = "WlBinFilt"
-    description = "Wavelength binning Filter"
+    description = "Spectral Binning"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -242,7 +242,7 @@ class oimFlagWithExpressionFilter(oimDataFilterComponent):
     """Flaging based on expression """
     name = "Flag With Expression filter"
     shortname = "FlagExprFilt"
-    description = "Flaging based on expression"
+    description = "Flagging based on boolean expressions"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -254,6 +254,24 @@ class oimFlagWithExpressionFilter(oimDataFilterComponent):
         oifitsFlagWithExpression(data, self.params["arr"], 1, self.params["expr"],
                                  keepOldFlag=self.params["keepOldFlag"])
 
+
+
+class oimKeepBaselinesFilter(oimDataFilterComponent):
+    """Select baselines to keep"""
+    name = "Baseline selection filter"
+    shortname = "KeepBAselineFilt"
+    description = "Selection based on baseline name(s)"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["baselines"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        for arri in self.params["arr"]:
+            oifitsKeepBaselines(data,arri, self.params["baselines"],
+                                 keepOldFlag=self.params["keepOldFlag"])
 
 class oimResetFlags(oimDataFilterComponent):
     """Unflag all data """
@@ -274,7 +292,7 @@ class oimDiffErrFilter(oimDataFilterComponent):
     """Compute differential error from std of signal inside or outside a range """
     name = "Differential Error Filter"
     shortname = "DiffErrFilt"
-    description = "Compute differential error from std of signal inside or outside a range"
+    description = "Compute differential error from std inside or outside a range"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -296,7 +314,7 @@ class oimSetMinErrFilter(oimDataFilterComponent):
     """Set minimum error on data in % for vis ans deg for phases"""
     name = "Differential Error Filter"
     shortname = "DiffErrFilt"
-    description = "Compute differential error from std of signal inside or outside a range"
+    description = "Set minimum error on data in % for vis ans deg for phases"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
