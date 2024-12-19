@@ -3,13 +3,19 @@
 import os
 from enum import IntFlag
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union, Dict
+
 
 import numpy as np
 from astropy.io import fits
 
 from .oimUtils import hdulistDeepCopy, _oimDataTypeArr
 from .oimDataFilter import oimDataFilter, oimDataFilterComponent
+
+
+import astropy.units as u
+from matplotlib.axes import Axes
+import matplotlib.pyplot as plt
 
 
 def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
@@ -480,6 +486,45 @@ class oimData(object):
                     dataInfoi.append(info)
             dataInfo.append(dataInfoi)
         self.dataInfo = dataInfo
+        
+        
+    def info(self) -> None:
+        """print info on the oimData object
+
+        Parameters
+        ----------
+
+        """
+        dataInfo = []
+        
+        for idata,datai in enumerate(self.data):
+            print("\u2550"*80)
+            try:
+                path = Path(self.data[idata].filename()).name
+            except:
+                path = ""
+            print(f"file {idata}: {path}")
+            print("\u2500"*80)
+            for iarr, arri in enumerate(datai):
+                if arri.name in _oimDataTypeArr:
+                    txt=f"{iarr})\t {arri.name.ljust(8)}:\t "
+                    info = {"arr": arri.name, "idx": iarr}
+                    if arri.name == "OI_VIS2":
+                        nB=np.shape(arri.data["VIS2DATA"])
+                    if arri.name == "OI_VIS":
+                        nB = np.shape(arri.data["VISAMP"])
+                    if arri.name == "OI_T3":
+                        nB = np.shape(arri.data["T3AMP"])
+                    if arri.name == "OI_FLUX":
+                        try:
+                            nB = np.shape(arri.data["FLUXDATA"])
+                        except Exception:
+                            nB = np.shape(arri.data["FLUX"])
+                    txt+=f"(nB,n\u03BB) = {nB} "
+                    txt+=f"\t dataTypes = {oimDataCheckData(arri)}"
+                    print(txt)
+        print("\u2550"*80)   
+
 
     def prepareData(self) -> None:
         """Prepare the data for further analysis."""
@@ -589,3 +634,114 @@ class oimData(object):
                 datai.writeto(filenamei, overwrite=overwrite)
             except:
                 raise TypeError("Can't save the data!")
+
+
+    def plot(self, xname: str, yname: str, axe: Optional[Axes] = None,
+             removeFilter=False, savefig=None, **kwargs):
+        """
+        Plot the data contained in the oimData.
+
+        Parameters
+        ----------
+        xname : str
+            Name of the x-axis to be plotted: can be EFF_WAVE, SPAFREQ, LENGTH, PA, MJD ...
+        yname : str
+            Name of the y-axis to be plotted: for instance VIS2DATA, T3PHI, ...
+        axe : Optional[Axes], optional
+            the maplotlib axe that should be used for the plot. The default is None.
+        removeFilter : TYPE, optional
+            Plot unfiltered data if True. The default is False.
+        **kwargs : TYPE
+            kwargs to be passed to the oiplot function.
+
+
+        Returns
+        -------
+        fig : TYPE
+            The matplotlib figure.
+        axe : TYPE
+            The matplotlib axe.
+
+        """
+        if removeFilter:
+            data=self._data
+        else:
+            data=self.data
+        
+        if isinstance(yname, list):
+            nplots= len(yname)
+            
+            fig, axe = plt.subplots(nplots, 1, sharex=True, figsize=(8, 6),
+                                   subplot_kw=dict(projection='oimAxes'))
+
+            plt.subplots_adjust(left=0.09, top=0.98, right=0.98, hspace=0.14)
+            
+            for iax,axi in enumerate(axe):
+                
+                self.plot(xname, yname[iax], axe=axi,
+                          removeFilter=removeFilter, **kwargs)
+        else:
+
+            if not(axe):
+                fig = plt.figure()
+                axe = plt.subplot(projection='oimAxes')
+            else:
+                fig = axe.get_figure()
+    
+            if  axe.name=="oimAxes":
+                axe.oiplot(data, xname, yname, **kwargs)
+            else:
+                raise TypeError("Matplotlib axe wasn't created with projection='oimAxes'")
+                
+        if savefig != None:
+            plt.savefig(savefig)
+
+        return fig,axe
+           
+    def uvplot(self, axe: Optional[Axes] = None,removeFilter=False, 
+               savefig=None, **kwargs):
+        """
+        
+
+        Parameters
+        ----------
+        axe : Optional[Axes], optional
+            The matplotlib axe to be used for the plot. The default is None.
+        removeFilter : TYPE, optional
+            Plot unfiltered data if True. The default is False.
+        **kwargs : TYPE
+            kwargs to be passed to the uvplot function.
+
+
+        Returns
+        -------
+        fig : TYPE
+            The matplotlib figure.
+        axe : TYPE
+            The matplotlib axe.
+
+        """
+        
+        if removeFilter:
+            data=self._data
+        else:
+            data=self.data
+            
+        if not(axe):
+            fig = plt.figure()
+            axe = plt.subplot(projection='oimAxes')
+        else:
+            fig = axe.get_figure()
+
+        if  axe.name=="oimAxes":
+            axe.uvplot(data, **kwargs)
+        else:
+            raise TypeError("Matplotlib axe wasn't created with projection='oimAxes'")
+         
+        if savefig != None:
+            plt.savefig(savefig)   
+             
+        return fig,axe
+            
+            
+            
