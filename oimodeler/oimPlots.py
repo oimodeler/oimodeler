@@ -71,9 +71,9 @@ def _errorplot(axe, x: np.ndarray, y: np.ndarray,
         ker = np.ones(smooth)/smooth
         ys = np.convolve(y, ker, mode="same")  # [smooth//2:-smooth//2-1]
 
-    xx = np.concatenate([x, np.flip(x)])
-    yy = np.concatenate([ys-dy, np.flip(ys+dy)])
-    axe.fill(xx, yy, **kwargs)
+
+    axe.fill_between(x,ys-dy,ys+dy, **kwargs)
+
 
 
 def _colorPlot(axe, x: np.ndarray,
