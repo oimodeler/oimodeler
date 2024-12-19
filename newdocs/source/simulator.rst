@@ -1,0 +1,4 @@
+..  _simulator:
+
+Simulating data
+===============

@@ -1,0 +1,4 @@
+..  _fitter:
+
+Model fitting
+=============
