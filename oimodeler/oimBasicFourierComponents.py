@@ -35,8 +35,14 @@ class oimPt(oimComponentFourier):
     def _imageFunction(self, xx, yy, wl, t):
         image = xx*0
         val = np.abs(xx)+np.abs(yy)
-        idx = np.unravel_index(np.argmin(val), np.shape(val))
-        image[idx] = 1
+        nwl = xx.shape[1]
+        nt  = xx.shape[0]
+        #TODO rewrite without loop
+        for it in range(nt):
+            for iwl in range(nwl):
+                val = np.abs(xx[it,iwl,:,:])+np.abs(yy[it,iwl,:,:])
+                idx = np.unravel_index(np.argmin(val), np.shape(val))
+                image[it,iwl,idx[0],idx[1]] = 1
         return image
 
 
