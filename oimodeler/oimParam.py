@@ -4,65 +4,34 @@
 normalizers and interpolators.
 """
 import sys
-from typing import Union, Optional, Dict
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
 
-import astropy.units as u
 import astropy.constants as const
+import astropy.units as u
 import numpy as np
+import toml
 from astropy.modeling import models
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
 
-# NOTE: This module so it can retrieve attributes, even if called from outside
-CURRENT_MODULE = sys.modules[__name__]
+def load_toml(toml_file: Path) -> Dict[str, Any]:
+    """Loads a toml file into a dictionary."""
+    with open(toml_file, "r") as file:
+        dictionary = toml.load(file)
 
+    for value in dictionary.values():
+        if "unit" in value:
+            if value["unit"] == "one":
+                value["unit"] = u.one
+            else:
+                value["unit"] = u.Unit(value["unit"])
 
-# NOTE: Here is a list of standard parameters to be used when defining new components
-_standardParameters = {
-    "x": {"name": "x", "value": 0, "description": "x position", "unit": u.mas, "free": False},
-    "y": {"name": "y", "value": 0, "description": "y position", "unit": u.mas, "free": False},
-    "f": {"name": "f", "value": 1, "description": "flux", "unit": u.one, "mini": 0, "maxi": 1, "free": True},
-    "fwhm": {"name": "fwhm", "value": 0, "description": "FWHM", "unit": u.mas, "mini": 0},
-    "hlr": {"name": "hlr", "value": 0, "description": "Half-light/-flux radius", "unit": u.mas, "mini": 0},
-    "d": {"name": "d", "value": 0, "description": "Diameter", "unit": u.mas, "mini": 0},
-    "w": {"name": "w", "value": 0, "description": "Width", "unit": u.mas, "mini": 0},
-    "din": {"name": "din", "value": 0, "description": "Inner Diameter", "unit": u.mas, "mini": 0},
-    "dout": {"name": "dout", "value": 0, "description": "Outer Diameter", "unit": u.mas, "mini": 0},
-    "elong": {"name": "elong", "value": 1, "description": "Elongation Ratio", "unit": u.one, "mini": 1},
-    "pa": {"name": "pa", "value": 0, "description": "Major-axis Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
-    "skw": {"name": "skw", "value": 0, "description": "Skewedness", "unit": u.one, "mini": 0, "maxi": 1},
-    "skwPa": {"name": "skwPa", "value": 0, "description": "Skewedness Position angle", "unit": u.deg, "mini": -180, "maxi": 180},
-    "pixSize": {"name": "pixSize", "value": 0, "description": "Pixel Size", "unit": u.mas, "free": False, "mini": 0},
-    "dim": {"name": "dim", "value": 128, "description": "Dimension in pixels", "unit": u.one, "free": False, "mini": 1},
-    "wl": {"name": "wl", "value": 0, "description": "Wavelength", "unit": u.m, "mini": 0},
-    "mjd": {"name": "mjd", "value": 0, "description": "MJD", "unit": u.day},
-    "scale": {"name": "scale", "value": 1, "description": "Scaling Factor", "unit": u.one},
-    "index": {"name": "index", "value": 1, "description": "Index", "unit": u.one},
-    "fov": {"name": "fov", "value": 0, "description": "The interferometric field of view", "unit": u.mas, "free": False, "mini": 0},
-    "amp": {"name": "amplitude", "value": 1, "description": "Amplitude", "unit": u.one},
-    "p": {"name": "p", "value": 0, "description": "Power-law Exponent", "unit": u.one},
-}
+    return dictionary
 
-# NOTE: Sets the available interpolators for oimodeler. If strings are provided,
-# the `oimInterp` looks through `oimParam` in order to find the class.
-# To overwrite provide class variables
-_interpolators = {"wl": "oimParamInterpolatorWl",
-                  "time": "oimParamInterpolatorTime",
-                  "GaussWl": "oimParamGaussianWl",
-                  "GaussTime": "oimParamGaussianTime",
-                  "mGaussWl": "oimParamMultipleGaussianWl",
-                  "mGaussTime": "oimParamMultipleGaussianTime",
-                  "multiParam": "oimParamMultiWl",
-                  "cosTime": "oimParamCosineTime",
-                  "polyWl": "oimParamPolynomialWl",
-                  "polyTime": "oimParamPolynomialTime",
-                  "powerlawWl": "oimParamPowerLawWl",
-                  "powerlawTime": "oimParamPowerLawTime",
-                  "rangeWl": "oimParamLinearRangeWl",
-                  "templateWl": "oimParamLinearTemplateWl",
-                  "tempWl": "oimParamLinearTemperatureWl",
-                  "starWl": "oimParamLinearStarWl"}
+_standardParameters: Dict[str, Any] = load_toml(Path(__file__).parent / "config" / "standard_parameters.toml")
+_interpolators: Dict[str, Any] = load_toml(Path(__file__).parent / "config" / "interpolators.toml")["interpolators"]
 
 
 class oimParam:
@@ -70,18 +39,20 @@ class oimParam:
 
     Parameters
     ----------
-    name: string, optional
+    name : string, optional
         Name of the Parameter. The default is None.
-    value: float, optional
+    value : float, optional
         Value of the parameter. The default is None.
-    mini: float, optional
+    mini : float, optional
         Mininum value allowed for the parameter. The default is -1*np.inf.
-    maxi: float, optional
+    maxi : float, optional
         maximum value allowed for the parameter. The default is np.inf.
-    description: string, optional
+    description : string, optional
         Description of the parameter. The default is "".
-    unit: 1 or astropy.unit, optional
+    unit : 1 or astropy.unit, optional
         Unit of the parameter. The default is astropy.units.one
+    free : bool, optional
+        Determines if the parameter is to be fitted. The default is None
     """
     def __init__(self, name=None, value=None, mini=-np.inf, maxi=np.inf,
                  description="", unit=u.one, free=True, error=0):
@@ -123,14 +94,12 @@ class oimParam:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
 
 
-###############################################################################
 class oimParamLinker:
     """ Class to directly link two oimParam.
 
     """
     def __init__(self, param, operator="add", fact=0):
         """
-        
 
         Parameters
         ----------
@@ -146,7 +115,7 @@ class oimParamLinker:
         None.
 
         """
-    
+
         self.param = param
         self.fact = fact
 
@@ -160,7 +129,6 @@ class oimParamLinker:
 
     def _setOperator(self, operator):
         """
-        
 
         Parameters
         ----------
@@ -186,20 +154,18 @@ class oimParamLinker:
     def __call__(self, wl=None, t=None):
         return self.op(self.param.__call__(wl, t))
 
-###############################################################################
-
 
 class oimParamNorm:
     """
     Class to normalize a list of oimParam
-    
-    Example : 
-    p2 = oimParamNorm([p0,p1)]     
-                     
-    The value of p2 will always be 1-p2-p1      
+
+    Example :
+    p2 = oimParamNorm([p0,p1)]
+
+    The value of p2 will always be 1-p2-p1
     """
     def __init__(self, params, norm=1):
-        if type(params) == list:
+        if type(params) is list:
             self.params = params
         else:
             self.params = [params]
@@ -219,17 +185,16 @@ class oimParamNorm:
             res -= p(wl, t)
         return res
 
-###############################################################################
 
 class oimInterp:
     """Macro to directly create an oimParamInterpolator
-    
+
     Example :
-        
+
     .. code-block:: python
-    
+
         g = oim.oimGauss(fwhm=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 8]))
-    
+
     This will create a gaussiand component and remplace the parameter fwhm by an
     instance of the oimParamInterpolatorWl class (i.e., the wavelength linear 
     interpolator. The custom interpolator the reference to the interpolator 
@@ -258,12 +223,9 @@ class oimInterp:
     def __init__(self, name, **kwargs):
         self.kwargs = kwargs
         self.type = _interpolators[name]
-
-        # NOTE: Strings are accepted as a local definition within this module
         if isinstance(self.type, str):
-            self.type = getattr(CURRENT_MODULE, self.type)
+            self.type = getattr(sys.modules[__name__], self.type)
 
-###############################################################################
 
 class oimParamInterpolator(oimParam):
     def __init__(self, param, **kwargs):
@@ -291,21 +253,19 @@ class oimParamInterpolator(oimParam):
 
         params = []
         for pi in params0:
-            if not (pi in params) and not(isinstance(pi, oimParamLinker)):
+            if pi not in params and not isinstance(pi, oimParamLinker):
                 params.append(pi)
         return params
-    
-    
+
     def  set(self, **kwargs):
         print("Warning set method is not defined for all interpolators. use getFreeParametezrs instead")
-        for parami in self.params:
+        for _ in self.params:
             for key, value in kwargs.items():
                 try:
                     self.__dict__[key] = value
                 except NameError:
                     print("Not valid parameter : {}".format(value))
 
-###############################################################################
 
 class oimParamInterpolatorKeyframes(oimParamInterpolator):
     def _init(self, param, dependence="wl", keyframes=[], keyvalues=[],
@@ -348,8 +308,9 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
     def _getParams(self):
         params = []
-        if self.fixedRef == False:
+        if not self.fixedRef:
             params.extend(self.keyframes)
+
         params.extend(self.keyvalues)
         return params
 
@@ -374,7 +335,7 @@ class oimParamMultiWl(oimParamInterpolatorKeyframes):
         keyframes = np.array([param.value for param in self.keyframes])
         values = np.array([param.value for param in self.keyvalues])
         new_values = np.zeros(wl.shape)
-        
+
         for index, wavelength in enumerate(wl):
             if wavelength in keyframes:
                 value_index = np.where(wavelength == keyframes)[0][0]
@@ -397,7 +358,7 @@ class oimParamInterpolatorTime(oimParamInterpolatorKeyframes):
 
 class oimParamCosineTime(oimParamInterpolator):
     def _init(self, param, T0=0, P=1, values=[0, 1], x0=None, **kwargs):
-        self.assymetric = False
+        self.asymmetric = False
         self.T0 = oimParam(name="T0", value=T0,
                            description="Start", unit=u.day)
         self.P = oimParam(name="P", value=P,
@@ -411,19 +372,14 @@ class oimParamCosineTime(oimParamInterpolator):
                           unit=param.unit, free=param.free, error=param.error)
             self.values.append(pi)
 
-        # self.params.append(self.T0)
-        # self.params.append(self.P)
-        if x0 != None:
+        if x0 is not None:
             self.x0 = oimParam(name="x0", value=x0,
                                description="Inflection point", unit=u.one)
-            # self.params.append(self.x0)
-            self.assymetric = True
-
-        # self.params.extend(self.values)
+            self.asymmetric = True
 
     def _interpFunction(self, wl, t):
         normt = np.divmod((t-self.T0.value)/self.P.value, 1)[1]
-        if self.assymetric == True:
+        if self.asymmetric:
             normt = interp1d([0, self.x0(), 1], [
                              0, 0.5, 1], kind='slinear')(normt)
 

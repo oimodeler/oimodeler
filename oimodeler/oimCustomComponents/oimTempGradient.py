@@ -96,6 +96,7 @@ class oimTempGradient(oimComponentRadialProfile):
         """
         # HACK: Sets the multi wavelength coordinates properly.
         # Does not account for time, improves computation time.
+        # TODO: Check if this is still needed and if not remove it
         wl = np.unique(wl)
         kappa_abs = self.params["kappa_abs"](wl, t)
         if len(r.shape) == 3:
@@ -113,10 +114,7 @@ class oimTempGradient(oimComponentRadialProfile):
                 * self.params["dust_mass"].unit.to(u.g)
         rin_mas, rout_mas = map(lambda x: 1e3*x/dist, [rin, rout])
 
-        # NOTE: Temperature profile.
-        temp_profile = (inner_temp*(r / rin_mas)**(-q))
-
-        # NOTE: Surface density profile.
+        temperatures = (inner_temp*(r / rin_mas)**(-q))
         rin_cm, rout_cm = map(
             lambda x: x*self.params["rin"].unit.to(u.cm), [rin, rout])
         if p == 2:
@@ -124,14 +122,16 @@ class oimTempGradient(oimComponentRadialProfile):
         else:
             f = ((rout_cm/rin_cm)**(2-p)-1)/(2-p)
             sigma_in = dust_mass/(2.*np.pi*f*rin_cm**2)
-        sigma_profile = sigma_in*(r / rin_mas)**(-p)
 
-        # NOTE: Spectral density.
-        spectral_density = blackbody(wl, temp_profile)*(1-np.exp(-sigma_profile*kappa_abs))
-        image = np.nan_to_num(np.logical_and(r > rin_mas, r < rout_mas).astype(int)*spectral_density, nan=0)
+        surface_densities = sigma_in*(r / rin_mas)**(-p)
+        emissivities = (1 - np.exp(-surface_densities * kappa_abs))
+        spectral_density = blackbody(wl, temperatures) * emissivities
+        radial_profile = ((r > rin_mas) & (r < rout_mas)).astype(int)
+        image = np.nan_to_num(radial_profile * spectral_density, nan=0)
 
         if len(r.shape) == 3:
             return image
+
         return image
 
     @property

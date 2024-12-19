@@ -1,0 +1,168 @@
+[x]
+name = "x"
+value = 0
+description = "x position"
+unit = "mas"
+free = false
+
+[y]
+name = "y"
+value = 0
+description = "y position"
+unit = "mas"
+free = false
+
+[f]
+name = "f"
+value = 1
+description = "flux"
+unit = "one"
+mini = 0
+maxi = 1
+free = true
+
+[fwhm]
+name = "fwhm"
+value = 0
+description = "FWHM"
+unit = "mas"
+mini = 0
+
+[hlr]
+name = "hlr"
+value = 0
+description = "Half-light/-flux radius"
+unit = "mas"
+mini = 0
+
+[d]
+name = "d"
+value = 0
+description = "Diameter"
+unit = "mas"
+mini = 0
+
+[w]
+name = "w"
+value = 0
+description = "Width"
+unit = "mas"
+mini = 0
+
+[rin]
+name = "rin"
+value = 0
+description = "Inner radius"
+unit = "au"
+
+[rout]
+name = "rin"
+value = 0
+description = "Outer radius"
+unit = "au"
+
+[din]
+name = "din"
+value = 0
+description = "Inner Diameter"
+unit = "mas"
+mini = 0
+
+[dout]
+name = "dout"
+value = 0
+description = "Outer Diameter"
+unit = "mas"
+mini = 0
+
+[elong]
+name = "elong"
+value = 1
+description = "Elongation Ratio"
+unit = "one"
+mini = 1
+
+[pa]
+name = "pa"
+value = 0
+description = "Major-axis Position angle"
+unit = "deg"
+mini = -180
+maxi = 180
+
+[skw]
+name = "skw"
+value = 0
+description = "Skewedness"
+unit = "one"
+mini = 0
+maxi = 1
+
+[skwPa]
+name = "skwPa"
+value = 0
+description = "Skewedness Position angle"
+unit = "deg"
+mini = -180
+maxi = 180
+
+[pixSize]
+name = "pixSize"
+value = 0
+description = "Pixel Size"
+unit = "mas"
+free = false
+mini = 0
+
+[dim]
+name = "dim"
+value = 128
+description = "Dimension in pixels"
+unit = "one"
+free = false
+mini = 1
+
+[wl]
+name = "wl"
+value = 0
+description = "Wavelength"
+unit = "m"
+mini = 0
+
+[mjd]
+name = "mjd"
+value = 0
+description = "MJD"
+unit = "day"
+
+[scale]
+name = "scale"
+value = 1
+description = "Scaling Factor"
+unit = "one"
+
+[index]
+name = "index"
+value = 1
+description = "Index"
+unit = "one"
+
+[fov]
+name = "fov"
+value = 0
+description = "The interferometric field of view"
+unit = "mas"
+free = false
+mini = 0
+
+[amp]
+name = "amplitude"
+value = 1
+description = "Amplitude"
+unit = "one"
+
+[p]
+name = "p"
+value = 0
+description = "Power-law Exponent"
+unit = "one"
