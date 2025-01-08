@@ -16,6 +16,13 @@ The ``oimodeler`` package is developed with support from the
 and the ANR project `MASSIF <https://www.anr-massif.fr>`_.
 
 
+
+Citation
+========
+
+If you make use of ``oimodeler`` in your work, please cite our paper (`HAL <https://cnrs.hal.science/hal-04797236>`_, `ADS <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/abstract>`_, `BibTeX <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/exportcitation>`_).
+
+
 Contact
 =======
 
