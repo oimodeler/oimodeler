@@ -9,7 +9,7 @@ from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
 from astropy.modeling import models
-from scipy.stats import circstd
+from scipy.stats import circmean, circstd
 
 from .oimOptions import oimOptions
 
@@ -624,7 +624,7 @@ def getBaselineLengthAndPA(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
                 pa.append(0*pa123) # TODO: what's the PAS of a triangle?
             else:
                 baselines.append(b123)
-                pa.append(pa123)
+                pa.append(np.max(pa123,axis=0))
 
 
     if squeeze and len(baselines) == 1:
@@ -1184,6 +1184,8 @@ def spectralSmoothing(oifits: fits.HDUList, kernel_size: float,
     if  "all" in cols2Smooth:
         cols2Smooth = ["VIS2DATA", "VIS2ERR", "VISAMP", "VISAMPERR", "VISPHI", "VISPHIERR",
                        "T3AMP", "T3AMPERR", "T3PHI", "T3PHIERR", "FLUXDATA", "FLUXDATAERR"]
+        
+        circular=[False,False,False,False,True,True,False,False,True,True,False,False]
 
     for i, _ in enumerate(data, start=1):
         try:
@@ -1192,16 +1194,33 @@ def spectralSmoothing(oifits: fits.HDUList, kernel_size: float,
                 for coli in cols:
                     if coli.name in cols2Smooth:
                         dims = np.shape(data[i].data[coli.name])
-
-                        if len(dims) == 2:
-                            nB = dims[0]
-                            for iB in range(nB):
-                                data[i].data[coli.name][iB, :] = np.convolve(
-                                    data[i].data[coli.name][iB, :], kernel, "same")
+                        iscirc=circular[cols2Smooth.index(coli.name)]
+                        if iscirc:
+                            if len(dims) == 2:
+                                nB = dims[0]
+                                for iB in range(nB):
+                                    datai=np.exp(complex(0,1)*data[i].data[coli.name][iB, :])
+                                    datai_real=np.real(datai)
+                                    datai_imag=np.imagl(datai)
+                                    
+                                    conv_real=np.convolve(datai_real, kernel, "same")
+                                    conv_imag=np.convolve(datai_imag, kernel, "same")  
+                                    data_conv=np.complex(conv_real,conv_imag)
+                                    
+                                    data[i].data[coli.name][iB, :] = data_conv
+                                    
+                            else:
+                                  data[i].data[coli.name]=np.convolve(
+                                      data[i].data[coli.name], kernel, "same")
                         else:
-                              data[i].data[coli.name]=np.convolve(
-                                  data[i].data[coli.name], kernel, "same")
-
+                            if len(dims) == 2:
+                                nB = dims[0]
+                                for iB in range(nB):
+                                    data[i].data[coli.name][iB, :] = np.convolve(
+                                        data[i].data[coli.name][iB, :], kernel, "same")
+                            else:
+                                  data[i].data[coli.name]=np.convolve(
+                                      data[i].data[coli.name], kernel, "same")
                         if normalizeError and coli.name in _oimDataTypeErr:
                             data[i].data[coli.name] /= np.sqrt(kernel_size)
         except:
@@ -1249,7 +1268,8 @@ def rebin_image(image: np.ndarray,
 
 
 def _rebin(array: np.ndarray, binsize: int,
-           median: Optional[bool] = True) -> np.ndarray:
+           median: Optional[bool] = True,
+           circular: Optional[bool] = False) -> np.ndarray:
     """Rebin an array.
 
     Parameters
@@ -1266,13 +1286,19 @@ def _rebin(array: np.ndarray, binsize: int,
     res : numpy.ndarray
         The rebinned array.
     """
+    
     newsize = (array.shape[0] // int(binsize)) * binsize
     array = array [:newsize]
     shape = (array.shape[0]// binsize, binsize)
-    if median:
-        res = np.median(array.reshape(shape),axis=-1)
+
+    if circular:
+        if median:
+            res = np.median(array.reshape(shape),axis=-1)
+        else:
+            res = array.reshape(shape).mean(-1)
     else:
-        res = array.reshape(shape).mean(-1)
+        res = np.mean(array.reshape(shape),axis=-1)
+
     return res
 
 
@@ -1294,17 +1320,22 @@ def _rebinHdu(hdu: fits.BinTableHDU, binsize: int,
     newhdu : astropy.io.fits.BinTableHDU
         The rebinned HDU.
     """
+
     cols = hdu.data.columns
     newcols = []
 
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
         for coli in cols:
+            if "PHI" in coli.name:
+                circular=True
+            else:
+                circular=False
             newformat = coli.format
             shape = np.shape(hdu.data[coli.name])
             if len(shape) == 2 and not(coli.name in exception):
                 bini =[]
                 for jB in range(shape[0]):
-                    binij = _rebin(hdu.data[coli.name][jB,:],binsize)
+                    binij = _rebin(hdu.data[coli.name][jB,:],binsize,circular=circular)
                     bini.append(binij)
                 bini = np.array(bini)
                 newformat = f"{shape[1]//binsize}{coli.format[-1]}"
@@ -1316,7 +1347,13 @@ def _rebinHdu(hdu: fits.BinTableHDU, binsize: int,
             newcols.append(newcoli)
     else:
         for coli in cols:
-            bini = _rebin(hdu.data[coli.name],binsize)
+            if "PHI" in coli.name:
+                circular=True
+            else:
+                circular=False
+         
+            
+            bini = _rebin(hdu.data[coli.name],binsize,circular=circular)
             newcoli = fits.Column(name=coli.name, array=bini,
                                   unit=coli.unit, format=coli.format)
             newcols.append(newcoli)
@@ -1388,14 +1425,17 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
             eff_wave, eff_band = getWlFromOifits(data, arr=arri,
                                                  extver=extver, returnBand=True)
             nwl = np.size(eff_wave)
-            length, pa = getBaselineLengthAndPA(data, arr=arri, extver=extver)
+            length, pa = getBaselineLengthAndPA(data, arr=arri, extver=extver,T3Max=True)
             nB = np.size(length)
 
             EFF_WAVE = np.tile(eff_wave[None, :], (nB,1))
             EFF_BAND = np.tile(eff_band[None, :], (nB,1))
             LENGTH = np.tile(length[:, None], (1, nwl))
-            PA = np.tile(pa[:, None], (1, nwl))
 
+            PA = np.tile(pa[:, None], (1, nwl))
+ 
+            SPAFREQ = LENGTH/EFF_WAVE
+           
 
             for colname in data[arri].columns:
                 coldata = data[arri].data[colname.name]
@@ -1410,6 +1450,7 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
   
             # TODO: Remove eval here as it is can be security liability
             flags = eval(expr)
+            
             if keepOldFlag:
                 data[arri].data["FLAG"] = np.logical_or(flags, data[arri].data["FLAG"])
             else:
@@ -1421,6 +1462,40 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
 
     return True
 
+
+def oifitsKeepBaselines(data,arr,baselines_to_keep,extver=None,keepOldFlag = True):
+    
+    
+    baselines=getBaselineName(data,hduname=arr,extver=extver)
+    
+    baselines_to_keep_ordered=[]
+    for Bi in baselines_to_keep:
+        Bi=Bi.split("-")
+        Bi.sort()
+        baselines_to_keep_ordered.append(''.join(Bi))
+        
+    baselines_ordered=[]
+    for iB,Bi in enumerate(baselines):
+        Bi=Bi.split("-")
+        Bi.sort()
+        baselines_ordered.append(''.join(Bi))
+        
+    baselines_ordered=np.array(baselines_ordered)
+    baselines_to_keep_ordered=np.array(baselines_to_keep_ordered)
+
+    idx_to_keep=[]
+    for Bi in baselines_to_keep_ordered:
+        idx=np.where(baselines_ordered==Bi)[0]
+        if len(idx!=0):
+            idx_to_keep.extend(idx)
+    
+    
+    for iB,Bi in enumerate(baselines):
+        if not(iB in idx_to_keep):
+            data[arr,extver].data["FLAG"][iB,:]=True
+        
+        
+    
 
 def computeDifferentialError(
         oifits: fits.HDUList, ranges: Optional[List[int]] = [[0, 5]],

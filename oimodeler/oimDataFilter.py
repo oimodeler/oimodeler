@@ -3,8 +3,8 @@
 import numpy as np
 from .oimUtils import cutWavelengthRange, shiftWavelength, spectralSmoothing, \
     binWavelength, oifitsFlagWithExpression, computeDifferentialError, \
-    setMinimumError, getDataArrname, getDataType, _oimDataType, \
-    _oimDataTypeArr
+    setMinimumError, getDataArrname, getDataType, oifitsKeepBaselines, \
+        _oimDataType,  _oimDataTypeArr
 
 
 class oimDataFilterComponent:
