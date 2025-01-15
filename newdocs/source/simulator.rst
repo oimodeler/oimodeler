@@ -1,4 +1,4 @@
 ..  _simulator:
 
-Simulating data
-===============
+Data/Model comparison
+=====================

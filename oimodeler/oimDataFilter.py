@@ -123,7 +123,7 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
             for wlRangei in wlRange:
                 expr += f"((EFF_WAVE<{wlRangei[0]}) | (EFF_WAVE>{wlRangei[1]})) &"
             expr = expr[:-1]
-            oifitsFlagWithExpression(data, self.params["arr"], 1, expr, keepOldFlag=True)
+            oifitsFlagWithExpression(data, self.params["arr"], None, expr, keepOldFlag=True)
 
 
 class oimDataTypeFilter(oimDataFilterComponent):
@@ -251,7 +251,7 @@ class oimFlagWithExpressionFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
-        oifitsFlagWithExpression(data, self.params["arr"], 1, self.params["expr"],
+        oifitsFlagWithExpression(data, self.params["arr"], None, self.params["expr"],
                                  keepOldFlag=self.params["keepOldFlag"])
 
 

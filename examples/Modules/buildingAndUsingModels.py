@@ -6,16 +6,17 @@ Created on Wed Oct 23 16:00:52 2024
 """
 
 import oimodeler as oim
+from pprint import pprint as print
+ud = oim.oimUD(d=10, f=0.95)
+pt = oim.oimPt(x=15, y=7, f=0.05)
 
+mbin = oim.oimModel(pt,ud)
 
-ud1 = oim.oimUD(x=15, y=7, d=5, f=0.5)
-ud2 = oim.oimUD(d=10, f=0.5)
-
-model = oim.oimModel(ud1,ud2)
 #%%
-model.components
-print(model)
-print(model.shortname)
+print(ud.params)
+print(pt.params)
+#%%
+print(mbin.getParameters())
 #%%
 
-im = model.showModel(512,0.1,fromFT=True,normPow=1,normalize=True)
+im = mbin.showModel(32,1.2,fromFT=False,normPow=0.5,normalize=True,cmap="hot")

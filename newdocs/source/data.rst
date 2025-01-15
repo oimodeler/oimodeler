@@ -409,6 +409,38 @@ For instance in the following we flag data with baselines longer than 50m for th
   :alt: Alternative text   
   
   
+Selection by baseline name(s)
+"""""""""""""""""""""""""""""
+
+The :func:`oimKeepBaselinesFilter <oimodeler.oimDataFilter.oimKeepBaselinesFilter>`
+class can be used to select data by baseline name. For instance in the following we 
+keep the data for the MATISSE data for the A0-B2 and A0-D0 baselines. Other data are 
+flagged and ths will not be used for chi2 computation and model fitting.
+ This can be useful to determine the caracterist size of object using simple models such 
+ as Gaussian or uniform disk and avoid being biased by longer baselines than would contain 
+ information on smaller structures.
+
+
+.. code-block:: python 
+
+    path = Path(__file__).parent.parent.parent
+    dir0 = path / "data"  / "RealData" / "MATISSE"/ "FSCMa"
+    filenames = list(dir0.glob("*.fits"))
+    data = oim.oimData(filenames)
+
+    baselines=["A0-B2","A0-D0"]
+    filt_baselines=oim.oimKeepBaselinesFilter(baselines=baselines,arr="OI_VIS2")
+    data.setFilter(filt_baselines)
+    figflag,axflag = data.plot("SPAFREQ","VIS2DATA",xunit="cycle/mas",removeFilter=True,
+                               color="orange",label="Original data",lw=5)
+    data.plot("SPAFREQ","VIS2DATA",axe=axflag,xunit="cycle/mas",
+              label="Filtered data",color="k",lw=2)
+    axflag.legend()
+    axflag.set_title(f"Keep only baselines {baselines}")
+
+.. image:: ../../images/oimDataExample_plot_keepBaselines.png
+  :alt: Alternative text     
+  
   
 ..  _data_oimFluxData:
 Photometric and spectroscopic data

@@ -1419,46 +1419,59 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
 
     if arr == ["all"]:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
-
-    for arri in arr:
-        try:
-            eff_wave, eff_band = getWlFromOifits(data, arr=arri,
-                                                 extver=extver, returnBand=True)
-            nwl = np.size(eff_wave)
-            length, pa = getBaselineLengthAndPA(data, arr=arri, extver=extver,T3Max=True)
-            nB = np.size(length)
-
-            EFF_WAVE = np.tile(eff_wave[None, :], (nB,1))
-            EFF_BAND = np.tile(eff_band[None, :], (nB,1))
-            LENGTH = np.tile(length[:, None], (1, nwl))
-
-            PA = np.tile(pa[:, None], (1, nwl))
- 
-            SPAFREQ = LENGTH/EFF_WAVE
-           
-
-            for colname in data[arri].columns:
-                coldata = data[arri].data[colname.name]
-                s = coldata.shape
-
-                if len(s) == 1 and s[0] == nB:
-                    coldata = np.tile(length[:, None], (1, nwl))
-
-                # TODO: Remove exec here as it is can be security liability
-                exec(f"{colname.name}=coldata")
-                
-  
-            # TODO: Remove eval here as it is can be security liability
-            flags = eval(expr)
-            
-            if keepOldFlag:
-                data[arri].data["FLAG"] = np.logical_or(flags, data[arri].data["FLAG"])
-            else:
-                data[arri].data["FLAG"] = flags
-       
-        except:
-            pass
     
+    for iarr in range(len(data)):
+    
+        ok = True
+        if data[iarr].name in arr:
+            arri = data[iarr].name
+            if extver:
+                if extver != data[iarr].header["EXTVER"]:
+                    ok = False
+            else:
+                extver = data[iarr].header["EXTVER"]
+        else:
+            ok = False
+            
+        if ok:
+            try:
+                eff_wave, eff_band = getWlFromOifits(data, arr=arri,
+                                                     extver=extver, returnBand=True)
+                nwl = np.size(eff_wave)
+                length, pa = getBaselineLengthAndPA(data, arr=arri, extver=extver,T3Max=True)
+                nB = np.size(length)
+    
+                EFF_WAVE = np.tile(eff_wave[None, :], (nB,1))
+                EFF_BAND = np.tile(eff_band[None, :], (nB,1))
+                LENGTH = np.tile(length[:, None], (1, nwl))
+    
+                PA = np.tile(pa[:, None], (1, nwl))
+     
+                SPAFREQ = LENGTH/EFF_WAVE
+               
+    
+                for colname in data[arri].columns:
+                    coldata = data[arri].data[colname.name]
+                    s = coldata.shape
+    
+                    if len(s) == 1 and s[0] == nB:
+                        coldata = np.tile(length[:, None], (1, nwl))
+    
+                    # TODO: Remove exec here as it is can be security liability
+                    exec(f"{colname.name}=coldata")
+                    
+      
+                # TODO: Remove eval here as it is can be security liability
+                flags = eval(expr)
+                
+                if keepOldFlag:
+                    data[arri].data["FLAG"] = np.logical_or(flags, data[arri].data["FLAG"])
+                else:
+                    data[arri].data["FLAG"] = flags
+           
+            except:
+                pass
+        
 
     return True
 
@@ -1466,35 +1479,40 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
 def oifitsKeepBaselines(data,arr,baselines_to_keep,extver=None,keepOldFlag = True):
     
     
-    baselines=getBaselineName(data,hduname=arr,extver=extver)
-    
-    baselines_to_keep_ordered=[]
-    for Bi in baselines_to_keep:
-        Bi=Bi.split("-")
-        Bi.sort()
-        baselines_to_keep_ordered.append(''.join(Bi))
-        
-    baselines_ordered=[]
-    for iB,Bi in enumerate(baselines):
-        Bi=Bi.split("-")
-        Bi.sort()
-        baselines_ordered.append(''.join(Bi))
-        
-    baselines_ordered=np.array(baselines_ordered)
-    baselines_to_keep_ordered=np.array(baselines_to_keep_ordered)
+    if arr == ["all"]:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
 
-    idx_to_keep=[]
-    for Bi in baselines_to_keep_ordered:
-        idx=np.where(baselines_ordered==Bi)[0]
-        if len(idx!=0):
-            idx_to_keep.extend(idx)
-    
-    
-    for iB,Bi in enumerate(baselines):
-        if not(iB in idx_to_keep):
-            data[arr,extver].data["FLAG"][iB,:]=True
+    for arri in arr:
+        try:
+            baselines=getBaselineName(data,hduname=arr,extver=extver)
+            baselines_to_keep_ordered=[]
+            for Bi in baselines_to_keep:
+                Bi=Bi.split("-")
+                Bi.sort()
+                baselines_to_keep_ordered.append(''.join(Bi))
+                
+            baselines_ordered=[]
+            for iB,Bi in enumerate(baselines):
+                Bi=Bi.split("-")
+                Bi.sort()
+                baselines_ordered.append(''.join(Bi))
+                
+            baselines_ordered=np.array(baselines_ordered)
+            baselines_to_keep_ordered=np.array(baselines_to_keep_ordered)
+            
+            idx_to_keep=[]
+            for Bi in baselines_to_keep_ordered:
+                idx=np.where(baselines_ordered==Bi)[0]
+                if len(idx!=0):
+                    idx_to_keep.extend(idx)
+            
+            
+            for iB,Bi in enumerate(baselines):
+                if not(iB in idx_to_keep):
+                    data[arr,extver].data["FLAG"][iB,:]=True
         
-        
+        except:
+            pass        
     
 
 def computeDifferentialError(

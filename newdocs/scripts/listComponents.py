@@ -8,8 +8,6 @@ Created on Thu Sep 26 11:37:28 2024
 import oimodeler as oim
 import csv
 
-
-
 list_components_fourier=[]
 list_components_image=[]
 list_components_radial=[]

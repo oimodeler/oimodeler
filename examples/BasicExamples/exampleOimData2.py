@@ -77,6 +77,23 @@ axflag.legend()
 axflag.set_title("Removing (=flaggging) data where  B>50m")
 figflag.savefig(save_dir / "oimDataExample_plot_flag.png")
 
+
+#%%
+path = Path(__file__).parent.parent.parent
+dir0 = path / "data"  / "RealData" / "MATISSE"/ "FSCMa"
+filenames = list(dir0.glob("*.fits"))
+data = oim.oimData(filenames)
+
+baselines=["A0-B2","A0-D0"]
+filt_baselines=oim.oimKeepBaselinesFilter(baselines=baselines,arr="OI_VIS2")
+data.setFilter(filt_baselines)
+figflag,axflag = data.plot("SPAFREQ","VIS2DATA",xunit="cycle/mas",removeFilter=True,color="orange",label="Original data",lw=5)
+data.plot("SPAFREQ","VIS2DATA",axe=axflag,xunit="cycle/mas",label="Filtered data",color="k",lw=2)
+axflag.legend()
+axflag.set_title(f"Keep only baselines {baselines}")
+figflag.savefig(save_dir / "oimDataExample_plot_keepBaselines.png")
+
+
 #%%%
 data = oim.oimData(filenames)
 from astropy.io import ascii

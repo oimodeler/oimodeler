@@ -9,6 +9,7 @@ oimWavelengthShiftFilter|Shifting wavelength table|targets, arr, wlShift
 oimWavelengthSmoothingFilter|Spectral smoothing |targets, arr, smoothPix, normalizeError
 oimWavelengthBinningFilter|Spectral Binning|targets, arr, bin, normalizeError
 oimFlagWithExpressionFilter|Flagging based on boolean expressions|targets, arr, expr, keepOldFlag
+oimKeepBaselinesFilter|Selection based on baseline name(s)|targets, arr, baselines, keepOldFlag
 oimResetFlags|Set all the flags to False|targets, arr
 oimDiffErrFilter|Compute differential error from std inside or outside a range|targets, arr, ranges, rangeType, excludeRange, dataType
 oimSetMinErrFilter|Set minimum error on data in % for vis ans deg for phases|targets, arr, values, dataType
