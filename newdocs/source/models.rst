@@ -5,8 +5,12 @@
 Building and using models
 =========================
 
+.. _basics of models:
+
 The basics of models
 --------------------
+
+This complete code corresponding to this section is available in `TheBasicsOfModels.py <https://github.com/oimodeler/oimodeler/blob/main/examples/modules/TheBasicsOfModels.py>`_ 
 
 Models, Components and Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -332,25 +336,66 @@ for all the previously created models.
 Types of components
 -------------------
 
+This complete code corresponding to this section is available in `TypesOfComponents.py <https://github.com/oimodeler/oimodeler/blob/main/examples/modules/TypesOfComponents.py>`_ 
+
+**oimodeler** components are of three different types:
+
+1. the components defined in the Fourier plan by an analytical formula. 
+   They inherit from the  :func:`oimComponentFourier <oimodeler.oimcomponent.oimComponentFourier>` class
+2. the components defined by their 2D intensity map in the image plan. 
+   They inherit from the  :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class
+3. the components defined by their 1D intensity profile in the image plan. 
+   They inherit from the  :func:`oimComponentRadialProfile <oimodeler.oimcomponent.oimComponentRadialProfile>` class
+
+
 Basic Fourier components
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+In the table below is a list of the current Fourier-based component, which all derived from the :func:`oimComponentFourier <oimodeler.oimComponent.oimComponentFourier>` semi-abstract class.
 
-.. csv-table:: Available filter components
+.. csv-table:: Available Fourier based components
    :file: table_components_fourier.csv
    :header-rows: 1  
    :delim: |
    :widths: auto
-   
+
+To print the comprehensive list of Fourier-based compnents you can type:
+
+.. code-block:: ipython3
+
+    print(oim.listComponents(componentType="fourier"))
+
+.. parsed-literal::
+
+    ['oimComponentFourier', 'oimPt', 'oimBackground', 'oimUD', 'oimEllipse', 'oimGauss', 'oimEGauss', 'oimIRing',
+     'oimEIRing', 'oimRing', 'oimRing2', 'oimERing', 'oimERing2', 'oimESKIRing', 'oimESKGRing', 'oimESKRing', 'oimLorentz',
+     'oimELorentz', 'oimLinearLDD', 'oimQuadLDD', 'oimPowerLawLDD', 'oimSqrtLDD', 'oimAEIRing', 'oimAERing', 'oimBox',
+     'oimGaussLorentz', 'oimStarHaloGaussLorentz', 'oimStarHaloIRing']
+     
+.. note:: If you want to have more information on a component (for instance, on its paramaters) you can use python **help** function.
+
+Although simple, these components can allow to build complex models, For instance, Chromaticity and/or time-dependency 
+can be added to any parameters of these components to build more complex models.
+We will see this in details in the :ref:`Advanced parameters` section.
+
+.. note:: 
+    Models using Fourier-based components are usually faster to run as they use a simple function to compute the 
+    complex Coherent Flux whereas imaged-based used FFT or Hankel-Transform (for radial profile) 
+
 
 Image-plan components
 ~~~~~~~~~~~~~~~~~~~~~
+
+
+
 
 Fits images component
 ~~~~~~~~~~~~~~~~~~~~~
 
 Radial-Profile components
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _Advanced parameters:
 
 Advanced parameters
 -------------------

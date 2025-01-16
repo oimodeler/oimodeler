@@ -208,6 +208,7 @@ The oimData object also contains two methods to plot :
  as a function of the spatial frequency, baseline length, position angle, or wavelength.
 
 .. code:: ipython3
+    
     figuv, axuv = data.uvplot(color="byConfiguration")
 
     figdata,axdata = data.plot("SPAFREQ",["VIS2DATA","T3PHI"],cname="EFF_WAVE",
