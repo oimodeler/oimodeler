@@ -6,7 +6,10 @@ Created on Thu Sep 26 11:37:28 2024
 """
 
 import oimodeler as oim
+from pathlib import Path
 
+path = Path(__file__).parent
+path_save= path.parent / "source"
 
 #%%
 
@@ -68,9 +71,39 @@ for cname in list_components_fourier:
         table_components_fourier.append(ti)
     except:
         pass
-f=open("table_components_fourier.csv","w")
+f=open(path_save / "table_components_fourier.csv","w")
 w=csv.writer(f,delimiter="|")
 w.writerows(table_components_fourier)
+f.close()
+
+#%%  
+print("*"*10,"components image","*"*10)
+table_components_image =[]
+for cname in list_components_image:
+    try:
+        print(cname)
+        ti=[cname]
+        c = oim.__dict__[cname]()
+        p = c.params
+        name = c.name
+        
+        ti.append(name)
+        txt=""
+        for pname in p:
+            txt+=":abbr:`"
+            txt+=pname
+            txt+="("
+            txt+=p[pname].description
+            
+            txt+=")`, "
+        txt=txt[:-2]
+        ti.append(txt)
+        table_components_image.append(ti)
+    except:
+        pass
+f=open(path_save / "table_components_image.csv","w")
+w=csv.writer(f,delimiter="|")
+w.writerows(table_components_image)
 f.close()
 #%%
 print("*"*10,"interpolators","*"*10)
@@ -86,7 +119,7 @@ for cname in list_interpolators:
         table_param_interpolators.append(ti)
     except:
         pass
-f=open("table_param_interpolators.csv","w")
+f=open(path_save /"table_param_interpolators.csv","w")
 w=csv.writer(f,delimiter="|")
 w.writerows(table_param_interpolators)
 f.close()
@@ -109,7 +142,7 @@ for cname in list_filters:
         table_filters.append(boo)
     except:
         pass
-f=open("table_dataFilter.csv","w",newline='')
+f=open(path_save / "table_dataFilter.csv","w",newline='')
 w=csv.writer(f,delimiter="|")
 w.writerows(table_filters)
 f.close()

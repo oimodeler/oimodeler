@@ -10,7 +10,7 @@ Building and using models
 The basics of models
 --------------------
 
-This complete code corresponding to this section is available in `TheBasicsOfModels.py <https://github.com/oimodeler/oimodeler/blob/main/examples/modules/TheBasicsOfModels.py>`_ 
+This complete code corresponding to this section is available in `TheBasicsOfModels.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/TheBasicsOfModels.py>`_ 
 
 Models, Components and Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -336,7 +336,7 @@ for all the previously created models.
 Types of components
 -------------------
 
-This complete code corresponding to this section is available in `TypesOfComponents.py <https://github.com/oimodeler/oimodeler/blob/main/examples/modules/TypesOfComponents.py>`_ 
+This complete code corresponding to this section is available in `TypesOfComponents.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/TypesOfComponents.py>`_ 
 
 **oimodeler** components are of three different types:
 
@@ -385,6 +385,66 @@ We will see this in details in the :ref:`Advanced parameters` section.
 
 Image-plan components
 ~~~~~~~~~~~~~~~~~~~~~
+
+**oiomdeler** allows to use component described in the image plane. This can done done by subclassing the semi-abstract :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class.
+
+In the table below is a list of the current image plane components:
+
+
+.. csv-table:: Available Image plane components
+   :file: table_components_image.csv
+   :header-rows: 1  
+   :delim: |
+   :widths: auto
+
+
+To print the comprehensive list of image-based compnents you can type:
+
+.. code-block:: ipython3
+
+    print(oim.listComponents(componentType="image"))
+
+
+Describing an object by its intensity distribution instead of its Fourier transform can be useful in three cases:
+
+1. the component cannot be described using an analytical formula in the Fourier plane but can be described by an analytical formula in the image plane
+2. the component cannot be described by a simple analytical formula even in the image plane but an image can easily be computed, for instance with a iterative code
+3. the user want to use external code such as the output from a radiative transfert model
+
+
+Here are three example of these three kind of image-plane models implemented in **oimodeler**.
+
+The first one is a spiral component implemented as :func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oimSpiral>`.
+Its implementation is descrbided in details in XXXXXXXXXXXXXXXXXXXX.
+
+.. code-block:: ipython3
+
+    spiral = oim.oimSpiral(dim=256, fwhm=20, P=0.1, width=0.2, pa=30, elong=2)
+    mspiral = oim.oimModel(spiral)
+
+
+The second one is a simple simulation of a fast-rotator using the Roche model and including the gravity-darkening.
+It is implemented as :func:`oimFastRotator <oimodeler..oimCustomComponents.oimFastRotator.oimFastRotator>` and a full description is given in XXXXXXXXXXXXXXXXXXXX.
+
+.. code-block:: ipython3
+
+    frot = oim.oimFastRotator(dpole=5, dim=128, incl=-50,rot=0.99, Tpole=20000, beta=0.25,pa=20)
+    mfrot = oim.oimModel(frot)
+
+Finally, the last one is an output from the radiative transfer code  `RADMC3D <https://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ simulating the inner part of a dusty disk around the B[e] star FS CMa.
+The simulation was made from 1.5 to 13μm. and the output was saved as a chromatic image-cube in the fits  format with proper axes descruibed in the header (size of pixel in x, y and wavelength). We use the  :func:`oimComponentFitsImage <oimodeler..oimComponents.oimComponentFitsImage>` class to load the image as a image-components. 
+
+.. code-block:: ipython3
+
+    radmc3D_fname = product_dir / "radmc3D_model.fits"
+    radmc3D = oim.oimComponentFitsImage(radmc3D_fname,pa=180)
+    mradmc3D = oim.oimModel(radmc3D)
+
+For more information on using fits images in oimodeler, read the next section.
+
+.. image:: ../../images/componentImages_images.png
+  :alt: Alternative text 
+
 
 
 

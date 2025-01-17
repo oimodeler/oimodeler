@@ -4,6 +4,7 @@
 Loading & manipulating data
 ===========================
 
+
 Interferometric data from all modern optical-infrared interferometric instruments are stored in FITS files following the OIFITS2 (Optical Interferometry FITS) standard defined in `Duvert et al. (2017) <https://www.aanda.org/articles/aa/pdf/2017/01/aa26405-15.pdf>`_. 
 
 In oimodeler optical-interferometry data are stored in an :func:`oimData <oimodeler.oimData.oimData>` object. This object uses `astropy.io.fits <https://docs.astropy.org/en/stable/io/fits/index.html>`_ , the  standard  module to 
@@ -17,6 +18,8 @@ Finally data can be filtered using the **oimDataFilter** class.
 ..  _data_oimData:
 Interferometric data
 --------------------
+
+This complete code corresponding to this section is available in `InterferometricData.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/InterferometricData.py>`_ 
 
 In **oimodeler**, data are stored in a :func:`oimData <oimodeler.oimData.oimData>` object. Other modules that requires access to data such as the :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>` and
 :func:`oimFitter <oimodeler.oimFitter.oimFitter>` are all working with an instance of :func:`oimData <oimodeler.oimData.oimData>`.
@@ -208,10 +211,10 @@ The oimData object also contains two methods to plot :
  as a function of the spatial frequency, baseline length, position angle, or wavelength.
 
 .. code:: ipython3
-    
+
     figuv, axuv = data.uvplot(color="byConfiguration")
 
-    figdata,axdata = data.plot("SPAFREQ",["VIS2DATA","T3PHI"],cname="EFF_WAVE",
+    figdata,axdata =  data.plot("SPAFREQ",["VIS2DATA","T3PHI"],cname="EFF_WAVE",
                                cunit="micron",errorbar=True,xunit="cycle/mas")
     axdata[0].set_yscale("log")
 
@@ -233,6 +236,8 @@ These pltting methods are based on the :func:`uvplot <oimodeler.oimPlots.oimAxes
 ..  _data_oimDataFilter:
 Data Filtering
 --------------
+
+This complete code corresponding to this section is available in `DataFiltering.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/DataFiltering.py>`_ 
 
 
 Data filtering can be performed on :func:`oimData <oimodeler.oimData.oimData>` 
@@ -446,6 +451,8 @@ flagged and ths will not be used for chi2 computation and model fitting.
 ..  _data_oimFluxData:
 Photometric and spectroscopic data
 ----------------------------------
+
+This complete code corresponding to this section is available in `PhotometricAndSpectroscopicData.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/PhotometricAndSpectroscopicData.py>`_ 
 
 The `OIFITS2 <https://www.aanda.org/articles/aa/pdf/2017/01/aa26405-15.pdf>`_ format 
 allow to use flux or spectrum measurements using the OI_FLUX extension.  
