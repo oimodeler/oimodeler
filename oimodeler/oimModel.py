@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
 
 from .oimComponent import oimComponent
-from .oimParam import oimParam, oimParamLinker, oimParamInterpolator
+from .oimParam import oimParam, oimParamLinker, oimParamInterpolator, oimParamNorm
 from .oimUtils import rebin_image
 
 
@@ -592,3 +592,14 @@ class oimModel:
         if savefig is not None:
             plt.savefig(savefig)
         return fig, axe, im
+
+
+    def normalizeFlux(self,comp=None):
+        if comp==None:
+            comp = self.components[-1]
+        fluxes=[]
+        for compi in self.components:
+            if compi != comp:
+                fluxes.append(compi.params["f"])
+        comp.params['f'] = oimParamNorm(fluxes)
+        

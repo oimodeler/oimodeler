@@ -12,7 +12,8 @@ from pathlib import Path
 
 from . import __dict__ as oimDict
 from .oimOptions import oimOptions
-from .oimParam import oimInterp, oimParam, oimParamInterpolator, _standardParameters
+from .oimParam import oimInterp, oimParam, oimParamInterpolator, \
+                      _standardParameters, oimParamNorm, oimParamLinker
 from .oimUtils import getWlFromFitsImageCube, pad_image, rebin_image
 
 
@@ -77,22 +78,27 @@ class oimComponent:
         self._eval(**kwargs)
 
     def _paramstr(self):
+        
         txt = []
-        for _, param in self.params.items():
+        for paramname, param in self.params.items():
             if isinstance(param, oimParam):
                 if isinstance(param, oimParamInterpolator):
                     # TODO: Have a string for each oimParamInterpolator
                     txt.append(f"{param.name}={param.__class__.__name__}")
                 else:
                     txt.append(f"{param.name}={param.value:.2f}")
+            elif isinstance(param, oimParamNorm)  \
+                    or isinstance(param, oimParamLinker):
+                        txt.append(f"{paramname}={param.__class__.__name__}")
+                        
         return " ".join(txt)
 
     def __str__(self):
-        return self.name + self._paramstr() 
+        return self.name + ": " + self._paramstr() 
 
     def __repr__(self):
         return f"{self.__class__.__name__} at "\
-            f"{str(hex(id(self)))} : {self._paramstr()}"
+            f"{str(hex(id(self)))}: {self._paramstr()}"
 
     @property
     def _wl(self) -> np.ndarray:
@@ -687,9 +693,10 @@ class oimComponentFitsImage(oimComponentImage):
     name = "Fits Image Component"
     shortname = "Fits_Comp"
 
-    def __init__(self, fitsImage, useinternalPA=False, **kwargs):
+    def __init__(self, fitsImage=None, useinternalPA=False, **kwargs):
         super().__init__(**kwargs)
-        self.loadImage(fitsImage, useinternalPA=useinternalPA)
+        if fitsImage:
+            self.loadImage(fitsImage, useinternalPA=useinternalPA)
         self.params["pa"] = oimParam(**_standardParameters["pa"])
         self.params["scale"] = oimParam(**_standardParameters["scale"])
 
