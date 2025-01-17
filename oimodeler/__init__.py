@@ -11,9 +11,9 @@ from os.path import split
 import matplotlib.projections as proj
 import numpy as np
 
+from .oimComponent import *
 from .oimBasicFourierComponents import *
 from .oimCustomComponents import *
-from .oimComponent import *
 from .oimData import *
 from .oimFluxData import *
 from .oimDataFilter import *
