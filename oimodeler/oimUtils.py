@@ -12,7 +12,8 @@ from astropy.modeling import models
 from scipy.stats import circmean, circstd
 
 from .oimOptions import oimOptions
-
+import oimodeler as oim
+import csv
 
 # TODO: Should this (global variables) be moved into a configuration file?
 _oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
@@ -1429,7 +1430,7 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
                 if extver != data[iarr].header["EXTVER"]:
                     ok = False
             else:
-                extver = data[iarr].header["EXTVER"]
+                extver = 1 #data[iarr].header["EXTVER"]
         else:
             ok = False
             
@@ -1644,3 +1645,135 @@ def setMinimumError(oifits: fits.HDUList, dataTypes: Union[str, List[str]],
                                      <vali).astype(datai.data[dataTypeiErr].dtype)
                             datai.data[dataTypeiErr] = datai.data[dataTypeiErr] * \
                                 (1 - mask) + mask * vali * datai.data[dataTypei]
+
+
+def _listFeatures(baseClass,featureToTextFunction,details=False,
+                  save2csv=None,header=None):
+    
+    list_features=[]
+    
+    for obj in oim.__dict__:
+        try:
+            if issubclass(oim.__dict__[obj], baseClass):
+                list_features.append(obj)  
+        except:  
+            pass
+    
+    table  = []
+    if header:
+        table.append(header)
+    names  = []
+    
+    for cname in list_features:
+        try:
+            
+            ti = featureToTextFunction(cname)
+            table.append(ti)
+            names.append(cname)
+        except:
+            print(cname)
+        
+    if details:
+        if save2csv:
+            f=open(save2csv,"w")
+            w=csv.writer(f,delimiter="|")
+            w.writerows(table)
+            f.close()
+        return table
+    else:
+        return names
+
+
+def listComponents(details=False,save2csv=None, componentType="all"):
+    
+    def _componentToTextfunction(cname):
+        tab=[cname]
+        c = oim.__dict__[cname]()
+        p = c.params
+        name = c.name        
+        tab.append(name)
+        txt=""
+        for pname in p:
+            txt+=":abbr:`"
+            txt+=pname
+            txt+="("
+            txt+=p[pname].description           
+            txt+=")`, "
+        txt=txt[:-2]
+        tab.append(txt)
+        return tab
+    
+    header =["Component Name","Short description","Parameters"]
+    if componentType.lower() == "all":
+        class0 = oim.oimComponent
+    elif componentType.lower() == "fourier":
+        class0 = oim.oimComponentFourier
+    elif componentType.lower() == "image":
+        class0 = oim.oimComponentImage
+    elif componentType.lower() == "radial":
+        class0 = oim.oimComponentRadialProfile
+    
+    return _listFeatures(class0,_componentToTextfunction,details,
+                         save2csv,header=header)
+
+
+def listDataFilters(details=False,save2csv=None):
+    header =["Filter Name","Short description","Class Keywords"]
+    
+    def _datFilterToTextfunction(cname):
+        filt = oim.__dict__[cname]()
+        tab=[cname]
+        tab.append(filt.description)
+        txt=""
+        for pname in filt.params:
+            txt+=pname+", "
+        tab.append(txt[:-2])
+        return tab
+    
+    res = _listFeatures(oim.oimDataFilterComponent,_datFilterToTextfunction,
+                        details,save2csv,header=header)
+    
+    return res
+    
+def listFitters(details=False,save2csv=None):
+    header =["Fitter Name","Short description","Keywords"]
+    
+    def _fitterToTextfunction(cname):
+        #fit = oim.__dict__[cname](None,None)
+        tab=[cname]
+        #tab.append(fit.description)
+        #txt=""
+        #for pname in filt.params:
+        #    txt+=pname+", "
+        #tab.append(txt[:-2])
+        return tab
+    
+    res = _listFeatures(oim.oimFitter,_fitterToTextfunction,
+                        details,save2csv,header=header)
+    
+    return res   
+
+
+def listParamInterpolators(details=False,save2csv=None):
+    header =["Class Name","oimInterp macro","Description","parameters"]
+    p=oim.oimParam()
+    interp_name=list(oim._interpolators.values())
+    interp_macro=list(oim._interpolators.keys())
+    def _interpToTextfunction(cname):
+        interp = oim.__dict__[cname](p)
+        tab=[cname]
+        try:
+            macro=interp_macro[interp_name.index("oimParamMultipleGaussianTime")]
+        except:
+            macro="None"
+        tab.append(macro)
+        #txt=""
+        #for pname in filt.params:
+        #    txt+=pname+", "
+        #tab.append(txt[:-2])
+        return tab
+    
+    res = _listFeatures(oim.oimParamInterpolator,_interpToTextfunction,
+                        details,save2csv,header=header)
+    
+    return res  
