@@ -1421,16 +1421,19 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
     if arr == ["all"]:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     
-    for iarr in range(len(data)):
-    
+    for iarr in range(len(data)): 
         ok = True
         if data[iarr].name in arr:
             arri = data[iarr].name
-            if extver:
-                if extver != data[iarr].header["EXTVER"]:
-                    ok = False
-            else:
-                extver = 1 #data[iarr].header["EXTVER"]
+            try:
+                if extver:
+                    
+                    if extver != data[iarr].header["EXTVER"]:
+                        ok = False
+                else:
+                    extver = data[iarr].header["EXTVER"]
+            except:
+                pass
         else:
             ok = False
             
