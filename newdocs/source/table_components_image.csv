@@ -1,3 +1,4 @@
+Component Name|Short description|Parameters
 oimComponentImage|Generic component|:abbr:`x(x position)`, :abbr:`y(y position)`, :abbr:`f(flux)`, :abbr:`pa(Major-axis Position angle)`, :abbr:`dim(Dimension in pixels)`
 oimComponentFitsImage|Fits Image Component|:abbr:`x(x position)`, :abbr:`y(y position)`, :abbr:`f(flux)`, :abbr:`pa(Major-axis Position angle)`, :abbr:`dim(Dimension in pixels)`, :abbr:`scale(Scaling Factor)`
 oimFastRotator|Fast Rotator|:abbr:`x(x position)`, :abbr:`y(y position)`, :abbr:`f(flux)`, :abbr:`pa(Major-axis Position angle)`, :abbr:`dim(Dimension in pixels)`, :abbr:`incl(Inclination angle)`, :abbr:`rot(Rotation Rate)`, :abbr:`Tpole(Polar Temperature)`, :abbr:`dpole(Polar diameter)`, :abbr:`beta(Gravity Darkening Exponent)`

@@ -1,0 +1,18 @@
+Class Name|oimInterp macro|Description|parameters
+oimParamInterpolator|mGaussTime
+oimParamInterpolatorKeyframes|mGaussTime
+oimParamMultiWl|mGaussTime
+oimParamInterpolatorWl|mGaussTime
+oimParamInterpolatorTime|mGaussTime
+oimParamCosineTime|mGaussTime
+oimParamGaussian|mGaussTime
+oimParamGaussianWl|mGaussTime
+oimParamGaussianTime|mGaussTime
+oimParamMultipleGaussian|mGaussTime
+oimParamMultipleGaussianWl|mGaussTime
+oimParamMultipleGaussianTime|mGaussTime
+oimParamPolynomial|mGaussTime
+oimParamPolynomialWl|mGaussTime
+oimParamPolynomialTime|mGaussTime
+oimParamLinearRangeWl|mGaussTime
+oimParamLinearTemplateWl|mGaussTime

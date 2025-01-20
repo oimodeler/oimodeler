@@ -1,3 +1,4 @@
+Component Name|Short description|Parameters
 oimComponentFourier|Generic component|:abbr:`x(x position)`, :abbr:`y(y position)`, :abbr:`f(flux)`
 oimPt|Point source|:abbr:`x(x position)`, :abbr:`y(y position)`, :abbr:`f(flux)`
 oimBackground|Background|:abbr:`x(x position)`, :abbr:`y(y position)`, :abbr:`f(flux)`

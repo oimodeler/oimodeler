@@ -445,7 +445,7 @@ For more information on using fits images in oimodeler, read the next section.
 .. image:: ../../images/componentImages_images.png
   :alt: Alternative text 
 
-
+Unlike when using
 
 
 
@@ -454,6 +454,13 @@ Fits images component
 
 Radial-Profile components
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. csv-table:: Available radial profile components
+   :file: table_components_radial.csv
+   :header-rows: 1  
+   :delim: |
+   :widths: auto
+
 
 .. _Advanced parameters:
 
