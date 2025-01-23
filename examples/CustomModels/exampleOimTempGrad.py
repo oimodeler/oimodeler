@@ -32,7 +32,7 @@ s = oim.oimPt(f=oim.oimInterp(
     "starWl", temp=7500, dist=146, lum=9, wl=wavelengths))
 
 # NOTE: Define the temperature gradient
-tg = oim.oimTempGradient(dim=128, dist=146,
+tg = oim.oimAsymTempGrad(dim=128, dist=146,
                          kappa_abs=kappa_abs, inner_temp=1500,
                          rin=0.5, rout=5, p=0.5, q=0.5,
                          dust_mass=1e-3, pa=30, elong=1)

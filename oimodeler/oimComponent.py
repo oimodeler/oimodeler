@@ -7,14 +7,14 @@ import astropy.units as u
 from astropy.io import fits
 from astropy import units as units
 from scipy import interpolate, integrate
-from scipy.special import j0
+from scipy.special import j0, jv
 from pathlib import Path
 
 from . import __dict__ as oimDict
 from .oimOptions import oimOptions
 from .oimParam import oimInterp, oimParam, oimParamInterpolator, \
                       _standardParameters, oimParamNorm, oimParamLinker
-from .oimUtils import getWlFromFitsImageCube, pad_image, rebin_image
+from .oimUtils import getWlFromFitsImageCube, pad_image, rebin_image, compare_angles
 
 
 # TODO: Move somewhere else
@@ -546,19 +546,12 @@ class oimComponentRadialProfile(oimComponent):
         self._eval(**kwargs)
 
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
-        if self._wl is None:
-            wl0 = np.sort(np.unique(wl))
-        else:
-            wl0 = self._wl
-
-        if self._t is None:
-            t0 = np.sort(np.unique(t))
-        else:
-            t0 = self._t
+        wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
+        t0 = np.sort(np.unique(t)) if self._t is None else self._t
 
         if self._r is None:
-            pix = self._pixSize*units.rad.to(units.mas)
-            r = np.linspace(0, self.params["dim"].value-1, self.params["dim"].value)*pix
+            pix = self._pixSize * units.rad.to(units.mas)
+            r = np.linspace(0, self.params["dim"].value-1, self.params["dim"].value) * pix
         else:
             r = self._r
 
@@ -607,7 +600,8 @@ class oimComponentRadialProfile(oimComponent):
     #     norm = integrate.trapezoid(2 * np.pi * r * Ir, r, axis=2)
     #     return (num_hankel / norm).T.reshape(nfreq).astype(complex)
 
-    def hankel(self, Ir, r, wlin, tin, sfreq, wl, t):
+    # TODO: Finish the asymmetric implementation -> Not working right now (waiting on push from Anthony/Alexis)
+    def hankel(self, Ir, r, wlin, tin, sfreq, psi, wl, t):
         pad = oimOptions.ft.padding
         nr = r.size
         ntin = tin.size
@@ -617,6 +611,9 @@ class oimComponentRadialProfile(oimComponent):
         dsfreq0 = 1 / (fov * pad)
         sfreq0 = np.linspace(0, pad * nr-1, pad * nr) * dsfreq0
 
+        # NOTE: Dummy grid just to test functionality
+        psi0 = psi[:sfreq0.size]
+
         r2D = np.tile(r[None, None, :, None], (ntin, nwlin, 1, pad * nr))
         Ir2D = np.tile(Ir[:, :, :, None], (1, 1, 1, pad * nr))
         sf2D = np.tile(sfreq0[None, None, None, :], (ntin, nwlin, nr, 1))
@@ -624,7 +621,11 @@ class oimComponentRadialProfile(oimComponent):
         xx = 2 * np.pi * r2D * sf2D
         res0 = 2 * np.pi * integrate.trapezoid(r2D * Ir2D * j0(xx), r2D, axis=2)
         if self.asymmetric:
-            ...
+            res0_mod = []
+            for i in range(1, self.modulation_order + 1):
+                skw, skwPa = self.params[f"skw{i}"](), self.params[f"skwPa{i}"]()
+                mod = (-1j)**i * skw * np.cos(i * compare_angles(psi0, skwPa * u.deg.to(u.rad))) * jv(self.modulation_order, xx)
+                res0_mod.append(mod)
 
         # NOTE: Removing the norm here. Is not needed as hankel gives corr. fluxes
         # for it in range(ntin):
@@ -641,15 +642,9 @@ class oimComponentRadialProfile(oimComponent):
         return real+imag*1j
 
     def getImage(self, dim, pixSize, wl=None, t=None):
-        if wl is None:
-            wl = 0
-        if t is None:
-            t = 0
-
-        t = np.array(t).flatten()
-        nt = t.size
-        wl = np.array(wl).flatten()
-        nwl = wl.size
+        wl, t = 0 if wl is None else wl, 0 if t is None else t
+        t, wl = np.array(t).flatten(), np.array(wl).flatten()
+        nt, nwl = t.size, wl.size
         dims = (nt, nwl, dim, dim)
 
         v = np.linspace(-0.5, 0.5, dim)
@@ -702,14 +697,14 @@ class oimComponentRadialProfile(oimComponent):
             fyp = ucoord * si + vcoord * co
             vcoord, ucoord = fyp, fxp / self.params["elong"](wl, t)
 
-        spf, psi = np.hypot(ucoord, vcoord), np.arctan2(vcoord, ucoord)
+        spf = np.hypot(ucoord, vcoord)
+        psi = np.arctan2(vcoord, ucoord) if self.asymmetric else None
         wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
         t0 = np.sort(np.unique(t)) if self._t is None else self._t
 
         Ir = self.getInternalRadialProfile(wl0, t0)
         vc = self.hankel(Ir, self._r * units.mas.to(units.rad),
                          wl0, t0, spf, psi, wl, t)
-        breakpoint()
 
         return vc * self._ftTranslateFactor(ucoord, vcoord, wl, t) * \
             self.params["f"](wl, t)
