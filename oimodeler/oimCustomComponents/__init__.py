@@ -18,5 +18,5 @@ from .oimRadialRing import oimRadialRing
 from .oimRadialRing2 import oimRadialRing2
 from .oimSpiral import oimSpiral
 from .oimStarHaloDisk import oimStarHaloGaussLorentz, oimStarHaloIRing
-from .oimTempGradient import oimTempGradient
+from .oimTempGradient import oimTempGrad, oimAsymTempGrad
 from .oimKinematicDisk import oimKinematicDisk

@@ -7,7 +7,7 @@ from ..oimParam import oimParam
 from ..oimUtils import blackbody, convert_distance_to_angle
 
 
-class oimTempGradient(oimComponentRadialProfile):
+class oimTempGrad(oimComponentRadialProfile):
     """A ring defined by a radial temperature profile in r^q and a radial dust
     surface density profile in r^p.
 
@@ -125,7 +125,7 @@ class oimTempGradient(oimComponentRadialProfile):
 
         surface_densities = sigma_in*(r / rin_mas)**(-p)
         emissivities = (1 - np.exp(-surface_densities * kappa_abs))
-        spectral_density = blackbody(wl, temperatures) * emissivities
+        spectral_density = blackbody(temperatures, wl) * emissivities
         radial_profile = ((r > rin_mas) & (r < rout_mas)).astype(int)
         image = np.nan_to_num(radial_profile * spectral_density, nan=0)
 
@@ -150,3 +150,48 @@ class oimTempGradient(oimComponentRadialProfile):
     def _r(self, value):
         """Sets the radial profile [mas]."""
         return
+
+
+class oimAsymTempGrad(oimTempGrad):
+    """A ring defined by a radial temperature profile in r^q and a radial dust
+    surface density profile in r^p.
+
+    Parameters
+    ----------
+    rin : float
+        Inner radius of the disk [au].
+    rout : float
+        Outer radius of the disk [au].
+    Tin : float
+        Inner radius temperature [K].
+    Mdust : float
+        Mass of the dusty disk [M_sun].
+    q : float
+        Power-law exponent for the temperature profile.
+    p : float
+        Power-law exponent for the dust surface density profile.
+    kappa_abs : float or oimInterp
+        Dust mass absorption coefficient [cm2.g-1].
+    dist : float
+        Distance of the star [pc].
+
+    Attributes
+    ----------
+    params : dict with keys of str and values of oimParam
+        Dictionary of parameters.
+    _r : array_like
+    _wl : array_like
+        Wavelengths [micron].
+    _t : array_like
+        Times [second].
+
+    Methods
+    -------
+    _radialProfileFunction(r, wl, t)
+        Calculates a radial temperature gradient profile via a dust-surface
+        density- and temperature profile.
+    """
+    name = "Asymmetric Temperature Gradient"
+    shortname = "AsymTempGrad"
+    elliptic = True
+    asymmetric = True
