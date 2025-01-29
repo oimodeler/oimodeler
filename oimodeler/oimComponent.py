@@ -308,7 +308,7 @@ class oimComponentFourier(oimComponent):
 
     def _imageFunction(self, xx, yy, wl, t):
         raise ValueError(f"image function not implemented for {self.shortname}."
-                         "Use the fromFFT=True option to get a model image"
+                         "Use the fromFT=True option to get a model image"
                          " from the inverse Fourier Transform")
 
 
