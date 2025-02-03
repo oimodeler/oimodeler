@@ -212,6 +212,14 @@ def getDataTypeError(dataArrname: str) -> List[str]:
             if arrnamei == dataArrname]
 
 
+def compare_angles(angle1: float, angle2: float) -> float:
+    """Subtracts two angles and makes sure the are between -π and +π."""
+    diff = np.array(angle1 - angle2)
+    diff[diff > np.pi] -= 2 * np.pi
+    diff[diff < -np.pi] += 2 * np.pi
+    return diff
+
+
 def blackbody(temperature: u.K, wavelength: u.m = None,
               frequency: u.Hz = None) -> np.ndarray:
     """Planck's law with output in cgs.
