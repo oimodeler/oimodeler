@@ -579,8 +579,6 @@ class oimComponentRadialProfile(oimComponent):
             else:
                 return t_arr, wl_arr, r_arr
 
-
-
     def _internalRadialProfile(self):
         return None
 
@@ -609,7 +607,6 @@ class oimComponentRadialProfile(oimComponent):
     @staticmethod
     def sht(Ir, r, wlin, tin, sfreq, wl, t,precision=None):
          
-
         if precision==None:
             sfreq0 = np.unique(sfreq)
         else:
@@ -634,51 +631,8 @@ class oimComponentRadialProfile(oimComponent):
         imag=interpolate.interpn(grid,np.imag(res0),coord,bounds_error=False,
                                  fill_value=None)
         return real+imag*1j,flux
-    
-    
-    @staticmethod
-    def shtold(Ir, r, wlin, tin, sfreq, wl, t,method='linear'):
-        pad = 1 #if oimOptions['FTPaddingFactor'] is None else oimOptions['FTPaddingFactor']
-        nr = r.size
-        #ntin = tin.size
-        #nwlin = wlin.size
-    
-        fov = r[-1]-r[0]
-        dsfreq0 = 1/(fov*pad)
-        sfreq0 = np.linspace(0, pad*nr-1, pad*nr)*dsfreq0
-        
-        # r1D = np.tile(r[None, None, :], (ntin, nwlin, 1))
-        # r2D = np.tile(r[None, None, :, None], (ntin, nwlin, 1, pad*nr))
-        # Ir2D = np.tile(Ir[:, :, :, None], (1, 1, 1, pad*nr))
-        # sf2D = np.tile(sfreq0[None, None, None, :], (ntin, nwlin, nr, 1))
-        
-        r1D = r[np.newaxis, np.newaxis, :]
-        r2D = r[np.newaxis, np.newaxis, :, np.newaxis]
-        Ir2D = Ir[:, :, :, np.newaxis]
-        sf2D = sfreq0[np.newaxis, np.newaxis, np.newaxis, :]
-    
-        res0 = integrate.trapezoid(
-           2.*np.pi*r2D*Ir2D*j0(2.*np.pi*r2D*sf2D), r2D, axis=2)
-        flux=2.*np.pi*integrate.trapezoid(r1D*Ir, r1D,axis=2)
-        flux_r=flux[:,:,np.newaxis]
-        res0/=flux_r
-        
-        # flux=np.zeros([ntin,nwlin],dtype=float)
-        # for it in range(ntin):
-        #     for iwl in range(nwlin):
-        #         flux[it,iwl]=2.*np.pi*integrate.trapezoid(r*Ir[it,iwl,:], r)
-        #         res0[it,iwl,:]/= flux[it,iwl]
-        #         #res0[it,iwl,:]/=np.sum(r*Ir[it,iwl,:]*dr)
-       
-        grid=(tin,wlin,sfreq0)  
-        coord=np.transpose([t,wl,sfreq])  
       
-        real=interpolate.interpn(grid,np.real(res0),coord,bounds_error=False,
-                                 fill_value=None,method=method)
-        imag=interpolate.interpn(grid,np.imag(res0),coord,bounds_error=False,
-                                 fill_value=None,method=method)
-        return real+imag*1j,flux  
-  
+
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
             wl = 0
