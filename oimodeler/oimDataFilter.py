@@ -177,7 +177,7 @@ class oimKeepDataType(oimDataFilterComponent):
         arr2remove = []
         for ihdu, hdunamei in enumerate(hduname):
             if not (hdunamei in arr0 or hdunamei in arr2Keep):
-                extver = data[ihdu].header["EXTVER"]
+                extver = data[ihdu].header.get("EXTVER", 1)
                 arr2remove.append((hdunamei, extver))
             elif hdunamei in arr2Keep:
                 dataTypesi = getDataType(hdunamei)
