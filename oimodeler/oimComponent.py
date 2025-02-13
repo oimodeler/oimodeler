@@ -264,9 +264,7 @@ class oimComponentFourier(oimComponent):
         else:
             fxp, fyp = ucoord, vcoord
 
-        rho = np.sqrt(fxp**2 + fyp**2)
-        vc = self._visFunction(fxp, fyp, rho, wl, t)
-
+        vc = self._visFunction(fxp, fyp, np.hypot(fxp, fyp), wl, t)
         return (
             vc
             * self._ftTranslateFactor(ucoord, vcoord, wl, t)
@@ -576,7 +574,7 @@ class oimComponentRadialProfile(oimComponent):
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._t = [0]  # This component is static
         self.normalizeImage = True
-        self.precision = None # Presicion for the Hankel transform
+        self.precision = None  # Precision for the Hankel transform
 
         # CHECK: Is this not redundant as oimComponent is already ellpitical?
         # NOTE: Add ellipticity
@@ -611,8 +609,6 @@ class oimComponentRadialProfile(oimComponent):
             )
         else:
             r = self._r
-
-        # print('self._r (internal grid after) = ',self._r)
 
         if simple:
             return r, wl, t
@@ -782,9 +778,6 @@ class oimComponentRadialProfile(oimComponent):
         ftot_erg = ftot * (u.erg / (u.cm**2 * u.Hz * u.s))
         ftot_Jy = ftot_erg.to(u.Jy).value
         ftot_Jy_interp = np.interp(wl, wl0, ftot_Jy)
-        # fc=np.zeros(nwl,dtype=float)
-        # for i in range(50):
-        #    fc[wl==wl0[i]]=vc[wl==wl0[i]]*ftot_Jy[i]
         if self.shortname == "TempGrad":
             return (
                 vc
