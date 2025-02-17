@@ -11,6 +11,7 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
     name = "Star and Halo component with Gauss-Lorentzian disk"
     shortname = "SHGL"
     elliptic = True
+    asymmetric = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -94,6 +95,9 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
         )
         self.params["skw"] = oimParam(**_standardParameters["skw"])
         self.params["skwPa"] = oimParam(**_standardParameters["skwPa"])
+        if not self.asymmetric:
+            self.params["skw"].free = False
+            self.params["skwPa"].free = False
 
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._t = [0]  # This component is static
@@ -156,6 +160,7 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
 class oimStarHaloIRing(oimStarHaloGaussLorentz):
     name = "Star and Halo component with Gauss-Lorentzian ring convolved disk"
     shortname = "SHGLR"
+    asymmetric = True
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
