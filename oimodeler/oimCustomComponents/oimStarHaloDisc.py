@@ -89,7 +89,7 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
     def _vis_gauss_lorentz(self, xp, yp, rho, wl, t):
         la, flor = self.params["la"](wl, t), self.params["flor"](wl, t)
         xx = np.pi * 10**la * u.mas.to(u.rad) * rho
-        vis_gauss = np.exp(-(xx**2) / np.log(2))
+        vis_gauss = np.exp(-xx**2 / np.log(2))
         vis_lor = np.exp(-2 * xx / np.sqrt(3))
         return (1 - flor) * vis_gauss + flor * vis_lor
 
@@ -98,29 +98,24 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
         fs, fc = self.params["fs"](wl, t), self.params["fc"](wl, t)
         kc, ks = self.params["kc"](wl, t), self.params["ks"](wl, t)
         wavelength_ratio = self.params["wl0"](wl, t) / wl
-
-        vis_star = fs * wavelength_ratio**ks
+        vis_star = wavelength_ratio**ks
         vis_comp = (
-            fc
-            * self._vis_gauss_lorentz(xp, yp, rho, wl, t)
-            * wavelength_ratio**kc
+            self._vis_gauss_lorentz(xp, yp, rho, wl, t) * wavelength_ratio**kc
         )
         divisor = (fs + fh) * wavelength_ratio**ks + fc * wavelength_ratio**kc
-        return (vis_star + vis_comp) / divisor
+        return (fs * vis_star + fc * vis_comp) / divisor
 
     def _image_gauss_lorentz(self, xx, yy, wl, t):
         flor = self.params["flor"](wl, t)
-        ak = 10 ** self.params["la"](wl, t)
+        hlr = 10 ** self.params["la"](wl, t)
         radius = np.hypot(xx, yy)
         image_gauss = (
             np.log(2)
-            / (np.pi * ak**2)
-            * np.exp(-((radius / ak) ** 2) * np.log(2))
+            / (np.pi * hlr**2)
+            * np.exp(-(radius / hlr) ** 2 * np.log(2))
         )
         image_lor = (
-            ak
-            / (2 * np.pi * np.sqrt(3))
-            * (ak**2 / 3 + radius**2) ** (-3 / 2)
+            hlr / (2 * np.pi * np.sqrt(3)) * (hlr**2 / 3 + radius**2) ** (-3 / 2)
         )
         return (1 - flor) * image_gauss + flor * image_lor
 
@@ -161,7 +156,7 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         la, lkr = self.params["la"](wl, t), self.params["lkr"](wl, t)
         ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (-2 * lkr)))
         xx = np.pi * ak * u.mas.to(u.rad) * rho
-        vis_gauss = np.exp(-(xx**2) / np.log(2))
+        vis_gauss = np.exp(-xx**2 / np.log(2))
         vis_lor = np.exp(-2 * xx / np.sqrt(3))
         return (1 - flor) * vis_gauss + flor * vis_lor
 
@@ -181,10 +176,10 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
             np.arctan2(xp, yp) - skwPa
         ) * j1(xx)
         vis_gauss_lor = self._vis_gauss_lorentz(xp, yp, rho, wl, t)
-        vis_star = fs * wavelength_ratio**ks
-        vis_comp = fc * vis_gauss_lor * vis_ring * wavelength_ratio**kc
+        vis_star = wavelength_ratio**ks
+        vis_comp = vis_gauss_lor * vis_ring * wavelength_ratio**kc
         divisor = (fs + fh) * wavelength_ratio**ks + fc * wavelength_ratio**kc
-        return (vis_star + vis_comp) / divisor
+        return (fs * vis_star + fc * vis_comp) / divisor
 
     def _image_gauss_lorentz(self, xx, yy, wl, t):
         flor = self.params["flor"](wl, t)
@@ -194,21 +189,20 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         image_gauss = (
             np.log(2)
             / (np.pi * ak**2)
-            * np.exp(-((radius / ak) ** 2) * np.log(2))
+            * np.exp(-(radius / ak) ** 2 * np.log(2))
         )
         image_lor = (
-            ak
-            / (2 * np.pi * np.sqrt(3))
-            * (ak**2 / 3 + radius**2) ** (-3 / 2)
+            ak / (2 * np.pi * np.sqrt(3)) * (ak**2 / 3 + radius**2) ** (-3 / 2)
         )
         return (1 - flor) * image_gauss + flor * image_lor
-
 
     def _imageFunction(self, xx, yy, wl, t):
         fh = self.params["fh"](wl, t)
         fs, fc = self.params["fs"](wl, t), self.params["fc"](wl, t)
         skw, skwPa = self.params["skw"](wl, t), self.params["skwPa"](wl, t)
         skwPa = (skwPa + 90) * self.params["skwPa"].unit.to(u.rad)
+        # TODO: Check if the orientation here is correct, might be 90 degrees shifted
+        # due to the np.sin and cos needing to change
         c, s = skw * np.cos(skwPa), skw * np.sin(skwPa)
         polar_angle = np.arctan2(yy, xx)
 
