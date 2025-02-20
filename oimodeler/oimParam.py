@@ -715,7 +715,8 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
               **kwargs) -> None:
         """The subclass's constructor."""
         self.temp = oimParam(name="T", value=temperature,
-                             unit=u.K, free=False,
+                             unit=u.K, free=True,
+                             mini=0, maxi=3000,
                              description="The Temperature")
 
     def _getParams(self):
