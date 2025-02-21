@@ -3,9 +3,11 @@
 :func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers,
 normalizers and interpolators.
 """
+import operator
 import sys
+from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import astropy.constants as const
 import astropy.units as u
@@ -37,6 +39,23 @@ _standardParameters: Dict[str, Any] = load_toml(
 _interpolators: Dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "interpolators.toml"
 )["interpolators"]
+
+_operators = {
+    "add": operator.add,
+    "+": operator.add,
+    "sub": operator.sub,
+    "-": operator.sub,
+    "mul": operator.mul,
+    "*": operator.mul,
+    "div": operator.truediv,
+    "/": operator.truediv,
+    "floordiv": operator.floordiv,
+    "//": operator.floordiv,
+    "mod": operator.mod,
+    "%": operator.mod,
+    "pow": operator.pow,
+    "**": operator.pow,
+}
 
 
 class oimParam:
@@ -129,7 +148,12 @@ class oimParam:
 class oimParamLinker:
     """Class to directly link two oimParam."""
 
-    def __init__(self, param, operator="add", fact=0):
+    def __init__(
+        self,
+        param: oimParam,
+        operator: str = "add",
+        fact: Union[float, oimParam, List[Union[float, oimParam]]] = 0,
+    ) -> None:
         """
 
         Parameters
@@ -137,53 +161,31 @@ class oimParamLinker:
         param : oimParam
             the oimParam to link with.
         operator : str, optional
-            the operator to use Current values available are add or mult. The default is "add".
-        fact : float, optional
-            the value to add or multiply to tthe linked oimParam. The default is 0.
-
-        Returns
-        -------
-        None.
-
+            the operator to use. All python operators are available (case-insensitive) either spelt out like
+            "add" or with the symbol like "+". The default is "add".
+        fact : list of float or list of oimParam or oimParam or float, optional
+            The value used for the operation. Can be a list or a single value of float or an oimParam.
+            The default is 0.
         """
 
         self.param = param
-        self.fact = fact
-
-        self.op = None
-        self._setOperator(operator)
+        self.fact = fact if isinstance(fact, list) else [fact]
+        self.op = _operators[operator]
         self.free = False
 
     @property
     def unit(self):
         return self.param.unit
 
-    def _setOperator(self, operator):
-        """
-
-        Parameters
-        ----------
-        operator : the operator to use for linking the oimParam.
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        if operator == "add":
-            self.op = self._add
-        elif operator == "mult":
-            self.op = self._mult
-
-    def _add(self, val):
-        return val + self.fact
-
-    def _mult(self, val):
-        return val * self.fact
-
     def __call__(self, wl=None, t=None):
-        return self.op(self.param.__call__(wl, t))
+        values = [
+            self.param(wl, t),
+            *[
+                val(wl, t) if isinstance(val, oimParam) else val
+                for val in self.fact
+            ],
+        ]
+        return reduce(self.op, values)
 
 
 class oimParamNorm:
@@ -197,13 +199,10 @@ class oimParamNorm:
     """
 
     def __init__(self, params, norm=1):
-        if type(params) is list:
-            self.params = params
-        else:
+        if not isinstance(params, list):
             self.params = [params]
 
         self.norm = norm
-
         self.free = False
 
     @property
