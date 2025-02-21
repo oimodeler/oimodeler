@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
+import csv
 from typing import Any, List, Optional, Tuple, Union
 
 import astropy.constants as const
 import astropy.units as u
 import numpy as np
+import toml
 from astropy.coordinates import Angle
 from astropy.io import fits
-from astroquery.simbad import Simbad
 from astropy.modeling import models
+from astroquery.simbad import Simbad
 from numpy.typing import ArrayLike
 from scipy.stats import circmean, circstd
 
-from .oimOptions import oimOptions
 import oimodeler as oim
-import csv
+
+from .oimOptions import oimOptions
 
 # TODO: Should this (global variables) be moved into a configuration file?
 _oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
@@ -323,6 +325,21 @@ OI_FLUX_COLUMNS = [
     ("STA_INDEX", "I", True, "Station number contributing to the data", None),
     ("FLAG", "NWLL", False, "Flag", None),
 ]
+
+
+def load_toml(toml_file: Path) -> Dict[str, Any]:
+    """Loads a toml file into a dictionary."""
+    with open(toml_file, "r") as file:
+        dictionary = toml.load(file)
+
+    for value in dictionary.values():
+        if "unit" in value:
+            if value["unit"] == "one":
+                value["unit"] = u.one
+            else:
+                value["unit"] = u.Unit(value["unit"])
+
+    return dictionary
 
 
 def getDataTypeIsAnalysisComplex(dataType: str) -> str:

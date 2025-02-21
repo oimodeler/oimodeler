@@ -12,26 +12,11 @@ from typing import Any, Dict, List, Optional, Union
 import astropy.constants as const
 import astropy.units as u
 import numpy as np
-import toml
 from astropy.modeling import models
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
-
-def load_toml(toml_file: Path) -> Dict[str, Any]:
-    """Loads a toml file into a dictionary."""
-    with open(toml_file, "r") as file:
-        dictionary = toml.load(file)
-
-    for value in dictionary.values():
-        if "unit" in value:
-            if value["unit"] == "one":
-                value["unit"] = u.one
-            else:
-                value["unit"] = u.Unit(value["unit"])
-
-    return dictionary
-
+from .oimUtils import load_toml
 
 _standardParameters: Dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "standard_parameters.toml"
@@ -65,11 +50,11 @@ class oimParam:
     ----------
     name : string, optional
         Name of the Parameter. The default is None.
-    value : float, optional
+    value : int or float, optional
         Value of the parameter. The default is None.
-    mini : float, optional
+    mini : int or float, optional
         Mininum value allowed for the parameter. The default is -1*np.inf.
-    maxi : float, optional
+    maxi : int or float, optional
         maximum value allowed for the parameter. The default is np.inf.
     description : string, optional
         Description of the parameter. The default is "".
@@ -77,18 +62,20 @@ class oimParam:
         Unit of the parameter. The default is astropy.units.one
     free : bool, optional
         Determines if the parameter is to be fitted. The default is None
+    error : int or float, optional
+        The error of the parameter. The default is 0.
     """
 
     def __init__(
         self,
-        name=None,
-        value=None,
-        mini=-np.inf,
-        maxi=np.inf,
-        description="",
-        unit=u.one,
-        free=True,
-        error=0,
+        name: Union[str, None] = None,
+        value: Union[int, float, None] = None,
+        mini: Union[int, float] = -np.inf,
+        maxi: Union[int, float] = np.inf,
+        description: str = "",
+        unit: u.Quantity = u.one,
+        free: bool = True,
+        error: Union[int, float] = 0,
     ):
         """Initialize a new instance of the oimParam class."""
         self.name = name
@@ -116,7 +103,7 @@ class oimParam:
     def __str__(self):
         """String (print) representation of the oimParam class"""
         try:
-            return "oimParam {} = {} \xB1 {} {} range=[{},{}] {} ".format(
+            return "oimParam {} = {} \xb1 {} {} range=[{},{}] {} ".format(
                 self.name,
                 self.value,
                 self.error,
@@ -131,7 +118,7 @@ class oimParam:
     def __repr__(self):
         """String (console) representation of the oimParam class"""
         try:
-            return "oimParam at {} : {}={} \xB1 {} {} range=[{},{}] free={} ".format(
+            return "oimParam at {} : {}={} \xb1 {} {} range=[{},{}] free={} ".format(
                 hex(id(self)),
                 self.name,
                 self.value,
@@ -152,24 +139,28 @@ class oimParamLinker:
         self,
         param: oimParam,
         operator: str = "add",
-        fact: Union[float, oimParam, List[Union[float, oimParam]]] = 0,
+        fact: Union[
+            int, float, oimParam, List[Union[int, float, oimParam]]
+        ] = 0,
     ) -> None:
         """
 
         Parameters
         ----------
-        param : oimParam
+        param : .oimParam
             the oimParam to link with.
         operator : str, optional
             the operator to use. All python operators are available (case-insensitive) either spelt out like
             "add" or with the symbol like "+". The default is "add".
-        fact : list of float or list of oimParam or oimParam or float, optional
+        fact : list of int, float, or .oimParam or int, float, or .oimParam, optional
             The value used for the operation. Can be a list or a single value of float or an oimParam.
             The default is 0.
         """
 
         self.param = param
-        self.fact = fact if isinstance(fact, (tuple, list, np.ndarray)) else [fact]
+        self.fact = (
+            fact if isinstance(fact, (tuple, list, np.ndarray)) else [fact]
+        )
         self.op = _operators[operator.lower()]
         self.free = False
 
