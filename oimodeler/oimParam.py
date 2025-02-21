@@ -882,6 +882,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         self,
         param: oimParam,
         temp: Union[int, float, ArrayLike],
+        solid_angle: Union[int, float, ArrayLike, oimParam],
         **kwargs,
     ) -> None:
         """The subclass's constructor."""
@@ -894,6 +895,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
             maxi=3000,
             description="The temperature",
         )
+        self.solid_angle = solid_angle
 
     def _getParams(self):
         """Gets the parameters of the interpolator."""
@@ -915,7 +917,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         blackbody_distribution : astropy.units.Jy
             The star's flux.
         """
-        bb = models.BlackBody(temperature=self.temp.value * self.temp.unit)
+        bb = models.BlackBody(temperature=self.temp(wl, t))
         return bb(wl * u.m).to(u.erg / u.cm**2 / u.Hz / u.s / u.mas**2).value
 
 
