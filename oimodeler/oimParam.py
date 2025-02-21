@@ -360,39 +360,6 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
         return params
 
 
-class oimParamMultiWl(oimParamInterpolatorKeyframes):
-    """Class of model parameters for multiple wavelengths.
-
-    Notes
-    -----
-    The difference of this class to the interpolators is that
-    there will be no interpolation done, but the parameters will be
-    returned for the different wavelengths, at which they are specified.
-    Will raise an error if there are missing wavelengths.
-    """
-
-    def _init(self, param, wl=[], values=[], **kwargs):
-        super()._init(
-            param, dependence="wl", keyframes=wl, keyvalues=values, **kwargs
-        )
-
-    def _interpFunction(self, wl, t):
-        """Returns the parameter's value for the given wavelength."""
-        keyframes = np.array([param.value for param in self.keyframes])
-        values = np.array([param.value for param in self.keyvalues])
-        new_values = np.zeros(wl.shape)
-
-        for index, wavelength in enumerate(wl):
-            if wavelength in keyframes:
-                value_index = np.where(wavelength == keyframes)[0][0]
-                if len(wl.shape) == 1:
-                    new_values[index] = values[value_index]
-                else:
-                    new_values[:, index, :, :] = values[value_index]
-
-        return new_values
-
-
 class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
     def _init(self, param, wl=[], values=[], **kwargs):
         super()._init(
