@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
 import csv
-from typing import Any, List, Optional, Tuple, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-import astropy.constants as const
 import astropy.units as u
 import numpy as np
 import toml
@@ -16,6 +16,7 @@ from scipy.stats import circmean, circstd
 
 import oimodeler as oim
 
+from .oimOptions import constants as const
 from .oimOptions import oimOptions
 
 # TODO: Should this (global variables) be moved into a configuration file?
@@ -404,17 +405,10 @@ def blackbody(
     blackbody : np.ndarray
         The blackbody (erg / (cm² s Hz sr)).
     """
-    nu = wavelength / const.c
-    return (
-        (2 * const.h.cgs * frequency**3 / const.c.cgs**2)
-        * (
-            1
-            / (
-                np.exp(const.h.cgs * frequency / (const.k_B.cgs * temperature))
-                - 1
-            )
-        )
-    ).value
+    nu = const.c / wavelength
+    factor = 2 * const.cgs.h * nu**3 / const.cgs.c**2
+    num = np.exp(const.cgs.h * nu / (const.cgs.kB * temperature)) - 1
+    return factor / num
 
 
 # TODO: Remove astropy from here
@@ -452,6 +446,7 @@ def compute_intensity(
     return np.array(spectral_profile)
 
 
+# TODO: Remove the astropy constants here
 def compute_photometric_slope(
     data: np.ndarray, temperature: u.K
 ) -> np.ndarray:
