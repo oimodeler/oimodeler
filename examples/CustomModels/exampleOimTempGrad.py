@@ -32,11 +32,11 @@ s = oim.oimPt(
 )
 
 # NOTE: Define the temperature gradient
-tg = oim.oimAsymTempGrad(
+tg = oim.oimTempGrad(
     dim=128,
     dist=146,
     kappa_abs=kappa_abs,
-    inner_temp=1500,
+    temp0=1500,
     rin=0.5,
     rout=5,
     p=0.5,
