@@ -16,7 +16,7 @@ from astropy.modeling import models
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
-from .oimUtils import load_toml
+from .oimUtils import load_toml, blackbody
 
 _standardParameters: Dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "standard_parameters.toml"
@@ -58,7 +58,7 @@ class oimParam:
         maximum value allowed for the parameter. The default is np.inf.
     description : string, optional
         Description of the parameter. The default is "".
-    unit : 1 or astropy.unit, optional
+    unit : astropy.unit.Quantity, optional
         Unit of the parameter. The default is astropy.units.one
     free : bool, optional
         Determines if the parameter is to be fitted. The default is None
@@ -853,32 +853,34 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
 
 
 class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
-    """Interpolates/Calculates a blackbody distribution
-    for different wavelengths for the input temperatures
-    (via Planck's law).
+    """Calculates a temperature and wavelength dependent blackbody
+    distribution via Planck's law.
 
     Parameters
     ----------
-    param : oimParam
-        The parameter that is to be calculated/interpolated.
-    temperature : int or float or numpy.ndarray
-        The temperature(s) to be calculated.
+    param : .oimParam
+        The parameter that is to be calculated (interpolated).
+    temperature : int or float
+        The temperature (K).
+    solid_angle : int, float, or .oimParam
+        The solid angle of the object or an oimParam containing the solid angle (mas).
 
     Attributes
     ----------
-    temp : oimParam
+    temp : .oimParam
+    solid_angle : int, float or .oimParam
     """
 
     def _init(
         self,
         param: oimParam,
-        temp: Union[int, float, ArrayLike],
-        solid_angle: Union[int, float, ArrayLike, oimParam],
+        temp: Union[int, float],
+        solid_angle: Union[int, float, oimParam],
         **kwargs,
     ) -> None:
         """The subclass's constructor."""
         self.temp = oimParam(
-            name="T",
+            name="temp",
             value=temp,
             unit=u.K,
             free=True,
@@ -899,19 +901,29 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         Parameters
         ----------
         wl : numpy.ndarray
-            Wavelengths [m].
+            Wavelengths (m).
         t : numpy.ndarray
-            Times.
+            Times (mjd).
 
         Returns
         -------
-        blackbody_distribution : astropy.units.Jy
-            The star's flux.
+        blackbody_distribution : numpy.ndarray
+            The star's flux (Jy).
         """
-        bb = models.BlackBody(temperature=self.temp(wl, t))
-        return bb(wl * u.m).to(u.erg / u.cm**2 / u.Hz / u.s / u.mas**2).value
+        if isinstance(self.solid_angle, oimParam):
+            solid_angle = self.solid_angle(wl, t)
+        else:
+            solid_angle = self.solid_angle
+
+        return (
+            blackbody(self.temp(wl, t), wl)
+            / u.rad.to(u.mas) ** 2
+            * solid_angle**2
+            * 1e23
+        )
 
 
+# TODO: Remove astropy.units here
 class oimParamLinearStarWl(oimParamInterpolator):
     """Interpolates/Calculates the stellar flux for distinct wavelengths.
 
@@ -922,19 +934,21 @@ class oimParamLinearStarWl(oimParamInterpolator):
     temperature : array_like
         The temperature distribution to be calculated at different wavelengths.
     distance : int or float
-        The distance to the star [pc].
+        The distance to the star (pc).
     luminostiy : int or float
-        The star's luminosity [Lsun].
+        The star's luminosity (Lsun).
     **kwargs : dict
 
     Attributes
     ----------
     stellar_radius : astropy.units.m
+        The stellar radius (m).
     stellar_angular_radius : astropy.units.mas
-    dist : oimParam
-        An oimParam containing the distance to the star.
-    lum : oimParam
-        An oimParam containing the star's luminosity.
+        The angular stellar radius (mas).
+    dist : .oimParam
+        An oimParam containing the distance to the star (pc).
+    lum : .oimParam
+        An oimParam containing the star's luminosity (Lsun).
     """
 
     def _init(
@@ -950,11 +964,11 @@ class oimParamLinearStarWl(oimParamInterpolator):
         self._stellar_radius = None
         self._stellar_angular_radius = None
         self.temp = oimParam(
-            name="T",
+            name="temp",
             value=temp,
             unit=u.K,
             free=False,
-            description="The Temperature",
+            description="The temperature",
         )
         self.dist = oimParam(
             name="dist",
