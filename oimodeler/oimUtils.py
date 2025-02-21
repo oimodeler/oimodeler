@@ -387,7 +387,7 @@ def compare_angles(angle1: float, angle2: float) -> float:
 
 def blackbody(
     temperature: float,
-    wavelength: Union[float, ArrayLike, None] = None,
+    nu: Union[float, ArrayLike, None] = None,
 ) -> np.ndarray:
     """Planck's law in CGS.
 
@@ -395,9 +395,7 @@ def blackbody(
     ----------
     temperature : float or numpy.typing.ArrayLike
         The temperature (K).
-    wavelength : float or numpy.typing.ArrayLike, optional
-        The wavelength (m).
-    frequency : float or numpy.typing.ArrayLike, optional
+    nu : float or numpy.typing.ArrayLike, optional
         The frequency (Hz).
 
     Returns
@@ -405,7 +403,6 @@ def blackbody(
     blackbody : np.ndarray
         The blackbody (erg / (cm² s Hz sr)).
     """
-    nu = const.c / wavelength
     factor = 2 * const.cgs.h * nu**3 / const.cgs.c**2
     num = np.exp(const.cgs.h * nu / (const.cgs.kB * temperature)) - 1
     return factor / num
@@ -534,27 +531,53 @@ def get_next_power_of_two(number: Union[int, float]) -> int:
     return int(2 ** np.ceil(np.log2(number)))
 
 
-def convert_angle_to_distance(
+def angular_to_linear(
     radius: Union[float, np.ndarray],
     distance: float,
-    rvalue: Optional[bool] = False,
 ) -> Union[float, np.ndarray]:
-    """Converts an angle from milliarcseconds to meters.
+    """Converts angular radius, using the object's distance, to linear radius.
 
     Parameters
     ----------
     radius : float or numpy.ndarray
-        The radius of the object around the star [mas].
+        The (angular) radius of the object (arcsec/").
     distance : float
-        The star's distance to the observer [pc].
-    rvalue : bool, optional
-        If toggled, returns the value witout u.else returns
-        an astropy.u.Quantity object. The default is False.
+        The object's distance to the observer (pc).
 
     Returns
     -------
     radius : float or numpy.ndarray
-        The radius of the object around the star [m].
+        The radius of the object around the star (au).
+
+    Notes
+    -----
+    The formula for the angular diameter (in small angle approximation) is
+
+    .. math:: \\delta = \\frac{d}{2D}
+
+    where d is the linear diameter from the star and D is the distance from the star
+    to the observer and ..math::`\\delta` is the angular diameter.
+    """
+    return radius * distance
+
+
+def linear_to_angular(
+    radius: Union[float, np.ndarray],
+    distance: float,
+) -> Union[float, np.ndarray]:
+    """Converts linear radius, using the object's distance, to angular radius.
+
+    Parameters
+    ----------
+    radius : float or numpy.ndarray
+        The (linear) radius of the object (au).
+    distance : float
+        The star's distance to the observer (pc).
+
+    Returns
+    -------
+    radius : float or numpy.ndarray
+        The radius of the object around the star (arcsec/").
 
     Notes
     -----
@@ -565,45 +588,7 @@ def convert_angle_to_distance(
     where d is the distance from the star and D is the distance from the star
     to the observer and ..math::`\\delta` is the angular diameter.
     """
-    radius = ((radius * u.mas).to(u.arcsec).value * distance * u.pc).to(u.m)
-    return radius if rvalue else radius.value
-
-
-def convert_distance_to_angle(
-    radius: Union[float, np.ndarray],
-    distance: float,
-    rvalue: Optional[bool] = False,
-) -> Union[float, np.ndarray]:
-    """Converts a distance from meters to an angle in milliarcseconds.
-
-    Parameters
-    ----------
-    radius : float or numpy.ndarray
-        The radius of the object around the star [au].
-    distance : float
-        The star's distance to the observer [pc].
-    rvalue : bool, optional
-        If toggled, returns the value witout u.else returns
-        an astropy.u.Quantity object. The default is False.
-
-    Returns
-    -------
-    radius : float or numpy.ndarray
-        The radius of the object around the star [m].
-
-    Notes
-    -----
-    The formula for the angular diameter small angle approximation is
-
-    .. math:: \\delta = \\frac{d}{D}
-
-    where d is the distance from the star and D is the distance from the star
-    to the observer and ..math::`\\delta` is the angular diameter.
-    """
-    radius = (
-        ((radius * u.au).to(u.m) / (distance * u.pc).to(u.m)) * u.rad
-    ).to(u.mas)
-    return radius if rvalue else radius.value
+    return radius / distance
 
 
 def getBaselineName(

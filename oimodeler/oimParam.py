@@ -9,14 +9,14 @@ from functools import reduce
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-import astropy.constants as const
 import astropy.units as u
 import numpy as np
 from astropy.modeling import models
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
-from .oimUtils import load_toml, blackbody
+from .oimUtils import blackbody, load_toml
+from .oimOptions import constants as const
 
 _standardParameters: Dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "standard_parameters.toml"
@@ -883,7 +883,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
             solid_angle = self.solid_angle
 
         return (
-            blackbody(self.temp(wl, t), wl)
+            blackbody(self.temp(wl, t), const.c / wl)
             / u.rad.to(u.mas) ** 2
             * solid_angle**2
             * 1e23
