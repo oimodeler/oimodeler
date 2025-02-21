@@ -170,7 +170,7 @@ class oimParamLinker:
 
         self.param = param
         self.fact = fact if isinstance(fact, list) else [fact]
-        self.op = _operators[operator]
+        self.op = _operators[operator.lower()]
         self.free = False
 
     @property
