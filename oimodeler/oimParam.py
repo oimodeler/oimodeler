@@ -7,15 +7,14 @@ import operator
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import astropy.units as u
 import numpy as np
-from astropy.modeling import models
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
-from .oimUtils import blackbody, load_toml
+from .oimUtils import blackbody, load_toml, linear_to_angular
 from .oimOptions import constants as const
 
 _standardParameters: Dict[str, Any] = load_toml(
@@ -890,21 +889,24 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         )
 
 
-# TODO: Remove astropy.units here
+# TODO: Add extinction to this model at some point
 class oimParamLinearStarWl(oimParamInterpolator):
-    """Interpolates/Calculates the stellar flux for distinct wavelengths.
+    """Calculates the stellar flux for different wavelengths.
+
+    Calculates the stellar radius none is provided from the luminosity.
 
     Parameters
     ----------
     param : oimParam
-        The parameter that is to be calculated/interpolated.
-    temperature : array_like
-        The temperature distribution to be calculated at different wavelengths.
-    distance : int or float
+        The parameter that is to be calculated (interpolated).
+    temp : array_like
+        The temperature (K).
+    dist : int or float
         The distance to the star (pc).
-    luminostiy : int or float
+    lum : int or float, optional
         The star's luminosity (Lsun).
-    **kwargs : dict
+    radius : int or float, optional
+        The star's radius (Rsun).
 
     Attributes
     ----------
@@ -923,19 +925,17 @@ class oimParamLinearStarWl(oimParamInterpolator):
         param: oimParam,
         temp: Union[int, float, ArrayLike],
         dist: Union[int, float],
-        lum: Union[int, float],
-        radius: Optional[Union[int, float]] = None,
+        lum: Union[int, float, None] = None,
+        radius: Union[int, float, None] = None,
         **kwargs: Dict,
     ) -> None:
-        """The subclass's constructor."""
-        self._stellar_radius = None
-        self._stellar_angular_radius = None
+        self._angular_stellar_radius = None
         self.temp = oimParam(
             name="temp",
             value=temp,
             unit=u.K,
             free=False,
-            description="The temperature",
+            description="The star's effective temperature",
         )
         self.dist = oimParam(
             name="dist",
@@ -952,112 +952,66 @@ class oimParamLinearStarWl(oimParamInterpolator):
             description="The star's luminosity",
         )
         self.radius = oimParam(
-            name="stellar radius",
+            name="radius",
             value=radius,
             unit=u.R_sun,
             free=False,
             description="The star's radius",
         )
-
-    @property
-    def stellar_radius(self) -> u.m:
-        """Calculates the stellar radius.
-
-        Returns
-        -------
-        stellar_radius : astropy.units.m
-            The star's radius.
-        """
-        if self.radius.value is not None:
-            return self.radius.value
-        if self._stellar_radius is None:
-            luminosity = (self.lum.value * self.lum.unit).to(u.W)
-            self._stellar_radius = np.sqrt(
-                luminosity
-                / (
-                    4
-                    * np.pi
-                    * const.sigma_sb
-                    * (self.temp.value * self.temp.unit) ** 4
-                )
+        if self.lum.value is None and self.radius.value is None:
+            raise ValueError(
+                "Either luminosity or radius must be provided to calculate stellar flux."
             )
-        return self._stellar_radius
 
     @property
-    def stellar_radius_angular(self) -> u.mas:
-        r"""Calculates the parallax from the stellar radius and the distance to
-        the object.
+    def angular_stellar_radius(self) -> float:
+        """Calculates the angular stellar radius.
 
         Returns
         -------
-        stellar_radius_angular : astropy.units.mas
-            The parallax of the stellar radius.
-
-        Notes
-        -----
-        The formula for the angular diameter $ \delta = \frac{d}{D} $ is used.
-        This produces an output in radians.
+        angular_stellar_radius : float
+            The star's radius (mas).
         """
-        if self._stellar_angular_radius is None:
-            distance = self.dist.value * self.dist.unit
-            if self.radius.value is not None:
-                self._stellar_angular_radius = (
-                    (self.radius.value * self.radius.unit).to(u.m)
-                    / distance.to(u.m)
-                    * u.rad
-                )
-            else:
-                self._stellar_angular_radius = (
-                    self.stellar_radius.to(u.m) / distance.to(u.m) * u.rad
-                )
-        return self._stellar_angular_radius
+        if self._angular_stellar_radius is not None:
+            return self._angular_stellar_radius
+
+        if self.radius.value is not None:
+            stellar_radius = self.radius.value * self.radius.unit.to(u.au)
+        else:
+            luminosity = self.lum.value * self.lum.unit.to(u.W)
+            stellar_radius = np.sqrt(
+                luminosity / (4 * np.pi * const.sigma_sb * self.temp.value**4)
+            ) * u.m.to(u.au)
+
+        self._angular_stellar_radius = (
+            linear_to_angular(stellar_radius, self.dist.value) * 1e3
+        )
+        return self._angular_stellar_radius
 
     def _getParams(self):
         """Gets the parameters of the interpolator."""
         return [self.temp]
 
-    def _calc_spectral_radiance(self, wl: u.m) -> np.ndarray:
-        """Calculates a temperature and wavelength dependent blackbody
-        distribution via Planck's law.
-
-
-        Parameters
-        ----------
-        wl : astropy.units.m
-            Wavelengths [m].
-
-        Returns
-        -------
-        blackbody_distribution : astropy.units.Jy
-            The star's flux.
-        """
-        plancks_law = models.BlackBody(
-            temperature=self.temp.value * self.temp.unit
-        )
-        return plancks_law(wl).to(u.erg / (u.cm**2 * u.Hz * u.s * u.rad**2))
-
     def _interpFunction(self, wl: np.ndarray, t: np.ndarray) -> np.ndarray:
-        """Calculates the stellar flux from its distance and radius and
-        interpolates it to the input wavelengths,
-
-        This function is not time dependent.
+        """Calculates the stellar flux from its distance and radius at
+        the specified wavelengths.
 
         Parameters
         ----------
         wl : numpy.ndarray
-            Wavelengths [m].
+            Wavelengths (m).
         t : numpy.ndarray
-            Times.
+            Times (mjd).
 
         Returns
         -------
         stellar_flux : np.ndarray
-            The star's flux [Jy].
+            The star's flux (Jy).
         """
-        spectral_radiance = self._calc_spectral_radiance(wl * u.m)
-        spectral_radiance = (
-            (np.pi * spectral_radiance * self.stellar_radius_angular**2)
-            .to(u.Jy)
-            .value
+        return (
+            blackbody(self.temp(wl, t), const.c / wl)
+            / u.rad.to(u.mas) ** 2
+            * np.pi
+            * self.angular_stellar_radius**2
+            * 1e23
         )
-        return spectral_radiance

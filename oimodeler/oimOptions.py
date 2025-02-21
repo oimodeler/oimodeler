@@ -8,6 +8,7 @@ constants = SimpleNamespace(
     h=const.h.value,
     c=const.c.value,
     kB=const.k_B.value,
+    sigma_sb=const.sigma_sb.value,
     cgs=SimpleNamespace(
         h=const.h.cgs.value, c=const.c.cgs.value, kB=const.k_B.cgs.value
     ),

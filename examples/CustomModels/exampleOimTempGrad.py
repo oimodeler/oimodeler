@@ -28,7 +28,7 @@ kappa_abs = oim.oimInterp("wl", wl=wavelengths, values=[400e1, 300e-5])
 # NOTE: Define a point source with the flux from the star (blackbody)
 # interpolator
 s = oim.oimPt(
-    f=oim.oimInterp("starWl", temp=7500, dist=146, lum=9, wl=wavelengths)
+    f=oim.oimInterp("starWl", temp=7500, dist=146, lum=19, wl=wavelengths)
 )
 
 # NOTE: Define the temperature gradient
