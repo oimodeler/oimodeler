@@ -1103,7 +1103,7 @@ class oimAxes(plt.Axes):
                 self.set_ylim(0, 1)
             else:
                 lines = self.get_lines()
-                mini = np.Infinity
+                mini = np.inf
                 for li in lines:
                     mi = np.min(li.get_ydata())
                     if mi < mini and mi > 0:
