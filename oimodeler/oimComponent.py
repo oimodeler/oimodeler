@@ -775,9 +775,7 @@ class oimComponentRadialProfile(oimComponent):
         )
         nwl0 = np.size(wl0)
         ftot = ftot.reshape(nwl0)
-        ftot_erg = ftot * (u.erg / (u.cm**2 * u.Hz * u.s))
-        ftot_Jy = ftot_erg.to(u.Jy).value
-        ftot_Jy_interp = np.interp(wl, wl0, ftot_Jy)
+        ftot_Jy_interp = np.interp(wl, wl0, ftot * 1e23)
         if self.shortname == "TempGrad":
             return (
                 vc
