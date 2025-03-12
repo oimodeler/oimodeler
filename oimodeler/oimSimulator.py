@@ -11,8 +11,8 @@ from .oimPlots import oimWlTemplatePlots, _errorplot, oimPlotParamName,\
 
 def corrFlux2Vis2(vcompl):
     nB = vcompl.shape[0]
-    norm = np.outer(np.ones(nB-1), vcompl[0, :])
-    return np.abs(vcompl[1:, :]/norm)**2
+    norm = np.abs(np.outer(np.ones(nB-1), vcompl[0, :])) ** 2
+    return np.abs(vcompl[1:, :] * vcompl[1:, :].conj()/norm)
 
 
 def corrFlux2VisAmpAbs(vcompl):
