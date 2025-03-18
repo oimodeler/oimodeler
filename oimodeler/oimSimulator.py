@@ -40,7 +40,7 @@ def corrFlux2VisPhiAbs(vcompl):
 def corrFlux2VisPhiDif(vcompl):
     nlam = vcompl.shape[1]
     norm = np.outer(np.mean(vcompl[1:, :], axis=1), np.ones(nlam))
-    phi = np.rad2deg(np.angle(vcompl[1:, :]*np.conjugate(norm)))
+    phi = np.angle(vcompl[1:, :]*np.conjugate(norm), deg=True)
     return phi
 
 
@@ -60,7 +60,7 @@ def corrFlux2T3Phi(vcompl):
     norm = np.outer(np.ones(nCP), vcompl[0, :])
     BS = vcompl[1:nCP+1, :]*vcompl[nCP+1:2*nCP+1, :] * \
         np.conjugate(vcompl[2*nCP+1:, :])/norm**3
-    return np.rad2deg(np.angle(BS))
+    return np.angle(BS, deg=True)
 
 
 def corrFlux2Flux(vcompl):
