@@ -11,7 +11,7 @@ from ..oimComponent import oimComponentImage
 from ..oimParam import oimParam
 
 
-def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
+def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25,a1=0,a2=0,ldd=None):
     """"""
     h = 6.63e-34
     c = 3e8
@@ -53,7 +53,18 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
     dr = (rin/r0-r) >= 0
     
     Teff = Tpole*(np.abs(1-rhoin*a)**beta)
+    
+    mu=np.rot90(np.sum(dr,axis=2))
+    mu=mu/mu.max()
+    
 
+    if ldd == "linear":
+        ldd_im = (1-a1*(1-mu))
+    elif ldd == "quadratic":
+        ldd_im = (1-a1*(1-mu)-a2*(1-mu)**2)
+    else:
+        ldd_im = 1
+    
     if nlam == 1:
         flx = 1./(np.exp(K1/(lam*Teff))-1)
 
@@ -64,6 +75,8 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
                 dr[:, :, iz]*flx[:, :, iz] 
 
         im = np.rot90(im)
+        im = im * ldd_im
+
 
         tot = np.sum(im)
         im = im/tot
@@ -84,7 +97,9 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25):
             im = im*(im != 0)+dr[:, :, iz, :]*flx[:, :, iz, :]*(im == 0)
 
         im = np.rot90(im)
-
+        if ldd :
+            im = im * ldd_im[:,:,np.newaxis]
+        
         tot = np.sum(im, axis=(0, 1))
 
         for ilam in range(nlam):
@@ -131,6 +146,98 @@ class oimFastRotator(oimComponentImage):
         beta = self.params["beta"].value
 
         im = fastRotator(dim, 1.5, incl, rot, Tpole, self._wl, beta=beta)
+
+        # make a nt,nwl,dim,dim hcube (even if t and/or wl are not relevent)
+        im = np.tile(np.moveaxis(im, -1, 0)[None, :, :, :], (1, 1, 1, 1))
+
+        # computing the pixelSize based on the internal image size and the polar diameter
+        self._pixSize = 1.5*dpole/dim*units.mas.to(units.rad)
+
+        return im
+
+class oimFastRotatorLLDD(oimComponentImage):
+    name = "Fast Rotator"
+    shortname = "FRot"
+
+    def __init__(self, **kwargs):
+        super(). __init__(**kwargs)
+
+        # Component parameters. Note that as it inherits from the oimComponentImage class it already has
+        # x,y,f and dim as parameters
+        self.params["incl"] = oimParam(name="incl", value=0, description="Inclination angle", unit=units.deg)
+        self.params["rot"] = oimParam(name="rot", value=0, description="Rotation Rate", unit=units.one)
+        self.params["Tpole"] = oimParam(name="Tpole", value=20000, description="Polar Temperature", unit=units.K)
+        self.params["dpole"] = oimParam(name="dplot", value=1, description="Polar diameter", unit=units.mas)
+        self.params["beta"] = oimParam(name="beta", value=0.25, description="Gravity Darkening Exponent", unit=units.one)
+        self.params["a"] = oimParam(name="a", value=0, description="Linear LDD coeff",unit=units.one, mini=-1, maxi=1)
+
+        # constant value <=> static model
+        self._t = np.array([0])
+
+        # The component is chromatic. Here we set a fixed array of reference wavelengths. This can be
+        # modified later as, in our case the model is recomputed at each call to the fastRotator function
+        self._wl = np.linspace(0.5e-6, 15e-6, num=10)
+
+        # Finally evalutating paramters as for all other components
+        self._eval(**kwargs)
+
+    def _internalImage(self):
+        dim = self.params["dim"].value
+        incl = self.params["incl"].value
+        rot = self.params["rot"].value
+        Tpole = self.params["Tpole"].value
+        dpole = self.params["dpole"].value
+        beta = self.params["beta"].value
+        a = self.params["a"].value
+        
+        im = fastRotator(dim, 1.5, incl, rot, Tpole, self._wl, beta=beta,ldd="linear",a1=a)
+
+        # make a nt,nwl,dim,dim hcube (even if t and/or wl are not relevent)
+        im = np.tile(np.moveaxis(im, -1, 0)[None, :, :, :], (1, 1, 1, 1))
+
+        # computing the pixelSize based on the internal image size and the polar diameter
+        self._pixSize = 1.5*dpole/dim*units.mas.to(units.rad)
+
+        return im
+    
+    
+class oimFastRotatorQuadLDD(oimComponentImage):
+    name = "Fast Rotator"
+    shortname = "FRot"
+
+    def __init__(self, **kwargs):
+        super(). __init__(**kwargs)
+
+        # Component parameters. Note that as it inherits from the oimComponentImage class it already has
+        # x,y,f and dim as parameters
+        self.params["incl"] = oimParam(name="incl", value=0, description="Inclination angle", unit=units.deg)
+        self.params["rot"] = oimParam(name="rot", value=0, description="Rotation Rate", unit=units.one)
+        self.params["Tpole"] = oimParam(name="Tpole", value=20000, description="Polar Temperature", unit=units.K)
+        self.params["dpole"] = oimParam(name="dplot", value=1, description="Polar diameter", unit=units.mas)
+        self.params["beta"] = oimParam(name="beta", value=0.25, description="Gravity Darkening Exponent", unit=units.one)
+        self.params["a1"] = oimParam(name="a1", value=0, description="1st SLDD coeff",unit=units.one, mini=-1, maxi=1)
+        self.params["a2"] = oimParam(name="a2", value=0, description="2nd SLDD coeff",unit=units.one, mini=-1, maxi=1)
+        # constant value <=> static model
+        self._t = np.array([0])
+
+        # The component is chromatic. Here we set a fixed array of reference wavelengths. This can be
+        # modified later as, in our case the model is recomputed at each call to the fastRotator function
+        self._wl = np.linspace(0.5e-6, 15e-6, num=10)
+
+        # Finally evalutating paramters as for all other components
+        self._eval(**kwargs)
+
+    def _internalImage(self):
+        dim = self.params["dim"].value
+        incl = self.params["incl"].value
+        rot = self.params["rot"].value
+        Tpole = self.params["Tpole"].value
+        dpole = self.params["dpole"].value
+        beta = self.params["beta"].value
+        a1 = self.params["a1"].value
+        a2 = self.params["a2"].value
+        
+        im = fastRotator(dim, 1.5, incl, rot, Tpole, self._wl, beta=beta,ldd="linear",a1=a1,a2=a2)
 
         # make a nt,nwl,dim,dim hcube (even if t and/or wl are not relevent)
         im = np.tile(np.moveaxis(im, -1, 0)[None, :, :, :], (1, 1, 1, 1))

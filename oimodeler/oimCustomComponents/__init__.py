@@ -11,7 +11,7 @@ the customComponent module
 from .oimAsymRing import oimAEIRing, oimAERing
 from .oimBox import oimBox
 from .oimExpRing import oimExpRing
-from .oimFastRotator import oimFastRotator
+from .oimFastRotator import oimFastRotator,oimFastRotatorLLDD,oimFastRotatorQuadLDD
 from .oimGaussLorentz import oimGaussLorentz
 from .oimKinematicDisk import oimKinematicDisk
 from .oimRadialRing import oimRadialRing
