@@ -3,35 +3,43 @@
 :func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers,
 normalizers and interpolators.
 """
+import operator
 import sys
+from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Union
 
-import astropy.constants as const
 import astropy.units as u
 import numpy as np
-import toml
-from astropy.modeling import models
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
+from .oimUtils import blackbody, load_toml, linear_to_angular
+from .oimOptions import constants as const
 
-def load_toml(toml_file: Path) -> Dict[str, Any]:
-    """Loads a toml file into a dictionary."""
-    with open(toml_file, "r") as file:
-        dictionary = toml.load(file)
+_standardParameters: Dict[str, Any] = load_toml(
+    Path(__file__).parent / "config" / "standard_parameters.toml"
+)
+_interpolators: Dict[str, Any] = load_toml(
+    Path(__file__).parent / "config" / "interpolators.toml"
+)["interpolators"]
 
-    for value in dictionary.values():
-        if "unit" in value:
-            if value["unit"] == "one":
-                value["unit"] = u.one
-            else:
-                value["unit"] = u.Unit(value["unit"])
-
-    return dictionary
-
-_standardParameters: Dict[str, Any] = load_toml(Path(__file__).parent / "config" / "standard_parameters.toml")
-_interpolators: Dict[str, Any] = load_toml(Path(__file__).parent / "config" / "interpolators.toml")["interpolators"]
+_operators = {
+    "add": operator.add,
+    "+": operator.add,
+    "sub": operator.sub,
+    "-": operator.sub,
+    "mul": operator.mul,
+    "*": operator.mul,
+    "div": operator.truediv,
+    "/": operator.truediv,
+    "floordiv": operator.floordiv,
+    "//": operator.floordiv,
+    "mod": operator.mod,
+    "%": operator.mod,
+    "pow": operator.pow,
+    "**": operator.pow,
+}
 
 
 class oimParam:
@@ -41,22 +49,34 @@ class oimParam:
     ----------
     name : string, optional
         Name of the Parameter. The default is None.
-    value : float, optional
+    value : int or float, optional
         Value of the parameter. The default is None.
-    mini : float, optional
+    mini : int or float, optional
         Mininum value allowed for the parameter. The default is -1*np.inf.
-    maxi : float, optional
+    maxi : int or float, optional
         maximum value allowed for the parameter. The default is np.inf.
     description : string, optional
         Description of the parameter. The default is "".
-    unit : 1 or astropy.unit, optional
+    unit : astropy.unit.Quantity, optional
         Unit of the parameter. The default is astropy.units.one
     free : bool, optional
         Determines if the parameter is to be fitted. The default is None
+    error : int or float, optional
+        The error of the parameter. The default is 0.
     """
-    def __init__(self, name=None, value=None, mini=-np.inf, maxi=np.inf,
-                 description="", unit=u.one, free=True, error=0):
-        """Initialize a new instance of the oimParam class. """
+
+    def __init__(
+        self,
+        name: Union[str, None] = None,
+        value: Union[int, float, None] = None,
+        mini: Union[int, float] = -np.inf,
+        maxi: Union[int, float] = np.inf,
+        description: str = "",
+        unit: u.Quantity = u.one,
+        free: bool = True,
+        error: Union[int, float] = 0,
+    ):
+        """Initialize a new instance of the oimParam class."""
         self.name = name
         self.value = value
         self.error = error
@@ -82,77 +102,80 @@ class oimParam:
     def __str__(self):
         """String (print) representation of the oimParam class"""
         try:
-            return "oimParam {} = {} \xB1 {} {} range=[{},{}] {} ".format(self.name, self.value, self.error, self.unit.to_string(), self.min, self.max, 'free' if self.free else 'fixed')
+            return "oimParam {} = {} \xb1 {} {} range=[{},{}] {} ".format(
+                self.name,
+                self.value,
+                self.error,
+                self.unit.to_string(),
+                self.min,
+                self.max,
+                "free" if self.free else "fixed",
+            )
         except:
             return "oimParam is {}".format(type(self))
 
     def __repr__(self):
         """String (console) representation of the oimParam class"""
         try:
-            return "oimParam at {} : {}={} \xB1 {} {} range=[{},{}] free={} ".format(hex(id(self)), self.name, self.value, self.error, self.unit.to_string(), self.min, self.max, self.free)
+            return "oimParam at {} : {}={} \xb1 {} {} range=[{},{}] free={} ".format(
+                hex(id(self)),
+                self.name,
+                self.value,
+                self.error,
+                self.unit.to_string(),
+                self.min,
+                self.max,
+                self.free,
+            )
         except:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
 
 
 class oimParamLinker:
-    """ Class to directly link two oimParam.
+    """Class to directly link two oimParam."""
 
-    """
-    def __init__(self, param, operator="add", fact=0):
+    def __init__(
+        self,
+        param: oimParam,
+        operator: str = "add",
+        fact: Union[
+            int, float, oimParam, List[Union[int, float, oimParam]]
+        ] = 0,
+    ) -> None:
         """
 
         Parameters
         ----------
-        param : oimParam
+        param : .oimParam
             the oimParam to link with.
         operator : str, optional
-            the operator to use Current values available are add or mult. The default is "add".
-        fact : float, optional
-            the value to add or multiply to tthe linked oimParam. The default is 0.
-
-        Returns
-        -------
-        None.
-
+            the operator to use. All python operators are available (case-insensitive) either spelt out like
+            "add" or with the symbol like "+". The default is "add".
+        fact : list of int, float, or .oimParam or int, float, or .oimParam, optional
+            The value used for the operation. Can be a list or a single value of float or an oimParam.
+            The default is 0.
         """
 
         self.param = param
-        self.fact = fact
-
-        self.op = None
-        self._setOperator(operator)
+        self.fact = (
+            fact if isinstance(fact, (tuple, list, np.ndarray)) else [fact]
+        )
+        self.op = _operators[operator.lower()]
         self.free = False
 
     @property
     def unit(self):
         return self.param.unit
 
-    def _setOperator(self, operator):
-        """
-
-        Parameters
-        ----------
-        operator : the operator to use for linking the oimParam.
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        if operator == "add":
-            self.op = self._add
-        elif operator == "mult":
-            self.op = self._mult
-
-    def _add(self, val):
-        return val + self.fact
-
-    def _mult(self, val):
-        return val * self.fact
-
     def __call__(self, wl=None, t=None):
-        return self.op(self.param.__call__(wl, t))
+        values = [
+            self.param(wl, t),
+            *[
+                val(wl, t) if isinstance(val, oimParam) else val
+                for val in self.fact
+            ],
+        ]
+        return reduce(self.op, values)
 
 
 class oimParamNorm:
@@ -164,14 +187,12 @@ class oimParamNorm:
 
     The value of p2 will always be 1-p2-p1
     """
+
     def __init__(self, params, norm=1):
-        if type(params) is list:
-            self.params = params
-        else:
+        if not isinstance(params, list):
             self.params = [params]
 
         self.norm = norm
-
         self.free = False
 
     @property
@@ -196,8 +217,8 @@ class oimInterp:
         g = oim.oimGauss(fwhm=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 8]))
 
     This will create a gaussiand component and remplace the parameter fwhm by an
-    instance of the oimParamInterpolatorWl class (i.e., the wavelength linear 
-    interpolator. The custom interpolator the reference to the interpolator 
+    instance of the oimParamInterpolatorWl class (i.e., the wavelength linear
+    interpolator. The custom interpolator the reference to the interpolator
     need to be added to the  :func:`_interpolators <oimodeler.oimParam._interpolators>`
     dictionnary.
 
@@ -257,8 +278,10 @@ class oimParamInterpolator(oimParam):
                 params.append(pi)
         return params
 
-    def  set(self, **kwargs):
-        print("Warning set method is not defined for all interpolators. use getFreeParametezrs instead")
+    def set(self, **kwargs):
+        print(
+            "Warning set method is not defined for all interpolators. use getFreeParametezrs instead"
+        )
         for _ in self.params:
             for key, value in kwargs.items():
                 try:
@@ -268,8 +291,17 @@ class oimParamInterpolator(oimParam):
 
 
 class oimParamInterpolatorKeyframes(oimParamInterpolator):
-    def _init(self, param, dependence="wl", keyframes=[], keyvalues=[],
-              kind="linear", fixedRef=True, extrapolate=False, **kwargs):
+    def _init(
+        self,
+        param,
+        dependence="wl",
+        keyframes=[],
+        keyvalues=[],
+        kind="linear",
+        fixedRef=True,
+        extrapolate=False,
+        **kwargs,
+    ):
         self.dependence = dependence
         self.fixedRef = fixedRef
         self.kind = kind
@@ -283,9 +315,16 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
             self.keyframes[-1].value = kf
 
         for kv in keyvalues:
-            pi = oimParam(name=param.name, value=kv, mini=param.min,
-                          maxi=param.max, description=param.description,
-                          unit=param.unit, free=param.free, error=param.error)
+            pi = oimParam(
+                name=param.name,
+                value=kv,
+                mini=param.min,
+                maxi=param.max,
+                description=param.description,
+                unit=param.unit,
+                free=param.free,
+                error=param.error,
+            )
             self.keyvalues.append(pi)
 
     def _interpFunction(self, wl, t):
@@ -303,8 +342,13 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
             fill_value = (values[0], values[-1])
             bounds_error = False
 
-        return interp1d(keyframes, values, fill_value=fill_value,
-                        kind=self.kind, bounds_error=bounds_error)(var)
+        return interp1d(
+            keyframes,
+            values,
+            fill_value=fill_value,
+            kind=self.kind,
+            bounds_error=bounds_error,
+        )(var)
 
     def _getParams(self):
         params = []
@@ -315,76 +359,59 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
         return params
 
 
-class oimParamMultiWl(oimParamInterpolatorKeyframes):
-    """Class of model parameters for multiple wavelengths.
-
-    Notes
-    -----
-    The difference of this class to the interpolators is that
-    there will be no interpolation done, but the parameters will be
-    returned for the different wavelengths, at which they are specified.
-    Will raise an error if there are missing wavelengths.
-    """
-
-    def _init(self, param, wl=[], values=[], **kwargs):
-        super()._init(param, dependence="wl", keyframes=wl,
-                      keyvalues=values, **kwargs)
-
-    def _interpFunction(self, wl, t):
-        """Returns the parameter's value for the given wavelength."""
-        keyframes = np.array([param.value for param in self.keyframes])
-        values = np.array([param.value for param in self.keyvalues])
-        new_values = np.zeros(wl.shape)
-
-        for index, wavelength in enumerate(wl):
-            if wavelength in keyframes:
-                value_index = np.where(wavelength == keyframes)[0][0]
-                if len(wl.shape) == 1:
-                    new_values[index] = values[value_index]
-                else:
-                    new_values[:, index, :, :] = values[value_index]
-
-        return new_values
-
 class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
     def _init(self, param, wl=[], values=[], **kwargs):
-        super()._init(param, dependence="wl", keyframes=wl, keyvalues=values, **kwargs)
+        super()._init(
+            param, dependence="wl", keyframes=wl, keyvalues=values, **kwargs
+        )
 
 
 class oimParamInterpolatorTime(oimParamInterpolatorKeyframes):
     def _init(self, param, mjd=[], values=[], **kwargs):
-        super()._init(param, dependence="mjd", keyframes=mjd, keyvalues=values, **kwargs)
+        super()._init(
+            param, dependence="mjd", keyframes=mjd, keyvalues=values, **kwargs
+        )
 
 
 class oimParamCosineTime(oimParamInterpolator):
     def _init(self, param, T0=0, P=1, values=[0, 1], x0=None, **kwargs):
         self.asymmetric = False
-        self.T0 = oimParam(name="T0", value=T0,
-                           description="Start", unit=u.day)
-        self.P = oimParam(name="P", value=P,
-                          description="Period", unit=u.day)
+        self.T0 = oimParam(
+            name="T0", value=T0, description="Start", unit=u.day
+        )
+        self.P = oimParam(name="P", value=P, description="Period", unit=u.day)
 
         self.values = []
 
         for kv in values:
-            pi = oimParam(name=param.name, value=kv, mini=param.min,
-                          maxi=param.max, description=param.description,
-                          unit=param.unit, free=param.free, error=param.error)
+            pi = oimParam(
+                name=param.name,
+                value=kv,
+                mini=param.min,
+                maxi=param.max,
+                description=param.description,
+                unit=param.unit,
+                free=param.free,
+                error=param.error,
+            )
             self.values.append(pi)
 
         if x0 is not None:
-            self.x0 = oimParam(name="x0", value=x0,
-                               description="Inflection point", unit=u.one)
+            self.x0 = oimParam(
+                name="x0", value=x0, description="Inflection point", unit=u.one
+            )
             self.asymmetric = True
 
     def _interpFunction(self, wl, t):
-        normt = np.divmod((t-self.T0.value)/self.P.value, 1)[1]
+        normt = np.divmod((t - self.T0.value) / self.P.value, 1)[1]
         if self.asymmetric:
-            normt = interp1d([0, self.x0(), 1], [
-                             0, 0.5, 1], kind='slinear')(normt)
+            normt = interp1d([0, self.x0(), 1], [0, 0.5, 1], kind="slinear")(
+                normt
+            )
 
-        return (np.cos(normt*2*np.pi)+1)/2*(self.values[0]() -
-                                            self.values[1]())+(self.values[1]())
+        return (np.cos(normt * 2 * np.pi) + 1) / 2 * (
+            self.values[0]() - self.values[1]()
+        ) + (self.values[1]())
 
     def _getParams(self):
         params = []
@@ -398,7 +425,9 @@ class oimParamCosineTime(oimParamInterpolator):
 
 
 class oimParamGaussian(oimParamInterpolator):
-    def _init(self, param, dependence="wl", val0=0, value=0, x0=0, fwhm=0, **kwargs):
+    def _init(
+        self, param, dependence="wl", val0=0, value=0, x0=0, fwhm=0, **kwargs
+    ):
         self.dependence = dependence
         self.x0 = oimParam(**_standardParameters[dependence])
         self.x0.name = "x0"
@@ -409,13 +438,27 @@ class oimParamGaussian(oimParamInterpolator):
         self.fwhm.description = "fwhm"
         self.fwhm.value = fwhm
 
-        self.val0 = oimParam(name=param.name, value=val0, mini=param.min,
-                             maxi=param.max, description=param.description,
-                             unit=param.unit, free=param.free, error=param.error)
+        self.val0 = oimParam(
+            name=param.name,
+            value=val0,
+            mini=param.min,
+            maxi=param.max,
+            description=param.description,
+            unit=param.unit,
+            free=param.free,
+            error=param.error,
+        )
 
-        self.value = oimParam(name=param.name, value=value, mini=param.min,
-                              maxi=param.max, description=param.description,
-                              unit=param.unit, free=param.free, error=param.error)
+        self.value = oimParam(
+            name=param.name,
+            value=value,
+            mini=param.min,
+            maxi=param.max,
+            description=param.description,
+            unit=param.unit,
+            free=param.free,
+            error=param.error,
+        )
         self.value.value
 
     def _interpFunction(self, wl, t):
@@ -425,8 +468,9 @@ class oimParamGaussian(oimParamInterpolator):
         else:
             var = t
 
-        return self.val0()+(self.value()-self.val0()) \
-            * np.exp(-2.77*(var-self.x0())**2/self.fwhm()**2)
+        return self.val0() + (self.value() - self.val0()) * np.exp(
+            -2.77 * (var - self.x0()) ** 2 / self.fwhm() ** 2
+        )
 
     def _getParams(self):
         return [self.x0, self.fwhm, self.val0, self.value]
@@ -434,21 +478,35 @@ class oimParamGaussian(oimParamInterpolator):
 
 class oimParamGaussianWl(oimParamGaussian):
     def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
-        super()._init(param, dependence="wl", val0=val0, value=value, x0=x0, fwhm=fwhm)
+        super()._init(
+            param, dependence="wl", val0=val0, value=value, x0=x0, fwhm=fwhm
+        )
 
 
 class oimParamGaussianTime(oimParamGaussian):
     def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
-        super()._init(param, dependence="mjd", val0=val0, value=value, x0=x0, fwhm=fwhm)
+        super()._init(
+            param, dependence="mjd", val0=val0, value=value, x0=x0, fwhm=fwhm
+        )
 
 
 class oimParamMultipleGaussian(oimParamInterpolator):
 
-    def _init(self, param, dependence="wl", val0=0, values=[], x0=[], fwhm=[], **kwargs):
+    def _init(
+        self,
+        param,
+        dependence="wl",
+        val0=0,
+        values=[],
+        x0=[],
+        fwhm=[],
+        **kwargs,
+    ):
         try:
             if len(values) != len(x0) and len(values) != len(fwhm):
                 raise TypeError(
-                    "values, x0 and fwhm should have the same length")
+                    "values, x0 and fwhm should have the same length"
+                )
         except:
             print("values, x0 and fwhm should have the same length")
 
@@ -465,15 +523,31 @@ class oimParamMultipleGaussian(oimParamInterpolator):
             self.fwhm[-1].name = "fwhm"
             self.fwhm[-1].description = "fwhm"
             self.fwhm[-1].value = fwhm[i]
-            self.values.append(oimParam(name=param.name, value=values[i], mini=param.min,
-                                        maxi=param.max, description=param.description,
-                                        unit=param.unit, free=param.free, error=param.error))
+            self.values.append(
+                oimParam(
+                    name=param.name,
+                    value=values[i],
+                    mini=param.min,
+                    maxi=param.max,
+                    description=param.description,
+                    unit=param.unit,
+                    free=param.free,
+                    error=param.error,
+                )
+            )
 
         self.dependence = dependence
 
-        self.val0 = oimParam(name=param.name, value=val0, mini=param.min,
-                             maxi=param.max, description=param.description,
-                             unit=param.unit, free=param.free, error=param.error)
+        self.val0 = oimParam(
+            name=param.name,
+            value=val0,
+            mini=param.min,
+            maxi=param.max,
+            description=param.description,
+            unit=param.unit,
+            free=param.free,
+            error=param.error,
+        )
 
     def _interpFunction(self, wl, t):
 
@@ -483,8 +557,9 @@ class oimParamMultipleGaussian(oimParamInterpolator):
             var = t
         val = self.val0()
         for i in range(len(self.x0)):
-            val += (self.values[i]()-self.val0()) \
-                * np.exp(-2.77*(var-self.x0[i]())**2/self.fwhm[i]()**2)
+            val += (self.values[i]() - self.val0()) * np.exp(
+                -2.77 * (var - self.x0[i]()) ** 2 / self.fwhm[i]() ** 2
+            )
         return val
 
     def _getParams(self):
@@ -498,16 +573,22 @@ class oimParamMultipleGaussian(oimParamInterpolator):
 
 class oimParamMultipleGaussianWl(oimParamMultipleGaussian):
     def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
-        super()._init(param, dependence="wl", val0=val0, values=values, x0=x0, fwhm=fwhm)
+        super()._init(
+            param, dependence="wl", val0=val0, values=values, x0=x0, fwhm=fwhm
+        )
 
 
 class oimParamMultipleGaussianTime(oimParamMultipleGaussian):
     def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
-        super()._init(param, dependence="mjd", val0=val0, values=values, x0=x0, fwhm=fwhm)
+        super()._init(
+            param, dependence="mjd", val0=val0, values=values, x0=x0, fwhm=fwhm
+        )
 
 
 class oimParamPolynomial(oimParamInterpolator):
-    def _init(self, param, dependence="wl", order=2, coeffs=None, x0=None, **kwargs):
+    def _init(
+        self, param, dependence="wl", order=2, coeffs=None, x0=None, **kwargs
+    ):
         self.dependence = dependence
 
         if x0 is None:
@@ -516,17 +597,24 @@ class oimParamPolynomial(oimParamInterpolator):
             self.x0 = x0
 
         if coeffs is None:
-            coeffs = [0]*(order+1)
+            coeffs = [0] * (order + 1)
 
         self.coeffs = []
         for ci in coeffs:
-            pi = oimParam(name=param.name, value=ci, mini=param.min,
-                          maxi=param.max, description=param.description,
-                          unit=param.unit, free=param.free, error=param.error)
+            pi = oimParam(
+                name=param.name,
+                value=ci,
+                mini=param.min,
+                maxi=param.max,
+                description=param.description,
+                unit=param.unit,
+                free=param.free,
+                error=param.error,
+            )
             self.coeffs.append(pi)
 
         self.params.extend(self.coeffs)
-        if not(x0 is None):
+        if not (x0 is None):
             self.params.append(x0)
 
     def _interpFunction(self, wl, t):
@@ -535,7 +623,7 @@ class oimParamPolynomial(oimParamInterpolator):
             var = wl
         else:
             var = t
-        var = var-self.x0
+        var = var - self.x0
         c = np.flip([ci() for ci in self.coeffs])
         return np.poly1d(c)(var)
 
@@ -545,12 +633,16 @@ class oimParamPolynomial(oimParamInterpolator):
 
 class oimParamPolynomialWl(oimParamPolynomial):
     def _init(self, param, order=2, coeffs=None, x0=None, **kwargs):
-        super()._init(param, dependence="wl", order=order, coeffs=coeffs, x0=x0)
+        super()._init(
+            param, dependence="wl", order=order, coeffs=coeffs, x0=x0
+        )
 
 
 class oimParamPolynomialTime(oimParamPolynomial):
     def _init(self, param, order=2, coeffs=None, x0=None):
-        super()._init(param, dependence="mjd", order=order, coeffs=coeffs, x0=x0)
+        super()._init(
+            param, dependence="mjd", order=order, coeffs=coeffs, x0=x0
+        )
 
 
 class oimParamPowerLaw(oimParamInterpolator):
@@ -560,34 +652,35 @@ class oimParamPowerLaw(oimParamInterpolator):
         self.dependence = dependence
 
         self.x0 = oimParam(**_standardParameters[dependence])
-        self.x0.name = 'x0'
-        self.x0.description = 'Power-law reference value (wl0 or t0)'
+        self.x0.name = "x0"
+        self.x0.description = "Power-law reference value (wl0 or t0)"
         self.x0.value = x0
         self.x0.free = False
 
-        self.A = oimParam(**_standardParameters['scale'])
-        self.A.name = 'A'
-        self.A.description = 'Power-law scale factor'
+        self.A = oimParam(**_standardParameters["scale"])
+        self.A.name = "A"
+        self.A.description = "Power-law scale factor"
         self.A.value = A
         self.A.free = True
 
-        self.p = oimParam(**_standardParameters['index'])
-        self.p.name = 'p'
-        self.p.description = 'Power-law index'
+        self.p = oimParam(**_standardParameters["index"])
+        self.p.name = "p"
+        self.p.description = "Power-law index"
         self.p.value = p
         self.p.free = True
 
     def _interpFunction(self, wl, t):
 
-        if self.dependence == 'wl':
+        if self.dependence == "wl":
             x = wl
-        elif self.dependence == 'mjd':
+        elif self.dependence == "mjd":
             x = t
         else:
             raise NotImplementedError(
-                'No support for interpolation along "%s"' % self.dependence)
+                'No support for interpolation along "%s"' % self.dependence
+            )
 
-        return self.A()*(x/self.x0())**self.p()
+        return self.A() * (x / self.x0()) ** self.p()
 
     def _getParams(self):
         return [self.x0, self.A, self.p]
@@ -595,26 +688,28 @@ class oimParamPowerLaw(oimParamInterpolator):
 
 class oimParamPowerLawTime(oimParamPowerLaw):
     def _init(self, param, x0, A, p):
-        super()._init(param, dependence='t', x0=x0, A=A, p=p)
+        super()._init(param, dependence="t", x0=x0, A=A, p=p)
 
 
 class oimParamPowerLawWl(oimParamPowerLaw):
     def _init(self, param, x0, A, p):
-        super()._init(param, dependence='wl', x0=x0, A=A, p=p)
+        super()._init(param, dependence="wl", x0=x0, A=A, p=p)
 
 
 class oimParamLinearRangeWl(oimParamInterpolator):
-    def _init(self, param, wlmin=2e-6, wlmax=3e-6, values=[], kind="linear", **kwargs):
+    def _init(
+        self, param, wlmin=2e-6, wlmax=3e-6, values=[], kind="linear", **kwargs
+    ):
         self.kind = kind
 
         n = len(values)
-        self.wlmin = (oimParam(**_standardParameters["wl"]))
+        self.wlmin = oimParam(**_standardParameters["wl"])
         self.wlmin.name = "wlmin"
         self.wlmin.description = "Min of wl range"
         self.wlmin.value = wlmin
         self.wlmin.free = False
 
-        self.wlmax = (oimParam(**_standardParameters["wl"]))
+        self.wlmax = oimParam(**_standardParameters["wl"])
         self.wlmax.name = "wlmax"
         self.wlmax.description = "Max of the wl range"
         self.wlmax.value = wlmax
@@ -623,18 +718,27 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         self.values = []
 
         for i in range(n):
-            self.values.append(oimParam(name=param.name, value=values[i],
-                                        mini=param.min, maxi=param.max,
-                                        description=param.description,
-                                        unit=param.unit, free=param.free,
-                                        error=param.error))
+            self.values.append(
+                oimParam(
+                    name=param.name,
+                    value=values[i],
+                    mini=param.min,
+                    maxi=param.max,
+                    description=param.description,
+                    unit=param.unit,
+                    free=param.free,
+                    error=param.error,
+                )
+            )
 
     def _interpFunction(self, wl, t):
 
         vals = np.array([vi.value for vi in self.values])
         nwl = vals.size
         wl0 = np.linspace(self.wlmin.value, self.wlmax.value, num=nwl)
-        return interp1d(wl0, vals, kind=self.kind, fill_value="extrapolate")(wl)
+        return interp1d(wl0, vals, kind=self.kind, fill_value="extrapolate")(
+            wl
+        )
 
     def _getParams(self):
         params = []
@@ -645,47 +749,68 @@ class oimParamLinearRangeWl(oimParamInterpolator):
 
 
 class oimParamLinearTemplateWl(oimParamInterpolator):
-    def _init(self, param, wl0=2e-6, dwl=1e-9,
-              f_contrib=1., values=[],  kind="linear", **kwargs):
+    def _init(
+        self,
+        param,
+        wl0=2e-6,
+        dwl=1e-9,
+        f_contrib=1.0,
+        values=[],
+        kind="linear",
+        **kwargs,
+    ):
         self.kind = kind
 
         n = len(values)
-        self.wl0 = (oimParam(**_standardParameters["wl"]))
+        self.wl0 = oimParam(**_standardParameters["wl"])
         self.wl0.name = "wl0"
         self.wl0.description = "Initial wl of the range"
         self.wl0.value = wl0
         self.wl0.free = False
 
-        self.dwl = (oimParam(**_standardParameters["wl"]))
+        self.dwl = oimParam(**_standardParameters["wl"])
         self.dwl.name = "dwl"
         self.dwl.description = "wl step in range"
         self.dwl.value = dwl
         self.dwl.free = False
 
-        self.f_contrib = (oimParam(**_standardParameters["f"]))
+        self.f_contrib = oimParam(**_standardParameters["f"])
         self.f_contrib.name = "f_contrib"
-        self.f_contrib.description = "Flux contribution at the wavelength"\
-            " corresponding to the maximum of the"\
+        self.f_contrib.description = (
+            "Flux contribution at the wavelength"
+            " corresponding to the maximum of the"
             " associated emission template"
+        )
         self.f_contrib.value = f_contrib
         self.f_contrib.free = False
 
         self.values = []
 
         for i in range(n):
-            self.values.append(oimParam(name=param.name, value=values[i],
-                                        mini=param.min,maxi=param.max,
-                                        description=param.description,
-                                        unit=param.unit, free=param.free,
-                                        error=param.error))
+            self.values.append(
+                oimParam(
+                    name=param.name,
+                    value=values[i],
+                    mini=param.min,
+                    maxi=param.max,
+                    description=param.description,
+                    unit=param.unit,
+                    free=param.free,
+                    error=param.error,
+                )
+            )
 
     def _interpFunction(self, wl, t):
         vals = np.array([vi.value for vi in self.values])
         nwl = vals.size
-        wl0 = np.linspace(self.wl0.value, self.wl0.value+self.dwl.value*nwl, num=nwl)
-        interp_template = interp1d(wl0, vals, kind=self.kind, fill_value="extrapolate")(wl)
-        interp_template_norm = interp_template/interp_template.max()
-        return interp_template_norm*self.f_contrib.value
+        wl0 = np.linspace(
+            self.wl0.value, self.wl0.value + self.dwl.value * nwl, num=nwl
+        )
+        interp_template = interp1d(
+            wl0, vals, kind=self.kind, fill_value="extrapolate"
+        )(wl)
+        interp_template_norm = interp_template / interp_template.max()
+        return interp_template_norm * self.f_contrib.value
 
     def _getParams(self):
         params = []
@@ -694,29 +819,42 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
 
 
 class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
-    """Interpolates/Calculates a blackbody distribution
-    for different wavelengths for the input temperatures
-    (via Planck's law).
+    """Calculates a temperature and wavelength dependent blackbody
+    distribution via Planck's law.
 
     Parameters
     ----------
-    param : oimParam
-        The parameter that is to be calculated/interpolated.
-    temperature : int or float or numpy.ndarray
-        The temperature(s) to be calculated.
+    param : .oimParam
+        The parameter that is to be calculated (interpolated).
+    temperature : int or float
+        The temperature (K).
+    solid_angle : int, float, or .oimParam
+        The solid angle of the object or an oimParam containing the solid angle (mas).
 
     Attributes
     ----------
-    temp : oimParam
+    temp : .oimParam
+    solid_angle : int, float or .oimParam
     """
 
-    def _init(self, param: oimParam,
-              temperature: Union[int, float, ArrayLike],
-              **kwargs) -> None:
+    def _init(
+        self,
+        param: oimParam,
+        temp: Union[int, float],
+        solid_angle: Union[int, float, oimParam],
+        **kwargs,
+    ) -> None:
         """The subclass's constructor."""
-        self.temp = oimParam(name="T", value=temperature,
-                             unit=u.K, free=False,
-                             description="The Temperature")
+        self.temp = oimParam(
+            name="temp",
+            value=temp,
+            unit=u.K,
+            free=True,
+            mini=0,
+            maxi=3000,
+            description="The temperature",
+        )
+        self.solid_angle = solid_angle
 
     def _getParams(self):
         """Gets the parameters of the interpolator."""
@@ -729,148 +867,151 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         Parameters
         ----------
         wl : numpy.ndarray
-            Wavelengths [m].
+            Wavelengths (m).
         t : numpy.ndarray
-            Times.
+            Times (mjd).
 
         Returns
         -------
-        blackbody_distribution : astropy.units.Jy
-            The star's flux.
+        blackbody_distribution : numpy.ndarray
+            The star's flux (Jy).
         """
-        plancks_law = models.BlackBody(temperature=self.temp.value*self.temp.unit)
-        return plancks_law(wl*u.m).to(u.erg/(u.cm**2*u.Hz*u.s*u.mas**2)).value
+        if isinstance(self.solid_angle, oimParam):
+            solid_angle = self.solid_angle(wl, t)
+        else:
+            solid_angle = self.solid_angle
+
+        return (
+            blackbody(self.temp(wl, t), const.c / wl)
+            / u.rad.to(u.mas) ** 2
+            * solid_angle**2
+            * 1e23
+        )
 
 
+# TODO: Add extinction to this model at some point
 class oimParamLinearStarWl(oimParamInterpolator):
-    """Interpolates/Calculates the stellar flux for distinct wavelengths.
+    """Calculates the stellar flux for different wavelengths.
+
+    Calculates the stellar radius none is provided from the luminosity.
 
     Parameters
     ----------
     param : oimParam
-        The parameter that is to be calculated/interpolated.
-    temperature : array_like
-        The temperature distribution to be calculated at different wavelengths.
-    distance : int or float
-        The distance to the star [pc].
-    luminostiy : int or float
-        The star's luminosity [Lsun].
-    **kwargs : dict
+        The parameter that is to be calculated (interpolated).
+    temp : array_like
+        The temperature (K).
+    dist : int or float
+        The distance to the star (pc).
+    lum : int or float, optional
+        The star's luminosity (Lsun).
+    radius : int or float, optional
+        The star's radius (Rsun).
 
     Attributes
     ----------
     stellar_radius : astropy.units.m
+        The stellar radius (m).
     stellar_angular_radius : astropy.units.mas
-    dist : oimParam
-        An oimParam containing the distance to the star.
-    lum : oimParam
-        An oimParam containing the star's luminosity.
+        The angular stellar radius (mas).
+    dist : .oimParam
+        An oimParam containing the distance to the star (pc).
+    lum : .oimParam
+        An oimParam containing the star's luminosity (Lsun).
     """
 
-    def _init(self, param: oimParam,
-              temp: Union[int, float, ArrayLike],
-              dist: Union[int, float],
-              lum: Union[int, float],
-              radius: Optional[Union[int, float]] = None,
-              **kwargs: Dict) -> None:
-        """The subclass's constructor."""
-        self._stellar_radius = None
-        self._stellar_angular_radius = None
-        self.temp = oimParam(name="T", value=temp,
-                             unit=u.K, free=False,
-                             description="The Temperature")
-        self.dist = oimParam(name="dist", value=dist,
-                             unit=u.pc, free=False,
-                             description="Distance to the star")
-        self.lum = oimParam(name="lum", value=lum,
-                            unit=u.Lsun, free=False,
-                            description="The star's luminosity")
-        self.radius = oimParam(name="stellar radius",
-                               value=radius,
-                               unit=u.R_sun, free=False,
-                               description="The star's radius")
+    def _init(
+        self,
+        param: oimParam,
+        temp: Union[int, float, ArrayLike],
+        dist: Union[int, float],
+        lum: Union[int, float, None] = None,
+        radius: Union[int, float, None] = None,
+        **kwargs: Dict,
+    ) -> None:
+        self._angular_stellar_radius = None
+        self.temp = oimParam(
+            name="temp",
+            value=temp,
+            unit=u.K,
+            free=False,
+            description="The star's effective temperature",
+        )
+        self.dist = oimParam(
+            name="dist",
+            value=dist,
+            unit=u.pc,
+            free=False,
+            description="Distance to the star",
+        )
+        self.lum = oimParam(
+            name="lum",
+            value=lum,
+            unit=u.Lsun,
+            free=False,
+            description="The star's luminosity",
+        )
+        self.radius = oimParam(
+            name="radius",
+            value=radius,
+            unit=u.R_sun,
+            free=False,
+            description="The star's radius",
+        )
+        if self.lum.value is None and self.radius.value is None:
+            raise ValueError(
+                "Either luminosity or radius must be provided to calculate stellar flux."
+            )
 
     @property
-    def stellar_radius(self) -> u.m:
-        """Calculates the stellar radius.
+    def angular_stellar_radius(self) -> float:
+        """Calculates the angular stellar radius.
 
         Returns
         -------
-        stellar_radius : astropy.units.m
-            The star's radius.
+        angular_stellar_radius : float
+            The star's radius (mas).
         """
+        if self._angular_stellar_radius is not None:
+            return self._angular_stellar_radius
+
         if self.radius.value is not None:
-            return self.radius.value
-        if self._stellar_radius is None:
-            luminosity = (self.lum.value*self.lum.unit).to(u.W)
-            self._stellar_radius = np.sqrt(luminosity/(4*np.pi*const.sigma_sb*(self.temp.value*self.temp.unit)**4))
-        return self._stellar_radius
+            stellar_radius = self.radius.value * self.radius.unit.to(u.au)
+        else:
+            luminosity = self.lum.value * self.lum.unit.to(u.W)
+            stellar_radius = np.sqrt(
+                luminosity / (4 * np.pi * const.sigma_sb * self.temp.value**4)
+            ) * u.m.to(u.au)
 
-    @property
-    def stellar_radius_angular(self) -> u.mas:
-        r"""Calculates the parallax from the stellar radius and the distance to
-        the object.
-
-        Returns
-        -------
-        stellar_radius_angular : astropy.units.mas
-            The parallax of the stellar radius.
-
-        Notes
-        -----
-        The formula for the angular diameter $ \delta = \frac{d}{D} $ is used.
-        This produces an output in radians.
-        """
-        if self._stellar_angular_radius is None:
-            distance = self.dist.value*self.dist.unit
-            if self.radius.value is not None:
-                self._stellar_angular_radius =\
-                        (self.radius.value*self.radius.unit).to(u.m)/distance.to(u.m)*u.rad
-            else:
-                self._stellar_angular_radius =\
-                        self.stellar_radius.to(u.m)/distance.to(u.m)*u.rad
-        return self._stellar_angular_radius
+        self._angular_stellar_radius = (
+            linear_to_angular(stellar_radius, self.dist.value) * 1e3
+        )
+        return self._angular_stellar_radius
 
     def _getParams(self):
         """Gets the parameters of the interpolator."""
         return [self.temp]
 
-    def _calc_spectral_radiance(self, wl: u.m) -> np.ndarray:
-        """Calculates a temperature and wavelength dependent blackbody
-        distribution via Planck's law.
-
-
-        Parameters
-        ----------
-        wl : astropy.units.m
-            Wavelengths [m].
-
-        Returns
-        -------
-        blackbody_distribution : astropy.units.Jy
-            The star's flux.
-        """
-        plancks_law = models.BlackBody(temperature=self.temp.value*self.temp.unit)
-        return plancks_law(wl).to(u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
-
     def _interpFunction(self, wl: np.ndarray, t: np.ndarray) -> np.ndarray:
-        """Calculates the stellar flux from its distance and radius and
-        interpolates it to the input wavelengths,
-
-        This function is not time dependent.
+        """Calculates the stellar flux from its distance and radius at
+        the specified wavelengths.
 
         Parameters
         ----------
         wl : numpy.ndarray
-            Wavelengths [m].
+            Wavelengths (m).
         t : numpy.ndarray
-            Times.
+            Times (mjd).
 
         Returns
         -------
         stellar_flux : np.ndarray
-            The star's flux [Jy].
+            The star's flux (Jy).
         """
-        spectral_radiance = self._calc_spectral_radiance(wl*u.m)
-        spectral_radiance = (np.pi*spectral_radiance*self.stellar_radius_angular**2).to(u.Jy).value
-        return spectral_radiance
+        return (
+            blackbody(self.temp(wl, t), const.c / wl)
+            / u.rad.to(u.mas) ** 2
+            * np.pi
+            * self.angular_stellar_radius**2
+            * 1e23
+        )

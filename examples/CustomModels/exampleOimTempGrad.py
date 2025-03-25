@@ -22,20 +22,29 @@ oim.oimOptions.model.grid.type = "logarithmic"
 # grid creation). Default is 'None/1' and doesn't pad
 oim.oimOptions.ft.padding = 4
 
-# NOTE: A multi param that contains different values for different wavelengths
-kappa_abs = oim.oimInterp(
-        "multiParam", values=[400e1, 300e-5], wl=wavelengths)
+# NOTE: An interpolator that contains different values for different wavelengths
+kappa_abs = oim.oimInterp("wl", wl=wavelengths, values=[400e1, 300e-5])
 
 # NOTE: Define a point source with the flux from the star (blackbody)
 # interpolator
-s = oim.oimPt(f=oim.oimInterp(
-    "starWl", temp=7500, dist=146, lum=9, wl=wavelengths))
+s = oim.oimPt(
+    f=oim.oimInterp("starWl", temp=7500, dist=146, lum=19, wl=wavelengths)
+)
 
 # NOTE: Define the temperature gradient
-tg = oim.oimAsymTempGrad(dim=128, dist=146,
-                         kappa_abs=kappa_abs, inner_temp=1500,
-                         rin=0.5, rout=5, p=0.5, q=0.5,
-                         dust_mass=1e-3, pa=30, elong=1)
+tg = oim.oimTempGrad(
+    dim=128,
+    dist=146,
+    kappa_abs=kappa_abs,
+    temp0=1500,
+    rin=0.5,
+    rout=5,
+    p=0.5,
+    q=0.5,
+    dust_mass=1e-3,
+    pa=30,
+    elong=1,
+)
 
 # NOTE: Specifying the parameter space.
 tg.params["rin"].set(min=0, max=20)
@@ -66,15 +75,31 @@ fit.run(nsteps=100, progress=True)
 figWalkers, axeWalkers = fit.walkersPlot()
 fig0, ax0 = sim.plot(["VIS2DATA", "T3PHI"])
 
-best, err_l, err_u, err = fit.getResults(mode='best', discard=10)
+best, err_l, err_u, err = fit.getResults(mode="best", discard=10)
 
 # NOTE: Plotting images of the model
 tg._wl = None
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-model.showModel(128, 0.35, wl=8e-6, swapAxes=True, fromFT=False,
-                normPow=0.3, axe=ax[0], colorbar=False)
-model.showModel(128, 0.35, wl=8e-6, swapAxes=True, fromFT=True,
-                normPow=0.3, axe=ax[1], colorbar=False)
+model.showModel(
+    128,
+    0.35,
+    wl=8e-6,
+    swapAxes=True,
+    fromFT=False,
+    normPow=0.3,
+    axe=ax[0],
+    colorbar=False,
+)
+model.showModel(
+    128,
+    0.35,
+    wl=8e-6,
+    swapAxes=True,
+    fromFT=True,
+    normPow=0.3,
+    axe=ax[1],
+    colorbar=False,
+)
 ax[1].get_yaxis().set_visible(False)
 ax[0].set_title("Direct Image")
 ax[1].set_title("From FFT")

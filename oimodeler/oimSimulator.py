@@ -33,15 +33,14 @@ def corrFlux2VisAmpCor(vcompl):
 
 
 def corrFlux2VisPhiAbs(vcompl):
-    return np.rad2deg(np.angle(vcompl[1:, :]))
+    return np.angle(vcompl[1:, :], deg=True)
 
 
 # FIXME : Not real formula for differential phases
 def corrFlux2VisPhiDif(vcompl):
     nlam = vcompl.shape[1]
     norm = np.outer(np.mean(vcompl[1:, :], axis=1), np.ones(nlam))
-    phi = np.rad2deg(np.angle(vcompl[1:, :]*np.conjugate(norm)))
-    return phi
+    return np.angle(vcompl[1:, :]*np.conjugate(norm), deg=True)
 
 
 # TODO: Special function doing T3Amp and T3Phi simultaneously
@@ -60,7 +59,7 @@ def corrFlux2T3Phi(vcompl):
     norm = np.outer(np.ones(nCP), vcompl[0, :])
     BS = vcompl[1:nCP+1, :]*vcompl[nCP+1:2*nCP+1, :] * \
         np.conjugate(vcompl[2*nCP+1:, :])/norm**3
-    return np.rad2deg(np.angle(BS))
+    return np.angle(BS, deg=True)
 
 
 def corrFlux2Flux(vcompl):

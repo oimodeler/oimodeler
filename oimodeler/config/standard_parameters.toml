@@ -160,9 +160,5 @@ name = "amplitude"
 value = 1
 description = "Amplitude"
 unit = "one"
-
-[p]
-name = "p"
-value = 0
-description = "Power-law Exponent"
-unit = "one"
+mini = 0
+maxi = 1

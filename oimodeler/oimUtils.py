@@ -1,185 +1,346 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
-from typing import Any, List, Optional, Tuple, Union
+import csv
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-import astropy.constants as const
 import astropy.units as u
 import numpy as np
+import toml
 from astropy.coordinates import Angle
 from astropy.io import fits
-from astroquery.simbad import Simbad
 from astropy.modeling import models
+from astroquery.simbad import Simbad
+from numpy.typing import ArrayLike
 from scipy.stats import circmean, circstd
 
-from .oimOptions import oimOptions
 import oimodeler as oim
-import csv
+
+from .oimOptions import constants as const
+from .oimOptions import oimOptions
 
 # TODO: Should this (global variables) be moved into a configuration file?
 _oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
-_oimDataTypeErr = ["VIS2ERR", "VISAMPERR",
-                   "VISPHIERR", "T3AMPERR", "T3PHIERR", "FLUXERR"]
+_oimDataTypeErr = [
+    "VIS2ERR",
+    "VISAMPERR",
+    "VISPHIERR",
+    "T3AMPERR",
+    "T3PHIERR",
+    "FLUXERR",
+]
 _oimDataTypeArr = ["OI_VIS2", "OI_VIS", "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX"]
 
 _oimDataAnalysisInComplex = [False, False, True, False, True, False]
 
-_cutArr = ['EFF_WAVE', 'EFF_BAND', 'VIS2DATA', 'VIS2ERR', 'FLAG', 'VISAMP', 'VISAMPERR',
-           'VISPHI', 'VISPHIERR', 'T3AMP', 'T3AMPERR', 'T3PHI', 'T3PHIERR',
-           'FLUXDATA', 'FLUXERR', 'FLAG']
+_cutArr = [
+    "EFF_WAVE",
+    "EFF_BAND",
+    "VIS2DATA",
+    "VIS2ERR",
+    "FLAG",
+    "VISAMP",
+    "VISAMPERR",
+    "VISPHI",
+    "VISPHIERR",
+    "T3AMP",
+    "T3AMPERR",
+    "T3PHI",
+    "T3PHIERR",
+    "FLUXDATA",
+    "FLUXERR",
+    "FLAG",
+]
 
-OI_TARGET_KEYWORDS = [
-    ("OI_REVN", False, "Revision number")
-    ]
+OI_TARGET_KEYWORDS = [("OI_REVN", False, "Revision number")]
 
 OI_TARGET_COLUMNS = [
-        ("TARGET_ID", "I",   False, "Index number. Must be >=1", None),
-        ("TARGET",    "16A", False, "Target name", None),
-        ("RAEP0",     "D",   False, "RA at mean EQUINOX ", "deg"),
-        ("DECEP0",    "D",   False, "Dec at mean EQUINOX", "deg"),
-        ("EQUINOX",   "E",   False, "Equinox", None),
-        ("RA_ERR",    "D",   False, "Error in RA", "deg"),
-        ("DEC_ERR",   "D",   False, "Error in Dec", "deg"),
-        ("SYSVEL",    "D",   False, "Systemic radial velocity", "m/s"),
-        ("VELTYP",   "8A",   False, "Reference for radial velocity:LSR, GEOCENTR...", None),
-        ("VELDEF",   "8A",   False, "Definition of radial velocity:(OPTICAL,RADIO)", None),
-        ("PMRA",     "D",    False, "Proper motion in RA", "deg/yr"),
-        ("PMDEC",    "D",    False, "Proper motion in Dec", "deg/yr"),
-        ("PMRA_ERR", "D",    False, "Error of proper motion in RA", "deg/yr"),
-        ("PMDEC_ERR","D",    False, "Error of proper motion in Dec", "deg/yr"),
-        ("PARALLAX", "E",    False, "Parallax", "deg"),
-        ("PARA_ERR", "E",    False, "Error in parallax ", "deg"),
-        ("SPECTYP",  "16A",  False, "Spectral type", "deg"),
-        ("CATEGORY", "3A",   True,  "CAL or SCI", None)
-        ]
+    ("TARGET_ID", "I", False, "Index number. Must be >=1", None),
+    ("TARGET", "16A", False, "Target name", None),
+    ("RAEP0", "D", False, "RA at mean EQUINOX ", "deg"),
+    ("DECEP0", "D", False, "Dec at mean EQUINOX", "deg"),
+    ("EQUINOX", "E", False, "Equinox", None),
+    ("RA_ERR", "D", False, "Error in RA", "deg"),
+    ("DEC_ERR", "D", False, "Error in Dec", "deg"),
+    ("SYSVEL", "D", False, "Systemic radial velocity", "m/s"),
+    (
+        "VELTYP",
+        "8A",
+        False,
+        "Reference for radial velocity:LSR, GEOCENTR...",
+        None,
+    ),
+    (
+        "VELDEF",
+        "8A",
+        False,
+        "Definition of radial velocity:(OPTICAL,RADIO)",
+        None,
+    ),
+    ("PMRA", "D", False, "Proper motion in RA", "deg/yr"),
+    ("PMDEC", "D", False, "Proper motion in Dec", "deg/yr"),
+    ("PMRA_ERR", "D", False, "Error of proper motion in RA", "deg/yr"),
+    ("PMDEC_ERR", "D", False, "Error of proper motion in Dec", "deg/yr"),
+    ("PARALLAX", "E", False, "Parallax", "deg"),
+    ("PARA_ERR", "E", False, "Error in parallax ", "deg"),
+    ("SPECTYP", "16A", False, "Spectral type", "deg"),
+    ("CATEGORY", "3A", True, "CAL or SCI", None),
+]
 
 OI_ARRAY_KEYWORDS = [
-        ("OI_REVN", False, "Revision number"),
-        ("ARRNAME", False, "A Array name, for cross-referencing"),
-        ("FRAME",   False, "A Coordinate frame"),
-        ("ARRAYX",  False, "Array center x coordinates (m)"),
-        ("ARRAYY",  False, "Array center y coordinates (m)"),
-        ("ARRAYZ",  False, "Array center z coordinates (m)")
-        ]
+    ("OI_REVN", False, "Revision number"),
+    ("ARRNAME", False, "A Array name, for cross-referencing"),
+    ("FRAME", False, "A Coordinate frame"),
+    ("ARRAYX", False, "Array center x coordinates (m)"),
+    ("ARRAYY", False, "Array center y coordinates (m)"),
+    ("ARRAYZ", False, "Array center z coordinates (m)"),
+]
 
 OI_ARRAY_COLUMNS = [
-        ("TEL_NAME", "16A", False, " Telescope name", None),
-        ("STA_NAME", "16A", False, "Station name", None),
-        ("STA_INDEX", "I", False, "Station number. Must be >=1", None),
-        ("DIAMETER", "E", False, "Element diameter", "m"),
-        ("STAXYZ", "3D", False, "Station coordinates w.r.t. array center", "m"),
-        ("FOV", "D", False, " Photometric field of view", "arcsec"),
-        ("FOVTYPE", "6A", False, "Model for FOV: FWHM or RADIUS", None)
-        ]
+    ("TEL_NAME", "16A", False, " Telescope name", None),
+    ("STA_NAME", "16A", False, "Station name", None),
+    ("STA_INDEX", "I", False, "Station number. Must be >=1", None),
+    ("DIAMETER", "E", False, "Element diameter", "m"),
+    ("STAXYZ", "3D", False, "Station coordinates w.r.t. array center", "m"),
+    ("FOV", "D", False, " Photometric field of view", "arcsec"),
+    ("FOVTYPE", "6A", False, "Model for FOV: FWHM or RADIUS", None),
+]
 
 OI_WL_KEYWORDS = [
-        ("OI_REVN",  False, "Revision number"),
-        ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table")
-        ]
+    ("OI_REVN", False, "Revision number"),
+    ("INSNAME", False, "Identifies corresponding OI_WAVELENGTH table"),
+]
 
 OI_WL_COLUMNS = [
-        ("EFF_WAVE", "E", False, "Effective wavelength of channel", "m"),
-        ("EFF_BAND", "E", False, "Effective bandpass of channel", "m")
-        ]
+    ("EFF_WAVE", "E", False, "Effective wavelength of channel", "m"),
+    ("EFF_BAND", "E", False, "Effective bandpass of channel", "m"),
+]
 
 OI_VIS2_KEYWORDS = [
-        ("OI_REVN",  False, "Revision number"),
-        ("DATE-OBS", False, "UTC start date of observations"),
-        ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
-        ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
-        ("CORRNAME", True,  "Identifies corresponding OI_CORR table")
-        ]
+    ("OI_REVN", False, "Revision number"),
+    ("DATE-OBS", False, "UTC start date of observations"),
+    ("ARRNAME", False, "Identifies corresponding OI_ARRAY"),
+    ("INSNAME", False, "Identifies corresponding OI_WAVELENGTH table"),
+    ("CORRNAME", True, "Identifies corresponding OI_CORR table"),
+]
 
 OI_VIS2_COLUMNS = [
-        ("TARGET_ID",         "I",    False, "Target number as index into OI_TARGET table", "m"),
-        ("TIME",              "D",    False, "Zero. For backwards compatibility", None),
-        ("MJD",               "D",    False, "Modified Julian day", "day"),
-        ("INT_TIME",          "D",    False, "Integration time", None),
-        ("VIS2DATA",          "NWLD", False, "Squared Visibility", None),
-        ("VIS2ERR",           "NWLD", False, "Error in Squared Visibility", None),
-        ("CORRINDX_VIS2DATA", "J",    True,  "Index into correlation matrix for 1st VIS2DATA element", None),
-        ("UCOORD",            "D",    False, "U coordinate of the data", "m"),
-        ("VCOORD",            "D",    False, "V coordinate of the data", "m"),
-        ("STA_INDEX",         "2I",   False, "Station numbers contributing to the data", None),
-        ("FLAG",              "NWLL", False, "Flag", None)
-        ]
+    (
+        "TARGET_ID",
+        "I",
+        False,
+        "Target number as index into OI_TARGET table",
+        "m",
+    ),
+    ("TIME", "D", False, "Zero. For backwards compatibility", None),
+    ("MJD", "D", False, "Modified Julian day", "day"),
+    ("INT_TIME", "D", False, "Integration time", None),
+    ("VIS2DATA", "NWLD", False, "Squared Visibility", None),
+    ("VIS2ERR", "NWLD", False, "Error in Squared Visibility", None),
+    (
+        "CORRINDX_VIS2DATA",
+        "J",
+        True,
+        "Index into correlation matrix for 1st VIS2DATA element",
+        None,
+    ),
+    ("UCOORD", "D", False, "U coordinate of the data", "m"),
+    ("VCOORD", "D", False, "V coordinate of the data", "m"),
+    (
+        "STA_INDEX",
+        "2I",
+        False,
+        "Station numbers contributing to the data",
+        None,
+    ),
+    ("FLAG", "NWLL", False, "Flag", None),
+]
 
 OI_VIS_KEYWORDS = [
-        ("OI_REVN",  False, "Revision number"),
-        ("DATE-OBS", False, "UTC start date of observations"),
-        ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
-        ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
-        ("CORRNAME", True,  "Identifies corresponding OI_CORR table"),
-        ("AMPTYP",   True,  "absolute, differential, correlated flux"),
-        ("PHITYP",   True,  "absolute, differential"),
-        ("AMPORDER", True,  "Polynomial fit order for differential chromatic amplitudes"),
-        ("PHIORDER", True,  "Polynomial fit order for differential chromatic phases")
-        ]
+    ("OI_REVN", False, "Revision number"),
+    ("DATE-OBS", False, "UTC start date of observations"),
+    ("ARRNAME", False, "Identifies corresponding OI_ARRAY"),
+    ("INSNAME", False, "Identifies corresponding OI_WAVELENGTH table"),
+    ("CORRNAME", True, "Identifies corresponding OI_CORR table"),
+    ("AMPTYP", True, "absolute, differential, correlated flux"),
+    ("PHITYP", True, "absolute, differential"),
+    (
+        "AMPORDER",
+        True,
+        "Polynomial fit order for differential chromatic amplitudes",
+    ),
+    (
+        "PHIORDER",
+        True,
+        "Polynomial fit order for differential chromatic phases",
+    ),
+]
 
 # TODO: Implement RIV VISREFMAP ...
 OI_VIS_COLUMNS = [
-        ("TARGET_ID",       "I",    False, "Target number as index into OI_TARGET table", "m"),
-        ("TIME",            "D",    False, "Zero. For backwards compatibility", None),
-        ("MJD",             "D",    False, "Modified Julian day", "day"),
-        ("INT_TIME",        "D",    False, "Integration time", "s"),
-        ("VISAMP",          "NWLD", False, "Visibility amplitude", None),
-        ("VISAMPERR",       "NWLD", False, "Error in visibility amplitude", None),
-        ("CORRINDX_VISAMP", "J",    True,  "Index into correlation matrix for 1st VISAMP element", None),
-        ("VISPHI",          "NWLD", False, "Visibility phase", "deg"),
-        ("VISPHIERR",       "NWLD", False, "Error in visibility Phase", "deg"),
-        ("CORRINDX_VISPHI", "J",    True,  "Index into correlation matrix for 1st VISPHI element", None),
-        ("UCOORD",          "D",    False, "U coordinate of the data", "m"),
-        ("VCOORD",          "D",    False, "V coordinate of the data", "m"),
-        ("STA_INDEX",       "2I",   False, "Station numbers contributing to the data", None),
-        ("FLAG",            "NWLL", False, "Flag", None)]
+    (
+        "TARGET_ID",
+        "I",
+        False,
+        "Target number as index into OI_TARGET table",
+        "m",
+    ),
+    ("TIME", "D", False, "Zero. For backwards compatibility", None),
+    ("MJD", "D", False, "Modified Julian day", "day"),
+    ("INT_TIME", "D", False, "Integration time", "s"),
+    ("VISAMP", "NWLD", False, "Visibility amplitude", None),
+    ("VISAMPERR", "NWLD", False, "Error in visibility amplitude", None),
+    (
+        "CORRINDX_VISAMP",
+        "J",
+        True,
+        "Index into correlation matrix for 1st VISAMP element",
+        None,
+    ),
+    ("VISPHI", "NWLD", False, "Visibility phase", "deg"),
+    ("VISPHIERR", "NWLD", False, "Error in visibility Phase", "deg"),
+    (
+        "CORRINDX_VISPHI",
+        "J",
+        True,
+        "Index into correlation matrix for 1st VISPHI element",
+        None,
+    ),
+    ("UCOORD", "D", False, "U coordinate of the data", "m"),
+    ("VCOORD", "D", False, "V coordinate of the data", "m"),
+    (
+        "STA_INDEX",
+        "2I",
+        False,
+        "Station numbers contributing to the data",
+        None,
+    ),
+    ("FLAG", "NWLL", False, "Flag", None),
+]
 
 OI_T3_KEYWORDS = [
-        ("OI_REVN",  False, "Revision number"),
-        ("DATE-OBS", False, "UTC start date of observations"),
-        ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
-        ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
-        ("CORRNAME", True,  "Identifies corresponding OI_CORR table")
-        ]
+    ("OI_REVN", False, "Revision number"),
+    ("DATE-OBS", False, "UTC start date of observations"),
+    ("ARRNAME", False, "Identifies corresponding OI_ARRAY"),
+    ("INSNAME", False, "Identifies corresponding OI_WAVELENGTH table"),
+    ("CORRNAME", True, "Identifies corresponding OI_CORR table"),
+]
 
 OI_T3_COLUMNS = [
-        ("TARGET_ID",      "I",    False, "Target number as index into OI_TARGET table", "m"),
-        ("TIME",           "D",    False, "Zero. For backwards compatibility", None),
-        ("MJD",            "D",    False, "Modified Julian day", "day"),
-        ("INT_TIME",       "D",    False, "Integration time", "s"),
-        ("T3AMP",          "NWLD", False, "Triple product amplitude", None),
-        ("T3AMPERR",       "NWLD", False, "Error in triple product amplitude", None),
-        ("CORRINDX_T3AMP", "J",    True,  "Index into correlation matrix for 1st T3AMP element", None),
-        ("T3PHI",          "NWLD", False, "Triple Product Phase", "deg"),
-        ("T3PHIERR",       "NWLD", False, "Error in Triple Product Phase", "deg"),
-        ("CORRINDX_T3PHI", "J",    True,  "Index into correlation matrix for 1st T3PHI element", None),
-        ("U1COORD",        "D",    False, "U coordinate of baseline AB of the triangle", "m"),
-        ("V1COORD",        "D",    False, "V coordinate of baseline AB of the triangle", "m"),
-        ("U2COORD",        "D",    False, "U coordinate of baseline BC of the triangle", "m"),
-        ("V2COORD",        "D",    False, "V coordinate of baseline BC of the triangle", "m"),
-        ("STA_INDEX",      "3I",   False, "Station numbers contributing to the data", None),
-        ("FLAG",           "NWLL", False, "Flag", None)
-        ]
+    (
+        "TARGET_ID",
+        "I",
+        False,
+        "Target number as index into OI_TARGET table",
+        "m",
+    ),
+    ("TIME", "D", False, "Zero. For backwards compatibility", None),
+    ("MJD", "D", False, "Modified Julian day", "day"),
+    ("INT_TIME", "D", False, "Integration time", "s"),
+    ("T3AMP", "NWLD", False, "Triple product amplitude", None),
+    ("T3AMPERR", "NWLD", False, "Error in triple product amplitude", None),
+    (
+        "CORRINDX_T3AMP",
+        "J",
+        True,
+        "Index into correlation matrix for 1st T3AMP element",
+        None,
+    ),
+    ("T3PHI", "NWLD", False, "Triple Product Phase", "deg"),
+    ("T3PHIERR", "NWLD", False, "Error in Triple Product Phase", "deg"),
+    (
+        "CORRINDX_T3PHI",
+        "J",
+        True,
+        "Index into correlation matrix for 1st T3PHI element",
+        None,
+    ),
+    (
+        "U1COORD",
+        "D",
+        False,
+        "U coordinate of baseline AB of the triangle",
+        "m",
+    ),
+    (
+        "V1COORD",
+        "D",
+        False,
+        "V coordinate of baseline AB of the triangle",
+        "m",
+    ),
+    (
+        "U2COORD",
+        "D",
+        False,
+        "U coordinate of baseline BC of the triangle",
+        "m",
+    ),
+    (
+        "V2COORD",
+        "D",
+        False,
+        "V coordinate of baseline BC of the triangle",
+        "m",
+    ),
+    (
+        "STA_INDEX",
+        "3I",
+        False,
+        "Station numbers contributing to the data",
+        None,
+    ),
+    ("FLAG", "NWLL", False, "Flag", None),
+]
 
 OI_FLUX_KEYWORDS = [
-        ("OI_REVN",  False, "Revision number"),
-        ("DATE-OBS", False, "UTC start date of observations"),
-        ("ARRNAME",  False, "Identifies corresponding OI_ARRAY"),
-        ("INSNAME",  False, "Identifies corresponding OI_WAVELENGTH table"),
-        ("CORRNAME", True,  "Identifies corresponding OI_CORR table"),
-        ("FOV",      True,  "Area on sky over which flux is integrated (arcsec)"),
-        ("FOVTYPE",  True,  "Model for FOV: FWHM or RADIUS"),
-        ("CALSTAT",  True,  "C: Spectrum is calibrated, U: uncalibrated")
-        ]
+    ("OI_REVN", False, "Revision number"),
+    ("DATE-OBS", False, "UTC start date of observations"),
+    ("ARRNAME", False, "Identifies corresponding OI_ARRAY"),
+    ("INSNAME", False, "Identifies corresponding OI_WAVELENGTH table"),
+    ("CORRNAME", True, "Identifies corresponding OI_CORR table"),
+    ("FOV", True, "Area on sky over which flux is integrated (arcsec)"),
+    ("FOVTYPE", True, "Model for FOV: FWHM or RADIUS"),
+    ("CALSTAT", True, "C: Spectrum is calibrated, U: uncalibrated"),
+]
 
 OI_FLUX_COLUMNS = [
-        ("TARGET_ID",         "I",    False, "Target number as index into OI_TARGET table", "m"),
-        ("MJD",               "D",    False, "Modified Julian day", "day"),
-        ("INT_TIME",          "D",    False, "Integration time", "s"),
-        ("FLUXDATA",          "NWLD", False, "Flux in units of TUNITn", "external"),
-        ("FLUXERR",           "NWLD", False, "Corresponding flux error", "external"),
-        ("CORRINDX_FLUXDATA", "J",    True,  "Index into correlation matrix for 1st FLUXDATA element", None),
-        ("STA_INDEX",         "I",   True, "Station number contributing to the data", None),
-        ("FLAG",              "NWLL", False, "Flag", None)
-        ]
+    (
+        "TARGET_ID",
+        "I",
+        False,
+        "Target number as index into OI_TARGET table",
+        "m",
+    ),
+    ("MJD", "D", False, "Modified Julian day", "day"),
+    ("INT_TIME", "D", False, "Integration time", "s"),
+    ("FLUXDATA", "NWLD", False, "Flux in units of TUNITn", "external"),
+    ("FLUXERR", "NWLD", False, "Corresponding flux error", "external"),
+    (
+        "CORRINDX_FLUXDATA",
+        "J",
+        True,
+        "Index into correlation matrix for 1st FLUXDATA element",
+        None,
+    ),
+    ("STA_INDEX", "I", True, "Station number contributing to the data", None),
+    ("FLAG", "NWLL", False, "Flag", None),
+]
+
+
+def load_toml(toml_file: Path) -> Dict[str, Any]:
+    """Loads a toml file into a dictionary."""
+    with open(toml_file, "r") as file:
+        dictionary = toml.load(file)
+
+    for value in dictionary.values():
+        if "unit" in value:
+            if value["unit"] == "one":
+                value["unit"] = u.one
+            else:
+                value["unit"] = u.Unit(value["unit"])
+
+    return dictionary
 
 
 def getDataTypeIsAnalysisComplex(dataType: str) -> str:
@@ -200,16 +361,20 @@ def getDataArrname(dataType: str) -> str:
 
 def getDataType(dataArrname: str) -> List[str]:
     """Returns the datatype for a given dataArrname."""
-    return [datatypei for datatypei, arrnamei
-            in zip(_oimDataType, _oimDataTypeArr)
-            if arrnamei == dataArrname]
+    return [
+        datatypei
+        for datatypei, arrnamei in zip(_oimDataType, _oimDataTypeArr)
+        if arrnamei == dataArrname
+    ]
 
 
 def getDataTypeError(dataArrname: str) -> List[str]:
     """Returns the error datatype for a given dataArrname."""
-    return [datatypei for datatypei, arrnamei
-            in zip(_oimDataTypeErr, _oimDataTypeArr)
-            if arrnamei == dataArrname]
+    return [
+        datatypei
+        for datatypei, arrnamei in zip(_oimDataTypeErr, _oimDataTypeArr)
+        if arrnamei == dataArrname
+    ]
 
 
 def compare_angles(angle1: float, angle2: float) -> float:
@@ -220,37 +385,33 @@ def compare_angles(angle1: float, angle2: float) -> float:
     return diff
 
 
-def blackbody(temperature: u.K, wavelength: u.m = None,
-              frequency: u.Hz = None) -> np.ndarray:
-    """Planck's law with output in cgs.
+def blackbody(
+    temperature: float,
+    nu: Union[float, ArrayLike, None] = None,
+) -> np.ndarray:
+    """Planck's law in CGS.
 
     Parameters
     ----------
-    temperature : astrophy.units.K
-        The temperature [K].
-    wavelength : astrpy.units.m, optional
-        The wavelength [cm].
-    frequency : astropy.units.Hz, optional
-        The frequency [Hz].
+    temperature : float or numpy.typing.ArrayLike
+        The temperature (K).
+    nu : float or numpy.typing.ArrayLike, optional
+        The frequency (Hz).
 
     Returns
     -------
     blackbody : np.ndarray
-        The blackbody [erg/(cm² s Hz sr)].
+        The blackbody (erg / (cm² s Hz sr)).
     """
-    if wavelength is not None:
-        wavelength = u.Quantity(wavelength, u.m)
-        frequency = (const.c.cgs/(wavelength).to(u.cm))
-    else:
-        frequency = u.Quantity(frequency, u.Hz)
-
-    temperature = u.Quantity(temperature, u.K)
-    return ((2*const.h.cgs*frequency**3/const.c.cgs**2)\
-            * (1/(np.exp(const.h.cgs*frequency/(const.k_B.cgs*temperature))-1))).value
+    factor = 2 * const.cgs.h * nu**3 / const.cgs.c**2
+    num = np.exp(const.cgs.h * nu / (const.cgs.kB * temperature)) - 1
+    return factor / num
 
 
-def compute_intensity(wavelengths: u.um, temperature: u.K,
-                      pixel_size: Optional[float] = None) -> np.ndarray:
+# TODO: Remove astropy from here
+def compute_intensity(
+    wavelengths: u.um, temperature: u.K, pixel_size: Optional[float] = None
+) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
     dust surface density profile.
@@ -269,18 +430,23 @@ def compute_intensity(wavelengths: u.um, temperature: u.K,
     intensity : numpy.ndarray
         Intensity per pixel.
     """
-    plancks_law = models.BlackBody(temperature=temperature*u.K)
+    plancks_law = models.BlackBody(temperature=temperature * u.K)
     spectral_profile = []
     pixel_size *= u.rad
-    for wavelength in wavelengths*u.m:
+    for wavelength in wavelengths * u.m:
         spectral_radiance = plancks_law(wavelength).to(
-                u.erg/(u.cm**2*u.Hz*u.s*u.rad**2))
-        spectral_profile.append((spectral_radiance*pixel_size**2).to(u.Jy).value)
+            u.erg / (u.cm**2 * u.Hz * u.s * u.rad**2)
+        )
+        spectral_profile.append(
+            (spectral_radiance * pixel_size**2).to(u.Jy).value
+        )
     return np.array(spectral_profile)
 
 
+# TODO: Remove the astropy constants here
 def compute_photometric_slope(
-        data: np.ndarray, temperature: u.K) -> np.ndarray:
+    data: np.ndarray, temperature: u.K
+) -> np.ndarray:
     """Computes the photometric slope of the data from
     the effective temperature of the star.
 
@@ -297,10 +463,12 @@ def compute_photometric_slope(
     """
     temperature = u.Quantity(temperature, u.K)
     struct_wl = [item for sublist in data.struct_wl for item in sublist]
-    wl = (np.unique(np.hstack(struct_wl))*u.m).to(u.um)
-    nu = (const.c/wl.to(u.m)).to(u.Hz)
+    wl = (np.unique(np.hstack(struct_wl)) * u.m).to(u.um)
+    nu = (const.c / wl.to(u.m)).to(u.Hz)
     blackbody = models.BlackBody(temperature)(nu)
-    return wl.to(u.m).value, np.gradient(np.log(blackbody.value), np.log(nu.value))
+    return wl.to(u.m).value, np.gradient(
+        np.log(blackbody.value), np.log(nu.value)
+    )
 
 
 def pad_image(image: np.ndarray) -> np.ndarray:
@@ -326,21 +494,25 @@ def pad_image(image: np.ndarray) -> np.ndarray:
     s0x = np.trim_zeros(im0x).size
     s0y = np.trim_zeros(im0y).size
 
-    min_sizex = s0x*oimOptions.ft.padding
-    min_sizey = s0y*oimOptions.ft.padding
+    min_sizex = s0x * oimOptions.ft.padding
+    min_sizey = s0y * oimOptions.ft.padding
 
-    min_pow2x = 2**(min_sizex - 1).bit_length()
-    min_pow2y = 2**(min_sizey - 1).bit_length()
+    min_pow2x = 2 ** (min_sizex - 1).bit_length()
+    min_pow2y = 2 ** (min_sizey - 1).bit_length()
 
     # HACK: If Image has zeros around it already then this does not work -> Rework
     if min_pow2x < dimx:
         return image
 
-    padx = (min_pow2x-dimx)//2
-    pady = (min_pow2y-dimy)//2
+    padx = (min_pow2x - dimx) // 2
+    pady = (min_pow2y - dimy) // 2
 
-    return np.pad(image, ((0, 0), (0, 0), (padx, padx), (pady, pady)),
-                  'constant', constant_values=0)
+    return np.pad(
+        image,
+        ((0, 0), (0, 0), (padx, padx), (pady, pady)),
+        "constant",
+        constant_values=0,
+    )
 
 
 def get_next_power_of_two(number: Union[int, float]) -> int:
@@ -356,28 +528,56 @@ def get_next_power_of_two(number: Union[int, float]) -> int:
     closest_power_of_two : int
         The, to the input, closest power of two.
     """
-    return int(2**np.ceil(np.log2(number)))
+    return int(2 ** np.ceil(np.log2(number)))
 
 
-def convert_angle_to_distance(radius: Union[float, np.ndarray],
-                              distance: float,
-                              rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
-    """Converts an angle from milliarcseconds to meters.
+def angular_to_linear(
+    radius: Union[float, np.ndarray],
+    distance: float,
+) -> Union[float, np.ndarray]:
+    """Converts angular radius, using the object's distance, to linear radius.
 
     Parameters
     ----------
     radius : float or numpy.ndarray
-        The radius of the object around the star [mas].
+        The (angular) radius of the object (arcsec/").
     distance : float
-        The star's distance to the observer [pc].
-    rvalue : bool, optional
-        If toggled, returns the value witout u.else returns
-        an astropy.u.Quantity object. The default is False.
+        The object's distance to the observer (pc).
 
     Returns
     -------
     radius : float or numpy.ndarray
-        The radius of the object around the star [m].
+        The radius of the object around the star (au).
+
+    Notes
+    -----
+    The formula for the angular diameter (in small angle approximation) is
+
+    .. math:: \\delta = \\frac{d}{2D}
+
+    where d is the linear diameter from the star and D is the distance from the star
+    to the observer and ..math::`\\delta` is the angular diameter.
+    """
+    return radius * distance
+
+
+def linear_to_angular(
+    radius: Union[float, np.ndarray],
+    distance: float,
+) -> Union[float, np.ndarray]:
+    """Converts linear radius, using the object's distance, to angular radius.
+
+    Parameters
+    ----------
+    radius : float or numpy.ndarray
+        The (linear) radius of the object (au).
+    distance : float
+        The star's distance to the observer (pc).
+
+    Returns
+    -------
+    radius : float or numpy.ndarray
+        The radius of the object around the star (arcsec/").
 
     Notes
     -----
@@ -388,46 +588,17 @@ def convert_angle_to_distance(radius: Union[float, np.ndarray],
     where d is the distance from the star and D is the distance from the star
     to the observer and ..math::`\\delta` is the angular diameter.
     """
-    radius = ((radius*u.mas).to(u.arcsec).value*distance*u.pc).to(u.m)
-    return radius if rvalue else radius.value
+    return radius / distance
 
 
-def convert_distance_to_angle(radius: Union[float, np.ndarray],
-                              distance: float,
-                              rvalue: Optional[bool] = False) -> Union[float, np.ndarray]:
-    """Converts a distance from meters to an angle in milliarcseconds.
-
-    Parameters
-    ----------
-    radius : float or numpy.ndarray
-        The radius of the object around the star [au].
-    distance : float
-        The star's distance to the observer [pc].
-    rvalue : bool, optional
-        If toggled, returns the value witout u.else returns
-        an astropy.u.Quantity object. The default is False.
-
-    Returns
-    -------
-    radius : float or numpy.ndarray
-        The radius of the object around the star [m].
-
-    Notes
-    -----
-    The formula for the angular diameter small angle approximation is
-
-    .. math:: \\delta = \\frac{d}{D}
-
-    where d is the distance from the star and D is the distance from the star
-    to the observer and ..math::`\\delta` is the angular diameter.
-    """
-    radius = (((radius*u.au).to(u.m)/(distance*u.pc).to(u.m))*u.rad).to(u.mas)
-    return radius if rvalue else radius.value
-
-
-def getBaselineName(oifits: fits.HDUList, hduname: Optional[str] = "OI_VIS2",
-                    length: Optional[bool] = False, angle: Optional[bool] = False,
-                    extver: Optional[int] = None, squeeze: Optional[bool] = True) -> List[str]:
+def getBaselineName(
+    oifits: fits.HDUList,
+    hduname: Optional[str] = "OI_VIS2",
+    length: Optional[bool] = False,
+    angle: Optional[bool] = False,
+    extver: Optional[int] = None,
+    squeeze: Optional[bool] = True,
+) -> List[str]:
     """Gets the baseline names (i.e., telescopes names
     separated by minus sign) in an extension of a oifits file.
 
@@ -492,7 +663,7 @@ def getBaselineName(oifits: fits.HDUList, hduname: Optional[str] = "OI_VIS2",
             namej = ""
             for j in range(shape[1]):
                 namej += stanames[np.where(staindexes == staidx[i, j])[0]][0]
-                if j < shape[1]-1:
+                if j < shape[1] - 1:
                     namej += "-"
 
             if hduname != "OI_T3":
@@ -508,8 +679,12 @@ def getBaselineName(oifits: fits.HDUList, hduname: Optional[str] = "OI_VIS2",
 
 
 # TODO : Add support for multiple extensions
-def getConfigName(oifits: fits.HDUList, hduname: Optional[str] = "OI_VIS2",
-                  extver: Optional[int] = None, squeeze: Optional[bool] = True) -> List[str]:
+def getConfigName(
+    oifits: fits.HDUList,
+    hduname: Optional[str] = "OI_VIS2",
+    extver: Optional[int] = None,
+    squeeze: Optional[bool] = True,
+) -> List[str]:
     """Gets the configuration names in an extension of a oifits file.
 
     Parameters
@@ -556,16 +731,21 @@ def getConfigName(oifits: fits.HDUList, hduname: Optional[str] = "OI_VIS2",
         namei = ""
         for i in range(s):
             namei += stanames[np.where(staindexes == staidx[i])[0]][0]
-            if i < s-1:
+            if i < s - 1:
                 namei += "-"
         names.append(namei)
 
     return names[0] if (squeeze and len(names) == 1) else names
 
 
-def getBaselineLengthAndPA(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
-                           extver: Optional[int] = None, squeeze: Optional[bool] = True,
-                           returnUV: Optional[bool] = False, T3Max: Optional[bool] = False) -> Tuple[np.ndarray]:
+def getBaselineLengthAndPA(
+    oifits: fits.HDUList,
+    arr: Optional[str] = "OI_VIS2",
+    extver: Optional[int] = None,
+    squeeze: Optional[bool] = True,
+    returnUV: Optional[bool] = False,
+    T3Max: Optional[bool] = False,
+) -> Tuple[np.ndarray]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
 
@@ -616,7 +796,7 @@ def getBaselineLengthAndPA(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
         else:
             u1, v1 = datai.data["U1COORD"], datai.data["V1COORD"]
             u2, v2 = datai.data["U2COORD"], datai.data["V2COORD"]
-            u3, v3 = -u1-u2, -v1-v2
+            u3, v3 = -u1 - u2, -v1 - v2
             u123 = np.array([u1, u2, u3])
             v123 = np.array([v1, v2, v3])
 
@@ -629,12 +809,11 @@ def getBaselineLengthAndPA(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
             pa123 = np.rad2deg(np.arctan2(u123, v123))
 
             if T3Max:
-                baselines.append(np.max(b123,axis=0))
-                pa.append(0*pa123) # TODO: what's the PAS of a triangle?
+                baselines.append(np.max(b123, axis=0))
+                pa.append(0 * pa123)  # TODO: what's the PAS of a triangle?
             else:
                 baselines.append(b123)
-                pa.append(np.max(pa123,axis=0))
-
+                pa.append(np.max(pa123, axis=0))
 
     if squeeze and len(baselines) == 1:
         baselines, pa = baselines[0], pa[0]
@@ -646,9 +825,13 @@ def getBaselineLengthAndPA(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
         return baselines, pa
 
 
-def get2DSpaFreq(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
-                 unit: Optional[str] = None, extver: Optional[int] = None,
-                 squeeze: Optional[bool] = True) -> Tuple[np.ndarray]:
+def get2DSpaFreq(
+    oifits: fits.HDUList,
+    arr: Optional[str] = "OI_VIS2",
+    unit: Optional[str] = None,
+    extver: Optional[int] = None,
+    squeeze: Optional[bool] = True,
+) -> Tuple[np.ndarray]:
     """Get the spatial two dimensional frequencies.
 
     Parameters
@@ -674,7 +857,8 @@ def get2DSpaFreq(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
         data = oifits
 
     _, _, ucoord, vcoord = getBaselineLengthAndPA(
-            data, arr, extver, squeeze=False, returnUV=True)
+        data, arr, extver, squeeze=False, returnUV=True
+    )
 
     if arr == "OI_T3":
         raise TypeError("get2DSpaFreq does not accept OI_T3 extension")
@@ -697,7 +881,7 @@ def get2DSpaFreq(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
     elif unit == "cycles/arcsec":
         mult = u.arcsec.to(u.rad)
     elif unit == "Mlam":
-        mult = 1/(1e6)
+        mult = 1 / (1e6)
     else:
         mult = 1
 
@@ -712,20 +896,24 @@ def get2DSpaFreq(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
         spaFreqUi = np.ndarray([nB, nlam])
         spaFreqVi = np.ndarray([nB, nlam])
         for iB in range(nB):
-            spaFreqUi[iB, :] = ucoord[iarr][iB]/lam*mult
-            spaFreqVi[iB, :] = vcoord[iarr][iB]/lam*mult
+            spaFreqUi[iB, :] = ucoord[iarr][iB] / lam * mult
+            spaFreqVi[iB, :] = vcoord[iarr][iB] / lam * mult
         spaFreqU.append(spaFreqUi)
         spaFreqV.append(spaFreqVi)
 
     if squeeze and len(spaFreqU) == 1:
         spaFreqU, spaFreqV = spaFreqU[0], spaFreqV[0]
 
-    return spaFreqU,spaFreqV
+    return spaFreqU, spaFreqV
 
 
-def getSpaFreq(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
-               unit: Optional[str] = None, extver: Optional[int] = None,
-               squeeze: Optional[bool] = True) -> Tuple[np.ndarray]:
+def getSpaFreq(
+    oifits: fits.HDUList,
+    arr: Optional[str] = "OI_VIS2",
+    unit: Optional[str] = None,
+    extver: Optional[int] = None,
+    squeeze: Optional[bool] = True,
+) -> Tuple[np.ndarray]:
     """Get the spatial dimensional frequencies.
 
     Parameters
@@ -773,7 +961,7 @@ def getSpaFreq(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
     elif unit == "cycles/arcsec":
         mult = u.arcsec.to(u.rad)
     elif unit == "Mlam":
-        mult = 1/(1e6)
+        mult = 1 / (1e6)
     else:
         mult = 1
 
@@ -787,16 +975,19 @@ def getSpaFreq(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
 
         spaFreqi = np.ndarray([nB, nlam])
         for iB in range(nB):
-            spaFreqi[iB, :] = baselines[iarr][iB]/lam*mult
+            spaFreqi[iB, :] = baselines[iarr][iB] / lam * mult
 
         spaFreq.append(spaFreqi)
 
     return spaFreq[0] if (squeeze and len(spaFreq) == 1) else spaFreq
 
 
-def getWlFromOifits(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
-                    extver: Optional[int] = None,
-                    returnBand: Optional[bool] = False) -> Tuple[np.ndarray]:
+def getWlFromOifits(
+    oifits: fits.HDUList,
+    arr: Optional[str] = "OI_VIS2",
+    extver: Optional[int] = None,
+    returnBand: Optional[bool] = False,
+) -> Tuple[np.ndarray]:
     """Get the wavelength
 
     Parameters
@@ -835,9 +1026,9 @@ def getWlFromOifits(oifits: fits.HDUList, arr: Optional[str] = "OI_VIS2",
     iwl = np.where(oiwls_insname == insname)[0][0]
     oiwl = oiwls[iwl]
 
-    wavelength  = oiwl.data["EFF_WAVE"]
+    wavelength = oiwl.data["EFF_WAVE"]
     if returnBand:
-        return wavelength, oiwl.data["EFF_BAND"] 
+        return wavelength, oiwl.data["EFF_BAND"]
     else:
         return wavelength
 
@@ -852,10 +1043,13 @@ def hdulistDeepCopy(hdulist: fits.HDUList) -> fits.HDUList:
     return res
 
 
-def cutWavelengthRange(oifits: fits.HDUList, wlRange: Optional[List[float]] = None,
-                       addCut: Optional[List[float]] = []) -> fits.HDUList:
+def cutWavelengthRange(
+    oifits: fits.HDUList,
+    wlRange: Optional[List[float]] = None,
+    addCut: Optional[List[float]] = [],
+) -> fits.HDUList:
     """Cut the wavelength range of an oifits file.
-    
+
     Parameters
     ----------
     oifits : astropy.io.fits.HDUList
@@ -887,8 +1081,12 @@ def cutWavelengthRange(oifits: fits.HDUList, wlRange: Optional[List[float]] = No
 
         idx_wl_cut = []
         for wlRangei in wlRange:
-            idx_wl_cut.extend(np.where((data[i].data["EFF_WAVE"] >= wlRangei[0]) &
-                                       (data[i].data["EFF_WAVE"] <= wlRangei[1]))[0])
+            idx_wl_cut.extend(
+                np.where(
+                    (data[i].data["EFF_WAVE"] >= wlRangei[0])
+                    & (data[i].data["EFF_WAVE"] <= wlRangei[1])
+                )[0]
+            )
 
         idx_wl_cut = np.sort(idx_wl_cut).astype("int64")
         nwl_cut = len(idx_wl_cut)
@@ -897,25 +1095,43 @@ def cutWavelengthRange(oifits: fits.HDUList, wlRange: Optional[List[float]] = No
                 if datai.header["INSNAME"] == insname:
                     colDefs = []
                     for col in datai.columns:
-                        if np.isin(col.name, _cutArr) or np.isin(col.name, addCut):
+                        if np.isin(col.name, _cutArr) or np.isin(
+                            col.name, addCut
+                        ):
                             format0 = col.format[-1]
                             shape = datai.data[col.name].shape
                             if len(shape) == 2:
                                 arr = np.take(
-                                    datai.data[col.name], idx_wl_cut, axis=1)
-                                colDefs.append(fits.Column(
-                                    name=col.name, format=f"{nwl_cut}{format0}",
-                                    array=arr, unit=col.unit))
+                                    datai.data[col.name], idx_wl_cut, axis=1
+                                )
+                                colDefs.append(
+                                    fits.Column(
+                                        name=col.name,
+                                        format=f"{nwl_cut}{format0}",
+                                        array=arr,
+                                        unit=col.unit,
+                                    )
+                                )
                             else:
                                 arr = np.take(datai.data[col.name], idx_wl_cut)
-                                colDefs.append(fits.Column(
-                                    name=col.name, format=col.format,
-                                    array=arr, unit=col.unit))
+                                colDefs.append(
+                                    fits.Column(
+                                        name=col.name,
+                                        format=col.format,
+                                        array=arr,
+                                        unit=col.unit,
+                                    )
+                                )
 
                         else:
-                            colDefs.append(fits.Column(
-                                name=col.name, format=col.format,
-                                array=datai.data[col.name], unit=col.unit))
+                            colDefs.append(
+                                fits.Column(
+                                    name=col.name,
+                                    format=col.format,
+                                    array=datai.data[col.name],
+                                    unit=col.unit,
+                                )
+                            )
 
                     cols = fits.ColDefs(colDefs)
                     hdu = fits.BinTableHDU.from_columns(cols)
@@ -925,8 +1141,9 @@ def cutWavelengthRange(oifits: fits.HDUList, wlRange: Optional[List[float]] = No
     return data
 
 
-def getWlFromFitsImageCube(header: fits.header.Header,
-                           outputUnit: Optional[str] = None) -> float:
+def getWlFromFitsImageCube(
+    header: fits.header.Header, outputUnit: Optional[str] = None
+) -> float:
     """Returns the wavelength law from a chromatic cube image in the fits format.
 
     Parameters
@@ -948,7 +1165,7 @@ def getWlFromFitsImageCube(header: fits.header.Header,
     except:
         x0 = 0
 
-    wl = wl0+(np.arange(nwl)-x0)*dwl
+    wl = wl0 + (np.arange(nwl) - x0) * dwl
     if outputUnit:
         if "CUNIT3" in header:
             try:
@@ -962,8 +1179,13 @@ def getWlFromFitsImageCube(header: fits.header.Header,
     return wl
 
 
-def _createOiTab(extname: str, keywords_def: Tuple[Any], colums_def: Tuple[Any],
-                 dataTypeFromShape: str, **kwargs) -> fits.BinTableHDU:
+def _createOiTab(
+    extname: str,
+    keywords_def: Tuple[Any],
+    colums_def: Tuple[Any],
+    dataTypeFromShape: str,
+    **kwargs,
+) -> fits.BinTableHDU:
     """Create a OIFITS table from a dictionary of data.
 
     Parameters
@@ -986,10 +1208,10 @@ def _createOiTab(extname: str, keywords_def: Tuple[Any], colums_def: Tuple[Any],
     for el in kwargs.keys():
         keys[el.upper()] = kwargs[el]
 
-    if "DATE_OBS"  in keys:
+    if "DATE_OBS" in keys:
         keys["DATE-OBS"] = keys.pop("DATE_OBS")
 
-    if "DATEOBS"  in keys:
+    if "DATEOBS" in keys:
         keys["DATE-OBS"] = keys.pop("DATEOBS")
 
     try:
@@ -1027,8 +1249,14 @@ def _createOiTab(extname: str, keywords_def: Tuple[Any], colums_def: Tuple[Any],
                     unit = keys["UNIT"]
                 except:
                     raise TypeError(f"missing unit for {colname}")
-            cols.append(fits.Column(name=colname, format=form,
-                                    array=np.array(keys[colname]), unit=unit))
+            cols.append(
+                fits.Column(
+                    name=colname,
+                    format=form,
+                    array=np.array(keys[colname]),
+                    unit=unit,
+                )
+            )
 
     hdu = fits.BinTableHDU.from_columns(cols)
     for keyword, optional, comment in keywords_def:
@@ -1036,7 +1264,7 @@ def _createOiTab(extname: str, keywords_def: Tuple[Any], colums_def: Tuple[Any],
             raise TypeError(f"Missing {keyword} keyword")
 
         elif keyword in keys:
-            hdu.header[keyword]=(keys[keyword], comment)
+            hdu.header[keyword] = (keys[keyword], comment)
 
     hdu.header["EXTNAME"] = extname
     if "EXTVER" in keys:
@@ -1046,44 +1274,55 @@ def _createOiTab(extname: str, keywords_def: Tuple[Any], colums_def: Tuple[Any],
 
 def createOiTarget(**kwargs):
     """Create a OI_TARGET table from a dictionary of data."""
-    return _createOiTab("OI_TARGET", OI_TARGET_KEYWORDS,
-                        OI_TARGET_COLUMNS, "TARGET_ID",**kwargs)[0]
+    return _createOiTab(
+        "OI_TARGET",
+        OI_TARGET_KEYWORDS,
+        OI_TARGET_COLUMNS,
+        "TARGET_ID",
+        **kwargs,
+    )[0]
 
 
 def createOiArray(**kwargs):
     """Create a OI_ARRAY table from a dictionary of data."""
-    return _createOiTab("OI_ARRAY", OI_ARRAY_KEYWORDS, 
-                        OI_ARRAY_COLUMNS, "STA_INDEX", **kwargs)[0]
+    return _createOiTab(
+        "OI_ARRAY", OI_ARRAY_KEYWORDS, OI_ARRAY_COLUMNS, "STA_INDEX", **kwargs
+    )[0]
 
 
 def createOiWavelength(**kwargs):
     """Create a OI_WAVELENGTH table from a dictionary of data."""
-    return _createOiTab("OI_WAVELENGTH", OI_WL_KEYWORDS,
-                        OI_WL_COLUMNS, "EFF_WAVE", **kwargs)[0]
+    return _createOiTab(
+        "OI_WAVELENGTH", OI_WL_KEYWORDS, OI_WL_COLUMNS, "EFF_WAVE", **kwargs
+    )[0]
 
 
 def createOiVis(**kwargs):
     """Create a OI_VIS table from a dictionary of data."""
-    return _createOiTab("OI_VIS", OI_VIS_KEYWORDS,
-                        OI_VIS_COLUMNS, "VISAMP", **kwargs)[0]
+    return _createOiTab(
+        "OI_VIS", OI_VIS_KEYWORDS, OI_VIS_COLUMNS, "VISAMP", **kwargs
+    )[0]
 
 
 def createOiVis2(**kwargs):
     """Create a OI_VIS2 table from a dictionary of data."""
-    return _createOiTab("OI_VIS2", OI_VIS2_KEYWORDS,
-                        OI_VIS2_COLUMNS, "VIS2DATA", **kwargs)[0]
+    return _createOiTab(
+        "OI_VIS2", OI_VIS2_KEYWORDS, OI_VIS2_COLUMNS, "VIS2DATA", **kwargs
+    )[0]
 
 
 def createOiT3(**kwargs):
     """Create a OI_T3 table from a dictionary of data."""
-    return _createOiTab("OI_T3", OI_T3_KEYWORDS,
-                        OI_T3_COLUMNS, "T3AMP", **kwargs)[0]
+    return _createOiTab(
+        "OI_T3", OI_T3_KEYWORDS, OI_T3_COLUMNS, "T3AMP", **kwargs
+    )[0]
 
 
 def createOiFlux(**kwargs):
     """Create a OI_FLUX table from a dictionary of data."""
-    return _createOiTab("OI_FLUX", OI_FLUX_KEYWORDS,
-                        OI_FLUX_COLUMNS, "FLUXDATA", **kwargs)[0]
+    return _createOiTab(
+        "OI_FLUX", OI_FLUX_KEYWORDS, OI_FLUX_COLUMNS, "FLUXDATA", **kwargs
+    )[0]
 
 
 def createOiTargetFromSimbad(names: Union[str, List[str]]) -> fits.BinTableHDU:
@@ -1100,7 +1339,8 @@ def createOiTargetFromSimbad(names: Union[str, List[str]]) -> fits.BinTableHDU:
     """
     customSimbad = Simbad()
     customSimbad.add_votable_fields(
-            "plx", "plx_error", "propermotions", "sptype", "velocity")
+        "plx", "plx_error", "propermotions", "sptype", "velocity"
+    )
 
     if type(names) == type(""):
         names = [names]
@@ -1110,29 +1350,41 @@ def createOiTargetFromSimbad(names: Union[str, List[str]]) -> fits.BinTableHDU:
 
     rad = Angle(data["RA"], unit="hourangle").deg
     dec = Angle(data["DEC"], unit="deg").deg
-    ra_err = (data["COO_ERR_MAJA"].data*u.mas).to_value(unit="deg")
-    dec_err = (data["COO_ERR_MINA"].data*u.mas).to_value(unit="deg")
-    pmra = (data["PMRA"].data*u.mas).to_value(unit="deg")
-    pmdec = (data["PMDEC"].data*u.mas).to_value(unit="deg")
-    pmra_err = (data["PM_ERR_MAJA"].data*u.mas).to_value(unit="deg")
-    pmdec_err = (data["PM_ERR_MINA"].data*u.mas).to_value(unit="deg")
-    plx_value = (data["PLX_VALUE"].data*u.mas).to_value(unit="deg")
-    plx_error = (data["PLX_ERROR"].data*u.mas).to_value(unit="deg")
+    ra_err = (data["COO_ERR_MAJA"].data * u.mas).to_value(unit="deg")
+    dec_err = (data["COO_ERR_MINA"].data * u.mas).to_value(unit="deg")
+    pmra = (data["PMRA"].data * u.mas).to_value(unit="deg")
+    pmdec = (data["PMDEC"].data * u.mas).to_value(unit="deg")
+    pmra_err = (data["PM_ERR_MAJA"].data * u.mas).to_value(unit="deg")
+    pmdec_err = (data["PM_ERR_MINA"].data * u.mas).to_value(unit="deg")
+    plx_value = (data["PLX_VALUE"].data * u.mas).to_value(unit="deg")
+    plx_error = (data["PLX_ERROR"].data * u.mas).to_value(unit="deg")
 
     return createOiTarget(
-            target_id=np.arange(1, ntargets+1), target=names,
-            raep0=rad, decep0=dec, equinox=np.repeat(2000, ntargets),
-            ra_err=ra_err, dec_err=dec_err, sysvel=np.zeros([ntargets]),
-            veltyp=np.repeat("UNKNOWN", ntargets),
-            veldef=np.repeat("OPTICAL", ntargets), pmra=pmra, pmdec=pmdec,
-            pmra_err=pmra_err, pmdec_err=pmdec_err, parallax=plx_value,
-            para_err=plx_error, spectyp=data["SP_TYPE"])
+        target_id=np.arange(1, ntargets + 1),
+        target=names,
+        raep0=rad,
+        decep0=dec,
+        equinox=np.repeat(2000, ntargets),
+        ra_err=ra_err,
+        dec_err=dec_err,
+        sysvel=np.zeros([ntargets]),
+        veltyp=np.repeat("UNKNOWN", ntargets),
+        veldef=np.repeat("OPTICAL", ntargets),
+        pmra=pmra,
+        pmdec=pmdec,
+        pmra_err=pmra_err,
+        pmdec_err=pmdec_err,
+        parallax=plx_value,
+        para_err=plx_error,
+        spectyp=data["SP_TYPE"],
+    )
 
 
 # TODO: This current method does not allow to shift baseline of the same oifits
 # individually.
-def shiftWavelength(oifits: fits.HDUList, shift: float,
-                    verbose: Optional[bool] = False) -> None:
+def shiftWavelength(
+    oifits: fits.HDUList, shift: float, verbose: Optional[bool] = False
+) -> None:
     """Shift the wavelength of an oifits file.
 
     Parameters
@@ -1152,7 +1404,7 @@ def shiftWavelength(oifits: fits.HDUList, shift: float,
 
     wl_idx = np.where(extnames == "OI_WAVELENGTH")[0]
     for i in wl_idx:
-        if verbose :
+        if verbose:
             print(f"OI_WAVELENGTH table at index {i}")
 
         insname = data[i].header["INSNAME"]
@@ -1162,9 +1414,12 @@ def shiftWavelength(oifits: fits.HDUList, shift: float,
 
 
 # TODO: For phases smoothing should be done in complex plan
-def spectralSmoothing(oifits: fits.HDUList, kernel_size: float,
-                      cols2Smooth: Optional[Union[str, List[str]]] = "all",
-                      normalizeError: Optional[bool] = True) -> None:
+def spectralSmoothing(
+    oifits: fits.HDUList,
+    kernel_size: float,
+    cols2Smooth: Optional[Union[str, List[str]]] = "all",
+    normalizeError: Optional[bool] = True,
+) -> None:
     """Smooth the spectral data of an oifits file.
 
     Parameters
@@ -1185,16 +1440,41 @@ def spectralSmoothing(oifits: fits.HDUList, kernel_size: float,
     else:
         data = oifits
 
-    kernel = np.ones(kernel_size)/kernel_size
+    kernel = np.ones(kernel_size) / kernel_size
 
     if not isinstance(cols2Smooth, list):
         cols2Smooth = [cols2Smooth]
 
-    if  "all" in cols2Smooth:
-        cols2Smooth = ["VIS2DATA", "VIS2ERR", "VISAMP", "VISAMPERR", "VISPHI", "VISPHIERR",
-                       "T3AMP", "T3AMPERR", "T3PHI", "T3PHIERR", "FLUXDATA", "FLUXDATAERR"]
-        
-        circular=[False,False,False,False,True,True,False,False,True,True,False,False]
+    if "all" in cols2Smooth:
+        cols2Smooth = [
+            "VIS2DATA",
+            "VIS2ERR",
+            "VISAMP",
+            "VISAMPERR",
+            "VISPHI",
+            "VISPHIERR",
+            "T3AMP",
+            "T3AMPERR",
+            "T3PHI",
+            "T3PHIERR",
+            "FLUXDATA",
+            "FLUXDATAERR",
+        ]
+
+        circular = [
+            False,
+            False,
+            False,
+            False,
+            True,
+            True,
+            False,
+            False,
+            True,
+            True,
+            False,
+            False,
+        ]
 
     for i, _ in enumerate(data, start=1):
         try:
@@ -1203,42 +1483,60 @@ def spectralSmoothing(oifits: fits.HDUList, kernel_size: float,
                 for coli in cols:
                     if coli.name in cols2Smooth:
                         dims = np.shape(data[i].data[coli.name])
-                        iscirc=circular[cols2Smooth.index(coli.name)]
+                        iscirc = circular[cols2Smooth.index(coli.name)]
                         if iscirc:
                             if len(dims) == 2:
                                 nB = dims[0]
                                 for iB in range(nB):
-                                    datai=np.exp(complex(0,1)*data[i].data[coli.name][iB, :])
-                                    datai_real=np.real(datai)
-                                    datai_imag=np.imagl(datai)
-                                    
-                                    conv_real=np.convolve(datai_real, kernel, "same")
-                                    conv_imag=np.convolve(datai_imag, kernel, "same")  
-                                    data_conv=np.complex(conv_real,conv_imag)
-                                    
+                                    datai = np.exp(
+                                        complex(0, 1)
+                                        * data[i].data[coli.name][iB, :]
+                                    )
+                                    datai_real = np.real(datai)
+                                    datai_imag = np.imagl(datai)
+
+                                    conv_real = np.convolve(
+                                        datai_real, kernel, "same"
+                                    )
+                                    conv_imag = np.convolve(
+                                        datai_imag, kernel, "same"
+                                    )
+                                    data_conv = np.complex(
+                                        conv_real, conv_imag
+                                    )
+
                                     data[i].data[coli.name][iB, :] = data_conv
-                                    
+
                             else:
-                                  data[i].data[coli.name]=np.convolve(
-                                      data[i].data[coli.name], kernel, "same")
+                                data[i].data[coli.name] = np.convolve(
+                                    data[i].data[coli.name], kernel, "same"
+                                )
                         else:
                             if len(dims) == 2:
                                 nB = dims[0]
                                 for iB in range(nB):
-                                    data[i].data[coli.name][iB, :] = np.convolve(
-                                        data[i].data[coli.name][iB, :], kernel, "same")
+                                    data[i].data[coli.name][iB, :] = (
+                                        np.convolve(
+                                            data[i].data[coli.name][iB, :],
+                                            kernel,
+                                            "same",
+                                        )
+                                    )
                             else:
-                                  data[i].data[coli.name]=np.convolve(
-                                      data[i].data[coli.name], kernel, "same")
+                                data[i].data[coli.name] = np.convolve(
+                                    data[i].data[coli.name], kernel, "same"
+                                )
                         if normalizeError and coli.name in _oimDataTypeErr:
                             data[i].data[coli.name] /= np.sqrt(kernel_size)
         except:
             pass
 
 
-def rebin_image(image: np.ndarray,
-                binning_factor: Optional[int] = None,
-                rdim: Optional[bool] = False) -> np.ndarray:
+def rebin_image(
+    image: np.ndarray,
+    binning_factor: Optional[int] = None,
+    rdim: Optional[bool] = False,
+) -> np.ndarray:
     """Bins a 2D-image down according.
 
     The down binning is according to the binning factor
@@ -1265,8 +1563,12 @@ def rebin_image(image: np.ndarray,
         return image, image.shape[-1] if rdim else image
 
     new_dim = int(image.shape[-1] * 2**-binning_factor)
-    binned_shape = (new_dim, int(image.shape[-1] / new_dim),
-                    new_dim, int(image.shape[-1] / new_dim))
+    binned_shape = (
+        new_dim,
+        int(image.shape[-1] / new_dim),
+        new_dim,
+        int(image.shape[-1] / new_dim),
+    )
     if len(image.shape) == 4:
         shape = (image.shape[0], image.shape[1], *binned_shape)
     else:
@@ -1276,9 +1578,12 @@ def rebin_image(image: np.ndarray,
     return image.reshape(shape).mean(-1).mean(-2)
 
 
-def _rebin(array: np.ndarray, binsize: int,
-           median: Optional[bool] = True,
-           circular: Optional[bool] = False) -> np.ndarray:
+def _rebin(
+    array: np.ndarray,
+    binsize: int,
+    median: Optional[bool] = True,
+    circular: Optional[bool] = False,
+) -> np.ndarray:
     """Rebin an array.
 
     Parameters
@@ -1295,24 +1600,25 @@ def _rebin(array: np.ndarray, binsize: int,
     res : numpy.ndarray
         The rebinned array.
     """
-    
+
     newsize = (array.shape[0] // int(binsize)) * binsize
-    array = array [:newsize]
-    shape = (array.shape[0]// binsize, binsize)
+    array = array[:newsize]
+    shape = (array.shape[0] // binsize, binsize)
 
     if circular:
         if median:
-            res = np.median(array.reshape(shape),axis=-1)
+            res = np.median(array.reshape(shape), axis=-1)
         else:
             res = array.reshape(shape).mean(-1)
     else:
-        res = np.mean(array.reshape(shape),axis=-1)
+        res = np.mean(array.reshape(shape), axis=-1)
 
     return res
 
 
-def _rebinHdu(hdu: fits.BinTableHDU, binsize: int,
-              exception: Optional[List[str]] = []) -> fits.BinTableHDU:
+def _rebinHdu(
+    hdu: fits.BinTableHDU, binsize: int, exception: Optional[List[str]] = []
+) -> fits.BinTableHDU:
     """Rebin an HDU.
 
     Parameters
@@ -1336,35 +1642,38 @@ def _rebinHdu(hdu: fits.BinTableHDU, binsize: int,
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
         for coli in cols:
             if "PHI" in coli.name:
-                circular=True
+                circular = True
             else:
-                circular=False
+                circular = False
             newformat = coli.format
             shape = np.shape(hdu.data[coli.name])
-            if len(shape) == 2 and not(coli.name in exception):
-                bini =[]
+            if len(shape) == 2 and not (coli.name in exception):
+                bini = []
                 for jB in range(shape[0]):
-                    binij = _rebin(hdu.data[coli.name][jB,:],binsize,circular=circular)
+                    binij = _rebin(
+                        hdu.data[coli.name][jB, :], binsize, circular=circular
+                    )
                     bini.append(binij)
                 bini = np.array(bini)
                 newformat = f"{shape[1]//binsize}{coli.format[-1]}"
             else:
                 bini = hdu.data[coli.name]
 
-            newcoli = fits.Column(name=coli.name, array=bini,
-                                  unit=coli.unit, format=newformat)
+            newcoli = fits.Column(
+                name=coli.name, array=bini, unit=coli.unit, format=newformat
+            )
             newcols.append(newcoli)
     else:
         for coli in cols:
             if "PHI" in coli.name:
-                circular=True
+                circular = True
             else:
-                circular=False
-         
-            
-            bini = _rebin(hdu.data[coli.name],binsize,circular=circular)
-            newcoli = fits.Column(name=coli.name, array=bini,
-                                  unit=coli.unit, format=coli.format)
+                circular = False
+
+            bini = _rebin(hdu.data[coli.name], binsize, circular=circular)
+            newcoli = fits.Column(
+                name=coli.name, array=bini, unit=coli.unit, format=coli.format
+            )
             newcols.append(newcoli)
 
     newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(newcols))
@@ -1374,8 +1683,9 @@ def _rebinHdu(hdu: fits.BinTableHDU, binsize: int,
 
 
 # TODO: For phases bining should be done in complex plan
-def binWavelength(oifits: fits.HDUList, binsize: int,
-                  normalizeError: Optional[bool] = True) -> None:
+def binWavelength(
+    oifits: fits.HDUList, binsize: int, normalizeError: Optional[bool] = True
+) -> None:
     """Bin the wavelength of an oifits file.
 
     Parameters
@@ -1391,7 +1701,7 @@ def binWavelength(oifits: fits.HDUList, binsize: int,
         data = fits.open(oifits)
     else:
         data = oifits
-    
+
     tobin = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
         if data[i].name in tobin:
@@ -1402,7 +1712,7 @@ def binWavelength(oifits: fits.HDUList, binsize: int,
                     data[i].data[errnamei] /= np.sqrt(binsize)
 
 
-def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
+def oifitsFlagWithExpression(data, arr, extver, expr, keepOldFlag=False):
     """Flag the data with an expression.
 
     Parameters
@@ -1428,14 +1738,14 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
 
     if arr == ["all"]:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
-    
-    for iarr in range(len(data)): 
+
+    for iarr in range(len(data)):
         ok = True
         if data[iarr].name in arr:
             arri = data[iarr].name
             try:
                 if extver:
-                    
+
                     if extver != data[iarr].header["EXTVER"]:
                         ok = False
                 else:
@@ -1444,93 +1754,99 @@ def oifitsFlagWithExpression(data,arr,extver,expr,keepOldFlag = False):
                 pass
         else:
             ok = False
-            
+
         if ok:
             try:
-                eff_wave, eff_band = getWlFromOifits(data, arr=arri,
-                                                     extver=extver, returnBand=True)
+                eff_wave, eff_band = getWlFromOifits(
+                    data, arr=arri, extver=extver, returnBand=True
+                )
                 nwl = np.size(eff_wave)
-                length, pa = getBaselineLengthAndPA(data, arr=arri, extver=extver,T3Max=True)
+                length, pa = getBaselineLengthAndPA(
+                    data, arr=arri, extver=extver, T3Max=True
+                )
                 nB = np.size(length)
-    
-                EFF_WAVE = np.tile(eff_wave[None, :], (nB,1))
-                EFF_BAND = np.tile(eff_band[None, :], (nB,1))
+
+                EFF_WAVE = np.tile(eff_wave[None, :], (nB, 1))
+                EFF_BAND = np.tile(eff_band[None, :], (nB, 1))
                 LENGTH = np.tile(length[:, None], (1, nwl))
-    
+
                 PA = np.tile(pa[:, None], (1, nwl))
-     
-                SPAFREQ = LENGTH/EFF_WAVE
-               
-    
+
+                SPAFREQ = LENGTH / EFF_WAVE
+
                 for colname in data[arri].columns:
                     coldata = data[arri].data[colname.name]
                     s = coldata.shape
-    
+
                     if len(s) == 1 and s[0] == nB:
                         coldata = np.tile(length[:, None], (1, nwl))
-    
+
                     # TODO: Remove exec here as it is can be security liability
                     exec(f"{colname.name}=coldata")
-                    
-      
+
                 # TODO: Remove eval here as it is can be security liability
                 flags = eval(expr)
-                
+
                 if keepOldFlag:
-                    data[arri].data["FLAG"] = np.logical_or(flags, data[arri].data["FLAG"])
+                    data[arri].data["FLAG"] = np.logical_or(
+                        flags, data[arri].data["FLAG"]
+                    )
                 else:
                     data[arri].data["FLAG"] = flags
-           
+
             except:
                 pass
-        
 
     return True
 
 
-def oifitsKeepBaselines(data,arr,baselines_to_keep,extver=None,keepOldFlag = True):
-    
-    
+def oifitsKeepBaselines(
+    data, arr, baselines_to_keep, extver=None, keepOldFlag=True
+):
+
     if arr == ["all"]:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
 
     for arri in arr:
         try:
-            baselines=getBaselineName(data,hduname=arr,extver=extver)
-            baselines_to_keep_ordered=[]
+            baselines = getBaselineName(data, hduname=arr, extver=extver)
+            baselines_to_keep_ordered = []
             for Bi in baselines_to_keep:
-                Bi=Bi.split("-")
+                Bi = Bi.split("-")
                 Bi.sort()
-                baselines_to_keep_ordered.append(''.join(Bi))
-                
-            baselines_ordered=[]
-            for iB,Bi in enumerate(baselines):
-                Bi=Bi.split("-")
+                baselines_to_keep_ordered.append("".join(Bi))
+
+            baselines_ordered = []
+            for iB, Bi in enumerate(baselines):
+                Bi = Bi.split("-")
                 Bi.sort()
-                baselines_ordered.append(''.join(Bi))
-                
-            baselines_ordered=np.array(baselines_ordered)
-            baselines_to_keep_ordered=np.array(baselines_to_keep_ordered)
-            
-            idx_to_keep=[]
+                baselines_ordered.append("".join(Bi))
+
+            baselines_ordered = np.array(baselines_ordered)
+            baselines_to_keep_ordered = np.array(baselines_to_keep_ordered)
+
+            idx_to_keep = []
             for Bi in baselines_to_keep_ordered:
-                idx=np.where(baselines_ordered==Bi)[0]
-                if len(idx!=0):
+                idx = np.where(baselines_ordered == Bi)[0]
+                if len(idx != 0):
                     idx_to_keep.extend(idx)
-            
-            
-            for iB,Bi in enumerate(baselines):
-                if not(iB in idx_to_keep):
-                    data[arr,extver].data["FLAG"][iB,:]=True
-        
+
+            for iB, Bi in enumerate(baselines):
+                if not (iB in idx_to_keep):
+                    data[arr, extver].data["FLAG"][iB, :] = True
+
         except:
-            pass        
-    
+            pass
+
 
 def computeDifferentialError(
-        oifits: fits.HDUList, ranges: Optional[List[int]] = [[0, 5]],
-        excludeRange: Optional[bool] = False, rangeType: Optional[str] = "index",
-        dataType: Optional[str] = "VISPHI", extver: Optional[List[int]]= [None]) -> None:
+    oifits: fits.HDUList,
+    ranges: Optional[List[int]] = [[0, 5]],
+    excludeRange: Optional[bool] = False,
+    rangeType: Optional[str] = "index",
+    dataType: Optional[str] = "VISPHI",
+    extver: Optional[List[int]] = [None],
+) -> None:
     """Compute the differential error.
 
     Parameters
@@ -1553,10 +1869,10 @@ def computeDifferentialError(
     else:
         dtype = "float64"
 
-    ranges=np.array(ranges,dtype=dtype)
+    ranges = np.array(ranges, dtype=dtype)
 
     if ranges.ndim == 1:
-        ranges = ranges.reshape(1,ranges.size)
+        ranges = ranges.reshape(1, ranges.size)
 
     if not isinstance(dataType, list):
         dataType = [dataType]
@@ -1572,31 +1888,35 @@ def computeDifferentialError(
         if datai.name in extnames:
             if datai.header["EXTVER"] in extver or extver == [None]:
 
-                wl = getWlFromOifits(oifits, arr=datai.name,
-                                     extver=datai.header["EXTVER"])
+                wl = getWlFromOifits(
+                    oifits, arr=datai.name, extver=datai.header["EXTVER"]
+                )
                 nwl = wl.size
-                nB = np.size(datai.data['TARGET_ID'])
-
+                nB = np.size(datai.data["TARGET_ID"])
 
                 idx = np.array([], dtype="int64")
                 for ri in ranges:
                     if rangeType == "index":
-                        idx = np.append(idx,np.arange(ri[0],ri[1]))
+                        idx = np.append(idx, np.arange(ri[0], ri[1]))
                     else:
-                        idxi = np.where( (wl>= ri[0]) & (wl <= ri[1]) )[0]
-                        idx = np.append(idx,idxi)
-
+                        idxi = np.where((wl >= ri[0]) & (wl <= ri[1]))[0]
+                        idx = np.append(idx, idxi)
 
                     if excludeRange:
-                        idx = np.delete(np.arange(nwl),idx)
+                        idx = np.delete(np.arange(nwl), idx)
 
-                for dataTypei in getDataType(datai.name ):
+                for dataTypei in getDataType(datai.name):
                     if dataTypei in dataType:
-                        dataTypeiErr = _oimDataTypeErr[_oimDataType.index(dataTypei)]
+                        dataTypeiErr = _oimDataTypeErr[
+                            _oimDataType.index(dataTypei)
+                        ]
                         if getDataTypeIsAnalysisComplex(dataTypei):
                             for iB in range(nB):
-                                err = circstd(datai.data[dataTypei][iB, idx],
-                                              low=-180, high=180)
+                                err = circstd(
+                                    datai.data[dataTypei][iB, idx],
+                                    low=-180,
+                                    high=180,
+                                )
                                 datai.data[dataTypeiErr][iB, :] = err
                         else:
                             for iB in range(nB):
@@ -1604,9 +1924,12 @@ def computeDifferentialError(
                                 datai.data[dataTypeiErr][iB, :] = err
 
 
-def setMinimumError(oifits: fits.HDUList, dataTypes: Union[str, List[str]],
-                    values: Union[float, List[float]],
-                    extver: Optional[Union[int, List[int]]] = None) -> None:
+def setMinimumError(
+    oifits: fits.HDUList,
+    dataTypes: Union[str, List[str]],
+    values: Union[float, List[float]],
+    extver: Optional[Union[int, List[int]]] = None,
+) -> None:
     """Set the minimum error of a given data type to a given value.
 
     Parameters
@@ -1641,53 +1964,66 @@ def setMinimumError(oifits: fits.HDUList, dataTypes: Union[str, List[str]],
 
                 for dataTypei in getDataType(datai.name):
                     if dataTypei in dataTypes:
-                        dataTypeiErr = _oimDataTypeErr[_oimDataType.index(dataTypei)]
+                        dataTypeiErr = _oimDataTypeErr[
+                            _oimDataType.index(dataTypei)
+                        ]
                         vali = values[dataTypes.index(dataTypei)]
 
                         if getDataTypeIsAnalysisComplex(dataTypei):
-                            mask = (datai.data[dataTypeiErr]<vali) \
-                                    .astype(datai.data[dataTypeiErr].dtype)
+                            mask = (datai.data[dataTypeiErr] < vali).astype(
+                                datai.data[dataTypeiErr].dtype
+                            )
 
-                            datai.data[dataTypeiErr] = datai.data[dataTypeiErr] * \
-                                         (1 - mask) +  mask * vali
+                            datai.data[dataTypeiErr] = (
+                                datai.data[dataTypeiErr] * (1 - mask)
+                                + mask * vali
+                            )
                         else:
                             vali = vali / 100
-                            mask = ((datai.data[dataTypeiErr]/datai.data[dataTypei]) \
-                                     <vali).astype(datai.data[dataTypeiErr].dtype)
-                            datai.data[dataTypeiErr] = datai.data[dataTypeiErr] * \
-                                (1 - mask) + mask * vali * datai.data[dataTypei]
+                            mask = (
+                                (
+                                    datai.data[dataTypeiErr]
+                                    / datai.data[dataTypei]
+                                )
+                                < vali
+                            ).astype(datai.data[dataTypeiErr].dtype)
+                            datai.data[dataTypeiErr] = (
+                                datai.data[dataTypeiErr] * (1 - mask)
+                                + mask * vali * datai.data[dataTypei]
+                            )
 
 
-def _listFeatures(baseClass,featureToTextFunction,details=False,
-                  save2csv=None,header=None):
-    
-    list_features=[]
-    
+def _listFeatures(
+    baseClass, featureToTextFunction, details=False, save2csv=None, header=None
+):
+
+    list_features = []
+
     for obj in oim.__dict__:
         try:
             if issubclass(oim.__dict__[obj], baseClass):
-                list_features.append(obj)  
-        except:  
+                list_features.append(obj)
+        except:
             pass
-    
-    table  = []
+
+    table = []
     if header:
         table.append(header)
-    names  = []
-    
+    names = []
+
     for cname in list_features:
         try:
-            
+
             ti = featureToTextFunction(cname)
             table.append(ti)
             names.append(cname)
         except:
             print(cname)
-        
+
     if details:
         if save2csv:
-            f=open(save2csv,"w")
-            w=csv.writer(f,delimiter="|")
+            f = open(save2csv, "w")
+            w = csv.writer(f, delimiter="|")
             w.writerows(table)
             f.close()
         return table
@@ -1695,26 +2031,26 @@ def _listFeatures(baseClass,featureToTextFunction,details=False,
         return names
 
 
-def listComponents(details=False,save2csv=None, componentType="all"):
-    
+def listComponents(details=False, save2csv=None, componentType="all"):
+
     def _componentToTextfunction(cname):
-        tab=[cname]
+        tab = [cname]
         c = oim.__dict__[cname]()
         p = c.params
-        name = c.name        
+        name = c.name
         tab.append(name)
-        txt=""
+        txt = ""
         for pname in p:
-            txt+=":abbr:`"
-            txt+=pname
-            txt+="("
-            txt+=p[pname].description           
-            txt+=")`, "
-        txt=txt[:-2]
+            txt += ":abbr:`"
+            txt += pname
+            txt += "("
+            txt += p[pname].description
+            txt += ")`, "
+        txt = txt[:-2]
         tab.append(txt)
         return tab
-    
-    header =["Component Name","Short description","Parameters"]
+
+    header = ["Component Name", "Short description", "Parameters"]
     if componentType.lower() == "all":
         class0 = oim.oimComponent
     elif componentType.lower() == "fourier":
@@ -1723,68 +2059,84 @@ def listComponents(details=False,save2csv=None, componentType="all"):
         class0 = oim.oimComponentImage
     elif componentType.lower() == "radial":
         class0 = oim.oimComponentRadialProfile
-    
-    return _listFeatures(class0,_componentToTextfunction,details,
-                         save2csv,header=header)
+
+    return _listFeatures(
+        class0, _componentToTextfunction, details, save2csv, header=header
+    )
 
 
-def listDataFilters(details=False,save2csv=None):
-    header =["Filter Name","Short description","Class Keywords"]
-    
+def listDataFilters(details=False, save2csv=None):
+    header = ["Filter Name", "Short description", "Class Keywords"]
+
     def _datFilterToTextfunction(cname):
         filt = oim.__dict__[cname]()
-        tab=[cname]
+        tab = [cname]
         tab.append(filt.description)
-        txt=""
+        txt = ""
         for pname in filt.params:
-            txt+=pname+", "
+            txt += pname + ", "
         tab.append(txt[:-2])
         return tab
-    
-    res = _listFeatures(oim.oimDataFilterComponent,_datFilterToTextfunction,
-                        details,save2csv,header=header)
-    
+
+    res = _listFeatures(
+        oim.oimDataFilterComponent,
+        _datFilterToTextfunction,
+        details,
+        save2csv,
+        header=header,
+    )
+
     return res
-    
-def listFitters(details=False,save2csv=None):
-    header =["Fitter Name","Short description","Keywords"]
-    
+
+
+def listFitters(details=False, save2csv=None):
+    header = ["Fitter Name", "Short description", "Keywords"]
+
     def _fitterToTextfunction(cname):
-        #fit = oim.__dict__[cname](None,None)
-        tab=[cname]
-        #tab.append(fit.description)
-        #txt=""
-        #for pname in filt.params:
+        # fit = oim.__dict__[cname](None,None)
+        tab = [cname]
+        # tab.append(fit.description)
+        # txt=""
+        # for pname in filt.params:
         #    txt+=pname+", "
-        #tab.append(txt[:-2])
+        # tab.append(txt[:-2])
         return tab
-    
-    res = _listFeatures(oim.oimFitter,_fitterToTextfunction,
-                        details,save2csv,header=header)
-    
-    return res   
+
+    res = _listFeatures(
+        oim.oimFitter, _fitterToTextfunction, details, save2csv, header=header
+    )
+
+    return res
 
 
-def listParamInterpolators(details=False,save2csv=None):
-    header =["Class Name","oimInterp macro","Description","parameters"]
-    p=oim.oimParam()
-    interp_name=list(oim._interpolators.values())
-    interp_macro=list(oim._interpolators.keys())
+def listParamInterpolators(details=False, save2csv=None):
+    header = ["Class Name", "oimInterp macro", "Description", "parameters"]
+    p = oim.oimParam()
+    interp_name = list(oim._interpolators.values())
+    interp_macro = list(oim._interpolators.keys())
+
     def _interpToTextfunction(cname):
         interp = oim.__dict__[cname](p)
-        tab=[cname]
+        tab = [cname]
         try:
-            macro=interp_macro[interp_name.index("oimParamMultipleGaussianTime")]
+            macro = interp_macro[
+                interp_name.index("oimParamMultipleGaussianTime")
+            ]
         except:
-            macro="None"
+            macro = "None"
         tab.append(macro)
-        #txt=""
-        #for pname in filt.params:
+        # txt=""
+        # for pname in filt.params:
         #    txt+=pname+", "
-        #tab.append(txt[:-2])
+        # tab.append(txt[:-2])
         return tab
-    
-    res = _listFeatures(oim.oimParamInterpolator,_interpToTextfunction,
-                        details,save2csv,header=header)
-    
-    return res  
+
+    res = _listFeatures(
+        oim.oimParamInterpolator,
+        _interpToTextfunction,
+        details,
+        save2csv,
+        header=header,
+    )
+
+    return res
