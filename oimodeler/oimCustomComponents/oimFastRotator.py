@@ -80,10 +80,11 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25,a1=0,a2=0,ldd=None)
 
         tot = np.sum(im)
         im = im/tot
-        im0 = np.zeros([dim0, dim0])
+        im0 = np.zeros([dim0, dim0,1])
 
-        im0[dim0//2-dim//2:dim0//2+dim//2, dim0//2-dim//2:dim0//2+dim//2] = im
+        im0[dim0//2-dim//2:dim0//2+dim//2, dim0//2-dim//2:dim0//2+dim//2,0] = im
 
+        
         return im0
 
     else:
