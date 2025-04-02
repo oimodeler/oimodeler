@@ -1787,6 +1787,7 @@ def oifitsFlagWithExpression(data, arr, extver, expr, keepOldFlag=False):
                 # TODO: Remove eval here as it is can be security liability
                 flags = eval(expr)
 
+
                 if keepOldFlag:
                     data[arri].data["FLAG"] = np.logical_or(
                         flags, data[arri].data["FLAG"]
@@ -1795,7 +1796,8 @@ def oifitsFlagWithExpression(data, arr, extver, expr, keepOldFlag=False):
                     data[arri].data["FLAG"] = flags
 
             except:
-                pass
+                raise Warning(f"oifitsFlagWithExpression :" \
+                               f"Couldn't resolve expression {expr} in {arri} ")
 
     return True
 
