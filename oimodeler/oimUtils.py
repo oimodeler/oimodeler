@@ -1796,7 +1796,7 @@ def oifitsFlagWithExpression(data, arr, extver, expr, keepOldFlag=False):
                     data[arri].data["FLAG"] = flags
 
             except:
-                raise Warning(f"oifitsFlagWithExpression :" \
+                raise Warning(f"oifitsFlagWithExpression: " \
                                f"Couldn't resolve expression {expr} in {arri} ")
 
     return True
