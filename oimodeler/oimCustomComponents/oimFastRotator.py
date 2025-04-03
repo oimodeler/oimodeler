@@ -12,15 +12,12 @@ from ..oimParam import oimParam
 
 
 def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25,a1=0,a2=0,ldd=None):
-    """"""
-    h = 6.63e-34
-    c = 3e8
-    kb = 1.38e-23
+    
+    """
+    Equations are taken from Domiciano+ 2018
+    https://www.aanda.org/articles/aa/pdf/2018/11/aa33450-18.pdf
+    """
 
-    a = 2./3*(rot)**0.4+1e-9
-    K = np.sin(1./3.)*np.pi
-
-    K1 = h*c/kb
     nlam = np.size(lam)
     incl = np.deg2rad(incl)
 
@@ -42,21 +39,36 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25,a1=0,a2=0,ldd=None)
 
     theta = np.arccos(zp/r)
 
-    x0 = (1.5*a)**1.5*np.sin(1e-99)
-    r0 = a*np.sin(1/3.)*np.arcsin(x0)/(1.0/3.*x0)
+    eps = rot**2/3 # flatening parameter
+    ome = 1.5*(1-eps)*np.sqrt(3*eps) # angular rate
 
-    x2 = (1.5*a)**1.5*np.sin(theta)
-    rin = a*np.sin(1/3.)*np.arcsin(x2)/(1.0/3.*x2)
-
-    rhoin = rin*np.sin(theta)/a/K
-
-    dr = (rin/r0-r) >= 0
+    Rtheta = (1-eps)*np.sin(1/3*np.arcsin(ome*np.sin(theta)))/(1/3*ome*np.sin(theta))
+    Rtheta = Rtheta/Rtheta.min()
+    Req =  Rtheta.max()
     
-    Teff = Tpole*(np.abs(1-rhoin*a)**beta)
+    dr = (Rtheta-r) >= 0
+    
+    
+    Fc = rot**2*1/Req**2*Rtheta*np.sin(theta)
+    
+    G = 3/(2*Rtheta**2)
+    
+    G_z = G*np.cos(theta)
+    G_rho = G*np.sin(theta)
+    
+    
+    geff=np.sqrt(G_z**2+(Fc-G_rho)**2)
+    Teff = Tpole*geff**beta
+
     
     mu=np.rot90(np.sum(dr,axis=2))
     mu=mu/mu.max()
     
+    
+    h = 6.63e-34
+    c = 3e8
+    kb = 1.38e-23
+    K1 = h*c/kb
 
     if ldd == "linear":
         ldd_im = (1-a1*(1-mu))
@@ -66,7 +78,7 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25,a1=0,a2=0,ldd=None)
         ldd_im = 1
     
     if nlam == 1:
-        flx = 1./(np.exp(K1/(lam*Teff))-1)
+        flx = 1./(np.exp(K1/(lam*Teff))-1)*2*h*c**2/lam**5
 
         im = np.zeros([dim, dim])
 
@@ -90,7 +102,10 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25,a1=0,a2=0,ldd=None)
     else:
         unit = np.zeros(nlam)+1
         dr = np.einsum('ijk, l->ijkl', dr, unit)
-        flx = 1./(np.exp(K1/np.einsum('ijk, l->ijkl', Teff, lam))-1)
+        Teff2=Teff[:,:,:,np.newaxis]
+        lam2 = lam [np.newaxis,np.newaxis,np.newaxis,:]
+        flx = 1./(np.exp(K1/(lam2*Teff2))-1)*2*h*c**2/lam2**5
+        #flx = 1./(np.exp(K1/np.einsum('ijk, l->ijkl', Teff, lam))-1)
 
         im = np.zeros([dim, dim, nlam])
 
@@ -109,6 +124,7 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25,a1=0,a2=0,ldd=None)
         im0 = np.zeros([dim0, dim0, nlam])
         im0[dim0//2-dim//2:dim0//2+dim//2, dim0//2-dim//2:dim0//2+dim//2, :] = im
         return im0
+
 
 
 ###############################################################################
