@@ -282,7 +282,7 @@ class oimComponentFourier(oimComponent):
 
         dims = (nt, nwl, dim, dim)
 
-        v = np.linspace(-0.5, 0.5, dim)
+        v = np.linspace(-0.5, 0.5, dim, endpoint=False)
 
         vx, vy = np.meshgrid(v, v)
 
@@ -434,7 +434,7 @@ class oimComponentImage(oimComponent):
         nwl = wl.size
         dims = (nt, nwl, dim, dim)
 
-        v = np.linspace(-0.5, 0.5, dim)
+        v = np.linspace(-0.5, 0.5, dim, endpoint=False)
         vx, vy = np.meshgrid(v, v)
 
         vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
@@ -701,7 +701,7 @@ class oimComponentRadialProfile(oimComponent):
         nt, nwl = t.size, wl.size
         dims = (nt, nwl, dim, dim)
 
-        v = np.linspace(-0.5, 0.5, dim)
+        v = np.linspace(-0.5, 0.5, dim, endpoint=False)
         vx, vy = np.meshgrid(v, v)
 
         vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
