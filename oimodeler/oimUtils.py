@@ -377,11 +377,11 @@ def getDataTypeError(dataArrname: str) -> List[str]:
     ]
 
 
-def compare_angles(angle1: float, angle2: float) -> float:
+def compare_angles(phi: float, psi: float) -> float:
     """Subtracts two angles and makes sure the are between -π and +π."""
-    diff = np.array(angle1 - angle2)
-    diff[diff > np.pi] -= 2 * np.pi
-    diff[diff < -np.pi] += 2 * np.pi
+    diff = phi - psi
+    diff = np.where(diff > np.pi, diff - 2 * np.pi, diff)
+    diff = np.where(diff < -np.pi, diff + 2 * np.pi, diff)
     return diff
 
 
