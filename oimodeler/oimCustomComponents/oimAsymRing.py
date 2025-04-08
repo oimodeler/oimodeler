@@ -1,9 +1,8 @@
 import astropy.units as u
 import numpy as np
-from scipy.special import j0, j1
+from scipy.special import j1
 
 from ..oimBasicFourierComponents import oimIRing, oimRing
-from ..oimOptions import oimOptions
 from ..oimParam import _standardParameters, oimParam
 
 

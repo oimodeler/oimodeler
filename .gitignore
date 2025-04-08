@@ -158,3 +158,6 @@ oimodelerTODO.txt
 
 # Lock
 uv.lock
+
+# Dotenv
+.envrc
