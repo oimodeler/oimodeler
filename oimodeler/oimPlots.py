@@ -763,8 +763,10 @@ def oimPlot(oifitsList: fits.HDUList,
                                                **kwargs_error)
 
                 else:
+                    labeli = label + " " + ColorNames[colorIdx[ifile][idata][iB]]
                     axe.plot(xdata[idata][iB, :],ydata[idata][iB, :],
-                             color=colorTab[colorIdx[ifile][idata][iB] % ncol])
+                             color=colorTab[colorIdx[ifile][idata][iB] % ncol],
+                             label=labeli, **kwargs)
                     if errorbar:
                         _errorplot(axe, xdata[idata][iB, :], ydata[idata][iB, :],
                                    ydataerr[idata][iB, :], color=colorTab[
