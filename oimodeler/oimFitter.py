@@ -90,9 +90,10 @@ class oimFitter:
 
 
 class oimFitterEmcee(oimFitter):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, cprior=None, **kwargs):
         self.params["nwalkers"] = oimParam(name="nwalkers", value=16, mini=1,
                                            description="Number of walkers")
+        self.cprior = cprior
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
@@ -176,10 +177,22 @@ class oimFitterEmcee(oimFitter):
             low, up = self.limits[key]
             if not low < val < up:
                 return -np.inf
-
+        
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
-        return -0.5 * self.simulator.chi2
-
+        logprob = -0.5 * self.simulator.chi2
+        
+        if self.cprior is not None:
+            try:
+                logprob += self.cprior(self.model.getParameters())*self.simulator.nelChi2
+            except Exception as e:
+                print(e)
+                return -np.inf
+    
+        return logprob
+    
+    def getfinalChi2r(self):
+        return self.simulator.chi2r
+        
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
         chi2 = -2*self.sampler.get_log_prob(discard=discard, flat=True)
         chain = self.sampler.get_chain(discard=discard, flat=True)
@@ -476,6 +489,7 @@ class oimFitterMinimize(oimFitter):
             if theta[iparam]<parami.min or theta[iparam]>parami.max:
                 return np.inf
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
+        
         return self.simulator.chi2
             
     def _run(self, **kwargs):
