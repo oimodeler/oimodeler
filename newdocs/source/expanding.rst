@@ -1,22 +1,19 @@
 :tocdepth: 2
 
 .. _expanding:
- 
-Expanding oimodeler
--------------------
 
 In this section we present examples that show how to expand the functionality
-of the ``oimodeler`` software by creating customs objects: 
-:func:`oimComponents <oimodeler.oimComponent.oimComponent>`,
-:func:`oimFilters <oimodeler.oimFilter.oimFilter>`,
-:func:`oimFitters <oimodeler.oimFitter.oimFitter>`, and custom plotting
-functions or utils.
+of the ``oimodeler`` software by creating customs objects:
+:func:`components <oimodeler.oimComponent.oimComponent>`,
+:func:`parameter interpolators <oimodeler.oimParam.oimParamInterpolator>`,
+:func:`data filters <oimodeler.oimFilter.oimFilter>`,
+:func:`fitters <oimodeler.oimFitter.oimFitter>`, and other functionalities
 
-Creating New Components
-~~~~~~~~~~~~~~~~~~~~~~~
+Adding new components
+=====================
 
-Box (Fourier plan formula)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fourier component (Box)
+-----------------------
 
 In the `createCustomComponentFourier.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomComponentFourier.py>`_
 example we show how to implement a new model component using a formula in the Fourier plane.
@@ -57,7 +54,6 @@ implement the oimBox class and its ``__init__`` method.
             self.params["dy"] = oim.oimParam(
                 name="dy", value=1, description="Size in y", unit=u.mas)
             self._eval(**kwargs)
-         
 
 The class inherits from :func:`oimComponentFourier <oimodeler.oimComponent.oimComponentFourier>`.
 The ``__init__`` method is called with the ``**kwargs`` to allow the passing of keyword
@@ -89,7 +85,7 @@ the given unit (usually mas) to rad.
         x = self.params["dx"](wl, t)*self.params["dx"].unit.to(u.rad)*ucoord
         y = self.params["dy"](wl, t)*self.params["dy"].unit.to(u.rad)*vcoord
         return np.sinc(x)*np.sinc(y)
-    
+
 
 We also need to implement the image that will be created when using the
 :func:`oimComponent.getImage <oimodeler.oimComponent.oimComponent.getImage>` method.
@@ -140,12 +136,12 @@ We can now use it as we do with any other ``oimodeler`` component. Let's build o
 model with it.
 
 .. code-block:: python
-    
+
     b1 = oimBox(dx=40, dy=10)
     m1 = oim.oimModel([b1])
-    
-  
-Now we can create images of our model: 
+
+
+Now we can create images of our model:
 
 - In the image plane with the ``_imageFunction``.
 - In the Fourier plane with the ``_visFunction`` (with the FFT).
@@ -165,10 +161,10 @@ the ``fromFT`` keyword to ``True``.
 
 
 .. image:: ../../images/customCompBox1Image.png
-  :alt: Alternative text   
+  :alt: Alternative text
 
 
-Of course, as our ``oimBox`` inherits from the 
+Of course, as our ``oimBox`` inherits from the
 :func:`oimComponent <oimodeler.oimComponent.oimComponent>` class,
 it has three addtional parameters available: Its position described by `x` and `y`,
 and the flux `f`. All components can also be rotated using the position angle `pa`
@@ -188,9 +184,9 @@ Let's create a complex model with boxes and uniform disk.
 
 
 .. image:: ../../images/customCompBoxesImage.png
-  :alt: Alternative text  
+  :alt: Alternative text
 
-  
+
 We could also create a chromatic box component using the
 :func:`oimInterpWl <oimodeler.oimParam.oimInterpWl>` class or link parameters with
 the :func:`oimParamLinker <oimodeler.oimParam.oimParamLinker>` class.
@@ -199,20 +195,20 @@ the :func:`oimParamLinker <oimodeler.oimParam.oimParamLinker>` class.
 
     b4 = oimBox(dx=oim.oimInterpWl([2e-6, 2.4e-6], [5, 10]), dy=2, x=20, y=0, f=0.5)
     b4.params['dy'] = oim.oimParamLinker(b4.params['dx'], 'mult', 4)
-    
+
     m3 = oim.oimModel([b4])
     m3.showModel(512, 0.2, wl=[2e-6, 2.2e-6, 2.4e-6], colorbar=False, swapAxes=True)
 
 
 .. image:: ../../images/customCompChromBoxImages.png
-  :alt: Alternative text   
-    
+  :alt: Alternative text
+
 
 Let's finish this example by plotting the visibility of such models for a set
 of East-West and North-South baselines and wavelengths in the K-band.
 
 .. code-block:: python
-     
+
     nB = 200  # number of baselines
     nwl = 50  # number of walvengths
 
@@ -245,28 +241,28 @@ of East-West and North-South baselines and wavelengths in the K-band.
             ax[i, 1].get_xaxis().set_visible(False)
 
         ax[i, 1].get_yaxis().set_visible(False)
-            
+
     ax[2,0].set_xlabel("B/$\\lambda$ (cycles/rad)")
     ax[2,1].set_xlabel("B/$\\lambda$ (cycles/rad)")
     ax[0,0].set_title("East-West baselines")
     ax[0,1].set_title("North-South baselines")
-                  
+
 
 .. image:: ../../images/customCompMultiBoxesVis.png
-  :alt: Alternative text   
-    
+  :alt: Alternative text
+
 Of course, only the third model is chromatic.
 
-Fast Rotator (External model)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Image-plane component from external code (Fast Rotator)
+-------------------------------------------------------
 
 In the `createCustomComponentImageFastRotator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomComponentImageFastRotator.py>`_
-example, we will create a new component derived from the 
+example, we will create a new component derived from the
 :func:`oimImageComponent <oimodeler.oimImageComponent.oimImageComponent>`, using an
 external function that return a chromatic image cube.
 
 The model is a simple implementation of a fast rotating star flattened by
-rotation (Roche Model) including gravity darkening (:math:`T_{eff}\propto g_{eff}^\beta`). The emission is a simple blackbody. 
+rotation (Roche Model) including gravity darkening (:math:`T_{eff}\propto g_{eff}^\beta`). The emission is a simple blackbody.
 
 First, let's import a few packages used in this example:
 
@@ -360,12 +356,12 @@ to be used in ``oimodeler``.
             im0 = np.zeros([dim0, dim0, nlam])
             im0[dim0//2-dim//2:dim0//2+dim//2, dim0//2-dim//2:dim0//2+dim//2, :] = im
             return im0
-    
+
 
 Now, we will define the new class for the fast rotator model. It will be derived
 from the :func:`oimComponentImage <oimodeler.oimComponent.oimComponentImage>` class
 as the model is defined in the image plane. We first write the ``__init__`` method
-of the new class. It needs to includes all the model parameters. 
+of the new class. It needs to includes all the model parameters.
 
 .. code-block:: python
 
@@ -391,8 +387,8 @@ of the new class. It needs to includes all the model parameters.
             self._wl = np.linspace(0.5e-6, 15e-6, num=10)
             self._eval(**kwargs)
 
-            
-.. note:: 
+
+.. note::
 
     Unlike for models defined in the Fourier plane, you need to define the internal
     wavelength ``self._wl`` and time ``self._t`` grids with their respective class
@@ -403,16 +399,16 @@ Here, we set the time to a fixed value so that the model will be time independen
 The wavelength dependence of the model
 is set to a vector of 10 reference wavelengths between 0.5 and 15 microns. This will be
 used to compute reference images and linear interpolation in wavelength will be used on
-the Fourier transforms of the images. 
+the Fourier transforms of the images.
 
 Together with the parameter `dim` (dimension of the image in x and y), the ``self._wl``
 and the ``self._t`` set the length dimensions of the internal image hypercube
-(4-dimensional: `x`, `y`, `wl`, and `t`). 
+(4-dimensional: `x`, `y`, `wl`, and `t`).
 
 Now we can implement the call to the ``fastRotator`` function. As it is an external
 function that computes its own spatial and spectral grid we need to implement
 it in the :func:`oimComponentImage._internalImage <oimodeler.oimComponent.oimComponentImage>`
-method. 
+method.
 
 
 .. code-block:: python
@@ -429,18 +425,18 @@ method.
         im = np.tile(np.moveaxis(im, -1, 0)[None, :, :, :], (1, 1, 1, 1))
         self._pixSize = 1.5*dpole/dim*units.mas.to(units.rad)
         return im
-        
+
 
 Here we need to reshape the result of the ``fastRotator`` function to the proper
 shape for an internal image of the :func:`oimImageComponent <oimodeler.oimComponent.oimImageComponent>`
 class. The ``FastRotator`` returns a 3D image-cube (`x`, `y`, `wl`). We move its axis and
-reshape it to a 4D image-hypercube (`t`, `wl`, `x`, `y`). 
+reshape it to a 4D image-hypercube (`t`, `wl`, `x`, `y`).
 
 Finally, we need to set the pixel size (in rad) using the ``self._pixSize``
 private attribute. For our example, we compute a ``fastRotator`` on a grid of
 1.5 polar diameter (because the equatorial diameter goes up to 1.5 polar diameter
 for a critically rotating star). The pixel size formula depends on the `dpole` and
-`dim` parameters. 
+`dim` parameters.
 
 Let's build our first model with this brand new component.
 
@@ -448,20 +444,20 @@ Let's build our first model with this brand new component.
 
     c = oimFastRotator(dpole=5, dim=128, incl=-70, rot=0.99, Tpole=20000, beta=0.25)
     m = oim.oimModel(c)
-    
 
-We can now plot the model images at various wavelengths as we do for any other 
-:func:`oimModel <oimodeler.oimModel.oimModel>`. 
+
+We can now plot the model images at various wavelengths as we do for any other
+:func:`oimModel <oimodeler.oimModel.oimModel>`.
 
 .. code-block:: python
 
     m.showModel(512, 0.025, wl=[1e-6, 10e-6 ], legend=True, normalize=True)
-    
+
 
 .. image:: ../../images/customCompImageFastRotator.png
-  :alt: Alternative text       
+  :alt: Alternative text
 
- 
+
 Let's create a some spatial frequencies, with some chromaticity.
 For that we create baselines in the East-West and North-South orientations.
 
@@ -518,26 +514,26 @@ the wavelength.
     norm = colors.Normalize(vmin=np.min(wl)*1e6, vmax=np.max(wl)*1e6)
     sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
     fig.colorbar(sm, ax=ax, label="$\\lambda$ ($\\mu$m)")
- 
+
 
 .. image:: ../../images/customCompImageFastRotatorVis.png
-  :alt: Alternative text      
-  
-  
+  :alt: Alternative text
+
+
 This new ``oimfastRotator`` component can be rotated and used together with other
 :func:`oimComponent <oimodeler.oimComponent.oimComponent>` classes to build more
-complex models. 
+complex models.
 
 Here, we add a uniform disk component
 :func:`oimUD <oimodeler.oimBasicFourierComponents.oimUD>`:
-   
+
 .. code-block:: python
 
     c.params['f'].value = 0.9
     c.params['pa'].value = 30
     ud = oim.oimUD(d=1, f=0.1, y=10)
     m2 = oim.oimModel(c, ud)
-    
+
 And finally, we produce the same plots as before for this new complex model.
 
 .. code-block:: python
@@ -565,18 +561,18 @@ And finally, we produce the same plots as before for this new complex model.
     norm = colors.Normalize(vmin=np.min(wl)*1e6, vmax=np.max(wl)*1e6)
     sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
     fig.colorbar(sm, ax=ax, label="$\\lambda$ ($\\mu$m)")
-    
+
 
 .. image:: ../../images/customCompImageFastRotator2.png
-  :alt: Alternative text   
+  :alt: Alternative text
 
-  
+
 .. image:: ../../images/customCompImageFastRotatorVis2.png
-  :alt: Alternative text   
+  :alt: Alternative text
 
-  
-Spiral (Image plan formula)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Image plane component from simple formula (Spiral)
+--------------------------------------------------
 
 In the `createCustomComponentImageSpiral.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomComponentImageSpiral>`_
 example we will create a new component derived from the
@@ -598,7 +594,7 @@ But first let's import a few packages used in this example:
 Now we will define the new class for the spiral model. Again, it will be derived from
 the :func:`oimComponentImage <oim.oimComponentImage>` class as the model is defined
 in the image plane. We first write the ``__init__`` method of the new class.
-It needs to includes all the model's parameters. 
+It needs to includes all the model's parameters.
 
 .. code-block:: python
 
@@ -626,11 +622,11 @@ intend to have chromaticity, we fixed the internal time and wavelength arrays.
 
 Unlike in the previous example, as we don't use an externally computed image,
 so we can implement the :func:`oimComponentImage._imageFunction <oimodeler.oimComponent.oimComponentImage._imageFunction>`
-of the class instead of the 
+of the class instead of the
 :func:`oimComponentImage._internaImage <oimodeler.oimComponent.oimComponentImage._internalImage>`
 one.
 
-The main difference is that the 
+The main difference is that the
 :func:`oimComponentImage._imageFunction <oimodeler.oimComponent.oimComponentImage._imageFunction>`
 directly provides the 4D-grid in time, wavelength and x and y.
 
@@ -649,23 +645,23 @@ directly provides the 4D-grid in time, wavelength and x and y.
         im = 1 + np.cos(-phi-2*np.pi*np.log(r/p+1))
         im = (im < 2*w)*np.exp(-r**2/(2*sig**2))
         return im
-        
+
 
 .. note::
     As `xx` and `yy` are transformed coordinates, `r` and `phi` takes into account
     the ellipticity and orientation using the `pa` and `elong` keywords.
 
-    
+
 We create a model consisting of two components: The newly defined
 ``oimSpiral`` class and a uniform disk (:func:`oimUD <oim.oimBasicFourierComponents,oimUD>`).
 
 .. code-block:: python
 
     ud = oim.oimUD(d=2, f=0.2)
-    c = oimSpiral(dim=256, fwhm=5, P=0.1, width=0.2, pa=30, elong=2, x=10, f=0.8) 
+    c = oimSpiral(dim=256, fwhm=5, P=0.1, width=0.2, pa=30, elong=2, x=10, f=0.8)
     m = oim.oimModel(c, ud)
 
-    
+
 Then, we plot the image of the model (using the direct image formula and going back
 and forth to and from the Fourier plane).
 
@@ -682,7 +678,7 @@ and forth to and from the Fourier plane).
 
 
 .. image:: ../../images/customCompImageSpiral.png
-  :alt: Alternative text  
+  :alt: Alternative text
 
 
 And finally, the visibility from the models for a fixed wavelength and a series
@@ -716,25 +712,23 @@ of baselines in two perpendicular orientations.
     ax.set_ylabel("Visibility")
     ax.legend()
 
-
 .. image:: ../../images/customCompImageSpiralVis.png
-  :alt: Alternative text  
+  :alt: Alternative text
 
 
-Exp. Ring (Radial profile)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Radial profile from simple formula (Exp. Ring)
+----------------------------------------------
 
-.. note::
-    Examples will be added when the ``oimComponentRadialProfile`` is implemented.
+This example will be added when the ``oimComponentRadialProfile`` is implemented.
 
-    
+
 ..  _create_interp:
-  
-Creating New Interpolators
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Adding a new Interpolators
+==========================
 
 In the `createCustomParamInterpolator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomParamInterpolator.py>`_
-example we will create a new parameter interpolator derived from the 
+example we will create a new parameter interpolator derived from the
 :func:`oimParaminterpolator <oimodeler.oimParam.oimParamInterpolator>` class.
 The new class will allow chromatic interpolation with a vector of evenly spaced values
 in a range of wavelengths.
@@ -764,7 +758,7 @@ method that will be called by the ``__init__`` method of the base class.
 This method should contain information on the interpolator parameters.
 
 .. code-block:: python
-    
+
     class oimParamLinearRangeWl(oim.oimParamInterpolator):
         def _init(self, param, wl0=2e-6, dwl=1e-9, values=[], kind="linear", **kwargs):
 
@@ -792,7 +786,7 @@ This method should contain information on the interpolator parameters.
                                                 unit=param.unit, free=param.free,
                                                 error=param.error))
 
-                                        
+
 The first argument of the class, ``param`` is the
 :func:`oimParam <oim.oimParam.oimParam>` on which the new interpolator will be
 built.
@@ -810,7 +804,7 @@ The parameters ``wl0``, ``dwl`` are created from the ``_standardParameters["wl"]
 dictionary (contained in the :mod:`oimParam <oimodeler.oimParam>` module) for the
 wavelength.
 Their name, descriptions, and value are updated, and they are set as fixed parameter
-by default (``free=False``). 
+by default (``free=False``).
 
 The values vector of parameters is created from the input parameter ``param``.
 For each parameter in the vector the value is set to the proper one given as input
@@ -820,7 +814,7 @@ The second method to implement is the
 :func:`oimParamInterpolator._interpFunction <oimodeler.oimParam.oimParamInterpolator._interpFunction>`
 which is the core function of the interpolation. It has two input parameters: The
 wavelength `wl` and the time `t` for which the parameter shoud be interpolated.
-As our interoplator is not time dependent, we can ignore `t`. 
+As our interoplator is not time dependent, we can ignore `t`.
 
 .. code-block:: python
 
@@ -860,7 +854,7 @@ the base class :func:`oimParamInterpolator <oim.oimParam.oimParamInterpolator>`.
 This method simply returns the list of the interpolator parameters.
 Here, the list of the reference values ``self.values``, the initial wavelength ``self.wl0`` and the wavelength step ``self.dwl``. We omit the ``kind`` parameter as we consider it more as an option than a real parameter.
 
-Finally, if we want to use our interpolator using the 
+Finally, if we want to use our interpolator using the
 :func:`oimInterp <oim.oimParam.oimInterp>` macro, we need to reference it
 in the ``_interpolator`` dictionary contained in the :mod:`oimParam <oim.oimParam>`
 module.
@@ -873,7 +867,7 @@ module.
 Now, we can use our new interpolator to build a component and a model.
 Let's build a chromatic uniform disk with 10 reference wavelengths between
 2 and 2.5 microns. For the example, we will fill the ``values`` vector with
-random diameters from 4 to 7 mas. 
+random diameters from 4 to 7 mas.
 
 .. code-block:: python
 
@@ -887,7 +881,7 @@ We can print the parameters of our model:
 .. code-block:: python
 
     pprint(m.getParameters())
-    
+
 
 .. code-block::
 
@@ -918,7 +912,7 @@ We can also get the free parameters:
 .. code-block:: python
 
     pprint(m.getFreeParameters())
-    
+
 
 .. code-block::
 
@@ -954,14 +948,14 @@ First, we create the wavelength vector and the spatial frequencies and wavelengt
     wl_arr = np.tile(wl[:, None], (1, nB)).flatten()
     spfx_arr = Bx_arr/wl_arr
     spfy_arr = spfx_arr*0
-    
+
 
 Finally, we compute the visibilty using the
 :func:`oimModel.getComplexCoherentFlux <oimodeler.oimModel.getComplexCoherentFlux>` method
 and plot everything together.
 
 .. code-block:: python
- 
+
     v = np.abs(m.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr).reshape(nwl, nB))
 
     fig, ax = plt.subplots(2, 1)
@@ -973,8 +967,8 @@ and plot everything together.
 
     for iB in range(1,nB):
         ax[1].plot(wl*1e6, v[:, iB]/v[:, 0], color=plt.cm.plasma(iB/(nB-1)))
-       
-    ax[1].set_xlabel("$\lambda$ ($\mu$m)")   
+
+    ax[1].set_xlabel("$\lambda$ ($\mu$m)")
     ax[1].set_ylabel("Visibility")
 
     norm = colors.Normalize(vmin=np.min(B[1:]), vmax=np.max(B))
@@ -983,5 +977,14 @@ and plot everything together.
 
 
 .. image:: ../../images/createInterp1.png
-  :alt: Alternative text  
+  :alt: Alternative text
+
+Adding a new data Filter
+=========================
+
+Adding a new Fitter
+===================
+
+Adding other functionalities
+============================
 

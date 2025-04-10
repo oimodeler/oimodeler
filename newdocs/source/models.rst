@@ -147,7 +147,7 @@ The two main methods of an :func:`oimModel <oimodeler.oimModel.oimModel>` object
 
 Althought the :func:`getImage <oimodeler.oimModel.oimModel.getImage>`  is only used to vizualize the model intensity 
 distribution and is not used for  model-fitting, :func:`getComplexCoherentFlux <oimodeler.oimModel.oimModel.getComplexCoherentFlux>` is
- at the base of the computation of all interferometric observables and thus of the data-model comparison.
+at the base of the computation of all interferometric observables and thus of the data-model comparison.
 
 
 Getting the model image
@@ -341,15 +341,17 @@ The code corresponding to this section is available in `TypesOfComponents.py <ht
 **oimodeler** components are of three different types:
 
 | 1. the components defined in the Fourier space by an analytical formula.
- | They inherit from the  :func:`oimComponentFourier <oimodeler.oimcomponent.oimComponentFourier>` class
-|2. the components defined by their 2D intensity map in the image space.
- | They inherit from the  :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class
-|3. the components defined by their 1D intensity profile in the image space.
- | They inherit from the  :func:`oimComponentRadialProfile <oimodeler.oimcomponent.oimComponentRadialProfile>` class
+| They inherit from the  :func:`oimComponentFourier <oimodeler.oimcomponent.oimComponentFourier>` class.
+
+| 2. the components defined by their 2D intensity map in the image space.
+| They inherit from the  :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class.
+
+| 3. the components defined by their 1D intensity profile in the image space.
+| They inherit from the  :func:`oimComponentRadialProfile <oimodeler.oimcomponent.oimComponentRadialProfile>` class.
 
 
 Basic Fourier components
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 In the table below is a list of the current Fourier-based components, which all derived from
 the :func:`oimComponentFourier <oimodeler.oimComponent.oimComponentFourier>` semi-abstract class.
@@ -385,7 +387,7 @@ We will see this in details in the :ref:`Advanced parameters` section.
 
 
 Image components
-~~~~~~~~~~~~~~~~
+----------------
 
 **oimodeler** allows to use components described in the image space. This can be done by subclassing the semi-abstract
 :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class.
@@ -450,10 +452,10 @@ Unlike when using
 
 
 Fits images component
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 Radial-Profile components
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 .. csv-table:: Available radial profile components
    :file: table_components_radial.csv
