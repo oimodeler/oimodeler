@@ -336,22 +336,23 @@ for all the previously created models.
 Types of components
 -------------------
 
-This complete code corresponding to this section is available in `TypesOfComponents.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/TypesOfComponents.py>`_ 
+The code corresponding to this section is available in `TypesOfComponents.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/TypesOfComponents.py>`_
 
 **oimodeler** components are of three different types:
 
-1. the components defined in the Fourier plan by an analytical formula. 
-   They inherit from the  :func:`oimComponentFourier <oimodeler.oimcomponent.oimComponentFourier>` class
-2. the components defined by their 2D intensity map in the image plan. 
-   They inherit from the  :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class
-3. the components defined by their 1D intensity profile in the image plan. 
-   They inherit from the  :func:`oimComponentRadialProfile <oimodeler.oimcomponent.oimComponentRadialProfile>` class
+| 1. the components defined in the Fourier space by an analytical formula.
+ | They inherit from the  :func:`oimComponentFourier <oimodeler.oimcomponent.oimComponentFourier>` class
+|2. the components defined by their 2D intensity map in the image space.
+ | They inherit from the  :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class
+|3. the components defined by their 1D intensity profile in the image space.
+ | They inherit from the  :func:`oimComponentRadialProfile <oimodeler.oimcomponent.oimComponentRadialProfile>` class
 
 
 Basic Fourier components
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the table below is a list of the current Fourier-based component, which all derived from the :func:`oimComponentFourier <oimodeler.oimComponent.oimComponentFourier>` semi-abstract class.
+In the table below is a list of the current Fourier-based components, which all derived from
+the :func:`oimComponentFourier <oimodeler.oimComponent.oimComponentFourier>` semi-abstract class.
 
 .. csv-table:: Available Fourier based components
    :file: table_components_fourier.csv
@@ -383,20 +384,19 @@ We will see this in details in the :ref:`Advanced parameters` section.
     complex Coherent Flux whereas imaged-based used FFT or Hankel-Transform (for radial profile) 
 
 
-Image-plan components
-~~~~~~~~~~~~~~~~~~~~~
+Image components
+~~~~~~~~~~~~~~~~
 
-**oiomdeler** allows to use component described in the image plane. This can done done by subclassing the semi-abstract :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class.
+**oimodeler** allows to use components described in the image space. This can be done by subclassing the semi-abstract
+:func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class.
 
-In the table below is a list of the current image plane components:
-
+In the table below is a list of the current image-plan components:
 
 .. csv-table:: Available Image plane components
    :file: table_components_image.csv
    :header-rows: 1  
    :delim: |
    :widths: auto
-
 
 To print the comprehensive list of image-based compnents you can type:
 
@@ -407,15 +407,15 @@ To print the comprehensive list of image-based compnents you can type:
 
 Describing an object by its intensity distribution instead of its Fourier transform can be useful in three cases:
 
-1. the component cannot be described using an analytical formula in the Fourier plane but can be described by an analytical formula in the image plane
-2. the component cannot be described by a simple analytical formula even in the image plane but an image can easily be computed, for instance with a iterative code
-3. the user want to use external code such as the output from a radiative transfert model
+1. the component cannot be described using an analytical formula in the Fourier space but can be described by an analytical formula in the image plan
+2. the component cannot be described by a simple analytical formula even in the image space but an image can easily be computed, for instance with a iterative code
+3. the user want to use external code such as images from a radiative transfert model
 
 
-Here are three example of these three kind of image-plane models implemented in **oimodeler**.
+Here are three examples of these three kind of image components implemented in **oimodeler**.
 
-The first one is a spiral component implemented as :func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oimSpiral>`.
-Its implementation is descrbided in details in XXXXXXXXXXXXXXXXXXXX.
+The first one is a spiral implemented as :func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oimSpiral>`.
+Its implementation is descrbided in details in the ex
 
 .. code-block:: ipython3
 

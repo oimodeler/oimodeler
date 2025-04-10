@@ -36,7 +36,13 @@ compute chi2, perform model fitting (using mcmc or other fitters), and plot resu
    fitter
    plot
    utils
-   
+
+.. toctree::
+   :hidden:
+   :caption: Expanding oimodeler
+
+    expanding
+
 .. toctree::
    :hidden: 
    :caption: Examples   
