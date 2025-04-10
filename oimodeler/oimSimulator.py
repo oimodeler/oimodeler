@@ -6,7 +6,8 @@ import astropy.units as u
 from .oimData import oimData, oimDataType
 from .oimUtils import hdulistDeepCopy
 from .oimPlots import oimWlTemplatePlots, _errorplot, oimPlotParamName,\
-                      oimPlotParamLabelShort
+                      oimPlotParamLabelShort, oimPlotParamArr, oimPlotParamLabel,\
+                      oimPlotParamError
 
 
 def corrFlux2Vis2(vcompl):
@@ -325,4 +326,40 @@ class oimSimulator:
         if savefig != None:
             plt.savefig(savefig)
 
+        return fig, ax
+    def plot_residuals(self, arr, xaxis = 'SPAFREQ', xunit="cycle/rad", savefig=None, visLog=False,
+                       cname = "EFF_WAVE", cunit="micron", kwargsData={}):
+        
+        
+        residuals_data = oimData()
+        for i, (dat, fit_dat) in enumerate(zip(self.data.data,self.simulatedData.data)):
+            residuals_data.addData(hdulistDeepCopy(fit_dat))
+            for param in arr:
+                
+                idx_p = np.where(oimPlotParamName == param)[0][0]
+                p_arr = oimPlotParamArr[idx_p]
+                p_err = oimPlotParamError[idx_p]
+                
+                if param in ['T3PHI', 'VISPHI']:
+                    res_ph = (np.rad2deg(np.angle(np.exp(1j*np.deg2rad(dat[p_arr].data[param])- 
+                                             1j*np.deg2rad(fit_dat[p_arr].data[param])))))/dat[p_arr].data[p_err]
+                    residuals_data.data[i][p_arr].data[param] = res_ph
+                else:
+                    res_vis = (dat[p_arr].data[param] - fit_dat[p_arr].data[param])/fit_dat[p_arr].data[p_err]
+                    residuals_data.data[i][p_arr].data[param] = res_vis
+
+
+        kwargsData = dict(cname = cname, cunit=cunit)
+        idx_xaxis = np.where(oimPlotParamName == xaxis)[0][0]
+        label_xaxis = oimPlotParamLabel[idx_xaxis]
+        
+        fig, ax = plt.subplots(len(arr), 1, subplot_kw=dict(projection='oimAxes'), figsize=(14, 8), constrained_layout=True)
+
+        for i in range(len(arr)):
+            idx_p = np.where(oimPlotParamName == arr[i])[0][0]
+            label_p = oimPlotParamLabel[idx_p]
+            ax[i].oiplot(residuals_data, xaxis, arr[i], xunit=xunit, **kwargsData)
+            ax[i].set_title(label_p)
+            ax[i].set_xlabel(label_xaxis+' ('+xunit+')')
+            ax[i].set_ylabel(r'$\sigma$')
         return fig, ax
