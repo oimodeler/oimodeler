@@ -8,7 +8,7 @@ the customComponent module
 # TODO: Find a way to automatically add all class that derives from oimComponent
 # from all files in the oimCustomComponents directory
 
-from .oimAsymRing import oimAEIRing, oimAERing
+from .oimAsymRing import oimAEIRing
 from .oimBox import oimBox
 from .oimExpRing import oimExpRing
 from .oimFastRotator import oimFastRotator,oimFastRotatorLLDD,oimFastRotatorQuadLDD, oimFastRotatorNLLDD, oimFastRotatorMasse
