@@ -473,8 +473,7 @@ class oimComponentImage(oimComponent):
             coord = np.transpose(np.array([t_arr, wl_arr, x_arr, y_arr]))
 
             im = interpolate.interpn(
-                grid, im0, coord, bounds_error=False, fill_value=None
-            )
+                grid, im0, coord, bounds_error=False, fill_value=0)
             f0 = np.sum(im0)
             f = np.sum(im)
             im = im / f * f0
@@ -560,6 +559,9 @@ class oimComponentImage(oimComponent):
             else:
                 return t_arr, wl_arr, x_arr, y_arr
 
+        def setPixelSize(self):
+            return raise ValueError("setPixelSize Method not" \
+                                    "implemented while self._pixSize = None")
 
 class oimComponentRadialProfile(oimComponent):
     """Base class for components define by their radial profile"""
