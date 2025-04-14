@@ -604,8 +604,8 @@ class oimFitterRegularGrid(oimFitter):
     def printResults(self, format=".5f", **kwargs):
         res = self.getResults(**kwargs)
         chi2r = self.simulator.chi2r
-        for iparam,parami in enumerate(self.freeParams):
-            print(f"{parami} = {res[iparam]:{format}} {self.freeParams[parami].unit}")
+        for iparam,parami in enumerate(self.gridParams):
+            print(f"{parami.name} = {res[iparam]:{format}} {self.gridParams[iparam].unit}")
         print(f"chi2r = {chi2r:{format}}")
     
     
@@ -631,7 +631,6 @@ class oimFitterRegularGrid(oimFitter):
             kwargs["aspect"]="auto"
 
         ndims = len(self.gridSize)
-        print(ndims)
         
         min_idx=np.argmin(self.chi2rMap)
         chi2rmin= np.min(self.chi2rMap)
