@@ -6,7 +6,6 @@ Oifits Helpers & Utils
 Getting information
 -------------------
 
-
 Modifying oifits arrays
 -----------------------
 

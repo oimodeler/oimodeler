@@ -350,8 +350,8 @@ The code corresponding to this section is available in `TypesOfComponents.py <ht
 | They inherit from the  :func:`oimComponentRadialProfile <oimodeler.oimcomponent.oimComponentRadialProfile>` class.
 
 
-Basic Fourier components
-------------------------
+Fourier components
+------------------
 
 In the table below is a list of the current Fourier-based components, which all derived from
 the :func:`oimComponentFourier <oimodeler.oimComponent.oimComponentFourier>` semi-abstract class.
@@ -368,14 +368,38 @@ To print the comprehensive list of Fourier-based compnents you can type:
 
     print(oim.listComponents(componentType="fourier"))
 
-.. parsed-literal::
+
 
     ['oimComponentFourier', 'oimPt', 'oimBackground', 'oimUD', 'oimEllipse', 'oimGauss', 'oimEGauss', 'oimIRing',
      'oimEIRing', 'oimRing', 'oimRing2', 'oimERing', 'oimERing2', 'oimESKIRing', 'oimESKGRing', 'oimESKRing', 'oimLorentz',
      'oimELorentz', 'oimLinearLDD', 'oimQuadLDD', 'oimPowerLawLDD', 'oimSqrtLDD', 'oimAEIRing', 'oimAERing', 'oimBox',
      'oimGaussLorentz', 'oimStarHaloGaussLorentz', 'oimStarHaloIRing']
      
-.. note:: If you want to have more information on a component (for instance, on its paramaters) you can use python **help** function.
+If you want to have more information on a component (for instance, on its paramaters) you can use python **help** function.
+
+.. code-block:: ipython3
+
+    help(oim.oimUD)
+
+.. parsed-literal::
+
+    class oimUD(oimodeler.oimComponent.oimComponentFourier)
+     |  oimUD(**kwargs)
+     |
+     |  Uniform Disk component defined in the fourier space
+     |
+     |  Parameters
+     |  ----------
+     |  x: u.mas | oimInterp
+     |      x pos of the component (in mas). The default is 0.
+     |  y: u.mas | oimInterp
+     |      y pos of the component (in mas). The default is 0.
+     |  f: u.dimensionless_unscaled | oimInterp
+     |      flux of the component. The default is 1.
+     |  d: u.mas | oimInterp
+     |      diameter of the disk (in mas). The default is 0.
+     |
+
 
 Although simple, these components can allow to build complex models, For instance, Chromaticity and/or time-dependency 
 can be added to any parameters of these components to build more complex models.
@@ -454,7 +478,7 @@ class described in the next section to load the image as a image-components.
 Unlike when using Fourier-based components, the determination of the complex coherent flux (and the other interferometric observables) from an image
 requires the computation of the image Fourier Transform (FT) at the spatial frequency (and optionnally spectral and time) coordinates of the data.
 
-In **oimodeler** such computation relies on the :func:`oimFTBackends <oimodeler.oimFTBackends>`module which contains various algorithms to compute
+In **oimodeler** such computation relies on the :func:`oimFTBackends <oimodeler.oimFTBackends>` module which contains various algorithms to compute
 the Fourier trasnform. Currently implemented are the following:
 
 .. csv-table:: Available Fourier Transform Backends
@@ -463,11 +487,9 @@ the Fourier trasnform. Currently implemented are the following:
    :delim: |
    :widths: auto
 
-By default the standard numpy FFT backend will be used.
-
-The FFTW backend which is significantly faster  can be actived if `pyFFTW <https://pypi.org/project/pyFFTW/>`_ is installed on your system.
-
-To check which backend is available on your installation, type
+By default the standard **numpy FFT backend** will be used. The FFTW backend which is significantly faster can be
+actived if `pyFFTW <https://pypi.org/project/pyFFTW/>`_ is installed on your system. To check which backend is
+available on your installation, type:
 
 .. code-block:: ipython3
 
@@ -500,44 +522,50 @@ Or you can use the FT backend alias with the function :func:`setFTBackend <oimod
 
     oim.setFTBackend("fftw")
 
-The FFT backends is significantly faster than a normal DFT, but its precision depends on the zero-padding of the image.
-
-The default zero padding factor is set to 4 which means the the the image will be zero-padded in a four times bigger array (rounded to the closest power of 2).
-
-The user can access and change the zero paddingusing the oimOptions namespace :
+The FFT backends (numpy or FFTW) are significantly faster than a normal DFT, but its precision depends on the
+zero-padding of the image. The default zero padding factor is set to 4 which means the the the image will be zero-padded
+in a 4 times bigger array (rounded to the closest power of 2). The user can access and change the zero padding using the
+:func:`oimOptions <oimodeler.oimOptions>` namespace :
 
 .. code-block:: ipython3
 
     oim.oimOptions.ft.padding = 8
 
-Depending on the sharpness of the object image and its cropping reducing the zero-paddingh might lead to important errors.
+Depending on the sharpness of the object image and its cropping lowering the zero-padding might lead to important errors.
 
-Here is an illustration of the accuracy of the FFT as the function of the padding factor using using the spiral component.
+Here is a ample script illustrating the accuracy of the FFT as the function of the padding factor using the
+:func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oimSpiral>` component as example.
 
 .. code-block:: ipython3
 
     #creating the spiral model
-    spiral = oim.oimSpiral(dim=256, fwhm=20, P=0.1, width=0.2, pa=30, elong=2)
-    spiral._pixSize*=4
+    spiral = oim.oimSpiral(dim=128, fwhm=20, P=1, width=0.1, pa=0, elong=1)
     mspiral = oim.oimModel(spiral)
 
+    #creating a set of baselines from 0 to 100m in K band
     wl = 2.1e-6
-    B = np.linspace(0.0, 300, num=200)
+    B = np.linspace(0, 100, num=200)
     spf = B/wl
 
-    #computing the reference model with padding of 64
-    oim.oimOptions.ft.padding = 64
+    #computing the reference model with padding of 32
+    oim.oimOptions.ft.padding = 32
     ccf01 = mspiral.getComplexCoherentFlux(spf, spf*0)
     v01 = np.abs(ccf01/ccf01[0])
+
+    start = time.time()
     ccf02 = mspiral.getComplexCoherentFlux(spf*0, spf)
     v02 = np.abs(ccf02/ccf02[0])
+    end = time.time()
+    dt0 = end -start
 
-    #computing FFT with different padding
+    #%%  computing FFT with different padding
+    padding=[16,8,4,2,1]
     figpad,axpad = plt.subplots(2,2, figsize=(10,5),sharey="row",sharex=True)
 
-    padding=[1,2,4,8,16]
-    for pi in padding :
+    axpad[0,0].plot(spf, v01, color="k",lw=4)
+    axpad[0,1].plot(spf, v02, color="k",lw=4,label=f"padding=32x ({dt0*1000:.0f}ms)")
 
+    for pi in padding :
         oim.oimOptions.ft.padding = pi
         ccf1 = mspiral.getComplexCoherentFlux(spf, spf*0)
         v1 = np.abs(ccf1/ccf1[0])
@@ -546,22 +574,19 @@ Here is an illustration of the accuracy of the FFT as the function of the paddin
         v2 = np.abs(ccf2/ccf2[0])
         end = time.time()
         dt = end -start
-
         axpad[0,0].plot(spf, v1)
         axpad[0,1].plot(spf, v2,label=f"padding={pi}x ({dt*1000:.0f}ms)")
         axpad[1,0].plot(spf, (v1-v01)/v01*100,marker=".",ls="")
         axpad[1,1].plot(spf, (v2-v02)/v02*100,marker=".",ls="")
 
-        for i in range(2):
-            axpad[1,i].set_xlabel("spatial frequency (cycles/rad)")
-            axpad[1,i].set_yscale("symlog")
-
+    for i in range(2):
+        axpad[1,i].set_xlabel("spatial frequency (cycles/rad)")
+        axpad[1,i].set_yscale("symlog")
     axpad[0,0].set_title("East-West baselines")
     axpad[0,1].set_title("North-South baselines")
     axpad[0,0].set_ylabel("Visbility")
     axpad[0,1].legend()
     axpad[1,0].set_ylabel("Residual (%)")
-
 
 .. image:: ../../images/componentImages_padding.png
   :alt: Alternative text
@@ -569,6 +594,11 @@ Here is an illustration of the accuracy of the FFT as the function of the paddin
 .. note::
     FFT computation time grows like :math:`n log(n)`, where n is the number of pixels in the image so the padding reduce
     significantly the computation of the model (see the example above)
+
+In the case of the :func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oimSpiral>` component, reducing the
+zero-padding below the default value of 4 leads to mean errors of the order of 30% (with values up to 500%). The default
+padding reduce mean errors to a few precents (with maximum up to 10%).
+
 
 Loading fits images
 -------------------
