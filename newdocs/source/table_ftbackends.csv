@@ -1,0 +1,4 @@
+class name | Alias | Description
+numpyFFTBackend | numpyfft | 2D FFT with 4D interpolation using the numpy.fft (precision depends on the padding parameter)
+FFTWBackend | fftw | 2D FFT with 4D interpolation using the pyFFTW package (precision depend on the padding parameter)
+DFTBackend  | DFT  | Discreet Fourier Transform a the correct spatial frequency (2D interpolation possible between wavelengths and time)        

@@ -416,8 +416,12 @@ Describing an object by its intensity distribution instead of its Fourier transf
 
 Here are three examples of these three kind of image components implemented in **oimodeler**.
 
+.. image:: ../../images/componentImages_images.png
+  :alt: Alternative text
+
 The first one is a spiral implemented as :func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oimSpiral>`.
-Its implementation is descrbided in details in the ex
+
+Its implementation is descrbided in details in the section :ref:`spiral`.
 
 .. code-block:: ipython3
 
@@ -425,16 +429,20 @@ Its implementation is descrbided in details in the ex
     mspiral = oim.oimModel(spiral)
 
 
-The second one is a simple simulation of a fast-rotator using the Roche model and including the gravity-darkening.
-It is implemented as :func:`oimFastRotator <oimodeler..oimCustomComponents.oimFastRotator.oimFastRotator>` and a full description is given in XXXXXXXXXXXXXXXXXXXX.
+The second one is a simple simulation of a fast-rotator using the Roche model and a beta-law gravity-darkening.
+It is implemented in oimodeler as :func:`oimFastRotator <oimodeler..oimCustomComponents.oimFastRotator.oimFastRotator>`
+and a full description is given in :ref:`fastrot`.
 
 .. code-block:: ipython3
 
     frot = oim.oimFastRotator(dpole=5, dim=128, incl=-50,rot=0.99, Tpole=20000, beta=0.25,pa=20)
     mfrot = oim.oimModel(frot)
 
-Finally, the last one is an output from the radiative transfer code  `RADMC3D <https://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ simulating the inner part of a dusty disk around the B[e] star FS CMa.
-The simulation was made from 1.5 to 13μm. and the output was saved as a chromatic image-cube in the fits  format with proper axes descruibed in the header (size of pixel in x, y and wavelength). We use the  :func:`oimComponentFitsImage <oimodeler..oimComponents.oimComponentFitsImage>` class to load the image as a image-components. 
+Finally, the last one is an output from the radiative transfer code  `RADMC3D <https://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_
+simulating the inner part of a dusty disk around the B[e] star FS CMa.
+The simulation was made from 1.5 to 13μm. and the output was saved as a chromatic image-cube in the fits format with proper axes descruibed
+in the header (size of pixel in x, y and wavelength). We use the :func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>`
+class described in the next section to load the image as a image-components.
 
 .. code-block:: ipython3
 
@@ -442,23 +450,421 @@ The simulation was made from 1.5 to 13μm. and the output was saved as a chromat
     radmc3D = oim.oimComponentFitsImage(radmc3D_fname,pa=180)
     mradmc3D = oim.oimModel(radmc3D)
 
-For more information on using fits images in oimodeler, read the next section.
 
-.. image:: ../../images/componentImages_images.png
-  :alt: Alternative text 
+Unlike when using Fourier-based components, the determination of the complex coherent flux (and the other interferometric observables) from an image
+requires the computation of the image Fourier Transform (FT) at the spatial frequency (and optionnally spectral and time) coordinates of the data.
 
-Unlike when using
+In **oimodeler** such computation relies on the :func:`oimFTBackends <oimodeler.oimFTBackends>`module which contains various algorithms to compute
+the Fourier trasnform. Currently implemented are the following:
+
+.. csv-table:: Available Fourier Transform Backends
+   :file: table_ftbackends.csv
+   :header-rows: 1
+   :delim: |
+   :widths: auto
+
+By default the standard numpy FFT backend will be used.
+
+The FFTW backend which is significantly faster  can be actived if `pyFFTW <https://pypi.org/project/pyFFTW/>`_ is installed on your system.
+
+To check which backend is available on your installation, type
+
+.. code-block:: ipython3
+
+    print(oim.oimOptions.ft.backend.available)
+
+.. parsed-literal::
+
+    [<class 'oimodeler.oimFTBackends.numpyFFTBackend'>,
+     <class 'oimodeler.oimFTBackends.FFTWBackend'>]
+
+The current FT backend is given by :
+
+.. code-block:: ipython3
+
+    print(oim.oimOptions.ft.backend.active)
+
+.. parsed-literal::
+
+    <class 'oimodeler.oimFTBackends.numpyFFTBackend'>
+
+To change it you can modify directly  :func:`oimOptions <oimodeler.oimOptions>` namespace:
+
+.. code-block:: ipython3
+
+    oim.oimOptions.ft.backend.active = oim.FFTWBackend
+
+Or you can use the FT backend alias with the function :func:`setFTBackend <oimodeler.oimFTBackends.setFTBackend>`
+
+.. code-block:: ipython3
+
+    oim.setFTBackend("fftw")
+
+The FFT backends is significantly faster than a normal DFT, but its precision depends on the zero-padding of the image.
+
+The default zero padding factor is set to 4 which means the the the image will be zero-padded in a four times bigger array (rounded to the closest power of 2).
+
+The user can access and change the zero paddingusing the oimOptions namespace :
+
+.. code-block:: ipython3
+
+    oim.oimOptions.ft.padding = 8
+
+Depending on the sharpness of the object image and its cropping reducing the zero-paddingh might lead to important errors.
+
+Here is an illustration of the accuracy of the FFT as the function of the padding factor using using the spiral component.
+
+.. code-block:: ipython3
+
+    #creating the spiral model
+    spiral = oim.oimSpiral(dim=256, fwhm=20, P=0.1, width=0.2, pa=30, elong=2)
+    spiral._pixSize*=4
+    mspiral = oim.oimModel(spiral)
+
+    wl = 2.1e-6
+    B = np.linspace(0.0, 300, num=200)
+    spf = B/wl
+
+    #computing the reference model with padding of 64
+    oim.oimOptions.ft.padding = 64
+    ccf01 = mspiral.getComplexCoherentFlux(spf, spf*0)
+    v01 = np.abs(ccf01/ccf01[0])
+    ccf02 = mspiral.getComplexCoherentFlux(spf*0, spf)
+    v02 = np.abs(ccf02/ccf02[0])
+
+    #computing FFT with different padding
+    figpad,axpad = plt.subplots(2,2, figsize=(10,5),sharey="row",sharex=True)
+
+    padding=[1,2,4,8,16]
+    for pi in padding :
+
+        oim.oimOptions.ft.padding = pi
+        ccf1 = mspiral.getComplexCoherentFlux(spf, spf*0)
+        v1 = np.abs(ccf1/ccf1[0])
+        start = time.time()
+        ccf2 = mspiral.getComplexCoherentFlux(spf*0, spf)
+        v2 = np.abs(ccf2/ccf2[0])
+        end = time.time()
+        dt = end -start
+
+        axpad[0,0].plot(spf, v1)
+        axpad[0,1].plot(spf, v2,label=f"padding={pi}x ({dt*1000:.0f}ms)")
+        axpad[1,0].plot(spf, (v1-v01)/v01*100,marker=".",ls="")
+        axpad[1,1].plot(spf, (v2-v02)/v02*100,marker=".",ls="")
+
+        for i in range(2):
+            axpad[1,i].set_xlabel("spatial frequency (cycles/rad)")
+            axpad[1,i].set_yscale("symlog")
+
+    axpad[0,0].set_title("East-West baselines")
+    axpad[0,1].set_title("North-South baselines")
+    axpad[0,0].set_ylabel("Visbility")
+    axpad[0,1].legend()
+    axpad[1,0].set_ylabel("Residual (%)")
+
+
+.. image:: ../../images/componentImages_padding.png
+  :alt: Alternative text
+
+.. note::
+    FFT computation time grows like :math:`n log(n)`, where n is the number of pixels in the image so the padding reduce
+    significantly the computation of the model (see the example above)
+
+Loading fits images
+-------------------
+One special and very useful image based component is the
+:func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>` that allows the loading precomputed images
+and use them as normal **oimodeler** components.
+
+In this example, we will use a semi-physical model for a classical Be star and its circumstellar disk. The model,
+detailed in `Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_ was taken from the
+`AMHRA <https://amhra.oca.eu/AMHRA/disco-gas/input.htm>`_ service of the JMMC.
+
+.. note::
+
+    AMHRA develops and provides various astrophysical models online, dedicated to the
+    scientific exploitation of high-angular and high-spectral facilities.
+
+    Currently available models are:
+
+    - Semi-physical gaseous disk of classical Be stars and dusty
+      disk of YSO.
+    - Red-supergiant and AGB.
+    - Binary spiral for WR stars.
+    - Physical limb darkening models.
+    - Kinematics gaseous disks.
+    - A grid of supergiant B[e] stars models.
+
+The fits-formatted image-cube ``BeDisco.fits`` that we will use is located in the ``examples/basicExamples`` directory.
+
+There are two ways to load a fits image into a :func:`oimComponentFitsImage <oimodeler.oimComponentFourier.oimComponentFitsImage>`
+object. The first one is to open the fits file using the ``astropy.io.fits`` module of the ``astropy`` package and then
+passing it to the :func:`oimComponentFitsImage <oimodeler.oimBasicFourierComponents.oimComponentFitsImage>` class.
+
+.. code-block:: ipython3
+
+    im = fits.open(file_name)
+    c = oim.oimComponentFitsImage(im)
+
+
+A simplier way, if the user doesn’t need to directly access the content of ``im``, is to pass the filename to the
+:func:`oimComponentFitsImage <oimodeler.oimBasicFourierComponents.oimComponentFitsImage>` class.
+
+.. code-block:: ipython3
+
+    c = oim.oimComponentFitsImage(file_name)
+
+Finally, we can build our model with this unique component and plot the model image with an arbitrary pixel
+size and dimension:
+
+.. code-block:: ipython3
+
+    m = oim.oimModel(c)
+    m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot")
+
+.. image:: ../../images/FitsImage_Disco_image.png
+  :alt: Alternative text
+
+.. note::
+
+    Although the image was computed for a specific wavelength (i.e., 1.5 microns),
+    our model is achromatic as we use a single image to generate it. We will discuss the chromatic image cube later
+    is this section.
 
 
 
-Fits images component
----------------------
+We now create spatial frequencies for a thousand baselines ranging from 0 to 120 m,
+in the North-South and East-West orientation and at an observing wavlength of 1.5 microns.
+
+.. code-block:: ipython3
+
+   wl, nB = 1.5e-6, 1000
+   B = np.linspace(0, 120, num=nB)
+
+   spfx = np.append(B, B*0)/wl # 1st half of B array are baseline in the East-West orientation
+   spfy = np.append(B*0, B)/wl # 2nd half are baseline in the North-South orientation
+
+
+We compute the complex coherent flux and then the absolute visibility
+
+.. code-block:: ipython3
+
+   ccf = m.getComplexCoherentFlux(spfx, spfy)
+   v = np.abs(ccf)
+   v = v/v.max()
+
+and, finally, we can plot our results:
+
+.. code-block:: ipython3
+
+    plt.figure()
+    plt.plot(B , v[0:nB],label="East-West")
+    plt.plot(B , v[nB:],label="North-South")
+    plt.xlabel("B (m)")
+    plt.ylabel("Visbility")
+    plt.legend()
+    plt.margins(0)
+
+.. image:: ../../images/FitsImage_Disco_visibility.png
+  :alt: Alternative text
+
+Let's now have a look at the model's parameters:
+
+.. code-block:: ipython3
+
+    pprint(m.getParameters())
+
+.. code-block::
+
+    ... {'c1_Fits_Comp_dim': oimParam at 0x19c6201c820 : dim=128 ± 0  range=[1,inf] free=False ,
+         'c1_Fits_Comp_f': oimParam at 0x19c6201c760 : f=1 ± 0  range=[0,1] free=True ,
+         'c1_Fits_Comp_pa': oimParam at 0x19c00b9bbb0 : pa=0 ± 0 deg range=[-180,180] free=True ,
+         'c1_Fits_Comp_scale': oimParam at 0x19c6201c9d0 : scale=1 ± 0  range=[-inf,inf] free=True ,
+         'c1_Fits_Comp_x': oimParam at 0x19c6201c6a0 : x=0 ± 0 mas range=[-inf,inf] free=False ,
+         'c1_Fits_Comp_y': oimParam at 0x19c6201c640 : y=0 ± 0 mas range=[-inf,inf] free=False }
+
+
+In addition to the `x`, `y`, and `f` parameters, common to all components,
+the
+:func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>`
+have three additional parameters:
+
+* `dim`: The fixed size of the internal fits image (currently only square images are
+  compatible).
+* `pa`: The position of angle of the component (used for rotating the component).
+* `scale`: A scaling factor for the component.
+
+The position angle `pa` and the `scale` are both free parameters (as default) and
+can be used for model fitting.
+
+Let's try to rotate and scale our model and plot the image again.
+
+.. code-block:: ipython3
+
+    c.params['pa'].value = 45
+    c.params['scale'].value = 2
+    m.showModel(256, 0.04, legend=True, normPow=0.4, colorbar=False)
+
+
+.. image:: ../../images/FitsImage_Disco_image2.png
+  :alt: Alternative text
+
+
+The :func:`oimComponentFitsImage <oimodeler.oimBasicFourierComponents.oimComponentFitsImage>`
+can be combined with any kind of other component. Let's add a companion
+(i.e., uniform disk) for our Be star model.
+
+.. code-block:: ipython3
+
+    c2 = oim.oimUD(x=20, d=1, f=0.03)
+    m2 = oim.oimModel(c, c2)
+
+
+We add a 1 mas companion located at 20 mas East of the central object with a flux
+of 0.03. We can now plot the image of our new model.
+
+.. code-block:: ipython3
+
+    m2.showModel(256, 0.2, legend=True, normalize=True, fromFT=True, normPow=1, cmap="hot")
+
+
+.. image:: ../../images/FitsImage_Disco_image3.png
+  :alt: Alternative text
+
+
+To finish this example, let's plot the visibility along North-South and East-West
+baseline for our binary Be-star model.
+
+.. code-block:: ipython3
+
+    ccf = m2.getComplexCoherentFlux(spfx, spfy)
+    v = np.abs(ccf)
+    v = v/v.max()
+
+    plt.figure()
+    plt.plot(B, v[0:nB], label="East-West")
+    plt.plot(B, v[nB:], label="North-South")
+    plt.xlabel("B (m)")
+    plt.ylabel("Visbility")
+    plt.legend()
+    plt.margins(0)
+
+
+.. image:: ../../images/FitsImage_Disco_visibility2.png
+  :alt: Alternative text
+
+Using precomputed chromatic image-cube
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` can als obe used to load chromatic
+image-cubes in the fits format.
+
+In this example we will use a chromatic image-cube computed around the
+:math:`Br\,\gamma` emission line for a classical Be Star circumstellar disk. The model,
+detailed in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
+was taken form the `AMHRA <https://amhra.oca.eu/AMHRA/bedisk/input.htm>`_ service of the JMMC.
+
+The fits-formatted image-cube we will use, `KinematicsBeDiskModel.fits`, is located in the `./examples/AdvancedExamples`
+directory.
+
+.. code-block:: python
+
+    path = Path(__file__).parent.parent.parent
+    file_name = path / "examples" / "AdvancedExamples" / "KinematicsBeDiskModel.fits"
+
+
+We build our model using a single component of the type
+:func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` which
+allows to load fits images or image-cubes.
+
+.. code-block:: python
+
+    c = oim.oimComponentFitsImage(file_name)
+    m = oim.oimModel(c)
+
+
+We can now plot images of the model through the :math:`Br\gamma` emission line
+(21661 :math:`\mu` m).
+
+.. code-block:: python
+
+    wl0, dwl, nwl = 2.1661e-6, 60e-10, 5
+    wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
+    m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4, colorbar=False,
+                figsize=(2, 2.5),
+                savefig=save_dir / "FitsImageCube_BeDiskKinematicsModel_images.png")
+
+
+.. image:: ../../images/FitsImageCube_BeDiskKinematicsModel_images.png
+  :alt: Alternative text
+
+
+We now compute the visibility for a series of North-South and East-West baselines ranging
+between 0 and 100m and with the wavelength ranging through the emission line.
+
+.. code-block:: python
+
+    nB = 1000
+    nwl = 51
+    wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
+
+    B = np.linspace(0, 100, num=nB//2)
+
+    # 1st half of B array are baseline in the East-West orientation
+    Bx = np.append(B, B*0)
+    By = np.append(B*0, B)  # 2nd half are baseline in the North-South orientation
+
+    Bx_arr = np.tile(Bx[None, :], (nwl, 1)).flatten()
+    By_arr = np.tile(By[None, :], (nwl,  1)).flatten()
+    wl_arr = np.tile(wl[:, None], (1, nB)).flatten()
+
+    spfx_arr = Bx_arr/wl_arr
+    spfy_arr = By_arr/wl_arr
+
+    vc = m.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr)
+    v = np.abs(vc.reshape(nwl, nB))
+    v = v/np.tile(v[:, 0][:, None], (1, nB))
+
+
+Finally, we plot the results as a function of the wavelength and with a colorscale
+in terms of the baseline length.
+
+.. code-block:: python
+
+    fig, ax = plt.subplots(1, 2, figsize=(8, 4))
+    titles = ["East-West Baselines", "North-South Baselines"]
+
+    for iB in range(nB):
+        cB = (iB % (nB//2))/(nB//2-1)
+        ax[2*iB//nB].plot(wl*1e9, v[:, iB],
+                          color=plt.cm.plasma(cB))
+
+    for i in range(2):
+        ax[i].set_title(titles[i])
+        ax[i].set_xlabel(r"$\lambda$ (nm)")
+    ax[0].set_ylabel("Visibility")
+    ax[1].get_yaxis().set_visible(False)
+
+    norm = colors.Normalize(vmin=np.min(B), vmax=np.max(B))
+    sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
+    fig.colorbar(sm, ax=ax, label="B (m)")
+
+
+.. image:: ../../images/FitsImageCube_BeDiskKinematicsModel_visibility.png
+  :alt: Alternative text
+
+
+As expected, for a rotating disk (see `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
+for more details), the visibility for the baselines along the major-axis show a W-shaped
+profile through the line, whereas the visibliity along the minor-axis of the disk show
+a V-shaped profile.
+
 
 Radial-Profile components
 -------------------------
 
 .. csv-table:: Available radial profile components
-   :file: table_components_radial.csv
+   :file: table_ftbackends.csv
    :header-rows: 1  
    :delim: |
    :widths: auto

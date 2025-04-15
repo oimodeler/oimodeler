@@ -28,9 +28,9 @@ try:
     test_array = pyfftw.empty_aligned(100, dtype="complex128")
     fft_object = pyfftw.FFTW(test_array, test_array, axes=(0,))
     transformed = fft_object(test_array)
-    oimOptions.ft.fftw.initialized = False
+    oimOptions.ft.fftw.initialized = True
 except Exception:
-    pass
+    oimOptions.ft.fftw.initialized = False
 
 
 class numpyFFTBackend:
@@ -337,6 +337,25 @@ class FFTWBackend:
 
 # NOTE: Set the FFT backends
 oimOptions.ft.backend.active = numpyFFTBackend
+
+oimOptions.ft.backend.dict={"numpyfft":numpyFFTBackend}
 oimOptions.ft.backend.available = [numpyFFTBackend]
 if oimOptions.ft.fftw.initialized:
     oimOptions.ft.backend.available.append(FFTWBackend)
+    oimOptions.ft.backend.names=["numpyfft"]
+    oimOptions.ft.backend.dict["fftw"]=FFTWBackend
+
+def setFTBackend(nameOrObj):
+    if type(nameOrObj)==str:
+        try:
+            oimOptions.ft.backend.active = oimOptions.ft.backend.dict[nameOrObj]
+        except:
+            names="\n".join(list(oimOptions.ft.backend.dict.keys()))
+            raise NameError (f"No FT backends named {nameOrObj} available. \nChoose between\n{names}")
+        
+    else:
+        try:
+            oimOptions.ft.backend.active = nameOrObj
+        except:
+            raise TypeError (f"No object name {nameOrObj}")
+    

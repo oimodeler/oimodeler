@@ -253,6 +253,9 @@ of East-West and North-South baselines and wavelengths in the K-band.
 
 Of course, only the third model is chromatic.
 
+
+.. _fastrot:
+
 Image-plane component from external code (Fast Rotator)
 -------------------------------------------------------
 
@@ -570,6 +573,7 @@ And finally, we produce the same plots as before for this new complex model.
 .. image:: ../../images/customCompImageFastRotatorVis2.png
   :alt: Alternative text
 
+.. _spiral:
 
 Image plane component from simple formula (Spiral)
 --------------------------------------------------
