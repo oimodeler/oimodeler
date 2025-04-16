@@ -632,8 +632,8 @@ described in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26
     - Kinematics gaseous disks.
     - A grid of supergiant B[e] stars models.
 
-DISCO Monochromatic image in the H band
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Monochromatic image
+~~~~~~~~~~~~~~~~~~~
 
 The fits-formatted image ``BeDisco.fits`` that we will use is located in **oimodeler** ``data\IMAGES`` directory.
 
@@ -822,8 +822,8 @@ baseline for our binary Be-star model.
 .. image:: ../../images/FitsImage_Disco_visibility2.png
   :alt: Alternative text
 
-Using precomputed chromatic image-cube
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using a chromatic image-cube
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` can als obe used to load chromatic
 image-cubes in the fits format.
