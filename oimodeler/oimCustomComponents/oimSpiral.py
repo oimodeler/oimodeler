@@ -32,8 +32,7 @@ class oimSpiral(oimComponentImage):
             description="Width as filling factor",
             unit=units.one)
 
-        self._pixSize = None #
-
+        self.pixSize=0.3
         self._t = np.array([0])  # constant value <=> static model
         self._wl = np.array([0])  # constant value <=> achromatic model
 
@@ -52,6 +51,12 @@ class oimSpiral(oimComponentImage):
 
         im = 1 + np.cos(-phi - 2 * np.pi * np.log(r / p + 1))
         im = (im < 2 * w) * np.exp(-(r**2) / (2 * sig**2))
-        
+        #im =np.exp(-(r**2) / (2 * sig**2))
         
         return im
+
+    def getPixelSize(self):
+        fwhm = self.params["fwhm"]()
+        dim  = self.params["dim"]()
+        return 2*fwhm/dim*units.mas.to(units.rad)
+         
