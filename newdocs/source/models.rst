@@ -474,7 +474,6 @@ class described in the next section to load the image as a image-components.
     radmc3D = oim.oimComponentFitsImage(radmc3D_fname,pa=180)
     mradmc3D = oim.oimModel(radmc3D)
 
-
 Unlike when using Fourier-based components, the determination of the complex coherent flux (and the other interferometric observables) from an image
 requires the computation of the image Fourier Transform (FT) at the spatial frequency (and optionnally spectral and time) coordinates of the data.
 
@@ -591,14 +590,18 @@ Here is a ample script illustrating the accuracy of the FFT as the function of t
 .. image:: ../../images/componentImages_padding.png
   :alt: Alternative text
 
-.. note::
-    FFT computation time grows like :math:`n log(n)`, where n is the number of pixels in the image so the padding reduce
-    significantly the computation of the model (see the example above)
-
 In the case of the :func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oimSpiral>` component, reducing the
 zero-padding below the default value of 4 leads to mean errors of the order of 30% (with values up to 500%). The default
-padding reduce mean errors to a few precents (with maximum up to 10%).
+padding reduce mean errors to a few percents (with maximum of the order of 10%).
 
+However, as the FFT computation time grows like :math:`n log(n)`, where n is the number of pixels in the image,
+increasing the padding increase significantly the computation time of the model (see the example above).
+
+Another way to reduce the computation time of the FFT (and the DFT) is to reduce the size of the image and increase the
+pixel size of the image while keeping the field of view fixed.
+
+Finally, when dealing with image-component, the user show determine the good trade-off between image resolution and size,
+zero-padding and computation time.
 
 Loading fits images
 -------------------
@@ -606,16 +609,20 @@ One special and very useful image based component is the
 :func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>` that allows the loading precomputed images
 and use them as normal **oimodeler** components.
 
-In this example, we will use a semi-physical model for a classical Be star and its circumstellar disk. The model,
-detailed in `Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_ was taken from the
-`AMHRA <https://amhra.oca.eu/AMHRA/disco-gas/input.htm>`_ service of the JMMC.
+To illustrate the functionalities of this component we will use two fits files representing a classical Be star
+and its circumstellar disk:
+
+1. a H-band continuum image generated using the DISCO semi-physical code as described in
+`Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_
+
+2. a chromatic image-cube computed around the :math:`Br\,\gamma` emission line using the Kinematic Be disk model as
+described in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
 
 .. note::
+    Both models were generated using the `AMHRA <https://amhra.oca.eu/AMHRA/disco-gas/input.htm>`_ service of the JMMC.
 
     AMHRA develops and provides various astrophysical models online, dedicated to the
-    scientific exploitation of high-angular and high-spectral facilities.
-
-    Currently available models are:
+    scientific exploitation of high-angular and high-spectral facilities. Currently available models are:
 
     - Semi-physical gaseous disk of classical Be stars and dusty
       disk of YSO.
@@ -625,27 +632,30 @@ detailed in `Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.4
     - Kinematics gaseous disks.
     - A grid of supergiant B[e] stars models.
 
-The fits-formatted image-cube ``BeDisco.fits`` that we will use is located in the ``examples/basicExamples`` directory.
+DISCO Monochromatic image in the H band
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are two ways to load a fits image into a :func:`oimComponentFitsImage <oimodeler.oimComponentFourier.oimComponentFitsImage>`
-object. The first one is to open the fits file using the ``astropy.io.fits`` module of the ``astropy`` package and then
-passing it to the :func:`oimComponentFitsImage <oimodeler.oimBasicFourierComponents.oimComponentFitsImage>` class.
+The fits-formatted image ``BeDisco.fits`` that we will use is located in **oimodeler** ``data\IMAGES`` directory.
+
+There are two ways to load a fits image into a
+:func:`oimComponentFitsImage <oimodeler.oimComponentFourier.oimComponentFitsImage>` object. The first one is to open
+the fits file using the ``astropy.io.fits`` module of the ``astropy`` package and then passing it to the
+:func:`oimComponentFitsImage <oimodeler.oimBasicFourierComponents.oimComponentFitsImage>` class.
 
 .. code-block:: ipython3
 
     im = fits.open(file_name)
     c = oim.oimComponentFitsImage(im)
 
-
-A simplier way, if the user doesn’t need to directly access the content of ``im``, is to pass the filename to the
-:func:`oimComponentFitsImage <oimodeler.oimBasicFourierComponents.oimComponentFitsImage>` class.
+However, if the user doesn’t need to directly access the content of the image, the filename can be passed directly to
+the :func:`oimComponentFitsImage <oimodeler.oimBasicFourierComponents.oimComponentFitsImage>` class.
 
 .. code-block:: ipython3
 
     c = oim.oimComponentFitsImage(file_name)
 
-Finally, we can build our model with this unique component and plot the model image with an arbitrary pixel
-size and dimension:
+Finally, we can build our model with this unique component and plot the model image with an arbitrary pixel size and
+dimension:
 
 .. code-block:: ipython3
 
@@ -655,11 +665,40 @@ size and dimension:
 .. image:: ../../images/FitsImage_Disco_image.png
   :alt: Alternative text
 
-.. note::
+When using the image-component, the image shown by the :func:`showModel <oimodeler.oimModel.oimModel.showModel>`
+method is interpolated and crop or zero-padded depending on the internal image dimension and pixel size and the
+dimension and pixel size used in the :func:`showModel <oimodeler.oimModel.oimModel.showModel>` method.
 
-    Although the image was computed for a specific wavelength (i.e., 1.5 microns),
-    our model is achromatic as we use a single image to generate it. We will discuss the chromatic image cube later
-    is this section.
+One can retrieve the component internal image (the one loaded from the fits file) using the ._internalImage() function
+
+.. code-block:: ipython3
+
+    im_disco = cdisco._internalImage()
+    print(im_disco.shape)
+
+.. parsed-literal::
+
+    (1, 1, 256, 256)
+
+The first two dimensions are the time and the wavelength but they are 1 as our model is static and grey.
+
+.. note::
+    The internal image can be modify that way if needed.
+
+The internal pixel size in rad can also be retrieved using the ```_pixSize`` variable. This can be used to plot the
+image using the showModel method without rescaling. Here we use astropy.units to convert the radians in mas.
+
+.. code-block:: ipython3
+
+    import astropy.units as u
+    pixSize = cdisco._pixSize*u.rad.to(u.mas)
+    dim = im_disco.shape[-1]
+    mdisco.showModel(dim, pixSize, legend=True, normalize=True, normPow=1, cmap="hot")
+
+
+.. image:: ../../images/FitsImage_Disco_internal_image.png
+  :alt: Alternative text
+
 
 
 

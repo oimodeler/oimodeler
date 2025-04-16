@@ -69,7 +69,7 @@ mspiral = oim.oimModel(spiral)
 
 #creating a set of baselines from 0 to 100m in K band
 wl = 2.1e-6
-B = np.linspace(0, 100, num=200)
+B = np.linspace(0, 100, num=1000)
 spf = B/wl
 
 #computing the reference model with padding of 32
@@ -102,9 +102,10 @@ for pi in padding :
     dt = end -start
     axpad[0,0].plot(spf, v1)
     axpad[0,1].plot(spf, v2,label=f"padding={pi}x ({dt*1000:.0f}ms)")
-    axpad[1,0].plot(spf, (v1-v01)/v01*100,marker=".",ls="")
-    axpad[1,1].plot(spf, (v2-v02)/v02*100,marker=".",ls="")  
+    axpad[1,0].plot(spf, (v1-v01)/v01*100)
+    axpad[1,1].plot(spf, (v2-v02)/v02*100)
     
+
 
 
 for i in range(2):
@@ -119,22 +120,34 @@ axpad[1,0].set_ylabel("Residual (%)")
 
 
 figpad.savefig(save_dir / "componentImages_padding.png")
-
+oim.oimOptions.ft.padding = 4
 #%% The oimFitImageComponent
 
 file_name = path / "data" / "BeDISCO.fits"
 im = fits.open(file_name)
 
 # load image from an opened astropy.io.primaryHDU
-c = oim.oimComponentFitsImage(im)
+cdisco = oim.oimComponentFitsImage(im)
 
-# c=oim.oimComponentFitsImage(filename) # load image from a valid filename of fits file
-m = oim.oimModel(c)
+# load image from a valid filename of fits file
+# cdisco=oim.oimComponentFitsImage(filename)
+mdisco = oim.oimModel(cdisco)
 
 
 # %% Plotting the model image
-m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", 
+mdisco.showModel(512, 0.1, legend=True, normalize=True, normPow=1, cmap="hot", 
             figsize=(7, 5.5),savefig=save_dir / "FitsImage_Disco_image.png")
+
+#%%
+im_disco = cdisco._internalImage()
+print(im_disco.shape)
+
+#%%
+import astropy.units as u
+pixSize = cdisco._pixSize*u.rad.to(u.mas)
+dim = im_disco.shape[-1]
+mdisco.showModel(dim, pixSize, legend=True, normalize=True, normPow=1, cmap="hot", 
+            figsize=(7, 5.5),savefig=save_dir / "FitsImage_Disco_internal_image.png")
 
 #%% Create some spatial frequencies (Baselines from 0 to 120m at 1.5 microns)
 wl, nB = 1.5e-6, 1000
@@ -146,7 +159,7 @@ spfx = np.append(B, B*0)/wl
 spfy = np.append(B*0, B)/wl
 
 
-ccf = m.getComplexCoherentFlux(spfx, spfy)
+ccf = mdisco.getComplexCoherentFlux(spfx, spfy)
 v = np.abs(ccf)
 v = v/v.max()
 
@@ -162,25 +175,25 @@ plt.savefig(save_dir / "FitsImage_Disco_visibility.png")
 #plt.close()
 
 # %%
-pprint(m.getParameters())
+pprint(mdisco.getParameters())
 
 # %% scaling and rotating
-c.params['pa'].value = 40
-c.params['scale'].value = 0.8
+cdisco.params['pa'].value = 40
+cdisco.params['scale'].value = 0.8
 
-m.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", 
+mdisco.showModel(512, 0.05, legend=True, normalize=True, normPow=1, cmap="hot", 
             figsize=(7, 5.5),savefig=save_dir / "FitsImage_Disco_image2.png")
 
 # %%Adding a companion
 
-c2 = oim.oimUD(x=20, d=1, f=0.03)
-m2 = oim.oimModel(c, c2)
+cud = oim.oimUD(x=20, d=1, f=0.03)
+mdisco_ud = oim.oimModel(cdisco, cud)
 
-m2.showModel(512, 0.1, legend=True, normalize=True, fromFT=True, normPow=1,
+mdisco_ud.showModel(512, 0.1, legend=True, normalize=True, fromFT=True, normPow=1,
              cmap="hot", savefig=save_dir / "FitsImage_Disco_image3.png")
 
 # %%
-ccf = m2.getComplexCoherentFlux(spfx, spfy)
+ccf = mdisco_ud.getComplexCoherentFlux(spfx, spfy)
 v = np.abs(ccf)
 v = v/v.max()
 
