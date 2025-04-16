@@ -191,6 +191,8 @@ class oimParamNorm:
     def __init__(self, params, norm=1):
         if not isinstance(params, list):
             self.params = [params]
+        else:
+            self.params = params
 
         self.norm = norm
         self.free = False

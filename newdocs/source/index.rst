@@ -18,7 +18,7 @@ Components or model parameters can be chromatic and/or time dependent.
 
 The software is modular and object oriented, in order to make it easy to expand it by creating new model components or other features from abstract classes.
 
-**oiomdeler** was first presented at the 2024 SPIE conference in Yokohama (see our paper on
+**oiomdeler** was presented at the 2024 SPIE conference in Yokohama (paper on
 (`HAL <https://cnrs.hal.science/hal-04797236>`_, `ADS <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/abstract>`_, `BibTeX <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/exportcitation>`_).
 
 

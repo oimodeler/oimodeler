@@ -373,9 +373,13 @@ class oimComponentImage(oimComponent):
 
         if oimOptions.ft.binning is not None:
             im = rebin_image(im, oimOptions.ft.binning)
-
+ 
         im = pad_image(im)
-        pix = self._pixSize
+        
+        if self._pixSize!=0 :
+            pix = self._pixSize
+        else:
+            pix = self.getPixelSize()
 
         tr = self._ftTranslateFactor(
             ucoord, vcoord, wl, t
@@ -531,7 +535,15 @@ class oimComponentImage(oimComponent):
 
         dim = self.params["dim"](wl, t)
 
-        pix = self._pixSize * units.rad.to(units.mas)
+        
+        #pix = self._pixSize * units.rad.to(units.mas)
+        
+        if self._pixSize!=0 :
+            pix = self._pixSize* units.rad.to(units.mas)
+        else:
+            pix = self.getPixelSize()* units.rad.to(units.mas)
+        
+        
         v = np.linspace(-0.5, 0.5, dim)
         xy = v * pix * dim
 
@@ -559,9 +571,9 @@ class oimComponentImage(oimComponent):
             else:
                 return t_arr, wl_arr, x_arr, y_arr
 
-        def setPixelSize(self):
-            return raise ValueError("setPixelSize Method not" \
-                                    "implemented while self._pixSize = None")
+    def getPixelSize(self):
+        raise ValueError("setPixelSize Method not implemented"
+                         " while self._pixSize = None")
 
 class oimComponentRadialProfile(oimComponent):
     """Base class for components define by their radial profile"""
