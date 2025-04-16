@@ -246,11 +246,12 @@ class oimSimulator:
 
             return fig
     
-    def plot(self, arr, simulated=True, savefig=None, visLog=False,xunit="cycle/rad", 
+    def plot(self, arr, simulated=True, savefig=None, visLog=False, xaxis="SPAFREQ",
+             xunit="cycle/rad", cname = "EFF_WAVE", cunit="micron", cmap="coolwarm",
              kwargsData={}, kwargsSimulatedData={}):
         # NOTE: Plotting  data and simulated data
-        kwargsData0 = dict(cname="EFF_WAVE", cunit="micron", lw=2,
-                           cmap="coolwarm", errorbar=True, label="data")
+        kwargsData0 = dict(cname=cname, cunit=cunit, lw=2,
+                           cmap=cmap, errorbar=True, label="data")
         
         kwargsSimulatedData0 = dict(color="k", ls=":", lw=1, label="model")
         
@@ -282,12 +283,12 @@ class oimSimulator:
         for iax, axi in enumerate(ax):
             # NOTE: Plotting the data with wavelength colorscale + errorbars vs
             # spatial frequencies
-            scale = axi.oiplot(self.data.data, "SPAFREQ", arr[iax],
+            scale = axi.oiplot(self.data.data, xaxis, arr[iax],
                                xunit=xunit, showColorbar=False, **kwargsData)
 
             # NOTE: Over-plotting the simulated data as a dotted line vs spatial
             # frequencies
-            axi.oiplot(self.simulatedData.data, "SPAFREQ", arr[iax],
+            axi.oiplot(self.simulatedData.data, xaxis, arr[iax],
                        xunit=xunit, **kwargsSimulatedData)
 
             if axi != ax[-1]:
