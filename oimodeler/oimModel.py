@@ -14,7 +14,7 @@ from numpy.typing import ArrayLike
 
 from .oimComponent import oimComponent
 from .oimParam import oimParam, oimParamLinker, oimParamInterpolator, oimParamNorm
-from .oimUtils import rebin_image
+from .oimUtils import rebin_image,pad_image
 
 
 class oimModel:
@@ -129,6 +129,7 @@ class oimModel:
                  t: Optional[Union[float, ArrayLike]] = None,
                  toFits: Optional[bool] = False,
                  fromFT: Optional[bool] = False,
+                 padFact: Optional[int] = 1,
                  squeeze: Optional[bool] = True,
                  normalize: Optional[bool] = False) -> Union[np.ndarray, PrimaryHDU]:
         """Compute and return an image or and image cube (if wavelength and time
@@ -154,6 +155,9 @@ class oimModel:
         fromFT : bool, optional
             If True compute the image using FT formula when available.
             The default is False.
+        padFact : int, optional
+            Padding factor for image computed using the fromFT=True option
+            The default is 1 (no padding)
         squeeze : bool, optional
             If False returns a (nt,nwl,dim,dim) array even if nt and/or nwl equal 1.
             The default is True.
@@ -178,22 +182,28 @@ class oimModel:
         dims = (nt, nwl, dim, dim)
 
         # TODO: The from FFT is not good for all functions
+        
+        dimpad= dim*padFact
+        dimspad = (nt, nwl, dimpad, dimpad)
         if fromFT:
-            v = np.linspace(-0.5, 0.5, dim)
+            v = np.linspace(-0.5*padFact, 0.5*padFact, dimpad)
             vx, vy = np.meshgrid(v, v)
 
             vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
             vy_arr = np.tile(vy[None, None, :, :], (nt, nwl, 1, 1))
-            wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
-            t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
+            wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dimpad, dimpad))
+            t_arr = np.tile(t[:, None, None, None], (1, nwl, dimpad, dimpad))
 
             spfx_arr = (vx_arr/pixSize/u.mas.to(u.rad)).flatten()
             spfy_arr = (vy_arr/pixSize/u.mas.to(u.rad)).flatten()
             wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
 
-            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
+            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dimspad)
             image = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(
                 ft, axes=[-2, -1]), axes=[-2, -1]), axes=[-2, -1]))
+            #odd = dim % 2
+            #image = image[:,:,dimpad//2-dim//2:dimpad//2+dim//2+odd,dimpad//2-dim//2:dimpad//2+dim//2+odd]
+            image =  image.reshape((nt,nwl,dim,padFact,dim,padFact)).sum(axis=(-1,-3))
         else:
             image = np.zeros(dims)
             for component in self.components:
@@ -294,6 +304,7 @@ class oimModel:
                   wl: Optional[Union[int, ArrayLike]] = None,
                   t: Optional[Union[int, ArrayLike]] = None,
                   fromFT: Optional[bool] = False,
+                  padFact: Optional[int] = 1,
                   axe: Optional[Axes] = None,
                   normPow: Optional[float] = 0.5,
                   figsize: Optional[Tuple[float]] = (3.5, 2.5),
@@ -320,6 +331,9 @@ class oimModel:
         fromFT : bool, optional
             If True compute the image using FT formula when available.
             The default is False.
+        padFact : int, optional
+            Padding factor for image computed using the fromFT=True option
+            The default is 1 (no padding)
         axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
             will be created. The default is None.
@@ -355,7 +369,7 @@ class oimModel:
         im  : numpy.array
             The image(s).
         """
-        im = self.getImage(dim, pixSize, wl, t, fromFT=fromFT,
+        im = self.getImage(dim, pixSize, wl, t, fromFT=fromFT,padFact=padFact,
                            squeeze=False, normalize=normalize)
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
 

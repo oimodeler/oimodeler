@@ -228,6 +228,12 @@ class oimComponent:
         x = x - self.params["x"](wl, t)
         y = y - self.params["y"](wl, t)
         return x, y
+    
+    def getNonRegularImage(self, xx, yy, wl=None, t=None):
+        """ Compute and return a non-regular image function at the xx, yy and 
+        optional wl and t coordinates)"""
+    
+        return 0*xx
 
 
 class oimComponentFourier(oimComponent):
@@ -329,6 +335,38 @@ class oimComponentFourier(oimComponent):
                         * self.params["f"](wli, ti)
                     )
         return image
+    
+    
+    def getNonRegularImage(self, xx, yy, wl=None, t=None):
+        
+        xx, yy = self._directTranslate(xx, yy, wl, t)
+
+        if self.elliptic:
+
+            pa_rad = (self.params["pa"](wl, t)) * \
+                self.params["pa"].unit.to(units.rad)
+
+            xp = xx*np.cos(pa_rad)-yy*np.sin(pa_rad)
+            yp = xx*np.sin(pa_rad)+yy*np.cos(pa_rad)
+
+            xx = xp*self.params["elong"](wl, t)
+            yy = yp
+
+        image = self._imageFunction(xx, yy, wl, t)
+
+        """
+        tot = np.sum(image, axis=(2, 3))
+
+        # TODO: No loop for normalization
+        
+        for it, ti in enumerate(t):
+            for iwl, wli in enumerate(wl):
+                if tot[it, iwl] != 0:
+                    image[it, iwl, :, :] = image[it, iwl, :, :]  \
+                        / tot[it, iwl]*self.params["f"](wli, ti)
+        """
+        return image
+        
 
     def _imageFunction(self, xx, yy, wl, t):
         raise ValueError(

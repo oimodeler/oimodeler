@@ -471,7 +471,7 @@ def compute_photometric_slope(
     )
 
 
-def pad_image(image: np.ndarray) -> np.ndarray:
+def pad_image(image: np.ndarray, padfact= None) -> np.ndarray:
     """Pads an image with additional zeros for Fourier transform.
 
     Parameters
@@ -484,6 +484,10 @@ def pad_image(image: np.ndarray) -> np.ndarray:
     padded_image : numpy.ndarray
         The padded image.
     """
+    
+    if padfact == None:
+        padfact = oimOptions.ft.padding
+        
     im0 = np.sum(image, axis=(0, 1))
     dimy = im0.shape[0]
     dimx = im0.shape[1]
@@ -494,8 +498,8 @@ def pad_image(image: np.ndarray) -> np.ndarray:
     s0x = np.trim_zeros(im0x).size
     s0y = np.trim_zeros(im0y).size
 
-    min_sizex = s0x * oimOptions.ft.padding
-    min_sizey = s0y * oimOptions.ft.padding
+    min_sizex = s0x*padfact
+    min_sizey = s0y*padfact
 
     min_pow2x = 2 ** (min_sizex - 1).bit_length()
     min_pow2y = 2 ** (min_sizey - 1).bit_length()
@@ -1786,7 +1790,6 @@ def oifitsFlagWithExpression(data, arr, extver, expr, keepOldFlag=False):
 
                 # TODO: Remove eval here as it is can be security liability
                 flags = eval(expr)
-
 
                 if keepOldFlag:
                     data[arri].data["FLAG"] = np.logical_or(
