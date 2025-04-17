@@ -742,7 +742,7 @@ Let's now have a look at the model's parameters:
 
     pprint(m.getParameters())
 
-.. code-block::
+.. parsed-literal::
 
     ... {'c1_Fits_Comp_dim': oimParam at 0x19c6201c820 : dim=128 ± 0  range=[1,inf] free=False ,
          'c1_Fits_Comp_f': oimParam at 0x19c6201c760 : f=1 ± 0  range=[0,1] free=True ,
@@ -829,58 +829,76 @@ was computed using the `AMHRA <https://amhra.oca.eu/AMHRA/bedisk/input.htm>`_ se
 
 The fits-formatted image-cube we will use, `KinematicsBeDiskModel.fits`, is located in the `data/IMAGES` directory.
 
+The code corresponding to this section is available in
+`LoadingFitsImageCube.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/LoadingFitsImageCube.py>`_
+
 We build our chromatic model the same way as for a monochromatic image.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     c = oim.oimComponentFitsImage(file_name)
     m = oim.oimModel(c)
 
-We can now plot some images through the :math:`Br\gamma` emission line (21661 :math:`\mu` m).
+However, unlike for the monochromatic image, our model is now chromatic. The internal image-cube can be accessed through the private variable
+``c._image`` of the :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` and the wavelength table using ``_wl``
 
-.. code-block:: python
+.. code-block:: ipython3
+
+    print(c._image.shape)
+    print(c._wl)
+
+.. parsed-literal::
+
+    (1, 25, 256, 256)
+    [2.16286e-06 2.16313e-06 2.16340e-06 2.16367e-06 2.16394e-06 2.16421e-06
+     2.16448e-06 2.16475e-06 2.16502e-06 2.16529e-06 2.16556e-06 2.16583e-06
+     2.16610e-06 2.16637e-06 2.16664e-06 2.16691e-06 2.16718e-06 2.16745e-06
+     2.16772e-06 2.16799e-06 2.16826e-06 2.16853e-06 2.16880e-06 2.16907e-06
+     2.16934e-06]
+
+The image-cube contains 256x256 pixels images at 25 wavelength ranging from 2.16286 to 2.16934:math:`\mu`m.
+
+
+We can now plot some images through the :math:`Br\gamma` emission line (21661 :math:`\mu`m)using the
+:func:`oimModel.showModel <oimodeler.oimModel.oimModel.showModel>` method. We need to specify some wavelengths.
+Images will be interpolated between the internal image-cubve wavelengths.
+
+.. code-block:: ipython3
 
     wl0, dwl, nwl = 2.1661e-6, 60e-10, 5
     wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
-    m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4, colorbar=False,
-                figsize=(2, 2.5),
-                savefig=save_dir / "FitsImageCube_BeDiskKinematicsModel_images.png")
+    fig, ax, im  = m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4,colorbar=False)
 
 .. image:: ../../images/FitsImageCube_BeDiskKinematicsModel_images.png
   :alt: Alternative text
 
-We now compute the visibility for a series of North-South and East-West baselines ranging
-between 0 and 100m and with the wavelength ranging through the emission line.
+Here is a small piece of code to compute visibility for a series of 500 North-South and 500
+East-West baselines ranging between 0 and 100m and with 51 wavelengths through the emission line.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     nB = 1000
     nwl = 51
-    wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
 
+    wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
     B = np.linspace(0, 100, num=nB//2)
 
-    # 1st half of B array are baseline in the East-West orientation
+    # The 1st half of B array are baseline in the East-West orientation
+    # and the 2nd half are baseline in the North-South orientation
     Bx = np.append(B, B*0)
-    By = np.append(B*0, B)  # 2nd half are baseline in the North-South orientation
+    By = np.append(B*0, B)
 
-    Bx_arr = np.tile(Bx[None, :], (nwl, 1)).flatten()
-    By_arr = np.tile(By[None, :], (nwl,  1)).flatten()
-    wl_arr = np.tile(wl[:, None], (1, nB)).flatten()
+    #creating the spatial frequencies and wls arrays nB x nwl by matrix multiplication
+    spfx = (Bx[np.newaxis,:]/wl[:,np.newaxis]).flatten()
+    spfy = (By[np.newaxis,:]/wl[:,np.newaxis]).flatten()
+    wls  = (wl[:,np.newaxis]*np.ones([1,nB])).flatten()
 
-    spfx_arr = Bx_arr/wl_arr
-    spfy_arr = By_arr/wl_arr
-
-    vc = m.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr)
+    #computing the complex coherent flux and visbility
+    vc = m.getComplexCoherentFlux(spfx, spfy, wls)
     v = np.abs(vc.reshape(nwl, nB))
     v = v/np.tile(v[:, 0][:, None], (1, nB))
 
-
-Finally, we plot the results as a function of the wavelength and with a colorscale
-in terms of the baseline length.
-
-.. code-block:: python
-
+    #plotting the results
     fig, ax = plt.subplots(1, 2, figsize=(8, 4))
     titles = ["East-West Baselines", "North-South Baselines"]
 
@@ -910,17 +928,35 @@ for more details), the visibility for the baselines along the major-axis show a 
 profile through the line, whereas the visibliity along the minor-axis of the disk show
 a V-shaped profile.
 
-Note
-
 
 Radial-Profile components
 -------------------------
+
+.. warning::
+    **oimodeler** radial profile component is not yet fully tested. Use at your own risk!
+
+Although not fully implemented and optimize, **oimodeler** allow to use 1D intensity radial profile
+for circular or intensity distributions. Radial-profile components are derived from the semi-abstract class
+:func:`oimComponentRadialProfile <oimodeler.oimComponent.oimComponentRadialProfile>` .This class implement
+complex-coherent-flux computation using Hankel transform which take into account flattening for elliptic components.
+
+The code corresponding to this section is available in
+`radialProfileComponents.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/radialProfileComponents.py>`_
+
+Here is the list of radial-profile components currently implemented in **oimodeler**
 
 .. csv-table:: Available radial profile components
    :file: table_ftbackends.csv
    :header-rows: 1  
    :delim: |
    :widths: auto
+
+You can get this list using the :func:`listComponents <oimodeler.oimUtils.listComponents>` function.
+
+.. code-block:: ipython3
+
+    print(oim.listComponents(componentType="radial"))
+
 
 
 .. _Advanced parameters:

@@ -23,7 +23,7 @@ if not save_dir.exists():
     
 #%% The oimFitImageComponent
 
-file_name = path / "data" / "BeDISCO.fits"
+file_name = product_dir / "IMAGES" / "BeDISCO.fits"
 im = fits.open(file_name)
 
 # load image from an opened astropy.io.primaryHDU
