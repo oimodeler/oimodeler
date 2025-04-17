@@ -18,3 +18,4 @@ oim.listComponents(details=True,save2csv=path_save /"table_components_image.csv"
 oim.listComponents(details=True,save2csv=path_save /"table_components_radial.csv",componentType="radial")
 oim.listFitters(details=True,save2csv=path_save /"table_fitters.csv")
 oim.listParamInterpolators(details=True,save2csv=path_save /"table_interpolators.csv")
+
