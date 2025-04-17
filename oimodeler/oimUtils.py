@@ -2023,7 +2023,8 @@ def _listFeatures(
             table.append(ti)
             names.append(cname)
         except:
-            print(cname)
+            pass
+            #print(cname)
 
     if details:
         if save2csv:
