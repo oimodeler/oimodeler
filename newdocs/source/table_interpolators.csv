@@ -1,7 +1,6 @@
 Class Name|oimInterp macro|Description|parameters
 oimParamInterpolator|mGaussTime
 oimParamInterpolatorKeyframes|mGaussTime
-oimParamMultiWl|mGaussTime
 oimParamInterpolatorWl|mGaussTime
 oimParamInterpolatorTime|mGaussTime
 oimParamCosineTime|mGaussTime
