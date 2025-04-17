@@ -1408,7 +1408,7 @@ Parameter interpolators
 
  Here we present in more details the parameter
 interpolators.
-This example can be found in the  `paramInterpolators.py <https://github.com/oimodeler/oimodeler/blob/main/examples/AdvancedExamples/paramInterpolators.py>`_ script.
+This example can be found in the  `paramInterpolators.py <https://github.com/oimodeler/examples/Modules/paramInterpolators.py>`_ script.
 
 The following table summarize the available interpolators and their parameters. Most of
 them will be presented in this example.
