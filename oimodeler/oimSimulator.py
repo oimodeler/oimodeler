@@ -223,7 +223,7 @@ class oimSimulator:
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
         elif computeChi2:
-            chi2_prior = chi2 - 2*self.cprior(self.model.getParameters())*nelChi2
+            chi2_prior = chi2 + self.cprior(self.model.getParameters())*nelChi2
             self.chi2 = chi2_prior
             self.chi2r = chi2_prior/(nelChi2-len(self.model.getFreeParameters()))
             
