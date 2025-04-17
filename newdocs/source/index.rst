@@ -1,6 +1,17 @@
 .. image:: ../../images/oimodeler_title.png
   :alt: Alternative text
 
+.. raw:: html
+
+   <div style="height: 0; visibility: hidden;">
+
+Index
+=====
+
+.. raw:: html
+
+   </div>
+
 .. rst-class:: hide-me
 
     Introduction

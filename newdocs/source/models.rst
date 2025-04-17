@@ -635,6 +635,10 @@ described in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26
 Monochromatic image
 ~~~~~~~~~~~~~~~~~~~
 
+The code corresponding to this section is available in
+`LoadingFitsImage.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/LoadingFitsImage.py>`_
+
+
 The fits-formatted image ``BeDisco.fits`` that we will use is located in **oimodeler** ``data\IMAGES`` directory.
 
 There are two ways to load a fits image into a
@@ -695,12 +699,8 @@ image using the showModel method without rescaling. Here we use astropy.units to
     dim = im_disco.shape[-1]
     mdisco.showModel(dim, pixSize, legend=True, normalize=True, normPow=1, cmap="hot")
 
-
 .. image:: ../../images/FitsImage_Disco_internal_image.png
   :alt: Alternative text
-
-
-
 
 We now create spatial frequencies for a thousand baselines ranging from 0 to 120 m,
 in the North-South and East-West orientation and at an observing wavlength of 1.5 microns.
@@ -712,7 +712,6 @@ in the North-South and East-West orientation and at an observing wavlength of 1.
 
    spfx = np.append(B, B*0)/wl # 1st half of B array are baseline in the East-West orientation
    spfy = np.append(B*0, B)/wl # 2nd half are baseline in the North-South orientation
-
 
 We compute the complex coherent flux and then the absolute visibility
 
@@ -778,7 +777,6 @@ Let's try to rotate and scale our model and plot the image again.
 .. image:: ../../images/FitsImage_Disco_image2.png
   :alt: Alternative text
 
-
 The :func:`oimComponentFitsImage <oimodeler.oimBasicFourierComponents.oimComponentFitsImage>`
 can be combined with any kind of other component. Let's add a companion
 (i.e., uniform disk) for our Be star model.
@@ -788,7 +786,6 @@ can be combined with any kind of other component. Let's add a companion
     c2 = oim.oimUD(x=20, d=1, f=0.03)
     m2 = oim.oimModel(c, c2)
 
-
 We add a 1 mas companion located at 20 mas East of the central object with a flux
 of 0.03. We can now plot the image of our new model.
 
@@ -796,10 +793,8 @@ of 0.03. We can now plot the image of our new model.
 
     m2.showModel(256, 0.2, legend=True, normalize=True, fromFT=True, normPow=1, cmap="hot")
 
-
 .. image:: ../../images/FitsImage_Disco_image3.png
   :alt: Alternative text
-
 
 To finish this example, let's plot the visibility along North-South and East-West
 baseline for our binary Be-star model.
@@ -825,35 +820,23 @@ baseline for our binary Be-star model.
 Using a chromatic image-cube
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` can als obe used to load chromatic
-image-cubes in the fits format.
+The :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` can also be used to import fits files containing
+chromatic image-cubes into oimodeler.
 
-In this example we will use a chromatic image-cube computed around the
-:math:`Br\,\gamma` emission line for a classical Be Star circumstellar disk. The model,
-detailed in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
-was taken form the `AMHRA <https://amhra.oca.eu/AMHRA/bedisk/input.htm>`_ service of the JMMC.
+In this example we will use a chromatic image-cube computed around the :math:`Br\,\gamma` emission line for a classical Be star
+circumstellar disk. The model, detailed in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
+was computed using the `AMHRA <https://amhra.oca.eu/AMHRA/bedisk/input.htm>`_ service of the JMMC.
 
-The fits-formatted image-cube we will use, `KinematicsBeDiskModel.fits`, is located in the `./examples/AdvancedExamples`
-directory.
+The fits-formatted image-cube we will use, `KinematicsBeDiskModel.fits`, is located in the `data/IMAGES` directory.
 
-.. code-block:: python
-
-    path = Path(__file__).parent.parent.parent
-    file_name = path / "examples" / "AdvancedExamples" / "KinematicsBeDiskModel.fits"
-
-
-We build our model using a single component of the type
-:func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` which
-allows to load fits images or image-cubes.
+We build our chromatic model the same way as for a monochromatic image.
 
 .. code-block:: python
 
     c = oim.oimComponentFitsImage(file_name)
     m = oim.oimModel(c)
 
-
-We can now plot images of the model through the :math:`Br\gamma` emission line
-(21661 :math:`\mu` m).
+We can now plot some images through the :math:`Br\gamma` emission line (21661 :math:`\mu` m).
 
 .. code-block:: python
 
@@ -863,10 +846,8 @@ We can now plot images of the model through the :math:`Br\gamma` emission line
                 figsize=(2, 2.5),
                 savefig=save_dir / "FitsImageCube_BeDiskKinematicsModel_images.png")
 
-
 .. image:: ../../images/FitsImageCube_BeDiskKinematicsModel_images.png
   :alt: Alternative text
-
 
 We now compute the visibility for a series of North-South and East-West baselines ranging
 between 0 and 100m and with the wavelength ranging through the emission line.
@@ -923,10 +904,13 @@ in terms of the baseline length.
   :alt: Alternative text
 
 
-As expected, for a rotating disk (see `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
+As expected, for a rotating disk (see
+`Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
 for more details), the visibility for the baselines along the major-axis show a W-shaped
 profile through the line, whereas the visibliity along the minor-axis of the disk show
 a V-shaped profile.
+
+Note
 
 
 Radial-Profile components
