@@ -162,3 +162,10 @@ description = "Amplitude"
 unit = "one"
 mini = 0
 maxi = 1
+
+[p]
+name = "pow"
+value = 1
+description = "Power exponent"
+unit = "one"
+
