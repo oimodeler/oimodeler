@@ -24,7 +24,7 @@ class oimFitter:
     def __init__(self, *args, **kwargs):
         nargs = len(args)
         if nargs == 2:
-            self.simulator = oimSimulator(args[0], args[1])
+            self.simulator = oimSimulator(args[0], args[1], cprior=self.cprior)
         elif nargs == 1:
             self.simulator = args[0]
         else:
@@ -178,21 +178,10 @@ class oimFitterEmcee(oimFitter):
             if not low < val < up:
                 return -np.inf
         
-        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
-        logprob = -0.5 * self.simulator.chi2
-        
-        if self.cprior is not None:
-            try:
-                logprob += self.cprior(self.model.getParameters())*self.simulator.nelChi2
-            except Exception as e:
-                print(e)
-                return -np.inf
-    
-        return logprob
-    
-    def getfinalChi2r(self):
-        return self.simulator.chi2r
-        
+        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes, 
+                               cprior=self.cprior)
+        return -0.5 * self.simulator.chi2
+     
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
         chi2 = -2*self.sampler.get_log_prob(discard=discard, flat=True)
         chain = self.sampler.get_chain(discard=discard, flat=True)
@@ -225,7 +214,7 @@ class oimFitterEmcee(oimFitter):
             parami.error = err[iparam]
 
         self.simulator.compute(computeChi2=True, computeSimulatedData=True,
-                               dataTypes=self.dataTypes)
+                               dataTypes=self.dataTypes, cprior=self.cprior)
 
         return res, err, err_m, err_p
 
@@ -389,7 +378,8 @@ class oimFitterDynesty(oimFitter):
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = theta[iparam]
 
-        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
+        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes, 
+                               cprior=self.cprior)
         return -0.5 * self.simulator.chi2r
 
     def getResults(self, mode="median", **kwargs):
@@ -408,7 +398,7 @@ class oimFitterDynesty(oimFitter):
             parami.error = err[iparam]
 
         self.simulator.compute(computeChi2=True, computeSimulatedData=True,
-                               dataTypes=self.dataTypes)
+                               dataTypes=self.dataTypes, cprior=self.cprior)
 
         return res, err, err_m, err_p
 
@@ -488,7 +478,8 @@ class oimFitterMinimize(oimFitter):
             parami.value = theta[iparam]
             if theta[iparam]<parami.min or theta[iparam]>parami.max:
                 return np.inf
-        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
+        self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes, 
+                               cprior=self.cprior)
         
         return self.simulator.chi2
             
@@ -514,7 +505,7 @@ class oimFitterMinimize(oimFitter):
             parami.error = errors[iparam]
 
         self.simulator.compute(computeChi2=True, computeSimulatedData=True,
-                               dataTypes=self.dataTypes)
+                               dataTypes=self.dataTypes, cprior=self.cprior)
         
         return values, errors
     
@@ -527,9 +518,10 @@ class oimFitterMinimize(oimFitter):
         print(f"chi2r = {chi2r:{format}}")
 
 class oimFitterRegularGrid(oimFitter):
-    def __init__(self, *args, **kwargs):
-
-       super().__init__(*args, **kwargs)
+    def __init__(self, *args, cprior=None, **kwargs):
+        
+        self.cprior = cprior
+        super().__init__(*args, **kwargs)
     
     def _prepare(self, **kwargs):
         
@@ -597,7 +589,7 @@ class oimFitterRegularGrid(oimFitter):
 
 
         self.simulator.compute(computeChi2=True, computeSimulatedData=True,
-                               dataTypes=self.dataTypes)
+                               dataTypes=self.dataTypes, cprior=self.cprior)
         
         return best
     

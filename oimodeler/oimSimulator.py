@@ -70,10 +70,11 @@ def corrFlux2Flux(vcompl):
 class oimSimulator:
     """Contains"""
 
-    def __init__(self, data=None, model=None, fitter=None, **kwargs):
+    def __init__(self, data=None, model=None, fitter=None, cprior=None, **kwargs):
         self.data = oimData()
         self.simulatedData = None
         self.model = None
+        self.cprior = cprior
 
         if data != None:
             if isinstance(data, oimData):
@@ -85,7 +86,7 @@ class oimSimulator:
             self.setModel(model)
 
         if model != None and not(data is None):
-            self.compute(computeChi2=True, computeSimulatedData=True)
+            self.compute(computeChi2=True, computeSimulatedData=True, cprior=self.cprior)
 
     def setModel(self, model):
         self.model = model
@@ -100,7 +101,7 @@ class oimSimulator:
             self.simulatedData.addData(hdulistDeepCopy(datai))
 
     def compute(self, computeChi2=False, computeSimulatedData=False,
-                checkSimulatedData=True, dataTypes=None):
+                checkSimulatedData=True, dataTypes=None, cprior=None):
         if dataTypes == None:    
             dataTypes = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
 
@@ -213,14 +214,25 @@ class oimSimulator:
                                 nelChi2 += np.sum((dataErr[ival] != 0)
                                                   * np.logical_not(flag[ival]))
                                 chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
+                                
                                 chi2List.append(chi2i)
                                 #print(chi2i)
-
-        if computeChi2:
+        if computeChi2 and self.cprior is None:
             self.chi2 = chi2
             self.chi2r = chi2/(nelChi2-len(self.model.getFreeParameters()))
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
+        elif computeChi2:
+            chi2_prior = chi2 + self.cprior(self.model.getParameters())*nelChi2
+            self.chi2 = chi2_prior
+            self.chi2r = chi2_prior/(nelChi2-len(self.model.getFreeParameters()))
+            
+            self.chi2_np = chi2
+            self.chi2r_np = chi2/(nelChi2-len(self.model.getFreeParameters()))
+            
+            self.chi2List = chi2List
+            self.nelChi2 = nelChi2
+            
 
     def plotWlTemplate(self, shape, simulated=True, savefig=None, xunit="m",
                        plotFuntionData=_errorplot,
