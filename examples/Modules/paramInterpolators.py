@@ -109,9 +109,9 @@ pt = oim.oimPt(f=0.5)
 m2 = oim.oimModel(c2, pt)
 
 c2.params['d'].values[1] = oim.oimParamLinker(
-    c2.params['d'].values[0], "mult", 3)
+    c2.params['d'].values[0], "*", 3)
 c2.params['d'].values[2] = oim.oimParamLinker(
-    c2.params['d'].values[0], "add", -1)
+    c2.params['d'].values[0], "+", -1)
 
 wl = np.linspace(1.9e-6, 2.4e-6, num=nwl)
 
@@ -178,3 +178,7 @@ fig, ax, im = plotParamAndVis(B, wl, t, m5, c5.params['d'])
 fig.suptitle(
     "Polynomial interpolator in Time on a uniform disk diameter", fontsize=10)
 plt.savefig(save_dir / "interp5.png")
+
+
+#%%
+star1 = oim.oimUD(f=oim.oimInterp('polyTime', coeffs=[1, 3.5, -0.5], x0=60000))

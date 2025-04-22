@@ -1592,9 +1592,9 @@ multiple values for ``x0``, ``fwhm`` and ``values``.
     m2 = oim.oimModel(c2, pt)
 
     c2.params['d'].values[1] = oim.oimParamLinker(
-        c2.params['d'].values[0], "mult", 3)
+        c2.params['d'].values[0], "*", 3)
     c2.params['d'].values[2] = oim.oimParamLinker(
-        c2.params['d'].values[0], "add", -1)
+        c2.params['d'].values[0], "+", -1)
 
     wl = np.linspace(1.9e-6, 2.4e-6, num=nwl)
 
