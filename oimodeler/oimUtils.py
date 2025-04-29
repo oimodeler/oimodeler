@@ -2093,16 +2093,28 @@ def listDataFilters(details=False, save2csv=None):
 
 
 def listFitters(details=False, save2csv=None):
-    header = ["Fitter Name", "Short description", "Keywords"]
+    header = ["Fitter Name", "Description"]
 
     def _fitterToTextfunction(cname):
-        # fit = oim.__dict__[cname](None,None)
+        fit = oim.__dict__[cname](None,None)
         tab = [cname]
-        # tab.append(fit.description)
-        # txt=""
-        # for pname in filt.params:
-        #    txt+=pname+", "
-        # tab.append(txt[:-2])
+        try:
+            description= fit.description
+            #print(description)
+        except:
+             description = " - "
+        tab.append(description)
+        
+        """
+        txt = ""
+        try:     
+            for pname in fit.params:
+                txt += pname + ", "
+            txt = txt[:-2]
+        except:
+            pass
+        tab.append(txt)
+        """
         return tab
 
     res = _listFeatures(
@@ -2110,7 +2122,6 @@ def listFitters(details=False, save2csv=None):
     )
 
     return res
-
 
 def listParamInterpolators(details=False, save2csv=None):
     header = ["Class Name", "oimInterp macro", "Description", "parameters"]
