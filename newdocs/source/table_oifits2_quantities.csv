@@ -1,0 +1,10 @@
+Quantity!Extension!name!keyword!formula
+Square visibility!OI\_VIS2!VIS2DATA!-! :math:`\bigg|\frac{CCF[u,v,\lambda,t]}{CCF[0,0,\lambda,t]}\bigg|^2`
+Absolute visibility!OI\_VIS!VISAMP!AMPTYP= absolute! :math:`\bigg|\frac{CCF[u,v,\lambda,t]}{CCF[0,0,\lambda,t]}\bigg|`
+Differential visibility!OI\_VIS!VISAMP!AMPTYP= differential! :math:`\bigg|\frac{CCF[u,v,\lambda,t]}{<CCF>_B}\bigg|`
+Correlated flux!OI\_VIS!VISAMP!AMPTYP= correlated flux! :math:`\bigg|CCF[u,v,\lambda,t]\bigg|`
+Absolute phase!OI\_VIS!VISPHI!PHITYP= absolute! :math:`angle\bigg(CCF[u,v,\lambda,t]\bigg)`
+Differential phase!OI\_VIS!VISPHI!PHITYP= differential! :math:`angle\bigg(CCF[u,v,\lambda,t]<CCF^*>_B\bigg)`
+Triple product amplitude!OI\_T3!T3AMP!-! :math:`\bigg|TP[u1,u2,u3,v1,v2,v3,\lambda,t]\bigg|`
+Closure phase!OI\_T3!T3PHI!-! :math:`angle\bigg(TP[u1,u2,u3,v1,v2,v3,\lambda,t]\bigg)`
+Flux!OI\_FLUX!FLUXDATA!-! :math:`CCF[0,0,\lambda,t]`
