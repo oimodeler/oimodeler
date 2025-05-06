@@ -131,7 +131,7 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25, a1=0, a2=0, a3=0, 
         im0[dim0//2-dim//2:dim0//2+dim//2, dim0//2-dim//2:dim0//2+dim//2, :] = im
         return im0
 
-def fastRotator_2(dim0, size, R_pol, incl, veq, Mstar, Teq, lam, beta=np.nan, distance=10, a1=0, a2=0, a3=0, a4=0, ldd=None):
+def fastRotator_2(dim0, size, R_pol, incl, veq, Mstar, Tp, lam, beta=np.nan, distance=10, a1=0, a2=0, a3=0, a4=0, ldd=None):
     
     R_pol = R_pol * R_sun  
     size = size
@@ -175,12 +175,13 @@ def fastRotator_2(dim0, size, R_pol, incl, veq, Mstar, Teq, lam, beta=np.nan, di
     geff_r = -G*M/Rtheta**2 + geff_component*np.sin(theta)
     geff_theta = geff_component*np.cos(theta)
     geff = np.sqrt(geff_r**2+geff_theta**2)
-    geff = (geff/geff.min()).value
-
+    
+    gp = G*M/R_pol**2
+    
     if beta is np.nan:
         beta = 0.25-eps/3
 
-    Teff = Teq*geff**beta
+    Teff = Tp*(geff/gp)**beta
 
     mu=np.rot90(np.sum(dr,axis=2))
     mu=mu/mu.max()
@@ -423,7 +424,7 @@ class oimFastRotatorNLLDD(oimComponentImage):
         a3 = self.params["a3"].value
         a4 = self.params["a4"].value
         
-        im = fastRotator(dim, dpole, incl, rot, Tpole, self._wl, beta=beta,
+        im = fastRotator(dim, 1.5, incl, rot, Tpole, self._wl, beta=beta,
                          ldd="non-linear",a1=a1, a2=a2, a3=a3, a4=a4)
 
         # make a nt,nwl,dim,dim hcube (even if t and/or wl are not relevent)
