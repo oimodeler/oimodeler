@@ -181,7 +181,7 @@ class oimFitterEmcee(oimFitter):
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes, 
                                cprior=self.cprior)
         return -0.5 * self.simulator.chi2
-    
+
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
         chi2 = -2*self.sampler.get_log_prob(discard=discard, flat=True)
         chain = self.sampler.get_chain(discard=discard, flat=True)

@@ -446,7 +446,7 @@ class oimFastRotatorMasse(oimComponentImage):
         # x,y,f and dim as parameters
         self.params["incl"] = oimParam(name="incl", value=0, description="Inclination angle", unit=units.deg)
         self.params["Veq"] = oimParam(name="Veq", value=300, description="Equatorial veloclty", unit=units.km/units.s)
-        self.params["Teq"] = oimParam(name="Teq", value=7000, description="Equatorial Temperature", unit=units.K)
+        self.params["Tp"] = oimParam(name="Tp", value=7000, description="Equatorial Temperature", unit=units.K)
         self.params["Rpole"] = oimParam(name="Rpole", value=1, description="Polar diameter", unit=units.R_sun)
         self.params["Mstar"] = oimParam(name="Mstar", value=1, description="Stellar Masse", unit=units.M_sun)
         self.params["beta"] = oimParam(name="beta", value=0.25, description="Gravity Darkening Exponent", unit=units.one)
@@ -469,7 +469,7 @@ class oimFastRotatorMasse(oimComponentImage):
         dim = self.params["dim"].value
         incl = self.params["incl"].value
         veq = self.params["Veq"].value
-        Teq = self.params["Teq"].value
+        Tp = self.params["Tp"].value
         Mstar = self.params["Mstar"].value
         Rpole = self.params["Rpole"].value
         beta = self.params["beta"].value
@@ -479,7 +479,7 @@ class oimFastRotatorMasse(oimComponentImage):
         a3 = self.params["a3"].value
         a4 = self.params["a4"].value
         
-        im, app_diam = fastRotator_2(dim, 1.5, Rpole, incl, veq, Mstar, Teq, self._wl, 
+        im, app_diam = fastRotator_2(dim, 1.5, Rpole, incl, veq, Mstar, Tp, self._wl, 
                                      beta=beta,ldd="non-linear", distance=dist,
                                      a1=a1, a2=a2, a3=a3, a4=a4)
 
