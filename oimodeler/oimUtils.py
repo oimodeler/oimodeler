@@ -2123,18 +2123,30 @@ def listParamInterpolators(details=False, save2csv=None):
 
     def _interpToTextfunction(cname):
         interp = oim.__dict__[cname](p)
+        
         tab = [cname]
         try:
-            macro = interp_macro[
-                interp_name.index("oimParamMultipleGaussianTime")
-            ]
+            macro = interp_macro[interp_name.index(cname)]
         except:
-            macro = "None"
+            macro = " - "
         tab.append(macro)
-        # txt=""
-        # for pname in filt.params:
-        #    txt+=pname+", "
-        # tab.append(txt[:-2])
+    
+        try:
+            description= interp.interpdescription
+            print(description)
+        except:
+             description = " - "
+        tab.append(description)
+        
+        txt = ""
+        try:     
+            for pname in interp.interparams:
+                txt += pname + ", "
+            txt = txt[:-2]
+        except:
+            pass
+        tab.append(txt)
+        
         return tab
 
     res = _listFeatures(

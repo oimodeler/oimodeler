@@ -12,9 +12,10 @@ path = Path(__file__).parent
 path_save= path.parent / "source"
 
 #%%
-oim.listDataFilters(details=True,save2csv=path_save /"table_dataFilter.csv")
-oim.listComponents(details=True,save2csv=path_save /"table_components_fourier.csv",componentType="fourier")
-oim.listComponents(details=True,save2csv=path_save /"table_components_image.csv",componentType="image")
-oim.listComponents(details=True,save2csv=path_save /"table_components_radial.csv",componentType="radial")
-oim.listFitters(details=True,save2csv=path_save /"table_fitters.csv")
-oim.listParamInterpolators(details=True,save2csv=path_save /"table_interpolators.csv")
+res=oim.listDataFilters(details=True,save2csv=path_save /"table_dataFilter.csv")
+res=oim.listComponents(details=True,save2csv=path_save /"table_components_fourier.csv",componentType="fourier")
+res=oim.listComponents(details=True,save2csv=path_save /"table_components_image.csv",componentType="image")
+res=oim.listComponents(details=True,save2csv=path_save /"table_components_radial.csv",componentType="radial")
+res=oim.listFitters(details=True,save2csv=path_save /"table_fitters.csv")
+res=oim.listParamInterpolators(details=True,save2csv=path_save /"table_interpolators.csv")
+

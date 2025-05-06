@@ -333,21 +333,62 @@ for all the previously created models.
 Building complex models
 -----------------------
 
-In the example
-we create and play with more complex models which includes:
-
 Here we will create more complex models which will include:
 
-- adding chromaticity of some parameters
+- chromaticity for some parameters
 - flatenning of components
 - linking parameters together
 - normalizing the total flux
 
- The code for this section is available at
-`BuildingComlplexModels.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/BuildingComlplexModels.py>`_
+ The code for this section is available at `BuildingComlplexModels.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/BuildingComlplexModels.py>`_
+
+Chromatic models using parameter interpolators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Let's create our first chromatic components. A linearly chromatic parameter
+can added to grey component by using the :func:`oimInterp <oimodeler.oimParam.oimInterp>`
+macro with the parameter ``"wl"`` when creating a new component.
+
+.. code-block:: ipython3
+
+    g = oim.oimGauss(fwhm=oim.oimInterp("wl",wl=[3e-6, 4e-6], values=[2, 8]))
+    mg = oim.oimModel(g)
+
+We have created a Gaussian component with a ``fwhm`` growing from 2 mas at 3 microns
+to 8 mas at 4 microns.
+
+.. Note::
+    Parameter interpolators are described in details in the :ref:`parameterInterpolators`.
+
+We can access to the interpolated value of the parameters using the ``__call__``
+operator of the :func:`oimParam <oimodeler.oimParam.oimParam>` class with values
+passed for the wavelengths to be interpolated:
+
+.. code-block:: ipython3
+
+    pprint(g.params['fwhm'](wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6]))
 
 
-Let's first create some spatial frequencies and wavelengths to be used to generate visibilities.
+.. parsed-literal::
+
+    ... [2. 5. 8. 8.]
+
+The values are interpolated within the wavelength range [3e-6, 4e-6] and fixed beyond
+this range (see :ref:`parameterInterpolators` for more options such as extrapolation).
+
+
+Let's plot images of this model at various wavelengths using the :func:`showModel <oimodeler.oimModel.oimModel.showModel>`
+method. Unlike for grey models, the wavelength need to be specified.
+
+.. code-block:: ipython3
+
+    mg.showModel(256, 0.1, wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6],legend=True)
+
+.. image:: ../../images/complexModel_chromaticGaussian.png
+  :alt: Alternative text
+
+
+Let's now create some spatial frequencies and wavelengths to be used to generate visibilities.
 
 .. code-block:: ipython3
 
@@ -357,7 +398,7 @@ Let's first create some spatial frequencies and wavelengths to be used to genera
     wl = np.linspace(3e-6, 4e-6, num=nwl)
     B = np.linspace(1, 400, num=nB)
 
-    spf = 
+    spf =
     Bs = np.tile(B, (nwl, 1)).flatten()
     wls = np.transpose(np.tile(wl, (nB, 1))).flatten()
     spf = Bs/wls
@@ -367,46 +408,14 @@ Let's first create some spatial frequencies and wavelengths to be used to genera
 Unlike in the previous example with the grey data, we create a 2D-array for the spatial
 frequencies of ``nB`` baselines by ``nwl`` wavelengths. The wavlength vector is tiled
 itself to have the same length as the spatial frequency vector. Finally, we flatten the
-vector to be passed to the ``getComplexCoherentFlux`` method.
+vector to be passed to the
+:func:`getComplexCoherentFlux <oimodeler.oimModel.oimModel.getComplexCoherentFlux>`method.
 
-Let's create our first chromatic components. Linearly chromatic parameter can added to
-grey Fourier-based model by using the :func:`oimInterp <oimodeler.oimParam.oimInterp>`
-macro with the parameter ``"wl"`` when creating a new component.
+We can now plot the visibilities for these baselines with a colorscale corresponding
+to the wavelength. As expected the visibility decreases with the wavelength as the
+fwhm of our object grows with it.
 
-.. code-block:: python
-
-    g = oim.oimGauss(fwhm=oim.oimInterp("wl" wl=[3e-6, 4e-6], values=[2, 8]))
-
-
-We have created a Gaussian component with a ``fwhm`` growing from 2 mas at 3 microns
-to 8 mas at 4 microns.
-
-.. Note::
-    Parameter interpolators are described in details in the :ref:`following example <paramInterpolatorExample>`.
-
-
-We can access to the interpolated value of the parameters using the ``__call__``
-operator of the :func:`oimParam <oimodeler.oimParam.oimParam>` class with values
-passed for the wavelengths to be interpolated:
-
-
-.. code-block:: python
-
-    pprint(g.params['fwhm']([3e-6, 3.5e-6, 4e-6, 4.5e-6]))
-
-
-.. code-block:: python
-
-    ... [2. 5. 8. 8.]
-
-
-The values are interpolated within the wavelength range [3e-6, 4e-6] and fixed beyond
-this range.
-
-Let's build a simple model with this component and plot the images at few wavelengths
-and the visibilities for the baselines we created before.
-
-.. code-block:: python
+.. code-block:: ipython3
 
     vis = np.abs(mg.getComplexCoherentFlux(
         spf, spf*0, wls)).reshape(len(wl), len(B))
@@ -419,28 +428,19 @@ and the visibilities for the baselines we created before.
     axGv.set_ylabel("Visiblity")
     axGv.margins(0, 0)
 
-
-.. image:: ../../images/complexModel_chromaticGaussian.png
-  :alt: Alternative text
-
-
 .. image:: ../../images/complexModel_chromaticGaussianVis.png
   :alt: Alternative text
 
+Let's add a second component: An uniform disk with a chromatic flux.
 
-Now let's add a second component: An uniform disk with a chromatic flux.
-
-.. code-block:: python
+.. code-block:: ipython3
 
     ud = oim.oimUD(d=0.5, f=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 0.2]))
     m2 = oim.oimModel([ud, g])
-    fig2im, ax2im, im2 = m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
-                                      swapAxes=True, normPow=0.2, figsize=(3.5, 2.5),
-                                      fromFT=fromFT, normalize=True,
-                                      savefig=save_dir / "complexModel_UDAndGauss.png")
 
-    vis = np.abs(m2.getComplexCoherentFlux(
-        spf, spf*0, wls)).reshape(len(wl), len(B))
+    m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],normPow=0.2)
+
+    vis = np.abs(m2.getComplexCoherentFlux(spf, spf*0, wls)).reshape(len(wl), len(B))
     vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
 
     fig2v, ax2v = plt.subplots(1, 1, figsize=(14, 8))
@@ -460,10 +460,13 @@ Now let's add a second component: An uniform disk with a chromatic flux.
   :alt: Alternative text
 
 
-Now let's create a similar model but with elongated components. We will replace the
+Going from circular to elliptical models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Let's create a similar model but with elongated components. We will replace the
 uniform disk by an ellipse and the Gaussian by an elongated Gaussian.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     eg = oim.oimEGauss(fwhm=oim.oimInterp(
         "wl", wl=[3e-6, 4e-6], values=[2, 8]), elong=2, pa=90)
@@ -471,9 +474,7 @@ uniform disk by an ellipse and the Gaussian by an elongated Gaussian.
         "wl", wl=[3e-6, 4e-6], values=[2, 0.2]), elong=2, pa=90)
 
     m3 = oim.oimModel([el, eg])
-    fig3im, ax3im, im3 = m3.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
-                                      figsize=(3.5, 2.5), normPow=0.5, fromFT=fromFT, normalize=True,
-                                      savefig=save_dir / "complexModel_Elong.png")
+    fig3im, ax3im, im3 = m3.showModel(256, 0.1, wl=[3e-6,  4e-6],legend=True, normPow=0.1)
 
 
 .. image:: ../../images/complexModel_Elong.png
@@ -483,7 +484,7 @@ uniform disk by an ellipse and the Gaussian by an elongated Gaussian.
 Now that our model is no more circular, we need to take care of the baselines
 orientations. Let's plot both North-South and East-West baselines.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     fig3v, ax3v = plt.subplots(1, 2, figsize=(14, 5), sharex=True, sharey=True)
 
@@ -511,15 +512,17 @@ orientations. Let's plot both North-South and East-West baselines.
 .. image:: ../../images/complexModel_ElongVis.png
   :alt: Alternative text
 
+Linking parameters
+~~~~~~~~~~~~~~~~~~
 
 Let's have a look at our last model's free parameters.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     pprint(m3.getFreeParameters())
 
 
-.. code-block::
+.. parsed-literal::
 
     ... {'c1_eUD_f_interp1': oimParam at 0x23d9e7194f0 : f=2 ± 0  range=[-inf,inf] free=True ,
          'c1_eUD_f_interp2': oimParam at 0x23d9e719520 : f=0.2 ± 0  range=[-inf,inf] free=True ,
@@ -539,20 +542,20 @@ represent the value of the flux at 3 and 4 microns. We could have added more ref
 wavelengths in our model and would have ended with more parameters. The same happens for
 the elongated Gaussian (``C2_EG``) fwhm.
 
+
 Currently our model has 10 free parameters. In certain cases we might want to link or
 share two or more parameters. In our case, we might consider that the two components have
 the same ``pa`` and ``elong``. This can be done easily. To share a parameter you can just
 replace one parameter by another.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     eg.params['elong'] = el.params['elong']
     eg.params['pa'] = el.params['pa']
 
     pprint(m3.getFreeParameters())
 
-
-.. code-block::
+.. parsed-literal::
 
     ... {'c1_eUD_f_interp1': oimParam at 0x23d9e7194f0 : f=2 ± 0  range=[-inf,inf] free=True ,
          'c1_eUD_f_interp2': oimParam at 0x23d9e719520 : f=0.2 ± 0  range=[-inf,inf] free=True ,
@@ -564,16 +567,18 @@ replace one parameter by another.
          'c2_EG_fwhm_interp2': oimParam at 0x23d9e719340 : fwhm=8 ± 0 mas range=[-inf,inf] free=True }
 
 
-That way we have reduced our number of free parameters to 8. If you change the,
-for instance, the ``params['elong']`` or ``el.params['elong']`` values it will change
-both parameters are they are actually the same instance of the
+That way we have reduced our number of free parameters to 8. If you change  ``params['elong']`` value
+it will also change ``el.params['elong']`` values are they are actually the same instance of the
 :func:`oimParam <oimodeler.oimParam.oimParam>` class.
+
+A more advance way to link parameters is the use :func:`oimParamLinker <oimodeler.oimParam.oimParamLinker>`
+class. This class allow to define a simple mathematically formulat between the value of two parameters.
 
 Let's create a new model which include a elongated ring perpendicular to the Gaussian
 and Ellipse ``pa`` and with a inner and outer radii equals to 2 and 4 times the ellipse
 diameter, respectively.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     er = oim.oimERing()
     er.params['elong'] = eg.params['elong']
@@ -583,10 +588,7 @@ diameter, respectively.
 
     m4 = oim.oimModel([el, eg, er])
 
-    fig4im, ax4im, im4 = m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],
-                                      figsize=(3.5, 2.5), normPow=0.5, fromFT=fromFT,
-                                      normalize=True,
-                                      savefig=save_dir / "complexModel_link.png")
+    m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],normPow=0.2)
 
 
 .. image:: ../../images/complexModel_link.png
@@ -594,46 +596,106 @@ diameter, respectively.
 
 
 Although quite complex this models only have 9 free parameters. If we change the ellipse
-diameter and its position angle, the components will scale (except the Gaussian that fwhm
+diameter and its position angle, the components will scale (except the Gaussian whose fwhm
 is independent) and rotate.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     el.params['d'].value = 4
     el.params['pa'].value = 45
 
-    m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.5, figsize=(3.5, 2.5))
+    m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.2)
 
 
 .. image:: ../../images/complexModel_linkRotScale.png
   :alt: Alternative text
 
+Flux normalization
+~~~~~~~~~~~~~~~~~~
+
+In most cases, the user will want to have the total flux of the model to be normalized to 1.
+The allows to remove one of the flux parameter of the model and remove degenracy unless actual
+fluxes measurement are available.
+
+Here we build a triple-system model with one uniform disk and to point sources.
+
+.. code-block:: ipython3
+
+    star1 = oim.oimUD(f=0.8,d=1)
+    star2 = oim.oimPt(f=0.15,x=5,y=5)
+    star3 = oim.oimPt(x=15,y=12)
+    mtriple = oim.oimModel(star1,star2,star3)
+    star2.params["x"].free=True
+    star2.params["y"].free=True
+    star3.params["x"].free=True
+    star3.params["y"].free=True
+
+
+    print(mtriple.getFreeParameters())
+
+.. parsed-literal::
+
+    {'c1_UD_d': oimParam at 0x26f1f656480 : d=1 ± 0 mas range=[0,inf] free=True ,
+     'c1_UD_f': oimParam at 0x26f0c6d0da0 : f=0.8 ± 0  range=[0,1] free=True ,
+     'c2_Pt_f': oimParam at 0x26f0cb21fa0 : f=0.15 ± 0  range=[0,1] free=True ,
+     'c2_Pt_x': oimParam at 0x26f20520590 : x=5 ± 0 mas range=[-inf,inf] free=True ,
+     'c2_Pt_y': oimParam at 0x26f752cde80 : y=5 ± 0 mas range=[-inf,inf] free=True ,
+     'c3_Pt_f': oimParam at 0x26f0cb20560 : f=1 ± 0  range=[0,1] free=True ,
+     'c3_Pt_x': oimParam at 0x26f0cb21ac0 : x=15 ± 0 mas range=[-inf,inf] free=True ,
+     'c3_Pt_y': oimParam at 0x26f0cb23020 : y=12 ± 0 mas range=[-inf,inf] free=True }
+
+In order to normalize the three fluxes of this model (a remove the last flux as a parameter)
+we can use the :func:`oimParamNorm <oimodeler.oimParam.oimParamNorm>` class.
+
+.. code-block:: ipython3
+
+    star3.params["f"] = oim.oimParamNorm([star1.params["f"],star2.params["f"]])
+
+Alternatively, we can  use the :func:`normalizeFlux <oimodeler.oimModel.oimModel.normalizeFlux>`
+method of the :func:`oimModel <oimodeler.oimModel.oimModel>` class.
+
+.. code-block:: ipython3
+
+    mtriple.normalizeFlux()
+
+Both methods set the flux of the third star to 1 minus the flux of the two other ones.
+These flux will be updated if the other are modified.
+
+.. code-block:: ipython3
+
+   print(star3.params["f"]())
+   star1.params["f"].value = 0.5
+   print(star3.params["f"]())
+
+.. parsed-literal::
+
+    0.05
+    0.35
+
+Time-dependent model
+~~~~~~~~~~~~~~~~~~~~
 
 You can also add time dependent parameters to your model using
 :func:`oimInterpTime <oimodeler.oimParam.oimInterp` class which works similarly to the
 :func:`oimInterpWl <oimodeler.oimParam.oimInterpWl>` class.
 
-Here, we create a two-components model with a time dependent Gaussian fwhm and a
-wavelength dependent uniform disk diameter.
+Here is a small example that mix both time dependence and chromaticy of a binary model.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     gd1 = oim.oimGauss(fwhm=oim.oimInterp('time', mjd=[0, 1, 3], values=[1, 4, 1]))
     ud1 = oim.oimUD(d=oim.oimInterp("wl", wl=[1e-6, 3e-6], values=[0.5, 2]), x=-4, y=0, f=0.1)
 
-    m5 = oim.oimModel(gd1, ud1)
+    m6 = oim.oimModel(gd1, ud1)
 
     wls=np.array([1,2,3])*1e-6
     times=[0,1,2,3,4]
 
-    fig5im, ax5im, im5 = m5.showModel(256, 0.04, wl=wls, t=times, legend=True, figsize=(2.5, 2))
+    m6.showModel(256, 0.04, wl=wls, t=times, legend=True)
 
 
 .. image:: ../../images/complexModel_time.png
   :alt: Alternative text
-
-
-
 
 Types of components
 -------------------
@@ -1339,15 +1401,318 @@ We will simulated visibilities for 1000 East-West baselines in the K-band.
     Remember that, as for Image-based model, the computation time of visibility from radial profiles
     is much longer than that of the basic Fourier-based components as show in the figure above.
 
-.. _Advanced parameters:
-Advanced parameters
--------------------
+.. _parameterInterpolators:
+
+Parameter interpolators
+-----------------------
+
+ Here we present in more details the parameter
+interpolators.
+This example can be found in the  `paramInterpolators.py <https://github.com/oimodeler/examples/Modules/paramInterpolators.py>`_ script.
+
+The following table summarize the available interpolators and their parameters. Most of
+them will be presented in this example.
+
+.. csv-table:: Available parameter interpolators
+   :file: table_interpolators.csv
+   :header-rows: 1
+   :delim: |
+   :widths: auto
 
 
+In order to simplify plotting the various interpolators we define a plotting
+function that can works for either a chromatic or a time-dependent model. With some
+baseline length, wavelength, time vectors passed and some model and interpolated
+parameter, the function will plot the interpolated parameters as a function of the
+wavelength or time, and the corresponding visibilities.
 
-Linking parameters
-~~~~~~~~~~~~~~~~~~
+.. code-block:: ipython3
 
-chromatic & time-dependent Interpolator
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def plotParamAndVis(B, wl, t, model, param, ax=None, colorbar=True):
+        nB = B.size
+
+        if t is None:
+            n = wl.size
+            x = wl*1e6
+            y = param(wl, 0)
+            xlabel = r"$\lambda$ ($\mu$m)"
+        else:
+            n = t.size
+            x = t-60000
+            y = param(0, t)
+            xlabel = "MJD - 60000 (days)"
+
+        Bx_arr = np.tile(B[None, :], (n, 1)).flatten()
+        By_arr = Bx_arr*0
+
+        if t is None:
+            t_arr = None
+            wl_arr = np.tile(wl[:, None], (1, nB)).flatten()
+            spfx_arr = Bx_arr/wl_arr
+            spfy_arr = By_arr/wl_arr
+        else:
+            t_arr = np.tile(t[:, None], (1, nB)).flatten()
+            spfx_arr = Bx_arr/wl
+            spfy_arr = By_arr/wl
+            wl_arr = None
+
+        v = np.abs(model.getComplexCoherentFlux(
+            spfx_arr, spfy_arr, wl=wl_arr, t=t_arr).reshape(n, nB))
+
+        if ax is None:
+            fig, ax = plt.subplots(2, 1)
+        else:
+            fig = ax.flatten()[0].get_figure()
+
+        ax[0].plot(x, y, color="r")
+
+        ax[0].set_ylabel("{} (mas)".format(param.name))
+        ax[0].get_xaxis().set_visible(False)
+
+        for iB in range(1, nB):
+            ax[1].plot(x, v[:, iB]/v[:, 0], color=plt.cm.plasma(iB/(nB-1)))
+
+        ax[1].set_xlabel(xlabel)
+        ax[1].set_ylabel("Visibility")
+
+        if colorbar == True:
+            norm = colors.Normalize(vmin=np.min(B[1:]), vmax=np.max(B))
+            sm = cm.ScalarMappable(cmap=plt.cm.plasma, norm=norm)
+            fig.colorbar(sm, ax=ax, label="Baseline Length (m)")
+
+        return fig, ax, v
+
+
+We will need a baseline length vector (here 200 baselines between 0 and 60m) and we will
+build for each model either a length 1000 wavelength or time vector.
+
+.. code-block:: ipython3
+
+    nB = 200
+    B = np.linspace(0, 60, num=nB)
+
+    nwl = 1000
+    nt = 1000
+
+
+Now, let's start with our first interpolator: A Gaussian in wavelength (also available
+for time). It can be used to model spectral features like atomic lines or molecular bands
+in emission or absorption.
+
+It has 4 parameters :
+
+- A central wavelength ``x0``
+- A value outside the Gaussian (or offset) : ``val0``
+- A value at the maximum of the Gaussian : ``value``
+- A full width at half maximum : ``fwhm``
+
+To create such an interpolator, we use the class
+:func:`oimInterp <oimodeler.oimParam.oimInterp>` class and specify
+``GaussWl`` as the type of interpolator. In our example below we create a Uniform Disk
+model with a diameter interpolated between 2 mas (outside the Gaussian range) and 4 mas
+at the top of the Gaussian. The central wavelength is set to 2.1656 microns (Brackett
+Gamma hydrogen line) and the fwhm to 10nm.
+
+.. code-block:: ipython3
+
+    c1 = oim.oimUD(d=oim.oimInterp('GaussWl', val0=2, value=4, x0=2.1656e-6, fwhm=1e-8))
+    m1 = oim.oimModel(c1)
+
+Finally, we can define the wavelength range and use our custom plotting function.
+
+.. code-block:: ipython3
+
+    wl = np.linspace(2.1e-6, 2.3e-6, num=nwl)
+    fig, ax, im = plotParamAndVis(B, wl, None, m1, c1.params['d'])
+    fig.suptitle("Gaussian interpolator in $\lambda$ on a uniform disk diameter", fontsize=10)
+
+
+.. image:: ../../images/interp1.png
+  :alt: Alternative text
+
+
+The parameters of the interpolator can be accessed using the ``params`` attribute of the
+:func:`oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>`:
+
+.. code-block:: ipython3
+
+    pprint(c1.params['d'].params)
+
+
+.. parsed-literal::
+
+    ... [oimParam at 0x2610e25e220 : x0=2.1656e-06 ± 0 m range=[0,inf] free=True ,
+         oimParam at 0x2610e25e250 : fwhm=1e-08 ± 0 m range=[0,inf] free=True ,
+         oimParam at 0x2610e25e280 : d=2 ± 0 mas range=[-inf,inf] free=True ,
+         oimParam at 0x2610e25e2b0 : d=4 ± 0 mas range=[-inf,inf] free=True ]
+
+Each one can also be accessed using their name as an attribute:
+
+.. code-block:: ipython3
+
+    pprint(c1.params['d'].x0)
+
+
+.. parsed-literal::
+
+    ... oimParam x0 = 2.1656e-06 ± 0 m range=[0,inf] free
+
+
+These parameters will behave like normal free or fixed parameters when performing model
+fitting. We can get the full list of parameters from our model using the
+``getParameter`` method.
+
+.. code-block:: ipython3
+
+    pprint(m1.getParameters())
+
+.. parsed-literal::
+
+    ... {'c1_UD_x': oimParam at 0x2610e25e100 : x=0 ± 0 mas range=[-inf,inf] free=False ,
+         'c1_UD_y': oimParam at 0x2610e25e130 : y=0 ± 0 mas range=[-inf,inf] free=False ,
+         'c1_UD_f': oimParam at 0x2610e25e160 : f=1 ± 0  range=[-inf,inf] free=True ,
+         'c1_UD_d_interp1': oimParam at 0x2610e25e220 : x0=2.1656e-06 ± 0 m range=[0,inf] free=True ,
+         'c1_UD_d_interp2': oimParam at 0x2610e25e250 : fwhm=1e-08 ± 0 m range=[0,inf] free=True ,
+         'c1_UD_d_interp3': oimParam at 0x2610e25e280 : d=2 ± 0 mas range=[-inf,inf] free=True ,
+         'c1_UD_d_interp4': oimParam at 0x2610e25e2b0 : d=4 ± 0 mas range=[-inf,inf] free=True }
+
+In the dictionary returned by the ``getParameters`` method, the four interpolator parameters
+are called ``c1_UD_d_interpX``.
+
+The second interpolator presented here is the multiple Gaussian in wavelength (also
+available for time). It is a generalisation of the first interpolator but with
+multiple values for ``x0``, ``fwhm`` and ``values``.
+
+.. code-block:: ipython3
+
+    c2 = oim.oimUD(f=0.5, d=oim.oimInterp("mGaussWl", val0=2, values=[4, 0, 0],
+                                          x0=[2.05e-6, 2.1656e-6, 2.3e-6],
+                                          fwhm=[2e-8, 2e-8, 1e-7]))
+    pt = oim.oimPt(f=0.5)
+    m2 = oim.oimModel(c2, pt)
+
+    c2.params['d'].values[1] = oim.oimParamLinker(
+        c2.params['d'].values[0], "*", 3)
+    c2.params['d'].values[2] = oim.oimParamLinker(
+        c2.params['d'].values[0], "+", -1)
+
+    wl = np.linspace(1.9e-6, 2.4e-6, num=nwl)
+
+    fig, ax, im = plotParamAndVis(B, wl, None, m2, c2.params['d'])
+    fig.suptitle(
+        "Multiple Gaussian interpolator in $\lambda$ on a uniform disk diameter", fontsize=10)
+
+
+.. image:: ../../images/interp2.png
+  :alt: Alternative text
+
+
+Here, to reduce the number of free parameters of the model with have linked the second
+and third ``values`` of the interpolator to the first one.
+
+Let's look at our third interpolator: An asymmetric cosine interpolator in time. As it
+is cyclic it might be used to simulated a cyclic variation, for example a pulsating star.
+
+It has 5 parameters :
+
+- The Epoch (mjd) of the minimum value: ``T0``.
+- The period of the variation in days ``P``.
+- The mini and maximum values of the parameter as a two-elements array : ``value``.
+- Optionally, the asymmetry : ``x0``  (x0=0.5 means no assymetry, x0=0 or 1 maximum asymmetry).
+
+
+.. code-block:: ipython3
+
+    c3 = oim.oimGauss(fwhm=oim.oimInterp(
+        "cosTime", T0=60000, P=1, values=[1, 3], x0=0.8))
+    m3 = oim.oimModel(c3)
+
+    t = np.linspace(60000, 60006, num=nt)
+    wl = 2.2e-6
+
+    fig, ax, im = plotParamAndVis(B, wl, t, m3, c3.params['fwhm'])
+    fig.suptitle(
+        "Assym. Cosine interpolator in Time on a Gaussian fwhm", fontsize=10)
+
+
+.. image:: ../../images/interp3.png
+  :alt: Alternative text
+
+
+Now, let's have a look at the classic wavelength interpolator (also available for time).
+jIt has two parameters:
+
+- A list of reference wavelengths: ``wl``.
+- A list of values at the reference wavelengths: ``values``.
+
+Values will be interpolated in the range, using either linear (default), quadratic, or
+cubic interpolation set by the keyword ``kind``. Outside the range of defined wavelengths
+the values will be either fixed (default)  or extrapolated depending on the value of the
+``extrapolate`` keyword.
+
+Here, we present examples with the three kind of interpolation and with or without
+extrapolation.
+
+.. code-block:: ipython3
+
+    c4 = oim.oimIRing(d=oim.oimInterp("wl", wl=[2e-6, 2.4e-6, 2.7e-6, 3e-6], values=[2, 6, 5, 6],
+                                      kind="linear", extrapolate=True))
+    m4 = oim.oimModel(c4)
+    wl = np.linspace(1.8e-6, 3.2e-6, num=nwl)
+    fig, ax = plt.subplots(2, 6, figsize=(18, 6), sharex=True, sharey="row")
+
+    plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 0], colorbar=False)
+    c4.params['d'].extrapolate = False
+    plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 1], colorbar=False)
+
+    c4.params['d'].extrapolate = True
+    c4.params['d'].kind = "quadratic"
+    plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 2], colorbar=False)
+    c4.params['d'].extrapolate = False
+    plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 3], colorbar=False)
+
+    c4.params['d'].extrapolate = True
+    c4.params['d'].kind = "cubic"
+    plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 4], colorbar=False)
+    c4.params['d'].extrapolate = False
+    plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 5], colorbar=False)
+
+    plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.9,
+                        wspace=0.05, hspace=0.05)
+    for i in range(1, 6):
+        ax[0, i].get_yaxis().set_visible(False)
+        ax[1, i].get_yaxis().set_visible(False)
+
+    fig.suptitle("Linear, Quadratic and Cubic interpolators (with extrapolation"
+                 r" or fixed values outside the range) in $\lambda$ on a uniform"
+                 " disk diameter", fontsize=18)
+
+
+.. image:: ../../images/interp4.png
+  :alt: Alternative text
+
+
+Finally, we can also use a polynominal interpolator in time (also available for
+wavelength). Its free parameters are the coefficients of the polynomial. The parameter
+``x0`` allows to shift the reference time (in mjd) from 0 to an arbitrary date.
+
+.. code-block:: ipython3
+
+    c5 = oim.oimUD(d=oim.oimInterp('polyTime', coeffs=[1, 3.5, -0.5], x0=60000))
+    m5 = oim.oimModel(c5)
+
+    wl = 2.2e-6
+    t = np.linspace(60000, 60006, num=nt)
+
+    fig, ax, im = plotParamAndVis(B, wl, t, m5, c5.params['d'])
+    fig.suptitle(
+        "Polynomial interpolator in Time on a uniform disk diameter", fontsize=10)
+
+
+.. image:: ../../images/interp5.png
+  :alt: Alternative text
+
+
+As for other part of the oimodeler software, **oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage. See the :ref:`create_interp` example.
+
 
