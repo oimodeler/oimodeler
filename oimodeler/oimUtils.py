@@ -2010,7 +2010,6 @@ def _listFeatures(
                 list_features.append(obj)
         except:
             pass
-
     table = []
     if header:
         table.append(header)
@@ -2018,13 +2017,11 @@ def _listFeatures(
 
     for cname in list_features:
         try:
-
             ti = featureToTextFunction(cname)
             table.append(ti)
             names.append(cname)
         except:
-            pass
-            #print(cname)
+            print(cname)
 
     if details:
         if save2csv:
@@ -2133,7 +2130,7 @@ def listParamInterpolators(details=False, save2csv=None):
     
         try:
             description= interp.interpdescription
-            print(description)
+            #print(description)
         except:
              description = " - "
         tab.append(description)

@@ -678,7 +678,7 @@ class oimParamPowerLaw(oimParamInterpolator):
     interpdescription="Powerlaw interpolation in wl or mjd"
     """Power-law interpolation, i.e. A*(x/x0)**p."""
     interparams=["dependence","x0", "A","p"]
-    def _init(self, param, dependence, x0, A, p, **kwargs):
+    def _init(self, param, dependence="wl", x0=0, A=0, p=1, **kwargs):
         self.dependence = dependence
 
         self.x0 = oimParam(**_standardParameters[dependence])
@@ -719,14 +719,14 @@ class oimParamPowerLaw(oimParamInterpolator):
 class oimParamPowerLawTime(oimParamPowerLaw):
     interpdescription="Powerlaw interpolation in mjd"
     interparams=["x0", "A","p"]
-    def _init(self, param, x0, A, p):
-        super()._init(param, dependence="t", x0=x0, A=A, p=p)
+    def _init(self, param, x0=0, A=0, p=1):
+        super()._init(param, dependence="mjd", x0=x0, A=A, p=p)
 
 
 class oimParamPowerLawWl(oimParamPowerLaw):
     interpdescription="Powerlaw interpolation in wl"
     interparams=["x0", "A","p"]
-    def _init(self, param, x0, A, p):
+    def _init(self, param, x0=0, A=0, p=1):
         super()._init(param, dependence="wl", x0=x0, A=A, p=p)
 
 
@@ -879,8 +879,8 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
     def _init(
         self,
         param: oimParam,
-        temp: Union[int, float],
-        solid_angle: Union[int, float, oimParam],
+        temp: Union[int, float]=0,
+        solid_angle: Union[int, float, oimParam]=0,
         **kwargs,
     ) -> None:
         """The subclass's constructor."""
@@ -958,14 +958,14 @@ class oimParamLinearStarWl(oimParamInterpolator):
     lum : .oimParam
         An oimParam containing the star's luminosity (Lsun).
     """
-    interpdescription="Blackbody in wl for given temperature, distance and radius"
+    interpdescription="Blackbody in wl for given Teff, dist, and radius or lum"
     interparams=["temp","dist", "lum","radius"]
     def _init(
         self,
         param: oimParam,
-        temp: Union[int, float, ArrayLike],
-        dist: Union[int, float],
-        lum: Union[int, float, None] = None,
+        temp: Union[int, float, ArrayLike]=0,
+        dist: Union[int, float]=0,
+        lum: Union[int, float, None] = 0,
         radius: Union[int, float, None] = None,
         **kwargs: Dict,
     ) -> None:

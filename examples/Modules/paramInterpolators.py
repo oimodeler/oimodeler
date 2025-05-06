@@ -181,4 +181,21 @@ plt.savefig(save_dir / "interp5.png")
 
 
 #%%
-star1 = oim.oimUD(f=oim.oimInterp('polyTime', coeffs=[1, 3.5, -0.5], x0=60000))
+star1 = oim.oimUD(f=oim.oimInterp('starWl',temp=10000,radius=2.5,dist=100)) # A0V
+star2 = oim.oimUD(f=oim.oimInterp('starWl',temp=5000,radius=17,dist=100)) # K1III
+
+wl=np.logspace(-7,-4,num=50)
+f_star1=star1.params['f'](wl)
+f_star2=star2.params['f'](wl)
+
+fig,ax = plt.subplots()
+
+ax.loglog(wl*1e6,f_star1,label="star1: A0V")
+ax.loglog(wl*1e6,f_star2,label="star2: K1III")
+ax.set_xlabel("$\\lambda$ ($\\mu$m)")
+ax.set_ylabel("Flux [Jy]")
+ax.legend()
+
+
+
+

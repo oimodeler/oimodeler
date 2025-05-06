@@ -259,7 +259,7 @@ class oimSimulator:
             return fig
     
     def plot(self, arr, simulated=True, savefig=None, visLog=False, xaxis="SPAFREQ",
-             xunit="cycle/rad", cname = "EFF_WAVE", cunit="micron", cmap="coolwarm",
+             xunit="cycle/rad", cname = "EFF_WAVE", cunit="micron", cmap="plasma",
              kwargsData={}, kwargsSimulatedData={}):
         # NOTE: Plotting  data and simulated data
         kwargsData0 = dict(cname=cname, cunit=cunit, lw=2,
@@ -340,9 +340,30 @@ class oimSimulator:
             plt.savefig(savefig)
 
         return fig, ax
-    def plot_residuals(self, arr, xaxis = 'SPAFREQ', xunit="cycle/rad", savefig=None, visLog=False,
-                       cname = "EFF_WAVE", cunit="micron", kwargsData={}):
+    
+    
+    def plot_residuals(self, arr, xaxis = 'SPAFREQ', xunit="cycle/rad",
+                       savefig=None, visLog=False,cname = "EFF_WAVE", 
+                       cunit="micron",cmap="plasma",marker=".", **kwargs):
         
+        
+        
+        kwargs0 = dict(cname=cname, cunit=cunit, lw=2,cmap=cmap)
+        
+        
+        kwargs = {**kwargs0, **kwargs}
+        kwargs["cunit"]= u.Unit(kwargs["cunit"])
+
+        if "color" in kwargs:
+            kwargs.pop("cmap")
+            kwargs.pop("cname")
+            kwargs.pop("cunit")
+        
+        
+        
+        if not("ls" in kwargs) and not("linestyle" in kwargs):
+            kwargs["ls"]=""
+          
         
         residuals_data = oimData()
         for i, (dat, fit_dat) in enumerate(zip(self.data.data,self.simulatedData.data)):
@@ -362,17 +383,34 @@ class oimSimulator:
                     residuals_data.data[i][p_arr].data[param] = res_vis
 
 
-        kwargsData = dict(cname = cname, cunit=cunit)
+        #kwargs = dict(cname = cname, cunit=cunit)
         idx_xaxis = np.where(oimPlotParamName == xaxis)[0][0]
         label_xaxis = oimPlotParamLabel[idx_xaxis]
         
-        fig, ax = plt.subplots(len(arr), 1, subplot_kw=dict(projection='oimAxes'), figsize=(14, 8), constrained_layout=True)
+        
+        fig, ax = plt.subplots(len(arr), 1, subplot_kw=dict(projection='oimAxes'),
+                               figsize=(14, 8), constrained_layout=True)
 
         for i in range(len(arr)):
             idx_p = np.where(oimPlotParamName == arr[i])[0][0]
             label_p = oimPlotParamLabel[idx_p]
-            ax[i].oiplot(residuals_data, xaxis, arr[i], xunit=xunit, **kwargsData)
-            ax[i].set_title(label_p)
+            scale =ax[i].oiplot(residuals_data, xaxis, arr[i], xunit=xunit,
+                                marker=marker,showColorbar=False, **kwargs)
+            #ax[i].set_title(label_p)
             ax[i].set_xlabel(label_xaxis+' ('+xunit+')')
-            ax[i].set_ylabel(r'$\sigma$')
+            ax[i].set_ylabel(f"{label_p} Residuals")
+            
+        # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
+        
+       
+        if "cname" in kwargs:   
+            idxC = np.where(oimPlotParamName == kwargs['cname'])[0][0]
+            xlabel = oimPlotParamLabelShort[idxC]
+            cunittext = f"{kwargs['cunit']:latex_inline}"
+            fig.colorbar(scale, ax=ax.ravel().tolist(),
+                         label=f"{xlabel} ({cunittext})")
+            
+        if savefig != None:
+            plt.savefig(savefig)    
+        
         return fig, ax

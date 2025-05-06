@@ -74,9 +74,93 @@ def _errorplot(axe, x: np.ndarray, y: np.ndarray,
 
     axe.fill_between(x,ys-dy,ys+dy, **kwargs)
 
-
-
 def _colorPlot(axe, x: np.ndarray,
+               y: np.ndarray, z: np.ndarray, flag:np.ndarray=None,
+               setlim: Optional[bool] = False, **kwargs) -> Collection:
+    """Creates a plot of the x and y data with the z data as color.
+
+    Parameters
+    ----------
+    axe : matplotlib.axes.Axes
+        The axes to plot on.
+    x : np.ndarray
+        The x data.
+    y : numpy.ndarray
+        The y data.
+    z : numpy.ndarray
+        The colorbar data.
+    flag : None or numpy.ndarray, optional
+        Flagging of bad data (not to be plotted). The default is None. 
+    setlim : bool, optional
+        Automatically sets the plot's limit. The default is False.
+
+    Returns
+    -------
+    res : matplotlib.collections.Collection
+        The collection of the plot.
+    """
+    noline=False
+    if "ls" in kwargs:
+        if  kwargs["ls"]==None or kwargs["ls"]=="":
+            noline=True
+    if "linestyle" in kwargs:
+        if kwargs["linestyle"]==None or kwargs["linestyle"]=="":
+            noline=True
+        
+    if "cmap" not in kwargs:
+        kwargs["cmap"] = "plasma"
+
+    maxi = [np.max(z)]
+    mini = [np.min(z)]
+    for ci in axe.collections:
+        maxii = np.max(ci.get_array())
+        minii = np.min(ci.get_array())
+        if maxii is not None and minii is not None:
+            maxi.append(maxii)
+            mini.append(minii)
+            
+    maxi = np.max(maxi)
+    mini = np.min(mini)
+    
+    if type(flag) == type(None):
+        flag=(0*x).astype(bool)
+
+    yma=np.ma.masked_where(flag, y)
+
+
+    if "norm" not in kwargs:
+        norm = plt.Normalize(mini, maxi)
+    else:
+        norm = kwargs["norm"]
+
+    res = None
+    
+    if x.size == 1 or  "marker" in kwargs:
+        res = axe.scatter(x, yma, c=z, **kwargs)
+    if x.size > 1 and noline==False:
+        points = np.array([x, y]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        flag_seg = flag[1:] | flag[0:-1]
+        segments_flagged=segments[np.logical_not(flag_seg),:,:]
+        z_seg=np.mean(np.array([z[:-1], z[1:]]),axis=0)
+        z_flagged=z_seg[np.logical_not(flag_seg)]
+
+        if "marker" in kwargs:
+            kwargs.pop("marker")
+        
+        lc = LineCollection(segments_flagged, **kwargs)
+        lc.set_array(z_flagged)
+        res = axe.add_collection(lc)
+
+    for ci in axe.collections:
+        ci.set_norm(norm)
+
+    if setlim:
+        axe.autoscale_view()
+
+    return res
+
+def _colorPlotOld(axe, x: np.ndarray,
                y: np.ndarray, z: np.ndarray,
                setlim: Optional[bool] = False, **kwargs) -> Collection:
     """Creates a plot of the x and y data with the z data as color.

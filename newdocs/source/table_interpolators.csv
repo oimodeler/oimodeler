@@ -13,5 +13,10 @@ oimParamMultipleGaussianTime|mGaussTime|Multiple Gaussian interpolator in mjd|va
 oimParamPolynomial| - |Generic polynomial interpolation in wl or mjd|dependence, order, coeffs, x0
 oimParamPolynomialWl|polyWl|Polynomial interpolation in wl|order, coeffs, x0
 oimParamPolynomialTime|polyTime|Polynomial interpolation in mjd|order, coeffs, x0
+oimParamPowerLaw| - |Powerlaw interpolation in wl or mjd|dependence, x0, A, p
+oimParamPowerLawTime|powerlawTime|Powerlaw interpolation in mjd|x0, A, p
+oimParamPowerLawWl|powerlawWl|Powerlaw interpolation in wl|x0, A, p
 oimParamLinearRangeWl|rangeWl|Linear range interpolation in wl|wlmin, wlmax, values
 oimParamLinearTemplateWl|templateWl|Interpolation in wl using external regular grid template|wl0, dwl, f_contrib, values, kind
+oimParamLinearTemperatureWl|tempWl|Blackbody in wl for given temperature|temp, solid_angle
+oimParamLinearStarWl|starWl|Blackbody in wl for given Teff, dist, and radius or lum|temp, dist, lum, radius
