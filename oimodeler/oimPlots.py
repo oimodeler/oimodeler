@@ -160,71 +160,6 @@ def _colorPlot(axe, x: np.ndarray,
 
     return res
 
-def _colorPlotOld(axe, x: np.ndarray,
-               y: np.ndarray, z: np.ndarray,
-               setlim: Optional[bool] = False, **kwargs) -> Collection:
-    """Creates a plot of the x and y data with the z data as color.
-
-    Parameters
-    ----------
-    axe : matplotlib.axes.Axes
-        The axes to plot on.
-    x : np.ndarray
-        The x data.
-    y : numpy.ndarray
-        The y data.
-    z : numpy.ndarray
-        The colorbar data.
-    setlim : bool, optional
-        Automatically sets the plot's limit. The default is False.
-
-    Returns
-    -------
-    res : matplotlib.collections.Collection
-        The collection of the plot.
-    """
-    if "cmap" not in kwargs:
-        kwargs["cmap"] = "plasma"
-
-    maxi = [np.max(z)]
-    mini = [np.min(z)]
-    for ci in axe.collections:
-        maxii = np.max(ci.get_array())
-        minii = np.min(ci.get_array())
-        if maxii is not None and minii is not None:
-            maxi.append(maxii)
-            mini.append(minii)
-
-    maxi = np.max(maxi)
-    mini = np.min(mini)
-
-    if "norm" not in kwargs:
-        norm = plt.Normalize(mini, maxi)
-    else:
-        norm = kwargs["norm"]
-
-    res = None
-    if x.size == 1:
-        res = axe.scatter(x, y, c=z, **kwargs)
-    elif x.size > 1:
-        points = np.array([x, y]).T.reshape(-1, 1, 2)
-        segments = np.concatenate([points[:-1], points[1:]], axis=1)
-
-        if "marker" in kwargs:
-            kwargs.pop("marker")
-
-        lc = LineCollection(segments, **kwargs)
-        lc.set_array(z)
-        res = axe.add_collection(lc)
-
-    for ci in axe.collections:
-        ci.set_norm(norm)
-
-    if setlim:
-        axe.autoscale_view()
-    return res
-
-
 def uvPlot(oifitsList: fits.HDUList, arrname: Optional[str] = "OI_VIS2",
            unit: Optional[u.Quantity] = u.m,
            stringunitformat: Optional[str] = "latex_inline", 
@@ -312,8 +247,9 @@ def uvPlot(oifitsList: fits.HDUList, arrname: Optional[str] = "OI_VIS2",
 
     for datai in oifitsList:
         _,_, ui, vi = getBaselineLengthAndPA(datai, arr=arrname, squeeze=False, returnUV=True)
+        idx_arr = [jdata for jdata,dataij in enumerate(datai) if dataij.name=="OI_VIS2"]
         for iext in range(len(ui)):
-            wlii = getWlFromOifits(datai, arr=arrname, extver=iext+1)
+            wlii = getWlFromOifits(datai, arr=datai[idx_arr[iext]], extver=iext+1)
             nB=ui[iext].size
             ucoord.extend(ui[iext])
             vcoord.extend(vi[iext])
@@ -1223,3 +1159,90 @@ class oimAxes(plt.Axes):
         """Set the yscale of the plot."""
         super().set_yscale(value, **kwargs)
         self.autoscale_view()
+
+
+
+sta_name=np.array(['A0','A1','B0','B1','B2','B3','B4','B5','C0','C1','C2','C3',
+                   'D0','D1','D2','E0','G0','G1','G2','H0','I1','J1','J2','J3',
+                   'J4','J5','J6','K0','L0','M0','U1','U2','U3','U4'])
+
+
+sta_pos=np.array([[-32.001,-48.013,-14.642,-55.812],[-32.001,-64.021, -9.434,-70.949],
+                  [-23.991,-48.019, -7.065,-53.212],[-23.991,-64.011, -1.863,-68.334],
+                  [-23.991,-72.011,  0.739,-75.899],[-23.991,-80.029,  3.348,-83.481],
+                  [-23.991,-88.013,  5.945,-91.030],[-23.991,-96.012,  8.547,-98.594],
+                  [-16.002,-48.013,  0.487,-50.607],[-16.002,-64.011,  5.691,-65.735],
+                  [-16.002,-72.019,  8.296,-73.307],[-16.002,-80.010, 10.896,-80.864],
+                  [  0.010,-48.012, 15.628,-45.397],[  0.010,-80.015, 26.039,-75.660],
+                  [  0.010,-96.012, 31.243,-90.787],[ 16.011,-48.016, 30.760,-40.196],
+                  [ 32.017,-48.0172,45.896,-34.990],[ 32.020,-112.010,66.716,-95.501],
+                  [ 31.995,-24.003, 38.063,-12.289],[ 64.015,-48.007, 76.150,-24.572],
+                  [ 72.001,-87.997, 96.711,-59.789],[ 88.016,-71.992,106.648,-39.444],
+                  [ 88.016,-96.005,114.460,-62.151],[ 88.016,  7.996,  80.628,36.193],
+                  [ 88.016,23.993,  75.424, 51.320],[ 88.016,47.987,  67.618, 74.009],
+                  [ 88.016,71.990,  59.810, 96.706],[ 96.002,-48.006,106.397,-14.165],
+                  [104.021,-47.998,113.977,-11.549],[112.013,-48.000,121.535, -8.951],
+                  [-16.000,-16.000, -9.925,-20.335],[ 24.000,24.000,  14.887, 30.502],
+                  [64.0013,47.9725, 44.915, 66.183],[112.000,8.000,  103.306,43.999]])
+
+def vltiplot(axe=None,configs=np.array([]),marker="o",markersize=10,telcolor='k'
+             ,labels=True,fontsize=2):
+    
+   
+    UTs=sta_pos[-4:,:]
+    ATs=sta_pos[:-4,:]
+    
+    if axe==None:
+        fig,axe = plt.subplots()
+    else:
+        fig = axe.get_figure()
+        
+    #axe.axis([np.min(sta_pos[:,2])-20,np.max(sta_pos[:,2])+20,np.min(sta_pos[:,3])-20,np.max(sta_pos[:,3])+20])
+    axe.scatter(UTs[:,2],UTs[:,3],marker=marker,s=8*markersize,color=telcolor)
+    axe.scatter(ATs[:,2],ATs[:,3],marker=marker,s=markersize,color=telcolor)
+    
+    if labels:
+        for i in range(len(sta_name)):
+            mult=1
+            axe.text(sta_pos[i,2]+0.0*markersize,sta_pos[i,3]+0.5*markersize,
+                     sta_name[i],fontsize=3*fontsize*mult,color=telcolor)
+    
+    
+    if len(configs)>0:
+        for iconfig,configi in enumerate(configs):
+
+            tels=configi.split("-")
+            idx=[np.where(sta_name==teli)[0][0] for teli in tels]
+            
+            
+            for idxi in idx:
+                for idxj in idx:
+                    if idxi!=idxj:
+                        col = oimPlotParamColorCycle[iconfig]
+                        axe.plot([sta_pos[idxi,2],sta_pos[idxj,2]],
+                                 [sta_pos[idxi,3],sta_pos[idxj,3]],color=col)
+
+                
+    
+        
+            
+            
+    xlim=axe.get_xlim()
+    ylim=axe.get_ylim()
+    
+    xrange=xlim[1]-xlim[0]
+    yrange=ylim[1]-ylim[0]
+    x0=np.mean(xlim)
+    y0=np.mean(ylim)
+    
+    xyrange=np.max([xrange,yrange])+20
+    
+    
+    
+    axe.set_xlim(x0-xyrange/2,x0+xyrange/2)
+    axe.set_ylim(y0-xyrange/2,y0+xyrange/2)
+    axe.get_xaxis().set_visible(False)
+    axe.get_yaxis().set_visible(False)
+    axe.set_aspect('equal')
+    
+    return fig, axe

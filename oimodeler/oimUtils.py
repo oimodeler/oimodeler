@@ -1022,7 +1022,6 @@ def getWlFromOifits(
             arr = oifits[arr]
         else:
             TypeError(f"No extver in {arr}")
-
     insname = arr.header["INSNAME"]
     oiwls = np.array([di for di in oifits if di.name == "OI_WAVELENGTH"])
     oiwls_insname = np.array([oiwli.header["INSNAME"] for oiwli in oiwls])
@@ -1716,7 +1715,7 @@ def binWavelength(
                     data[i].data[errnamei] /= np.sqrt(binsize)
 
 
-def oifitsFlagWithExpression(data, arr, extver, expr, keepOldFlag=False):
+def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
     """Flag the data with an expression.
 
     Parameters
@@ -1743,14 +1742,14 @@ def oifitsFlagWithExpression(data, arr, extver, expr, keepOldFlag=False):
     if arr == ["all"]:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
 
+
     for iarr in range(len(data)):
         ok = True
         if data[iarr].name in arr:
             arri = data[iarr].name
             try:
-                if extver:
-
-                    if extver != data[iarr].header["EXTVER"]:
+                if extver0:
+                    if extver0 != data[iarr].header["EXTVER"]:
                         ok = False
                 else:
                     extver = data[iarr].header["EXTVER"]
@@ -1792,11 +1791,11 @@ def oifitsFlagWithExpression(data, arr, extver, expr, keepOldFlag=False):
                 flags = eval(expr)
 
                 if keepOldFlag:
-                    data[arri].data["FLAG"] = np.logical_or(
-                        flags, data[arri].data["FLAG"]
+                    data[iarr].data["FLAG"] = np.logical_or(
+                        flags, data[iarr].data["FLAG"]
                     )
                 else:
-                    data[arri].data["FLAG"] = flags
+                    data[iarr].data["FLAG"] = flags
 
             except:
                 raise Warning(f"oifitsFlagWithExpression: " \
@@ -2093,16 +2092,28 @@ def listDataFilters(details=False, save2csv=None):
 
 
 def listFitters(details=False, save2csv=None):
-    header = ["Fitter Name", "Short description", "Keywords"]
+    header = ["Fitter Name", "Description"]
 
     def _fitterToTextfunction(cname):
-        # fit = oim.__dict__[cname](None,None)
+        fit = oim.__dict__[cname](None,None)
         tab = [cname]
-        # tab.append(fit.description)
-        # txt=""
-        # for pname in filt.params:
-        #    txt+=pname+", "
-        # tab.append(txt[:-2])
+        try:
+            description= fit.description
+            #print(description)
+        except:
+             description = " - "
+        tab.append(description)
+        
+        """
+        txt = ""
+        try:     
+            for pname in fit.params:
+                txt += pname + ", "
+            txt = txt[:-2]
+        except:
+            pass
+        tab.append(txt)
+        """
         return tab
 
     res = _listFeatures(
@@ -2110,7 +2121,6 @@ def listFitters(details=False, save2csv=None):
     )
 
     return res
-
 
 def listParamInterpolators(details=False, save2csv=None):
     header = ["Class Name", "oimInterp macro", "Description", "parameters"]

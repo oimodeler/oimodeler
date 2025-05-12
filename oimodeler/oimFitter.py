@@ -20,8 +20,15 @@ from .oimSimulator import oimSimulator
 
 class oimFitter:
     params = {}
+    description="Abstract class for model-fitting"
 
     def __init__(self, *args, **kwargs):
+        
+        if "cprior" in kwargs:
+            self.cprior = kwargs["cprior"]
+        else:
+            self.cprior = None
+        
         nargs = len(args)
         if nargs == 2:
             self.simulator = oimSimulator(args[0], args[1], cprior=self.cprior)
@@ -90,10 +97,11 @@ class oimFitter:
 
 
 class oimFitterEmcee(oimFitter):
-    def __init__(self, *args, cprior=None, **kwargs):
+    description="MCMC sampler based on the emcee python module"
+    def __init__(self, *args, **kwargs):
         self.params["nwalkers"] = oimParam(name="nwalkers", value=16, mini=1,
                                            description="Number of walkers")
-        self.cprior = cprior
+        
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
@@ -322,7 +330,8 @@ class oimFitterEmcee(oimFitter):
 class oimFitterDynesty(oimFitter):
     """A multinested fitter that has generally a better coverage of the 
     global (than MCMC) parameter space."""
-
+    description="a dynamic nested sampler based on the dynesty python module"
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         samplers = {"dynamic": DynamicNestedSampler, "static": NestedSampler}
@@ -458,6 +467,7 @@ class oimFitterDynesty(oimFitter):
         
 
 class oimFitterMinimize(oimFitter):
+    description="a simple :math:`\chi^2` minimizer using the numpy Minimize function"
     def __init__(self, *args, **kwargs):
 
         self.params["method"] = oimParam(name="method", value="trf", mini=1,
@@ -518,9 +528,9 @@ class oimFitterMinimize(oimFitter):
         print(f"chi2r = {chi2r:{format}}")
 
 class oimFitterRegularGrid(oimFitter):
-    def __init__(self, *args, cprior=None, **kwargs):
+    description=" regular grid with :math:`\chi^2` explorer"
+    def __init__(self, *args, **kwargs):
         
-        self.cprior = cprior
         super().__init__(*args, **kwargs)
     
     def _prepare(self, **kwargs):
@@ -711,7 +721,7 @@ class oimFitterRegularGrid(oimFitter):
                 ax.plot([xmin,xmin],[self.grid[dim2][0],self.grid[dim2][-1]],
                        **minLines_kwargs)
                
-            
+
             if plotMin:
                 
                 label=  rf"min $\chi^2_r$ = {chi2rmin:.1f}" \
@@ -734,7 +744,7 @@ class oimFitterRegularGrid(oimFitter):
             ax.set_ylabel(ylabel)            
             fig.colorbar(sm, ax=ax, label="$\\chi^2_r$" )
             
-           
+
         return fig,ax    
                 
                     

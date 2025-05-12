@@ -8,7 +8,7 @@ comparison. In these section we will present:
 
 - the basics use and functionalities of this class
 - some details on how the simluated interferometric data are computed
-- some details on the :math:`\chi^2_r` computation
+- a description of the available plotting methods of the :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>` class
 
 The code for this section is in
 `SimulatingData.py <https://github.com/oimodeler/oimodeler/tree/main/examples/Modules/SimulatingData.py>`_
@@ -110,8 +110,6 @@ If computeSimulatedData is True, the results of the
 is converted into a :func:`oimData <oimodeler.oimData.oimData>` instance accessible through the
 :func:`data <oimodeler.oimSimulator.oimSimulator.simulatedData>` member variable of the simulator.
 
-
-
 .. code-block:: ipython3
 
     sim.simulatedData.info()
@@ -185,8 +183,8 @@ We could now try to fit the model "by hand", or by making a loop on some paramet
 But **oimodeler** implement various fitter class to perform automatic model fitting as described in :ref:`fitter` section.
 
 
-Simulating data and computing :math:`\chi^2`
---------------------------------------------
+Simulating data
+---------------
 
 Here, give a bit more details on how each of OIFITS2 compatible data type is computed from the complex coherent
 flux (CCF) return by the :func:`oimModel.getComplexCoherentFlux <oimodeler.oimModel.oimModel.getComplexCoherentFlux>` method.
@@ -213,7 +211,6 @@ phase and amplitude. The term :math:`<CCF>_B` is the per baseline average of the
 visibility and phase.
 
 The :math:`chi^2` computation
-
 
 Plotting methods
 ----------------
@@ -247,10 +244,8 @@ This method uses the :func:`oimWlTemplatePlots <oimodeler.oimPlots.oimWlTemplate
 in the :ref:`plot` section.
 
 Such plot are very useful to plot high spectral resolution observation center on atomic lines such as for the Be star
-:math:`alpha` Col VLTI/AMBER observation and modelling with a rotating disk model as descrbied in the ????? section.
+:math:`alpha` Col VLTI/AMBER observation and modelling with a rotating disk model as described in the examples section.
 
-.. image:: ../../images/ExampleRotatingDiskModel_data_model.png
-  :alt: Alternative text
 
 Finally, residuals can be plotted using the :func:`plot_residuals <oimodeler.oimSimulator.oimSimulator.plot_residuals>`
 method.
