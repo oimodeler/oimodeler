@@ -18,13 +18,10 @@ In the current version, **oimodeler** includes four model-fitting algorithms.
    :delim: |
    :widths: auto
 
-
 These various algorithms allow the user to find the best-fit values of all free parameters of the model
 (minimum of :math:`\chi^2`) and, depending on their nature, to evaluate their statistic. For instance, uncertainties can
 be estimated using the posterior probability function in the case of MCMC or dynamic nested samplers,or using the
 covariant matrix for the Minimize one.
-
-
 
 Emcee fitter
 ------------
