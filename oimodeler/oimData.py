@@ -525,6 +525,39 @@ class oimData(object):
                     print(txt)
         print("\u2550"*80)   
 
+    def removeUselessArrays(self):
+        for idata,datai in enumerate(self.data):
+            toRemove=[]
+            for iarr, arri in enumerate(datai):
+                if arri.name in _oimDataTypeArr:
+                    if len(oimDataCheckData(arri))==0:
+                        toRemove.append(arri)
+                        
+            for arri in toRemove:
+                datai.pop(arri)
+            toRemove=[]
+            for arri in datai:
+                if arri.name=="OI_ARRAY":
+                    useful=False
+                    arrname = arri.header["arrname"]
+                    for arrj in datai:
+                        if arrj.name in _oimDataTypeArr:
+                            if arrname == arrj.header["arrname"]:
+                                useful=True
+                    if useful==False:
+                        toRemove.append(arri)
+                if arri.name=="OI_WAVELENGTH":
+                    useful=False
+                    arrname = arri.header["insname"]
+                    for arrj in datai:
+                        if arrj.name in _oimDataTypeArr:
+                            if arrname == arrj.header["insname"]:
+                                useful=True
+                    if useful==False:
+                        toRemove.append(arri) 
+            for arri in toRemove:
+                datai.pop(arri)
+            
 
     def prepareData(self) -> None:
         """Prepare the data for further analysis."""
