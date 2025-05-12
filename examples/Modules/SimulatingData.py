@@ -10,6 +10,7 @@ from pprint import pprint
 
 import oimodeler as oim
 
+
 # Path tothe binary star  Beta Ari observed with MIRCX (1 files)
 path = Path(__file__).parent.parent.parent
 data_dir = path / "data" / "RealData" "/MIRCX" / "Beta Ari"
@@ -65,6 +66,6 @@ fig1.savefig(save_dir / "ExampleOimSimulator_WlTemplatePlot.png")
 
 #%% residual plot
 
-fig2, ax2 = sim.plot_residuals(["VIS2DATA", "T3PHI"],
+fig2, ax2 = sim.plotResiduals(["VIS2DATA", "T3PHI"],
                      savefig=save_dir / "ExampleOimSimulator_residuals_plot.png")
 
