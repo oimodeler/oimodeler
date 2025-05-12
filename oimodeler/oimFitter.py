@@ -86,7 +86,7 @@ class oimFitter:
         chi2r = self.simulator.chi2r
         pm = u'\xb1'
         for iparam,parami in enumerate(self.freeParams):
-            print(f"{parami} = {res[0][iparam]:{format}} {pm} {res[3][iparam]:{format}} {self.freeParams[parami].unit}")
+            print(f"{parami} = {res[0][iparam]:{format}} {pm} {res[1][iparam]:{format}} {self.freeParams[parami].unit}")
         print(f"chi2r = {chi2r:{format}}")
 
     def _prepare(self, **kwargs):
@@ -189,7 +189,7 @@ class oimFitterEmcee(oimFitter):
         self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes, 
                                cprior=self.cprior)
         return -0.5 * self.simulator.chi2
-     
+
     def getResults(self, mode='best', discard=0, chi2limfact=20, **kwargs):
         chi2 = -2*self.sampler.get_log_prob(discard=discard, flat=True)
         chain = self.sampler.get_chain(discard=discard, flat=True)
