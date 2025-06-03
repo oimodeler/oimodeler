@@ -167,7 +167,7 @@ class oimGauss(oimComponentFourier):
 
     def _imageFunction(self, xx, yy, wl, t):
         r2 = (xx**2+yy**2)
-        return np.sqrt(4*np.log(2)*self.params["fwhm"](wl, t)/np.pi) * \
+        return 4*np.log(2)/self.params["fwhm"](wl, t)**2/np.pi * \
             np.exp(-4*np.log(2)*r2/self.params["fwhm"](wl, t)**2)
 
 
@@ -826,6 +826,66 @@ class oimSqrtLDD(oimComponentFourier):
         s = (15-5*a1-3*a2)/30
         return np.nan_to_num(((1-a1-a2)*c1+(2*a1/6)*c2+(4*a2/10)*c3)/s, nan=1)
 
+class oim4CLDD(oimComponentFourier):
+    """4 Coefficients Limb Darkened Disk component defined in the fourier space
+
+    Parameters
+    ----------
+    x : u.mas | oimInterp
+        x pos of the component (in mas). The default is 0.
+    y : u.mas | oimInterp
+        y pos of the component (in mas). The default is 0.
+    f : u.dimensionless_unscaled | oimInterp
+        flux of the component. The default is 1.
+    d: u.mas | oimInterp
+        diameter of the ring (in mas). The default is 0.
+    a1: u.dimensionless_unscaled | oimInterp
+        first 4 Coefficients limb darkening coefficient
+    a2: u.dimensionless_unscaled | oimInterp
+        second 4 Coefficients limb darkening coefficient
+    a3: u.dimensionless_unscaled | oimInterp
+        third 4 Coefficients limb darkening coefficient
+    a4: u.dimensionless_unscaled | oimInterp
+        forth 4 Coefficients limb darkening coefficient
+        
+    I(mu)/I(1) = 1 - a1(1-mu**0.5) - a2(1 - mu)
+                   - a3(1 - mu**1.5) - a4(1 - mu**2)
+    """
+    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
+    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
+    name = "4 Coefficients Limb Darkened Disk "
+    shortname = "4CLDD"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["d"] = oimParam(**_standardParameters["d"])
+        self.params["a1"] = oimParam(name="a1", value=0, description="1st 4CLDD coeff",
+                                     unit=u.one, mini=-1, maxi=1)
+        self.params["a2"] = oimParam(name="a2", value=0, description="2nd 4CLDD coeff",
+                                     unit=u.one, mini=-1, maxi=1)
+        self.params["a3"] = oimParam(name="a3", value=0, description="3rd 4CLDD coeff",
+                                     unit=u.one, mini=-1, maxi=1)
+        self.params["a4"] = oimParam(name="a4", value=0, description="4th 4CLDD coeff",
+                                     unit=u.one, mini=-1, maxi=1)
+
+        self._eval(**kwargs)
+
+    def _visFunction(self, xp, yp, rho, wl, t):
+        xx = np.pi*self.params["d"](wl, t) * \
+            self.params["d"].unit.to(u.rad)*rho
+
+        a1 = self.params["a1"](wl, t)
+        a2 = self.params["a2"](wl, t)
+        a3 = self.params["a3"](wl, t)
+        a4 = self.params["a4"](wl, t)
+
+        c0 = np.divide(j1(xx), xx)
+        c1 = 2/5 * (gamma(9/4)) * (2**1.25) * np.divide(jv(1.25,xx),xx**1.25)
+        c2 = (np.pi/2)**0.5*np.divide(jv(1.5, xx), xx**1.5)
+        c3 = 2/7 * (gamma(11/4)) * (2**1.75) * np.divide(jv(1.75,xx),xx**1.75)
+        c4 = 2 * np.divide(jv(2., xx), xx**2.)
+        s = (210-42*a1-70*a2-90*a3-105*a4)/420
+        return np.nan_to_num(((1-a1-a2-a3-a4)*c0+a1*c1+a2*c2+a3*c3+a4*c4)/s, nan=1)
 
 #TODO check effect of PA of both component
 class oimConvolutor(oimComponentFourier):
