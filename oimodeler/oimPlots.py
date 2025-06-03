@@ -247,7 +247,7 @@ def uvPlot(oifitsList: fits.HDUList, arrname: Optional[str] = "OI_VIS2",
 
     for datai in oifitsList:
         _,_, ui, vi = getBaselineLengthAndPA(datai, arr=arrname, squeeze=False, returnUV=True)
-        idx_arr = [jdata for jdata,dataij in enumerate(datai) if dataij.name=="OI_VIS2"]
+        idx_arr = [jdata for jdata,dataij in enumerate(datai) if dataij.name==arrname]
         for iext in range(len(ui)):
             wlii = getWlFromOifits(datai, arr=datai[idx_arr[iext]], extver=iext+1)
             nB=ui[iext].size
