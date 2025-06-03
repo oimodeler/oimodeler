@@ -284,12 +284,14 @@ class oimParamInterpolator(oimParam):
 
     def set(self, **kwargs):
         print(
-            "Warning set method is not defined for all interpolators. use getFreeParametezrs instead"
+            "Warning set method is not defined for all interpolators.\n"
+            "Consider using getFreeParameters method instead"
         )
-        for _ in self.params:
+        params = self.params
+        for pi in params:
             for key, value in kwargs.items():
                 try:
-                    self.__dict__[key] = value
+                    pi.__dict__[key] = value
                 except NameError:
                     print("Not valid parameter : {}".format(value))
 
