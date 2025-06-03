@@ -333,7 +333,7 @@ class oimRing2(oimComponentFourier):
         d = self.params["d"](wl, t) * self.params["d"].unit.to(u.rad)
         w = self.params["w"](wl, t) * self.params["w"].unit.to(u.rad)
 
-        xx = np.pi*(d+w/2)*rho
+        xx = np.pi*(d)*rho
         dxx = np.pi*w*rho
 
         return j0(xx)*np.nan_to_num(np.divide(2*j1(dxx), dxx), nan=1)
