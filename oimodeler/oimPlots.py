@@ -871,7 +871,7 @@ class oimWlTemplatePlots(Figure):
                         arrName = oimPlotParamArr[idx]
                         for hdui in filek:
                             if hdui.name == arrName:
-                                extver = hdui.header["EXTVER"]
+                                extver = hdui.header.get("EXTVER", 1)
                                 if np.any(hdui.data[shapeij]!=0):
                                     s = hdui.data[shapeij].shape[0]
                                     for iB in range(s):

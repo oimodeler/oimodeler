@@ -1749,10 +1749,10 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
             arri = data[iarr].name
             try:
                 if extver0:
-                    if extver0 != data[iarr].header["EXTVER"]:
+                    if extver0 != data[iarr].header.get("EXTVER", 1):
                         ok = False
                 else:
-                    extver = data[iarr].header["EXTVER"]
+                    extver = data[iarr].header.get("EXTVER", 1)
             except:
                 pass
         else:
