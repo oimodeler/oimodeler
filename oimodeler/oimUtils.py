@@ -1764,10 +1764,17 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
                     data, arr=arri, extver=extver, returnBand=True
                 )
                 nwl = np.size(eff_wave)
-                length, pa = getBaselineLengthAndPA(
-                    data, arr=arri, extver=extver, T3Max=True
-                )
-                nB = np.size(length)
+                if arri!="OI_FLUX":
+                    length, pa = getBaselineLengthAndPA(
+                        data, arr=arri, extver=extver, T3Max=True)
+                    nB = np.size(length)
+                else:
+                    dim = data[iarr].data["FLUXDATA"].shape
+                    ndim =len(dim)
+                    if ndim == 2:
+                        nB = dim[0]
+                        length = np.ones(nB)*np.nan
+                        pa = np.ones(nB)*np.nan
 
                 EFF_WAVE = np.tile(eff_wave[None, :], (nB, 1))
                 EFF_BAND = np.tile(eff_band[None, :], (nB, 1))
@@ -1789,7 +1796,6 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
 
                 # TODO: Remove eval here as it is can be security liability
                 flags = eval(expr)
-
                 if keepOldFlag:
                     data[iarr].data["FLAG"] = np.logical_or(
                         flags, data[iarr].data["FLAG"]
