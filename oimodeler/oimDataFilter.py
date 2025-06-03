@@ -285,7 +285,7 @@ class oimResetFlags(oimDataFilterComponent):
 
     def _filteringFunction(self, data):
         oifitsFlagWithExpression(data, self.params["arr"],
-                                 1, "False", keepOldFlag=False)
+                                 None, "False", keepOldFlag=False)
 
 
 class oimDiffErrFilter(oimDataFilterComponent):
