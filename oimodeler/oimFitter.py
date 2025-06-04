@@ -2,17 +2,17 @@
 """model fitting"""
 # from multiprocessing import Pool
 
+import astropy.units as unit
 import corner
 import emcee
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import cm
-from scipy.optimize import minimize, least_squares
 from dynesty import DynamicNestedSampler, NestedSampler
 from dynesty import plotting as dyplot
+from matplotlib import cm
+from scipy.optimize import least_squares, minimize
 from tqdm import tqdm
-import astropy.units as unit
 
 from .oimParam import oimParam
 from .oimSimulator import oimSimulator
@@ -24,11 +24,7 @@ class oimFitter:
 
     def __init__(self, *args, **kwargs):
 
-        if "cprior" in kwargs:
-            self.cprior = kwargs["cprior"]
-        else:
-            self.cprior = None
-
+        self.cprior = kwargs.get("cprior", None)
         nargs = len(args)
         if nargs == 2:
             self.simulator = oimSimulator(args[0], args[1], cprior=self.cprior)
@@ -37,11 +33,7 @@ class oimFitter:
         else:
             raise TypeError("Wrong number of arguments")
 
-        try:
-            self.dataTypes = kwargs.pop("dataTypes")
-        except Exception:
-            self.dataTypes = None
-
+        self.dataTypes = kwargs.pop("dataTypes", None)
         self.data = self.simulator.data
         self.model = self.simulator.model
         self.pool = None
@@ -111,11 +103,7 @@ class oimFitterEmcee(oimFitter):
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
-        if "init" not in kwargs:
-            init = "random"
-        else:
-            init = kwargs.pop("init")
-
+        init = kwargs.pop("init", "random")
         if init == "random":
             self.initialParams = self._initRandom()
         elif init == "fixed":
@@ -123,19 +111,15 @@ class oimFitterEmcee(oimFitter):
         elif init == "gaussian":
             self.initialParams = self._initGaussian()
 
-        if "moves" in kwargs:
-            moves = kwargs.pop["moves"]
-        else:
-            moves = [
+        moves = kwargs.pop(
+            "moves",
+            [
                 (emcee.moves.DEMove(), 0.8),
                 (emcee.moves.DESnookerMove(), 0.2),
-            ]
+            ],
+        )
 
-        if "samplerFile" not in kwargs:
-            samplerFile = None
-        else:
-            samplerFile = kwargs.pop("samplerFile")
-
+        samplerFile = kwargs.pop("samplerFile", None)
         if samplerFile is None:
             self.sampler = emcee.EnsembleSampler(
                 self.params["nwalkers"].value,
@@ -201,8 +185,8 @@ class oimFitterEmcee(oimFitter):
 
         for i, key in enumerate(self.freeParams):
             val = theta[i]
-            low, up = self.limits[key]
-            if not low < val < up:
+            lower, upper = self.limits[key]
+            if not lower < val < upper:
                 return -np.inf
 
         self.simulator.compute(
@@ -285,7 +269,8 @@ class oimFitterEmcee(oimFitter):
         if c2.size == 0:
             raise ValueError(
                 "The emcee chain does not contain enough valid samples for the corner plot. "
-                "Potentially the `chi2limfact` parameter is too stringent."
+                "Potentially the `chi2limfact` parameter is too stringent or the min and max "
+                "values of your priors are switched."
             )
 
         fig = corner.corner(c2, labels=labels, **kwargs)
@@ -376,7 +361,7 @@ class oimFitterEmcee(oimFitter):
 
         ax[-1].set_xlabel("step number")
 
-        if savefig != None:
+        if savefig is not None:
             plt.savefig(savefig)
 
         return fig, ax
