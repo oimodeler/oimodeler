@@ -2,6 +2,9 @@
 """
 Basic model-components defined in the Fourier plan
 """
+import operator
+from functools import reduce
+
 import astropy.units as u
 import numpy as np
 from scipy.signal import convolve2d
@@ -1122,56 +1125,147 @@ class oim4CLDD(oimComponentFourier):
         )
 
 
-# TODO check effect of PA of both component
 class oimConvolutor(oimComponentFourier):
-    """
+    """Convolves two components.
 
     Parameters
     ----------
-    component1: oimComponentFourier
+    component1 : oimComponentFourier
         first fourier component of the convolution
-    component2: oimComponentFourier
+    component2 : oimComponentFourier
         first fourier component of the convolution
+
+    Attributes
+    ----------
+    components : list of oimComponentFourier
+        The components that are to be convolved.
+    params : dict
+        Dictionary with the convolutors parameters.
+
+    Warnings
+    -----
+    This component overloads the methods "getComplexCoherentFlux" and "getImage"
+    and does not use "_visFunction" and "_imageFunction", beware during usage.
     """
 
-    def __init__(self, component1, component2, **kwargs):
+    name = "Convolution Component"
+    shortname = "Conv"
+
+    def __init__(
+        self,
+        component1: oimComponentFourier,
+        component2: oimComponentFourier,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
-
-        self.component1 = component1
-        self.component2 = component2
-        self.name = "Convolution Component"
-        self.shortname = "Conv"
-
-        for key in component2.params:
-            self.params["c2_" + key] = component2.params[key]
-
-        for key in component1.params:
-            self.params["c1_" + key] = component1.params[key]
+        self.components = [component1, component2]
+        for index, component in enumerate(self.components, start=1):
+            for key in component.params:
+                self.params[f"c{index}_{key}"] = component.params[key]
 
         self._eval(**kwargs)
 
-    def _visFunction(self, xp, yp, rho, wl, t):
+    def _visFunction(self, ucoord, vcoord, rho, wl, t):
+        raise ValueError(
+            f"vis function not implemented for {self.shortname}."
+            " This component overloads the 'getComplexCoherentFlux' method."
+        )
 
-        return self.component1.getComplexCoherentFlux(
-            xp, yp, wl, t
-        ) * self.component2._visFunction(xp, yp, rho, wl, t)
+    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+        vcs = []
+        for index, component in enumerate(self.components, start=1):
+            fxp, fyp = ucoord.copy(), vcoord.copy()
+            if component.elliptic:
+                pa_rad = (self.params[f"c{index}_pa"](wl, t)) * self.params[
+                    f"c{index}_pa"
+                ].unit.to(u.rad)
+                co, si = np.cos(pa_rad), np.sin(pa_rad)
+                fxpt = (fxp * co - fyp * si) / self.params[f"c{index}_elong"](
+                    wl, t
+                )
+                fypt = fxp * si + fyp * co
+            else:
+                fxpt, fypt = fxp, fyp
+
+            vcs.append(
+                self.params[f"c{index}_f"](wl, t)
+                * component._visFunction(
+                    fxpt, fypt, np.hypot(fxpt, fypt), wl, t
+                )
+            )
+
+        return (
+            self.params["f"](wl, t)
+            * self._ftTranslateFactor(ucoord, vcoord, wl, t)
+            * reduce(operator.mul, vcs)
+        )
 
     def _imageFunction(self, xx, yy, wl, t):
+        raise ValueError(
+            f"image function not implemented for {self.shortname}."
+            " This component overloads the 'getImage' method."
+        )
 
-        im1 = self.component1._imageFunction(xx, yy, wl, t)
-        im2 = self.component2._imageFunction(xx, yy, wl, t)
-        nt, nwl, nx, ny = im1.shape
+    def getImage(self, dim, pixSize, wl=None, t=None):
+        t, wl = np.array(t).flatten(), np.array(wl).flatten()
+        nt, nwl = t.size, wl.size
+        dims = (nt, nwl, dim, dim)
 
-        # TODO : no loop
-        imConv = np.ndarray([nt, nwl, nx, ny])
+        v = np.linspace(-0.5, 0.5, dim, endpoint=False)
+        vx, vy = np.meshgrid(v, v)
+
+        vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
+        vy_arr = np.tile(vy[None, None, :, :], (nt, nwl, 1, 1))
+        wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
+        t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
+
+        x_arr = (vx_arr * pixSize * dim).flatten()
+        y_arr = (vy_arr * pixSize * dim).flatten()
+        t_arr, wl_arr = t_arr.flatten(), wl_arr.flatten()
+        x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
+
+        images = []
+        for index, component in enumerate(self.components, start=1):
+            xp, yp = x_arr.copy(), y_arr.copy()
+            if component.elliptic:
+                pa_rad = (
+                    self.params[f"c{index}_pa"](wl_arr, t_arr)
+                ) * self.params[f"c{index}_pa"].unit.to(units.rad)
+
+                co, si = np.cos(pa_rad), np.sin(pa_rad)
+                xpt = (xp * co - yp * si) * self.params[f"c{index}_elong"](
+                    wl_arr, t_arr
+                )
+                ypt = xp * si + yp * co
+            else:
+                xpt, ypt = xp, yp
+
+            img = component._imageFunction(
+                xpt.reshape(dims),
+                ypt.reshape(dims),
+                wl_arr.reshape(dims),
+                t_arr.reshape(dims),
+            )
+
+            tot = np.sum(img, axis=(2, 3))
+            for it, ti in enumerate(t):
+                for iwl, wli in enumerate(wl):
+                    if tot[it, iwl] != 0:
+                        img[it, iwl] = (
+                            img[it, iwl]
+                            / tot[it, iwl]
+                            * self.params[f"c{index}_f"](wli, ti)
+                        )
+            images.append(img)
+
+        img = np.zeros_like(images[0].shape)
         for iwl in range(nwl):
             for it in range(nt):
-                imConv[it, iwl, :, :] = convolve2d(
-                    im1[it, iwl, :, :],
-                    im2[it, iwl, :, :],
+                img[it, iwl] = convolve2d(
+                    *[img[it, iwl] for img in images],
                     mode="same",
                     boundary="fill",
                     fillvalue=0,
                 )
 
-        return imConv
+        return img
