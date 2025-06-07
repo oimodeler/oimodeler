@@ -1,6 +1,7 @@
 """Set global options of the oimodeler software."""
 
 from types import SimpleNamespace
+
 import astropy.constants as const
 
 # NOTE: Fourier transform settings

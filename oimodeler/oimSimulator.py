@@ -762,4 +762,3 @@ class oimSimulator:
             plt.savefig(savefig)
 
         return fig, ax
-

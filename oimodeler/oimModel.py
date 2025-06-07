@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Creation of models"""
-from typing import Union, Optional, Tuple, Dict, List
+from typing import Dict, List, Optional, Tuple, Union
 
 import astropy.units as u
 import matplotlib.colors as colors
@@ -13,8 +13,13 @@ from matplotlib.figure import Figure
 from numpy.typing import ArrayLike
 
 from .oimComponent import oimComponent
-from .oimParam import oimParam, oimParamLinker, oimParamInterpolator, oimParamNorm
-from .oimUtils import rebin_image,pad_image
+from .oimParam import (
+    oimParam,
+    oimParamInterpolator,
+    oimParamLinker,
+    oimParamNorm,
+)
+from .oimUtils import rebin_image
 
 
 class oimModel:
@@ -45,21 +50,31 @@ class oimModel:
 
     def __str__(self):
         """Return a string representation of the model"""
-        return "\n".join(["Model with", *[comp.__str__() for comp in self.components]])
+        return "\n".join(
+            ["Model with", *[comp.__str__() for comp in self.components]]
+        )
 
     def __repr__(self):
         """Return a string representation of the model"""
-        return "\n".join([f"oimModel at {str(hex(id(self)))}:",
-                          *[comp.__repr__() for comp in self.components]])
+        return "\n".join(
+            [
+                f"oimModel at {str(hex(id(self)))}:",
+                *[comp.__repr__() for comp in self.components],
+            ]
+        )
 
     @property
     def shortname(self):
         """Return a short name of the model"""
         return " + ".join([comp.shortname for comp in self.components])
 
-    def getComplexCoherentFlux(self, ucoord: ArrayLike, vcoord: ArrayLike,
-                               wl: Optional[ArrayLike] = None,
-                               t: Optional[ArrayLike] = None) -> np.ndarray:
+    def getComplexCoherentFlux(
+        self,
+        ucoord: ArrayLike,
+        vcoord: ArrayLike,
+        wl: Optional[ArrayLike] = None,
+        t: Optional[ArrayLike] = None,
+    ) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
         (and optionally wavelength and time) coordinates.
 
@@ -84,7 +99,9 @@ class oimModel:
             res += component.getComplexCoherentFlux(ucoord, vcoord, wl, t)
         return res
 
-    def getParameters(self, free: Optional[bool] = False) -> Dict[str, oimParam]:
+    def getParameters(
+        self, free: Optional[bool] = False
+    ) -> Dict[str, oimParam]:
         """Get the Model paramters (or free parameters)
 
         Parameters
@@ -105,13 +122,28 @@ class oimModel:
                     if isinstance(param, oimParamInterpolator):
                         for iparam, parami in enumerate(param.params):
                             if parami not in params.values():
-                                if (parami.free or not free):
-                                    params["c{0}_{1}_{2}_interp{3}".format(i+1, component.shortname.replace(" ", "_"), name, iparam+1)] = parami
+                                if parami.free or not free:
+                                    params[
+                                        "c{0}_{1}_{2}_interp{3}".format(
+                                            i + 1,
+                                            component.shortname.replace(
+                                                " ", "_"
+                                            ),
+                                            name,
+                                            iparam + 1,
+                                        )
+                                    ] = parami
                     elif isinstance(param, oimParamLinker):
                         pass
                     else:
-                        if (param.free or not free):
-                            params["c{0}_{1}_{2}".format(i+1, component.shortname.replace(" ", "_"), name)] = param
+                        if param.free or not free:
+                            params[
+                                "c{0}_{1}_{2}".format(
+                                    i + 1,
+                                    component.shortname.replace(" ", "_"),
+                                    name,
+                                )
+                            ] = param
         return params
 
     def getFreeParameters(self) -> Dict[str, oimParam]:
@@ -124,14 +156,18 @@ class oimModel:
         """
         return self.getParameters(free=True)
 
-    def getImage(self, dim: int, pixSize: float,
-                 wl: Optional[Union[float, ArrayLike]] = None,
-                 t: Optional[Union[float, ArrayLike]] = None,
-                 toFits: Optional[bool] = False,
-                 fromFT: Optional[bool] = False,
-                 padFact: Optional[int] = 1,
-                 squeeze: Optional[bool] = True,
-                 normalize: Optional[bool] = False) -> Union[np.ndarray, PrimaryHDU]:
+    def getImage(
+        self,
+        dim: int,
+        pixSize: float,
+        wl: Optional[Union[float, ArrayLike]] = None,
+        t: Optional[Union[float, ArrayLike]] = None,
+        toFits: Optional[bool] = False,
+        fromFT: Optional[bool] = False,
+        padFact: Optional[int] = 1,
+        squeeze: Optional[bool] = True,
+        normalize: Optional[bool] = False,
+    ) -> Union[np.ndarray, PrimaryHDU]:
         """Compute and return an image or and image cube (if wavelength and time
         are given).
 
@@ -182,11 +218,11 @@ class oimModel:
         dims = (nt, nwl, dim, dim)
 
         # TODO: The from FFT is not good for all functions
-        
-        dimpad= dim*padFact
+
+        dimpad = dim * padFact
         dimspad = (nt, nwl, dimpad, dimpad)
         if fromFT:
-            v = np.linspace(-0.5*padFact, 0.5*padFact, dimpad)
+            v = np.linspace(-0.5 * padFact, 0.5 * padFact, dimpad)
             vx, vy = np.meshgrid(v, v)
 
             vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
@@ -194,16 +230,26 @@ class oimModel:
             wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dimpad, dimpad))
             t_arr = np.tile(t[:, None, None, None], (1, nwl, dimpad, dimpad))
 
-            spfx_arr = (vx_arr/pixSize/u.mas.to(u.rad)).flatten()
-            spfy_arr = (vy_arr/pixSize/u.mas.to(u.rad)).flatten()
+            spfx_arr = (vx_arr / pixSize / u.mas.to(u.rad)).flatten()
+            spfy_arr = (vy_arr / pixSize / u.mas.to(u.rad)).flatten()
             wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
 
-            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dimspad)
-            image = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(
-                ft, axes=[-2, -1]), axes=[-2, -1]), axes=[-2, -1]))
-            #odd = dim % 2
-            #image = image[:,:,dimpad//2-dim//2:dimpad//2+dim//2+odd,dimpad//2-dim//2:dimpad//2+dim//2+odd]
-            image =  image.reshape((nt,nwl,dim,padFact,dim,padFact)).sum(axis=(-1,-3))
+            ft = self.getComplexCoherentFlux(
+                spfx_arr, spfy_arr, wl_arr, t_arr
+            ).reshape(dimspad)
+            image = np.abs(
+                np.fft.fftshift(
+                    np.fft.ifft2(
+                        np.fft.fftshift(ft, axes=[-2, -1]), axes=[-2, -1]
+                    ),
+                    axes=[-2, -1],
+                )
+            )
+            # odd = dim % 2
+            # image = image[:,:,dimpad//2-dim//2:dimpad//2+dim//2+odd,dimpad//2-dim//2:dimpad//2+dim//2+odd]
+            image = image.reshape((nt, nwl, dim, padFact, dim, padFact)).sum(
+                axis=(-1, -3)
+            )
         else:
             image = np.zeros(dims)
             for component in self.components:
@@ -220,54 +266,63 @@ class oimModel:
 
         if toFits:
             hdu = fits.PrimaryHDU(image)
-            hdu.header['CDELT1'] = pixSize*u.mas.to(u.rad)
-            hdu.header['CDELT2'] = pixSize*u.mas.to(u.rad)
-            hdu.header['CRVAL1'] = 0
-            hdu.header['CRVAL2'] = 0
-            hdu.header['CRPIX1'] = dim/2
-            hdu.header['CRPIX2'] = dim/2
-            hdu.header['CUNIT1'] = "rad"
-            hdu.header['CUNIT2'] = "rad"
-            hdu.header['CROTA1'] = 0
-            hdu.header['CROTA2'] = 0
+            hdu.header["CDELT1"] = pixSize * u.mas.to(u.rad)
+            hdu.header["CDELT2"] = pixSize * u.mas.to(u.rad)
+            hdu.header["CRVAL1"] = 0
+            hdu.header["CRVAL2"] = 0
+            hdu.header["CRPIX1"] = dim / 2
+            hdu.header["CRPIX2"] = dim / 2
+            hdu.header["CUNIT1"] = "rad"
+            hdu.header["CUNIT2"] = "rad"
+            hdu.header["CROTA1"] = 0
+            hdu.header["CROTA2"] = 0
 
             naxis = 3
             if nwl != 1:
-                dwl = (np.roll(wl, -1)-wl)[:-1]
+                dwl = (np.roll(wl, -1) - wl)[:-1]
 
-                if np.all(np.abs(dwl-dwl[0]) < 1e-12):
+                if np.all(np.abs(dwl - dwl[0]) < 1e-12):
                     dwl = dwl[0]
-                    hdu.header[f'CDELT{naxis}'] = dwl
-                    hdu.header[f'CRPIX{naxis}'] = 1
-                    hdu.header[f'CRVAL{naxis}'] = wl[0]
-                    hdu.header[f'CUNIT{naxis}'] = "m"
+                    hdu.header[f"CDELT{naxis}"] = dwl
+                    hdu.header[f"CRPIX{naxis}"] = 1
+                    hdu.header[f"CRVAL{naxis}"] = wl[0]
+                    hdu.header[f"CUNIT{naxis}"] = "m"
                     naxis += 1
 
                 else:
-                    raise TypeError("Wavelength vector is not regular. Fit image"
-                                    " with irregular grid not yet implemented")
+                    raise TypeError(
+                        "Wavelength vector is not regular. Fit image"
+                        " with irregular grid not yet implemented"
+                    )
 
             if nt != 1:
-                dt = (np.roll(t, -1)-t)[:-1]
+                dt = (np.roll(t, -1) - t)[:-1]
 
-                if np.all(np.abs(dt-dt[0]) < 1e-12):
+                if np.all(np.abs(dt - dt[0]) < 1e-12):
                     dt = dt[0]
-                    hdu.header[f'CDELT{naxis}'] = dt
-                    hdu.header[f'CRPIX{naxis}'] = 1
-                    hdu.header[f'CRVAL{naxis}'] = t[0]
-                    hdu.header[f'CUNIT{naxis}'] = "day"
+                    hdu.header[f"CDELT{naxis}"] = dt
+                    hdu.header[f"CRPIX{naxis}"] = 1
+                    hdu.header[f"CRVAL{naxis}"] = t[0]
+                    hdu.header[f"CUNIT{naxis}"] = "day"
 
                 else:
-                    raise TypeError("Time vector is not regular. Fit image"
-                                    " with irregular grid not yet implemented")
+                    raise TypeError(
+                        "Time vector is not regular. Fit image"
+                        " with irregular grid not yet implemented"
+                    )
             return hdu
         return image
 
-    def saveImage(self, filename: str, dim: int, pixSize: float,
-                  wl: Optional[Union[int, ArrayLike]] = None,
-                  t: Optional[Union[int, ArrayLike]] = None,
-                  fromFT: Optional[bool] = False,
-                  normalize: Optional[bool] = False) -> Union[np.ndarray, PrimaryHDU]:
+    def saveImage(
+        self,
+        filename: str,
+        dim: int,
+        pixSize: float,
+        wl: Optional[Union[int, ArrayLike]] = None,
+        t: Optional[Union[int, ArrayLike]] = None,
+        fromFT: Optional[bool] = False,
+        normalize: Optional[bool] = False,
+    ) -> Union[np.ndarray, PrimaryHDU]:
         """Save the model image
 
         Parameters
@@ -294,28 +349,39 @@ class oimModel:
              A numpy 2D array (or 3D/4D array if wl, t or both are given).
              The image of the component with given size in pixels and mas or rad
         """
-        im = self.getImage(dim, pixSize, wl=wl, t=t, toFits=True,
-                           fromFT=fromFT, normalize=normalize)
+        im = self.getImage(
+            dim,
+            pixSize,
+            wl=wl,
+            t=t,
+            toFits=True,
+            fromFT=fromFT,
+            normalize=normalize,
+        )
 
         im.writeto(filename, overwrite=True)
         return im
 
-    def showModel(self, dim: int, pixSize: float,
-                  wl: Optional[Union[int, ArrayLike]] = None,
-                  t: Optional[Union[int, ArrayLike]] = None,
-                  fromFT: Optional[bool] = False,
-                  padFact: Optional[int] = 1,
-                  axe: Optional[Axes] = None,
-                  normPow: Optional[float] = 0.5,
-                  figsize: Optional[Tuple[float]] = (3.5, 2.5),
-                  savefig: Optional[str] = None,
-                  colorbar: Optional[bool] = True,
-                  legend: Optional[bool] = False,
-                  swapAxes: Optional[bool] = True,
-                  kwargs_legend: Dict = {},
-                  normalize: Optional[bool] = False,
-                  rebin: Optional[bool] = False,
-                  **kwargs: Dict) -> Tuple[Figure, Axes, np.ndarray]:
+    def showModel(
+        self,
+        dim: int,
+        pixSize: float,
+        wl: Optional[Union[int, ArrayLike]] = None,
+        t: Optional[Union[int, ArrayLike]] = None,
+        fromFT: Optional[bool] = False,
+        padFact: Optional[int] = 1,
+        axe: Optional[Axes] = None,
+        normPow: Optional[float] = 0.5,
+        figsize: Optional[Tuple[float]] = (3.5, 2.5),
+        savefig: Optional[str] = None,
+        colorbar: Optional[bool] = True,
+        legend: Optional[bool] = False,
+        swapAxes: Optional[bool] = True,
+        kwargs_legend: Dict = {},
+        normalize: Optional[bool] = False,
+        rebin: Optional[bool] = False,
+        **kwargs: Dict,
+    ) -> Tuple[Figure, Axes, np.ndarray]:
         """Show the mode Image or image-Cube
 
         Parameters
@@ -369,8 +435,16 @@ class oimModel:
         im  : numpy.array
             The image(s).
         """
-        im = self.getImage(dim, pixSize, wl, t, fromFT=fromFT,padFact=padFact,
-                           squeeze=False, normalize=normalize)
+        im = self.getImage(
+            dim,
+            pixSize,
+            wl,
+            t,
+            fromFT=fromFT,
+            padFact=padFact,
+            squeeze=False,
+            normalize=normalize,
+        )
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
 
         if swapAxes:
@@ -379,8 +453,14 @@ class oimModel:
         nt, nwl = t.size, wl.size
 
         if axe is None:
-            fig, axe = plt.subplots(nwl, nt, figsize=(
-                figsize[0]*nt, figsize[1]*nwl), sharex=True, sharey=True, subplot_kw=dict(projection='oimAxes'))
+            fig, axe = plt.subplots(
+                nwl,
+                nt,
+                figsize=(figsize[0] * nt, figsize[1] * nwl),
+                sharex=True,
+                sharey=True,
+                subplot_kw=dict(projection="oimAxes"),
+            )
         else:
             try:
                 fig = axe.get_figure()
@@ -389,25 +469,39 @@ class oimModel:
 
         axe = np.array(axe).flatten().reshape((nwl, nt))
 
-        if 'norm' not in kwargs:
-            kwargs['norm'] = colors.PowerNorm(gamma=normPow)
+        if "norm" not in kwargs:
+            kwargs["norm"] = colors.PowerNorm(gamma=normPow)
 
         for iwl, wli in enumerate(wl):
             for it, ti in enumerate(t):
                 if not swapAxes:
-                    cb = axe[iwl, it].imshow(im[it, iwl, :, :],
-                                             extent=[-dim/2*pixSize, dim/2*pixSize,
-                                                     -dim/2*pixSize, dim/2*pixSize],
-                                             origin="lower", **kwargs)
+                    cb = axe[iwl, it].imshow(
+                        im[it, iwl, :, :],
+                        extent=[
+                            -dim / 2 * pixSize,
+                            dim / 2 * pixSize,
+                            -dim / 2 * pixSize,
+                            dim / 2 * pixSize,
+                        ],
+                        origin="lower",
+                        **kwargs,
+                    )
                 else:
-                    cb = axe[iwl, it].imshow(im[iwl, it, :, :],
-                                             extent=[-dim/2*pixSize, dim/2*pixSize,
-                                                     -dim/2*pixSize, dim/2*pixSize],
-                                             origin="lower", **kwargs)
+                    cb = axe[iwl, it].imshow(
+                        im[iwl, it, :, :],
+                        extent=[
+                            -dim / 2 * pixSize,
+                            dim / 2 * pixSize,
+                            -dim / 2 * pixSize,
+                            dim / 2 * pixSize,
+                        ],
+                        origin="lower",
+                        **kwargs,
+                    )
 
-                axe[iwl, it].set_xlim(dim/2*pixSize, -dim/2*pixSize)
+                axe[iwl, it].set_xlim(dim / 2 * pixSize, -dim / 2 * pixSize)
 
-                if iwl == nwl-1:
+                if iwl == nwl - 1:
                     axe[iwl, it].set_xlabel(r"$\alpha$(mas)")
                 if it == 0:
                     axe[iwl, it].set_ylabel(r"$\delta$(mas)")
@@ -429,8 +523,14 @@ class oimModel:
                             txt += f"Time={wli}"
                         if "color" not in kwargs_legend:
                             kwargs_legend["color"] = "w"
-                    axe[iwl, it].text(0, 0.95*dim/2*pixSize, txt,
-                                      va="top", ha="center", **kwargs_legend)
+                    axe[iwl, it].text(
+                        0,
+                        0.95 * dim / 2 * pixSize,
+                        txt,
+                        va="top",
+                        ha="center",
+                        **kwargs_legend,
+                    )
 
         if colorbar:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
@@ -443,20 +543,24 @@ class oimModel:
 
         return fig, axe, im
 
-    def showFourier(self, dim: int, pixSize: float,
-                    wl: Optional[Union[int, ArrayLike]] = None,
-                    t: Optional[Union[int, ArrayLike]] = None,
-                    axe: Optional[Axes] = None,
-                    normPow: Optional[float] = 0.5,
-                    figsize: Optional[Tuple[float]] = (3.5, 2.5),
-                    savefig: Optional[str] = None,
-                    colorbar: Optional[bool] = True,
-                    legend: Optional[bool] = False,
-                    swapAxes: Optional[bool] = True,
-                    display_mode: Optional[str] = "vis",
-                    kwargs_legend: Optional[Dict] = {},
-                    normalize: Optional[bool] = False,
-                    **kwargs: Dict):
+    def showFourier(
+        self,
+        dim: int,
+        pixSize: float,
+        wl: Optional[Union[int, ArrayLike]] = None,
+        t: Optional[Union[int, ArrayLike]] = None,
+        axe: Optional[Axes] = None,
+        normPow: Optional[float] = 0.5,
+        figsize: Optional[Tuple[float]] = (3.5, 2.5),
+        savefig: Optional[str] = None,
+        colorbar: Optional[bool] = True,
+        legend: Optional[bool] = False,
+        swapAxes: Optional[bool] = True,
+        display_mode: Optional[str] = "vis",
+        kwargs_legend: Optional[Dict] = {},
+        normalize: Optional[bool] = False,
+        **kwargs: Dict,
+    ):
         """Show the amplitude and phase of the Fourier space
 
         Parameters
@@ -521,14 +625,21 @@ class oimModel:
         wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
         t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
-        spfx_arr, spfy_arr = map(lambda x: (x/pixSize/u.mas.to(u.rad)).flatten(), [vx_arr, vy_arr])
+        spfx_arr, spfy_arr = map(
+            lambda x: (x / pixSize / u.mas.to(u.rad)).flatten(),
+            [vx_arr, vy_arr],
+        )
         wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
         spfx_extent = spfx_arr.max()
 
         if not swapAxes:
-            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr).reshape(dims)
+            ft = self.getComplexCoherentFlux(
+                spfx_arr, spfy_arr, wl_arr, t_arr
+            ).reshape(dims)
         else:
-            ft = self.getComplexCoherentFlux(spfx_arr, spfy_arr, t_arr, wl_arr).reshape(dims)
+            ft = self.getComplexCoherentFlux(
+                spfx_arr, spfy_arr, t_arr, wl_arr
+            ).reshape(dims)
 
         if display_mode == "vis":
             im = np.abs(ft)
@@ -538,8 +649,10 @@ class oimModel:
         elif display_mode == "phase":
             im = np.angle(ft, deg=True)
         else:
-            raise NameError("Only 'vis', 'corr_flux' and 'phase' are valid"
-                            " choices for the display_mode!")
+            raise NameError(
+                "Only 'vis', 'corr_flux' and 'phase' are valid"
+                " choices for the display_mode!"
+            )
 
         if normalize:
             for it in range(nt):
@@ -547,10 +660,14 @@ class oimModel:
                     im[it, iwl, :, :] /= np.max(im[it, iwl, :, :])
 
         if axe is None:
-            fig, axe = plt.subplots(nwl, nt,
-                                    figsize=(figsize[0]*nt, figsize[1]*nwl),
-                                    sharex=True, sharey=True,
-                                    subplot_kw={"projection": 'oimAxes'})
+            fig, axe = plt.subplots(
+                nwl,
+                nt,
+                figsize=(figsize[0] * nt, figsize[1] * nwl),
+                sharex=True,
+                sharey=True,
+                subplot_kw={"projection": "oimAxes"},
+            )
         else:
             try:
                 fig = axe.get_figure()
@@ -559,25 +676,39 @@ class oimModel:
 
         axe = np.array(axe).flatten().reshape((nwl, nt))
 
-        if 'norm' not in kwargs:
-            kwargs['norm'] = colors.PowerNorm(gamma=normPow)
+        if "norm" not in kwargs:
+            kwargs["norm"] = colors.PowerNorm(gamma=normPow)
 
         for iwl, wli in enumerate(wl):
             for it, ti in enumerate(t):
                 if not swapAxes:
-                    cb = axe[iwl, it].imshow(im[it, iwl, :, :],
-                                             extent=[-spfx_extent, spfx_extent,
-                                                     -spfx_extent, spfx_extent],
-                                             origin='lower', **kwargs)
+                    cb = axe[iwl, it].imshow(
+                        im[it, iwl, :, :],
+                        extent=[
+                            -spfx_extent,
+                            spfx_extent,
+                            -spfx_extent,
+                            spfx_extent,
+                        ],
+                        origin="lower",
+                        **kwargs,
+                    )
                 else:
-                    cb = axe[iwl, it].imshow(im[iwl, it, :, :],
-                                             extent=[-spfx_extent, spfx_extent,
-                                                     -spfx_extent, spfx_extent],
-                                             origin='lower', **kwargs)
+                    cb = axe[iwl, it].imshow(
+                        im[iwl, it, :, :],
+                        extent=[
+                            -spfx_extent,
+                            spfx_extent,
+                            -spfx_extent,
+                            spfx_extent,
+                        ],
+                        origin="lower",
+                        **kwargs,
+                    )
 
                 axe[iwl, it].set_xlim(-spfx_extent, spfx_extent)
 
-                if iwl == nwl-1:
+                if iwl == nwl - 1:
                     axe[iwl, it].set_xlabel("sp. freq. (cycles/rad)")
                 if it == 0:
                     axe[iwl, it].set_ylabel("sp. freq. (cycles/rad)")
@@ -586,20 +717,26 @@ class oimModel:
                     txt = ""
                     if not swapAxes:
                         if wl[0] is not None:
-                            txt += r"wl={:.4f}$\mu$m\n".format(wli*1e6)
+                            txt += r"wl={:.4f}$\mu$m\n".format(wli * 1e6)
                         if t[0] is not None:
                             txt += "Time={}".format(ti)
-                        if 'color' not in kwargs_legend:
-                            kwargs_legend['color'] = "w"
+                        if "color" not in kwargs_legend:
+                            kwargs_legend["color"] = "w"
                     else:
                         if t[0] is not None:
-                            txt += r"wl={:.4f}$\mu$m\n".format(ti*1e6)
+                            txt += r"wl={:.4f}$\mu$m\n".format(ti * 1e6)
                         if wl[0] is not None:
                             txt += f"Time={wli}"
-                        if 'color' not in kwargs_legend:
-                            kwargs_legend['color'] = "w"
-                    axe[iwl, it].text(0, 0.95*dim/2*pixSize, txt,
-                                      va='top', ha='center', **kwargs_legend)
+                        if "color" not in kwargs_legend:
+                            kwargs_legend["color"] = "w"
+                    axe[iwl, it].text(
+                        0,
+                        0.95 * dim / 2 * pixSize,
+                        txt,
+                        va="top",
+                        ha="center",
+                        **kwargs_legend,
+                    )
         if colorbar:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
 
@@ -607,13 +744,12 @@ class oimModel:
             plt.savefig(savefig)
         return fig, axe, im
 
-
-    def normalizeFlux(self,comp=None):
-        if comp==None:
+    def normalizeFlux(self, comp=None):
+        if comp == None:
             comp = self.components[-1]
-        fluxes=[]
+        fluxes = []
         for compi in self.components:
             if compi != comp:
                 fluxes.append(compi.params["f"])
-        comp.params['f'] = oimParamNorm(fluxes)
-        
+        comp.params["f"] = oimParamNorm(fluxes)
+

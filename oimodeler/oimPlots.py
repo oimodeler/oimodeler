@@ -6,45 +6,150 @@ import os
 from typing import Dict, List, Optional, Tuple, Union
 
 import astropy.units as u
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 from matplotlib.collections import Collection, LineCollection
+from matplotlib.figure import Figure
 from matplotlib.legend_handler import HandlerLineCollection
 
 from .oimData import loadOifitsData, oimData
-from .oimUtils import getBaselineName, getBaselineLengthAndPA, getConfigName, \
-    getSpaFreq, getWlFromOifits, getDataArrname
-
+from .oimUtils import (
+    getBaselineLengthAndPA,
+    getBaselineName,
+    getConfigName,
+    getDataArrname,
+    getSpaFreq,
+    getWlFromOifits,
+)
 
 # TODO: Move global variables somewhere else and make their name in capital letters
 # (python standard)
-oimPlotParamName = np.array(["LENGTH", "PA", "UCOORD", "VCOORD", "SPAFREQ", "EFF_WAVE",
-                             "VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA", "MJD","VISDATA"])
-oimPlotParamError = np.array(["", "", "", "", "", "EFF_BAND", "VIS2ERR", "VISAMPERR",
-                              "VISPHIERR", "T3AMPERR", "T3PHIERR", "FLUXERR", "",""])
-oimPlotParamArr = np.array(["", "", "", "", "", "OI_WAVELENGTH", "OI_VIS2", "OI_VIS",
-                            "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX", "","OI_VIS2"])
-oimPlotParamLabel = np.array(["Baseline Length", "Baseline Orientation", "U", "V",
-                              "Spatial Frequency", "Wavelength", "Square Visibility",
-                             "Visibility Amplitude", "Phase",
-                              "Closure Amplitude", "Closure Phase", "Flux", "MJD","Visibility"])
-oimPlotParamLabelShort = np.array(["B", "PA", "U", "V", r"B/$\lambda$", r"$\lambda$",
-                                   "V$^2$", "Vis. Amp.", "Vis. Phi.", "Clos. Amp.", "CP", "Flux", "MJD","V"])
-oimPlotParamUnit0 = np.array([u.m, u.deg, u.m, u.m, u.Unit("cycle/rad"), u.m, u.one, u.one, u.deg,
-                              u.one, u.deg, u.one, u.day,u.one])
-oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,0])
+oimPlotParamName = np.array(
+    [
+        "LENGTH",
+        "PA",
+        "UCOORD",
+        "VCOORD",
+        "SPAFREQ",
+        "EFF_WAVE",
+        "VIS2DATA",
+        "VISAMP",
+        "VISPHI",
+        "T3AMP",
+        "T3PHI",
+        "FLUXDATA",
+        "MJD",
+        "VISDATA",
+    ]
+)
+oimPlotParamError = np.array(
+    [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "EFF_BAND",
+        "VIS2ERR",
+        "VISAMPERR",
+        "VISPHIERR",
+        "T3AMPERR",
+        "T3PHIERR",
+        "FLUXERR",
+        "",
+        "",
+    ]
+)
+oimPlotParamArr = np.array(
+    [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "OI_WAVELENGTH",
+        "OI_VIS2",
+        "OI_VIS",
+        "OI_VIS",
+        "OI_T3",
+        "OI_T3",
+        "OI_FLUX",
+        "",
+        "OI_VIS2",
+    ]
+)
+oimPlotParamLabel = np.array(
+    [
+        "Baseline Length",
+        "Baseline Orientation",
+        "U",
+        "V",
+        "Spatial Frequency",
+        "Wavelength",
+        "Square Visibility",
+        "Visibility Amplitude",
+        "Phase",
+        "Closure Amplitude",
+        "Closure Phase",
+        "Flux",
+        "MJD",
+        "Visibility",
+    ]
+)
+oimPlotParamLabelShort = np.array(
+    [
+        "B",
+        "PA",
+        "U",
+        "V",
+        r"B/$\lambda$",
+        r"$\lambda$",
+        "V$^2$",
+        "Vis. Amp.",
+        "Vis. Phi.",
+        "Clos. Amp.",
+        "CP",
+        "Flux",
+        "MJD",
+        "V",
+    ]
+)
+oimPlotParamUnit0 = np.array(
+    [
+        u.m,
+        u.deg,
+        u.m,
+        u.m,
+        u.Unit("cycle/rad"),
+        u.m,
+        u.one,
+        u.one,
+        u.deg,
+        u.one,
+        u.deg,
+        u.one,
+        u.day,
+        u.one,
+    ]
+)
+oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 oimPlotParamColorCycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
 
 # NOTE: might be useful as unit cycles is not defined but cycle is
 # u.add_enabled_units(u.def_unit("cycles",u.cycle))
-def _errorplot(axe, x: np.ndarray, y: np.ndarray,
-               dy: np.ndarray, smooth: Optional[int] = 1, **kwargs):
+def _errorplot(
+    axe,
+    x: np.ndarray,
+    y: np.ndarray,
+    dy: np.ndarray,
+    smooth: Optional[int] = 1,
+    **kwargs,
+):
     """Creates a plot with error bars.
 
     Parameters
@@ -68,15 +173,21 @@ def _errorplot(axe, x: np.ndarray, y: np.ndarray,
         kwargs["color"] = "grey"
 
     if smooth != 1:
-        ker = np.ones(smooth)/smooth
+        ker = np.ones(smooth) / smooth
         ys = np.convolve(y, ker, mode="same")  # [smooth//2:-smooth//2-1]
 
+    axe.fill_between(x, ys - dy, ys + dy, **kwargs)
 
-    axe.fill_between(x,ys-dy,ys+dy, **kwargs)
 
-def _colorPlot(axe, x: np.ndarray,
-               y: np.ndarray, z: np.ndarray, flag:np.ndarray=None,
-               setlim: Optional[bool] = False, **kwargs) -> Collection:
+def _colorPlot(
+    axe,
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    flag: np.ndarray = None,
+    setlim: Optional[bool] = False,
+    **kwargs,
+) -> Collection:
     """Creates a plot of the x and y data with the z data as color.
 
     Parameters
@@ -90,7 +201,7 @@ def _colorPlot(axe, x: np.ndarray,
     z : numpy.ndarray
         The colorbar data.
     flag : None or numpy.ndarray, optional
-        Flagging of bad data (not to be plotted). The default is None. 
+        Flagging of bad data (not to be plotted). The default is None.
     setlim : bool, optional
         Automatically sets the plot's limit. The default is False.
 
@@ -99,14 +210,14 @@ def _colorPlot(axe, x: np.ndarray,
     res : matplotlib.collections.Collection
         The collection of the plot.
     """
-    noline=False
+    noline = False
     if "ls" in kwargs:
-        if  kwargs["ls"]==None or kwargs["ls"]=="":
-            noline=True
+        if kwargs["ls"] == None or kwargs["ls"] == "":
+            noline = True
     if "linestyle" in kwargs:
-        if kwargs["linestyle"]==None or kwargs["linestyle"]=="":
-            noline=True
-        
+        if kwargs["linestyle"] == None or kwargs["linestyle"] == "":
+            noline = True
+
     if "cmap" not in kwargs:
         kwargs["cmap"] = "plasma"
 
@@ -118,15 +229,14 @@ def _colorPlot(axe, x: np.ndarray,
         if maxii is not None and minii is not None:
             maxi.append(maxii)
             mini.append(minii)
-            
+
     maxi = np.max(maxi)
     mini = np.min(mini)
-    
+
     if type(flag) == type(None):
-        flag=(0*x).astype(bool)
+        flag = (0 * x).astype(bool)
 
-    yma=np.ma.masked_where(flag, y)
-
+    yma = np.ma.masked_where(flag, y)
 
     if "norm" not in kwargs:
         norm = plt.Normalize(mini, maxi)
@@ -134,20 +244,20 @@ def _colorPlot(axe, x: np.ndarray,
         norm = kwargs["norm"]
 
     res = None
-    
-    if x.size == 1 or  "marker" in kwargs:
+
+    if x.size == 1 or "marker" in kwargs:
         res = axe.scatter(x, yma, c=z, **kwargs)
-    if x.size > 1 and noline==False:
+    if x.size > 1 and noline == False:
         points = np.array([x, y]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
         flag_seg = flag[1:] | flag[0:-1]
-        segments_flagged=segments[np.logical_not(flag_seg),:,:]
-        z_seg=np.mean(np.array([z[:-1], z[1:]]),axis=0)
-        z_flagged=z_seg[np.logical_not(flag_seg)]
+        segments_flagged = segments[np.logical_not(flag_seg), :, :]
+        z_seg = np.mean(np.array([z[:-1], z[1:]]), axis=0)
+        z_flagged = z_seg[np.logical_not(flag_seg)]
 
         if "marker" in kwargs:
             kwargs.pop("marker")
-        
+
         lc = LineCollection(segments_flagged, **kwargs)
         lc.set_array(z_flagged)
         res = axe.add_collection(lc)
@@ -160,16 +270,27 @@ def _colorPlot(axe, x: np.ndarray,
 
     return res
 
-def uvPlot(oifitsList: fits.HDUList, arrname: Optional[str] = "OI_VIS2",
-           unit: Optional[u.Quantity] = u.m,
-           stringunitformat: Optional[str] = "latex_inline", 
-           color: Optional[str] = None, maxi: Optional[float] = None,
-           grid: Optional[bool] = True, gridcolor: Optional[str] = "k",
-           fontsize: Optional[int] = None, xytitle: Optional[List[bool]] = [True, True],
-           showLegend: Optional[bool] = True, showColorbar: Optional[bool] = True,
-           colorTab: Optional = None, axe: Optional = None,
-           title: Optional[str] = None, cunit: Optional[u.Quantity] = u.m,
-           legendkwargs: Optional[Dict] = {}, **kwargs) -> Axes:
+
+def uvPlot(
+    oifitsList: fits.HDUList,
+    arrname: Optional[str] = "OI_VIS2",
+    unit: Optional[u.Quantity] = u.m,
+    stringunitformat: Optional[str] = "latex_inline",
+    color: Optional[str] = None,
+    maxi: Optional[float] = None,
+    grid: Optional[bool] = True,
+    gridcolor: Optional[str] = "k",
+    fontsize: Optional[int] = None,
+    xytitle: Optional[List[bool]] = [True, True],
+    showLegend: Optional[bool] = True,
+    showColorbar: Optional[bool] = True,
+    colorTab: Optional = None,
+    axe: Optional = None,
+    title: Optional[str] = None,
+    cunit: Optional[u.Quantity] = u.m,
+    legendkwargs: Optional[Dict] = {},
+    **kwargs,
+) -> Axes:
     """Plot the uv coverage of the data.
 
     Parameters
@@ -243,14 +364,24 @@ def uvPlot(oifitsList: fits.HDUList, arrname: Optional[str] = "OI_VIS2",
         pass
 
     ncol = len(colorTab)
-    colorIdx, ColorNames = getColorIndices(oifitsList, color, arrname, "UCOORD", flatten=True)
+    colorIdx, ColorNames = getColorIndices(
+        oifitsList, color, arrname, "UCOORD", flatten=True
+    )
 
     for datai in oifitsList:
-        _,_, ui, vi = getBaselineLengthAndPA(datai, arr=arrname, squeeze=False, returnUV=True)
-        idx_arr = [jdata for jdata,dataij in enumerate(datai) if dataij.name==arrname]
+        _, _, ui, vi = getBaselineLengthAndPA(
+            datai, arr=arrname, squeeze=False, returnUV=True
+        )
+        idx_arr = [
+            jdata
+            for jdata, dataij in enumerate(datai)
+            if dataij.name == arrname
+        ]
         for iext in range(len(ui)):
-            wlii = getWlFromOifits(datai, arr=datai[idx_arr[iext]], extver=iext+1)
-            nB=ui[iext].size
+            wlii = getWlFromOifits(
+                datai, arr=datai[idx_arr[iext]], extver=iext + 1
+            )
+            nB = ui[iext].size
             ucoord.extend(ui[iext])
             vcoord.extend(vi[iext])
             for iB in range(nB):
@@ -265,29 +396,61 @@ def uvPlot(oifitsList: fits.HDUList, arrname: Optional[str] = "OI_VIS2",
 
         for icol in np.unique(colorIdx):
             idx = np.where(colorIdx == icol)
-            axe.scatter(ucoord[idx], vcoord[idx], color=colorTab[icol%ncol], label=label0+ColorNames[icol], **kwargs)
-            axe.scatter(-ucoord[idx], -vcoord[idx], color=colorTab[icol%ncol], **kwargs)
+            axe.scatter(
+                ucoord[idx],
+                vcoord[idx],
+                color=colorTab[icol % ncol],
+                label=label0 + ColorNames[icol],
+                **kwargs,
+            )
+            axe.scatter(
+                -ucoord[idx],
+                -vcoord[idx],
+                color=colorTab[icol % ncol],
+                **kwargs,
+            )
 
         if maxi is None:
-            maxi = 1.1*np.max(np.abs(np.array([ucoord, vcoord])))
+            maxi = 1.1 * np.max(np.abs(np.array([ucoord, vcoord])))
 
     elif unit.is_equivalent(u.Unit("cycle/rad")):
         for iB, ui, vi, wli in zip(range(len(ucoord)), ucoord, vcoord, wl):
-            spfu = ui/wli*u.Unit("cycle/rad").to(unit)
-            spfv = vi/wli*u.Unit("cycle/rad").to(unit)
+            spfu = ui / wli * u.Unit("cycle/rad").to(unit)
+            spfv = vi / wli * u.Unit("cycle/rad").to(unit)
 
             if color is None:
-                res = _colorPlot(axe, spfu, spfv, wli*u.m.to(cunit), label=label0, setlim=True, **kwargs)
-                _colorPlot(axe, -spfu, -spfv, wli*u.m.to(cunit), setlim=True, **kwargs)
+                res = _colorPlot(
+                    axe,
+                    spfu,
+                    spfv,
+                    wli * u.m.to(cunit),
+                    label=label0,
+                    setlim=True,
+                    **kwargs,
+                )
+                _colorPlot(
+                    axe,
+                    -spfu,
+                    -spfv,
+                    wli * u.m.to(cunit),
+                    setlim=True,
+                    **kwargs,
+                )
 
             else:
-                icol=colorIdx[iB]
-                axe.plot(spfu, spfv,label=label0+ColorNames[icol], color=colorTab[icol%ncol], **kwargs)
-                axe.plot(-spfu, -spfv,color=colorTab[icol%ncol], **kwargs)
+                icol = colorIdx[iB]
+                axe.plot(
+                    spfu,
+                    spfv,
+                    label=label0 + ColorNames[icol],
+                    color=colorTab[icol % ncol],
+                    **kwargs,
+                )
+                axe.plot(-spfu, -spfv, color=colorTab[icol % ncol], **kwargs)
 
     else:
         raise TypeError("invalid unit")
-                   
+
     if maxi is None:
         xmax, ymax = -1e99, -1e99
         for line in axe.lines:
@@ -297,38 +460,46 @@ def uvPlot(oifitsList: fits.HDUList, arrname: Optional[str] = "OI_VIS2",
 
         for collection in axe.collections:
             datalim = collection.get_datalim(axe.transData)
-            x0 = np.max(np.asarray(datalim)[:,0])
-            y0 = np.max(np.asarray(datalim)[:,1])
+            x0 = np.max(np.asarray(datalim)[:, 0])
+            y0 = np.max(np.asarray(datalim)[:, 1])
             xmax, ymax = max(x0, xmax), max(y0, ymax)
 
-        maxi = 1.1*max(xmax,ymax)
+        maxi = 1.1 * max(xmax, ymax)
 
     if grid:
         axe.plot([-maxi, maxi], [0, 0], linewidth=1, color=gridcolor, zorder=5)
         axe.plot([0, 0], [-maxi, maxi], linewidth=1, color=gridcolor, zorder=5)
-    axe.set_aspect('equal', 'box')
+    axe.set_aspect("equal", "box")
     axe.set_xlim([maxi, -maxi])
     axe.set_ylim([-maxi, maxi])
 
     xyunittext = unit.to_string(stringunitformat)
     if xytitle[0]:
-        axe.set_xlabel(f'u ({xyunittext})', fontsize=fontsize)
+        axe.set_xlabel(f"u ({xyunittext})", fontsize=fontsize)
     if xytitle[1]:
-        axe.set_ylabel(f'v ({xyunittext})', fontsize=fontsize)
+        axe.set_ylabel(f"v ({xyunittext})", fontsize=fontsize)
     if title:
         axe.set_title(title)
 
-    if unit.is_equivalent(u.Unit("cycle/rad")) and color is None and showColorbar:
-        plt.colorbar(res, ax=axe,label=f"$\\lambda$ ({cunit:latex})")
+    if (
+        unit.is_equivalent(u.Unit("cycle/rad"))
+        and color is None
+        and showColorbar
+    ):
+        plt.colorbar(res, ax=axe, label=f"$\\lambda$ ({cunit:latex})")
 
     if showLegend:
         axe.legend(**legendkwargs)
     return axe
 
 
-def getColorIndices(oifitsList: fits.HDUList, color: str,
-                    yarr: np.ndarray, yname: str,
-                    flatten: Optional[bool] = False) -> Tuple[np.ndarray, List[str]]:
+def getColorIndices(
+    oifitsList: fits.HDUList,
+    color: str,
+    yarr: np.ndarray,
+    yname: str,
+    flatten: Optional[bool] = False,
+) -> Tuple[np.ndarray, List[str]]:
     """Get the color indices of the data depending on the colorisation.
 
     Parameters
@@ -373,16 +544,16 @@ def getColorIndices(oifitsList: fits.HDUList, color: str,
                     ifname = len(names)
                     names.append(fname)
 
-                idxi.append(np.zeros(nB, dtype=int)+ifname)
+                idxi.append(np.zeros(nB, dtype=int) + ifname)
 
             elif color == "byArrname":
-                array = datai[jdata].header['ARRNAME']
+                array = datai[jdata].header["ARRNAME"]
                 if array in names:
                     iarr = names.index(array)
                 else:
                     iarr = len(names)
                     names.append(array)
-                idxi.append(np.zeros(nB, dtype=int)+iarr)
+                idxi.append(np.zeros(nB, dtype=int) + iarr)
 
             elif color == "byBaseline":
                 bnames = getBaselineName(datai, yarr, squeeze=False)[j]
@@ -403,40 +574,48 @@ def getColorIndices(oifitsList: fits.HDUList, color: str,
                 else:
                     iconf = len(names)
                     names.append(conf)
-                idxi.append(np.zeros(nB, dtype=int)+iconf)
+                idxi.append(np.zeros(nB, dtype=int) + iconf)
 
             else:
                 idxi.append(np.zeros(nB, dtype=int))
                 names.append("")
         idx.append(idxi)
 
-    #flatten version for the uvplot
+    # flatten version for the uvplot
     if flatten:
         idxf = []
 
         for ifile in range(len(idx)):
             for iext in range(len(idx[ifile])):
-                    idxf.extend(idx[ifile][iext])
+                idxf.extend(idx[ifile][iext])
         idx = idxf
 
     return idx, names
 
 
-def oimPlot(oifitsList: fits.HDUList,
-            xname: str, yname: str, axe: Optional[Axes] = None,
-            xunit: Optional[u.Quantity] = None,
-            yunit: Optional[u.Quantity] = None,
-            cname: Optional[str] = None, cunit: Optional[str] = None,
-            xlim: Optional[float] = None, ylim: Optional[float] = None,
-            xscale: Optional[str] = None, yscale: Optional[str] = None,
-            shortLabel: Optional[bool] = True,
-            color: Optional[str] = None,
-            colorTab: Optional[str] = None,
-            showColorbar: Optional[bool] = True,
-            errorbar: Optional[bool] = False,
-            showFlagged: Optional[bool] = False,
-            colorbar: Optional[bool] = True,
-            kwargs_error: Optional[Dict] = {},**kwargs):
+def oimPlot(
+    oifitsList: fits.HDUList,
+    xname: str,
+    yname: str,
+    axe: Optional[Axes] = None,
+    xunit: Optional[u.Quantity] = None,
+    yunit: Optional[u.Quantity] = None,
+    cname: Optional[str] = None,
+    cunit: Optional[str] = None,
+    xlim: Optional[float] = None,
+    ylim: Optional[float] = None,
+    xscale: Optional[str] = None,
+    yscale: Optional[str] = None,
+    shortLabel: Optional[bool] = True,
+    color: Optional[str] = None,
+    colorTab: Optional[str] = None,
+    showColorbar: Optional[bool] = True,
+    errorbar: Optional[bool] = False,
+    showFlagged: Optional[bool] = False,
+    colorbar: Optional[bool] = True,
+    kwargs_error: Optional[Dict] = {},
+    **kwargs,
+):
     """Plot the data from the oifits files.
 
     Parameters
@@ -514,7 +693,7 @@ def oimPlot(oifitsList: fits.HDUList,
         xunitmultiplier = 1
 
     if yunit:
-        yunit0 =u.Unit(yunit)
+        yunit0 = u.Unit(yunit)
         yunitmultiplier = oimPlotParamUnit0[idxY].to(yunit0)
     else:
         yunit0 = oimPlotParamUnit0[idxY]
@@ -544,7 +723,7 @@ def oimPlot(oifitsList: fits.HDUList,
         pass
 
     ncol = len(colorTab)
-    
+
     yname0 = yname
     if yname == "VISDATA":
         yname0 = "VIS2DATA"
@@ -561,22 +740,26 @@ def oimPlot(oifitsList: fits.HDUList,
         # yname can be anything but  UCOORD, VCOORD, LENGTH, SPAFREQ, PA or EFF_WAVE
         extnames = np.array([di.name for di in data])
         idx_yext = np.where(extnames == yarr)[0]
-        yinsname = np.array([data[i].header['INSNAME'] for i in idx_yext])
-        
-        #yname can be VISDATA =sqrt(VIS2DATA)
+        yinsname = np.array([data[i].header["INSNAME"] for i in idx_yext])
+
+        # yname can be VISDATA =sqrt(VIS2DATA)
         if yname != "VISDATA":
             ydata = [data[i].data[yname] for i in idx_yext]
             ydataerr = [data[i].data[yerrname] for i in idx_yext]
             yflag = [data[i].data["FLAG"] for i in idx_yext]
         else:
             ydata = [np.sqrt(data[i].data["VIS2DATA"]) for i in idx_yext]
-            ydataerr = [data[i].data["VIS2ERR"]/(2*np.sqrt(data[i].data["VIS2DATA"])) for i in idx_yext]
+            ydataerr = [
+                data[i].data["VIS2ERR"]
+                / (2 * np.sqrt(data[i].data["VIS2DATA"]))
+                for i in idx_yext
+            ]
             yflag = [data[i].data["FLAG"] for i in idx_yext]
-            
+
         # xname can be LENGTH, SPAFREQ, PA or EFF_WAVE
         if xname == "EFF_WAVE":
             idx_xext = np.where(extnames == xarr)[0]
-            xinsname = np.array([data[i].header['INSNAME'] for i in idx_xext])
+            xinsname = np.array([data[i].header["INSNAME"] for i in idx_xext])
             xdata = []
             for idata in range(len(idx_yext)):
                 iwlarr = idx_xext[np.where(xinsname == yinsname[idata])[0][0]]
@@ -585,21 +768,35 @@ def oimPlot(oifitsList: fits.HDUList,
                 xdata.append(np.tile(wl[None, :], (nB, 1)))
 
         elif xname == "SPAFREQ":
-            xdata = getSpaFreq(data, arr=yarr,  squeeze=False)
+            xdata = getSpaFreq(data, arr=yarr, squeeze=False)
 
         elif xname == "LENGTH":
-            B = getBaselineLengthAndPA(data, arr=yarr, squeeze=False,T3Max=True)[0]
+            B = getBaselineLengthAndPA(
+                data, arr=yarr, squeeze=False, T3Max=True
+            )[0]
             xdata = []
-            for i,idata in enumerate(idx_yext):
-                xdata.append(np.transpose(
-                    np.tile(B[i], (np.shape(data[idata].data[yname])[1], 1))))
+            for i, idata in enumerate(idx_yext):
+                xdata.append(
+                    np.transpose(
+                        np.tile(
+                            B[i], (np.shape(data[idata].data[yname])[1], 1)
+                        )
+                    )
+                )
 
         elif xname == "PA":
-            PA = getBaselineLengthAndPA(data, arr=yarr, squeeze=False,T3Max=True)[1]
+            PA = getBaselineLengthAndPA(
+                data, arr=yarr, squeeze=False, T3Max=True
+            )[1]
             xdata = []
-            for i,idata in enumerate(idx_yext):
-                xdata.append(np.transpose(
-                    np.tile(PA[i], (np.shape(data[idata].data[yname])[1], 1))))
+            for i, idata in enumerate(idx_yext):
+                xdata.append(
+                    np.transpose(
+                        np.tile(
+                            PA[i], (np.shape(data[idata].data[yname])[1], 1)
+                        )
+                    )
+                )
 
         if cname is not None:
             idxC = np.where(oimPlotParamName == cname)[0][0]
@@ -607,7 +804,9 @@ def oimPlot(oifitsList: fits.HDUList,
 
             if not shortLabel:
                 clabel = oimPlotParamLabel[idxC]
-                cunitmultiplier = u.Unit(oimPlotParamUnit0[idxC]).to(u.Unit(cunit))
+                cunitmultiplier = u.Unit(oimPlotParamUnit0[idxC]).to(
+                    u.Unit(cunit)
+                )
             else:
                 clabel = oimPlotParamLabelShort[idxC]
 
@@ -619,7 +818,7 @@ def oimPlot(oifitsList: fits.HDUList,
                 cunitmultiplier = 1
 
             if cunit0 != u.one:
-                clabel += " ("+f"{cunit0:latex}"+")"
+                clabel += " (" + f"{cunit0:latex}" + ")"
 
             if cname == "MJD":
                 carr = yarr
@@ -628,12 +827,14 @@ def oimPlot(oifitsList: fits.HDUList,
             elif cname == "EFF_WAVE":
                 carr = "OI_WAVELENGTH"
                 idx_cext = np.where(extnames == carr)[0]
-                cinsname = np.array([data[i].header['INSNAME']
-                                    for i in idx_cext])
+                cinsname = np.array(
+                    [data[i].header["INSNAME"] for i in idx_cext]
+                )
                 cdata = []
                 for idata in range(len(idx_yext)):
-                    iwlarr = idx_cext[np.where(
-                        cinsname == yinsname[idata])[0][0]]
+                    iwlarr = idx_cext[
+                        np.where(cinsname == yinsname[idata])[0][0]
+                    ]
                     wl = data[iwlarr].data["EFF_WAVE"]
                     nB = ydata[idata].shape[0]
                     cdata.append(np.tile(wl[None, :], (nB, 1)))
@@ -652,28 +853,43 @@ def oimPlot(oifitsList: fits.HDUList,
                 cdata = getSpaFreq(data, arr=yarr, squeeze=False)
 
             elif cname == "LENGTH":
-                B = getBaselineLengthAndPA(data, arr=yarr, squeeze=False,T3Max=True)[0]
+                B = getBaselineLengthAndPA(
+                    data, arr=yarr, squeeze=False, T3Max=True
+                )[0]
                 cdata = []
-                for i,idata in enumerate(idx_yext):
-                    cdata.append(np.transpose(
-                        np.tile(B[i], (np.shape(data[idata].data[yname])[1], 1))))
+                for i, idata in enumerate(idx_yext):
+                    cdata.append(
+                        np.transpose(
+                            np.tile(
+                                B[i], (np.shape(data[idata].data[yname])[1], 1)
+                            )
+                        )
+                    )
 
             elif cname == "PA":
-                PA = getBaselineLengthAndPA(data, arr=yarr, squeeze=False,T3Max=True)[1]
+                PA = getBaselineLengthAndPA(
+                    data, arr=yarr, squeeze=False, T3Max=True
+                )[1]
                 cdata = []
-                for i,idata in enumerate(idx_yext):
-                    cdata.append(np.transpose(
-                        np.tile(PA[i], (np.shape(data[idata].data[yname])[1], 1))))
+                for i, idata in enumerate(idx_yext):
+                    cdata.append(
+                        np.transpose(
+                            np.tile(
+                                PA[i],
+                                (np.shape(data[idata].data[yname])[1], 1),
+                            )
+                        )
+                    )
 
         for idata in range(len(xdata)):
-            xdata[idata]=xdata[idata]*xunitmultiplier
+            xdata[idata] = xdata[idata] * xunitmultiplier
 
         for idata in range(len(xdata)):
-            ydata[idata]=ydata[idata]*yunitmultiplier
+            ydata[idata] = ydata[idata] * yunitmultiplier
 
         if cunit:
             for idata in range(len(xdata)):
-                cdata[idata]=cdata[idata]*cunitmultiplier
+                cdata[idata] = cdata[idata] * cunitmultiplier
 
         # NOTE: Looping through oifits files
         for idata in range(len(ydata)):
@@ -682,7 +898,9 @@ def oimPlot(oifitsList: fits.HDUList,
 
             # NOTE: Dealing with the xy data dimensions
             if np.size(shapex) == np.size(shapey):
-                if np.size(shapex) == 1:  # if 1 baseline only just change array dim
+                if (
+                    np.size(shapex) == 1
+                ):  # if 1 baseline only just change array dim
                     nlam = np.size(xdata)
                     xdata = np.reshape((1, nlam))
                     ydata = np.reshape((1, nlam))
@@ -696,24 +914,28 @@ def oimPlot(oifitsList: fits.HDUList,
                 if shapex[0] == shapey[0]:
                     ydata[idata] = np.outer(ydata[idata], np.ones(shapex[1]))
                     ydataerr[idata] = np.outer(
-                        ydataerr[idata], np.ones(shapex[1]))
+                        ydataerr[idata], np.ones(shapex[1])
+                    )
                 else:
                     ydata[idata] = np.outer(np.ones(shapex[0]), ydata[idata])
                     ydataerr[idata] = np.outer(
-                        ydataerr[idata], np.ones(shapex[1]))
+                        ydataerr[idata], np.ones(shapex[1])
+                    )
 
             shapex = np.shape(xdata[idata])
             shapey = np.shape(ydata[idata])
 
             if cname is not None:
                 shapec = np.shape(cdata[idata])
-                if (np.size(shapec) == 1):
+                if np.size(shapec) == 1:
                     if shapec[0] == shapex[0]:
                         cdata[idata] = np.outer(
-                            cdata[idata], np.ones(shapex[1]))
+                            cdata[idata], np.ones(shapex[1])
+                        )
                     else:
                         cdata[idata] = np.outer(
-                            np.ones(shapex[0]), cdata[idata])
+                            np.ones(shapex[0]), cdata[idata]
+                        )
                     shapec = np.shape(cdata[idata])
 
             # NOTE: Separate multiples baselines
@@ -723,7 +945,9 @@ def oimPlot(oifitsList: fits.HDUList,
                     nflags, flag0, ilam0 = len(flags), True, 0
                     for ilam, flagi in enumerate(flags):
                         doPlot = False
-                        flagi = True if np.isnan(ydata[idata][iB, ilam]) else flagi
+                        flagi = (
+                            True if np.isnan(ydata[idata][iB, ilam]) else flagi
+                        )
                         if flag0 != flagi:
                             if not flagi:
                                 ilam0 = ilam
@@ -731,67 +955,109 @@ def oimPlot(oifitsList: fits.HDUList,
                                 doPlot = True
 
                             flag0 = flagi
-                        if ilam == (nflags-1) and not flagi:
+                        if ilam == (nflags - 1) and not flagi:
                             doPlot = True
 
                         if doPlot:
-                            labeli = label + " " + \
-                                ColorNames[colorIdx[ifile][idata][iB]]
+                            labeli = (
+                                label
+                                + " "
+                                + ColorNames[colorIdx[ifile][idata][iB]]
+                            )
 
                             if cname is None:
-                                if xdata[idata][iB, ilam0:ilam+1].size == 1:
-                                    axe.scatter(xdata[idata][iB, ilam0:ilam+1],
-                                                ydata[idata][iB,ilam0:ilam+1],
-                                                color=colorTab[colorIdx[ifile]
-                                                               [idata][iB] % ncol],
-                                                label=labeli, **kwargs)
+                                if (
+                                    xdata[idata][iB, ilam0 : ilam + 1].size
+                                    == 1
+                                ):
+                                    axe.scatter(
+                                        xdata[idata][iB, ilam0 : ilam + 1],
+                                        ydata[idata][iB, ilam0 : ilam + 1],
+                                        color=colorTab[
+                                            colorIdx[ifile][idata][iB] % ncol
+                                        ],
+                                        label=labeli,
+                                        **kwargs,
+                                    )
                                 else:
 
-                                    axe.plot(xdata[idata][iB, ilam0:ilam+1],
-                                             ydata[idata][iB, ilam0:ilam+1],
-                                             color=colorTab[colorIdx[ifile]
-                                                            [idata][iB] % ncol],
-                                             label=labeli, **kwargs)
+                                    axe.plot(
+                                        xdata[idata][iB, ilam0 : ilam + 1],
+                                        ydata[idata][iB, ilam0 : ilam + 1],
+                                        color=colorTab[
+                                            colorIdx[ifile][idata][iB] % ncol
+                                        ],
+                                        label=labeli,
+                                        **kwargs,
+                                    )
                                     if errorbar:
                                         if "color" not in kwargs_error:
                                             kwargs_errori = kwargs_error.copy()
-                                            kwargs_errori["color"] = \
-                                                colorTab[colorIdx[ifile][idata][iB] % ncol]
+                                            kwargs_errori["color"] = colorTab[
+                                                colorIdx[ifile][idata][iB]
+                                                % ncol
+                                            ]
 
-                                        _errorplot(axe, xdata[idata][iB, ilam0:ilam+1],
-                                                   ydata[idata][iB, ilam0:ilam+1],
-                                                   ydataerr[idata][iB, ilam0:ilam+1],
-                                                   **kwargs_errori)
+                                        _errorplot(
+                                            axe,
+                                            xdata[idata][iB, ilam0 : ilam + 1],
+                                            ydata[idata][iB, ilam0 : ilam + 1],
+                                            ydataerr[idata][
+                                                iB, ilam0 : ilam + 1
+                                            ],
+                                            **kwargs_errori,
+                                        )
 
                             else:
                                 # NOTE: dummy plot with alpha=0 as _colorPLot works
                                 # with collections thus not updating the xlim and ylim
                                 # automatically
-                                axe.plot(xdata[idata][iB, ilam0:ilam+1],
-                                         ydata[idata][iB, ilam0:ilam+1],
-                                         color="k", alpha=0)
+                                axe.plot(
+                                    xdata[idata][iB, ilam0 : ilam + 1],
+                                    ydata[idata][iB, ilam0 : ilam + 1],
+                                    color="k",
+                                    alpha=0,
+                                )
 
-                                res = _colorPlot(axe, xdata[idata][iB, ilam0:ilam+1],
-                                                 ydata[idata][iB, ilam0:ilam+1],
-                                                 cdata[idata][iB, ilam0:ilam+1],
-                                                 label=labeli, setlim=False, **kwargs)
+                                res = _colorPlot(
+                                    axe,
+                                    xdata[idata][iB, ilam0 : ilam + 1],
+                                    ydata[idata][iB, ilam0 : ilam + 1],
+                                    cdata[idata][iB, ilam0 : ilam + 1],
+                                    label=labeli,
+                                    setlim=False,
+                                    **kwargs,
+                                )
 
                                 if errorbar:
-                                    _errorplot(axe, xdata[idata][iB, ilam0:ilam+1],
-                                               ydata[idata][iB, ilam0:ilam+1],
-                                               ydataerr[idata][iB, ilam0:ilam+1],
-                                               **kwargs_error)
+                                    _errorplot(
+                                        axe,
+                                        xdata[idata][iB, ilam0 : ilam + 1],
+                                        ydata[idata][iB, ilam0 : ilam + 1],
+                                        ydataerr[idata][iB, ilam0 : ilam + 1],
+                                        **kwargs_error,
+                                    )
 
                 else:
-                    labeli = label + " " + ColorNames[colorIdx[ifile][idata][iB]]
-                    axe.plot(xdata[idata][iB, :],ydata[idata][iB, :],
-                             color=colorTab[colorIdx[ifile][idata][iB] % ncol],
-                             label=labeli, **kwargs)
+                    labeli = (
+                        label + " " + ColorNames[colorIdx[ifile][idata][iB]]
+                    )
+                    axe.plot(
+                        xdata[idata][iB, :],
+                        ydata[idata][iB, :],
+                        color=colorTab[colorIdx[ifile][idata][iB] % ncol],
+                        label=labeli,
+                        **kwargs,
+                    )
                     if errorbar:
-                        _errorplot(axe, xdata[idata][iB, :], ydata[idata][iB, :],
-                                   ydataerr[idata][iB, :], color=colorTab[
-                                       colorIdx[ifile][idata][iB] % ncol],
-                                   **kwargs_error)
+                        _errorplot(
+                            axe,
+                            xdata[idata][iB, :],
+                            ydata[idata][iB, :],
+                            ydataerr[idata][iB, :],
+                            color=colorTab[colorIdx[ifile][idata][iB] % ncol],
+                            **kwargs_error,
+                        )
 
     if yscale is not None:
         axe.set_yscale(yscale)
@@ -807,22 +1073,30 @@ def oimPlot(oifitsList: fits.HDUList,
 
     axe.set_xlabel(xlabel)
     axe.set_ylabel(ylabel)
-    
+
     if cname and showColorbar:
-        plt.colorbar(res, ax=axe, label=clabel) 
+        plt.colorbar(res, ax=axe, label=clabel)
     return res
 
 
 class _HandlerColorLineCollection(HandlerLineCollection):
-    def create_artists(self, legend, artist, xdescent, ydescent,
-                       width, height, fontsize, trans):
+    def create_artists(
+        self,
+        legend,
+        artist,
+        xdescent,
+        ydescent,
+        width,
+        height,
+        fontsize,
+        trans,
+    ):
         """Create the artists for the legend."""
-        x = np.linspace(0, width, self.get_numpoints(legend)+1)
-        y = np.zeros(self.get_numpoints(legend)+1)+height/2.-ydescent
+        x = np.linspace(0, width, self.get_numpoints(legend) + 1)
+        y = np.zeros(self.get_numpoints(legend) + 1) + height / 2.0 - ydescent
         points = np.array([x, y]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
-        lc = LineCollection(segments, cmap=artist.cmap,
-                            transform=trans)
+        lc = LineCollection(segments, cmap=artist.cmap, transform=trans)
         lc.set_array(x)
         lc.set_linewidth(artist.get_linewidth())
         return [lc]
@@ -831,17 +1105,24 @@ class _HandlerColorLineCollection(HandlerLineCollection):
 class oimWlTemplatePlots(Figure):
     """A class to plot the wavelength of the data."""
 
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """The class initialisation."""
         super().__init__(*args, **kwargs)
         self.data = []
         self.xunit = u.m
 
     def autoShape(
-            self, oifitsList: fits.HDUList,
-            shape: Optional[List[List[str]]]=[["VIS2DATA", None], ["VISAMP", None], ["VISPHI", None],
-                                              ["T3AMP", None], ["T3PHI", None], ["FLUXDATA", None]]
-            ) -> None:
+        self,
+        oifitsList: fits.HDUList,
+        shape: Optional[List[List[str]]] = [
+            ["VIS2DATA", None],
+            ["VISAMP", None],
+            ["VISPHI", None],
+            ["T3AMP", None],
+            ["T3PHI", None],
+            ["FLUXDATA", None],
+        ],
+    ) -> None:
         """Automatically set the shape of the plot.
 
         Parameters
@@ -872,11 +1153,11 @@ class oimWlTemplatePlots(Figure):
                         for hdui in filek:
                             if hdui.name == arrName:
                                 extver = hdui.header.get("EXTVER", 1)
-                                if np.any(hdui.data[shapeij]!=0):
+                                if np.any(hdui.data[shapeij] != 0):
                                     s = hdui.data[shapeij].shape[0]
                                     for iB in range(s):
-                                        datatypei.append([extver,iB,shapeij])
- 
+                                        datatypei.append([extver, iB, shapeij])
+
                 if len(datatypei) != 0:
                     datatypek.append(datatypei)
 
@@ -897,26 +1178,46 @@ class oimWlTemplatePlots(Figure):
                 plotListkl = []
                 datatypeil = self.datatype[k][il]
                 nplots_col = len(datatypeil)
-                showXlabel = (k == self.nfiles - 1) and (il == nl - 1 )
+                showXlabel = (k == self.nfiles - 1) and (il == nl - 1)
 
                 datatype_previous = None
                 for ic in range(nc):
-                    self.add_subplot(gss[il,ic])
+                    self.add_subplot(gss[il, ic])
                     if ic < nplots_col:
                         extver, iB, dataType = datatypeil[ic]
                         if datatype_previous is None:
                             datatype_0 = dataType
                             showYlabel = 1
-                        elif ic == nc-1 and datatype_0 != dataType:
+                        elif ic == nc - 1 and datatype_0 != dataType:
                             showYlabel = 2
                         else:
                             showYlabel = 0
 
-                        obj = [self.axes[-1], k, ic, il, extver, iB, dataType, showXlabel, showYlabel]
+                        obj = [
+                            self.axes[-1],
+                            k,
+                            ic,
+                            il,
+                            extver,
+                            iB,
+                            dataType,
+                            showXlabel,
+                            showYlabel,
+                        ]
                     else:
-                        obj = [self.axes[-1], k, ic, il, None, None, None, False, 0]
+                        obj = [
+                            self.axes[-1],
+                            k,
+                            ic,
+                            il,
+                            None,
+                            None,
+                            None,
+                            False,
+                            0,
+                        ]
                         try:
-                            plotListk[il-1][ic][7] = True
+                            plotListk[il - 1][ic][7] = True
                         except:
                             pass
 
@@ -932,7 +1233,17 @@ class oimWlTemplatePlots(Figure):
         yaxe_shares, yaxe_datatypes = [], []
         for k in range(len(self.plotList)):
             for l in range(len(self.plotList[k])):
-                for ax, _, _, _, extver, iB, dataType, showXlabel, showYlabel in self.plotList[k][l]:
+                for (
+                    ax,
+                    _,
+                    _,
+                    _,
+                    extver,
+                    iB,
+                    dataType,
+                    showXlabel,
+                    showYlabel,
+                ) in self.plotList[k][l]:
                     if dataType in yaxe_datatypes:
                         ax2share = yaxe_shares[yaxe_datatypes.index(dataType)]
                         ax.sharey(ax2share)
@@ -940,9 +1251,13 @@ class oimWlTemplatePlots(Figure):
                         yaxe_shares.append(ax)
                         yaxe_datatypes.append(dataType)
 
-    def plot(self, oifitsList: fits.HDUList, add: Optional[bool] = True,
-             plotFunction: Optional[Axes] = plt.Axes.plot,
-             plotFunctionkwarg: Optional[Dict] = {}) -> None:
+    def plot(
+        self,
+        oifitsList: fits.HDUList,
+        add: Optional[bool] = True,
+        plotFunction: Optional[Axes] = plt.Axes.plot,
+        plotFunctionkwarg: Optional[Dict] = {},
+    ) -> None:
         """Plot the data from the oifits files."""
         if isinstance(oifitsList, oimData):
             oifitsList = oifitsList.data
@@ -955,14 +1270,23 @@ class oimWlTemplatePlots(Figure):
 
         for k in range(len(self.plotList)):
             for l in range(len(self.plotList[k])):
-                for ax, ifile, _, _, extver, iB, dataType, *_ in self.plotList[k][l]:
+                for ax, ifile, _, _, extver, iB, dataType, *_ in self.plotList[
+                    k
+                ][l]:
                     if dataType:
                         oimSimplePlotWavelength(
-                                oifitsList, ifile, dataType, iB,
-                                extver=extver, axe=ax, plotFunction=plotFunction,
-                                xunit=self.xunit, plotFunctionkwarg=plotFunctionkwarg)
+                            oifitsList,
+                            ifile,
+                            dataType,
+                            iB,
+                            extver=extver,
+                            axe=ax,
+                            plotFunction=plotFunction,
+                            xunit=self.xunit,
+                            plotFunctionkwarg=plotFunctionkwarg,
+                        )
                     else:
-                        ax.axis('off')
+                        ax.axis("off")
 
         self.set_xlabels("auto")
         self.set_ylabels("auto")
@@ -971,25 +1295,25 @@ class oimWlTemplatePlots(Figure):
         """Set the unit of the x-axis."""
         self.xunit = u.Unit(xunit)
 
-    def set_wllim(self,*arg) -> None:
+    def set_wllim(self, *arg) -> None:
         """Set the wavelength limits of the plot."""
         for k in range(len(self.plotList)):
             for l in range(len(self.plotList[k])):
                 for ax, *_ in self.plotList[k][l]:
                     ax.set_xlim(*arg)
 
-    def set_xlim(self,*arg) -> None:
+    def set_xlim(self, *arg) -> None:
         """Set the x-axis limits of the plot."""
         self.set_wllim(*arg)
 
     def set_ylim(self, dataTypes: Union[str, List[str]], *arg) -> None:
         """Set the y-axis limits of the plot."""
-        if not isinstance(dataTypes,list):
+        if not isinstance(dataTypes, list):
             dataTypes = [dataTypes]
 
         for k in range(len(self.plotList)):
             for l in range(len(self.plotList[k])):
-                for ax, _, _, _, _, _,dataType, *_ in self.plotList[k][l]:
+                for ax, _, _, _, _, _, dataType, *_ in self.plotList[k][l]:
                     if dataType in dataTypes:
                         ax.set_ylim(*arg)
 
@@ -999,10 +1323,20 @@ class oimWlTemplatePlots(Figure):
             label = f"$\\lambda$ ({self.xunit:latex})"
             for k in range(len(self.plotList)):
                 for l in range(len(self.plotList[k])):
-                    for ax, _, _, _, _, _, dataType, showXlabel, _ in self.plotList[k][l]:
+                    for (
+                        ax,
+                        _,
+                        _,
+                        _,
+                        _,
+                        _,
+                        dataType,
+                        showXlabel,
+                        _,
+                    ) in self.plotList[k][l]:
                         if dataType:
                             if showXlabel:
-                                ax.set_xlabel(label, *arg,**kwargs)
+                                ax.set_xlabel(label, *arg, **kwargs)
                             else:
                                 ax.get_xaxis().set_visible(False)
 
@@ -1011,18 +1345,29 @@ class oimWlTemplatePlots(Figure):
         if mode == "auto":
             for k in range(len(self.plotList)):
                 for l in range(len(self.plotList[k])):
-                    for ax, _, _, _, _, _, dataType, _, showYlabel in self.plotList[k][l]:
+                    for (
+                        ax,
+                        _,
+                        _,
+                        _,
+                        _,
+                        _,
+                        dataType,
+                        _,
+                        showYlabel,
+                    ) in self.plotList[k][l]:
                         if dataType:
                             if showYlabel == 2:
                                 ax.yaxis.set_label_position("right")
                                 ax.yaxis.tick_right()
                             if showYlabel != 0:
-                                idx = np.where(oimPlotParamName == dataType)[0][0]
+                                idx = np.where(oimPlotParamName == dataType)[
+                                    0
+                                ][0]
                                 label = oimPlotParamLabelShort[idx]
-                                ax.set_ylabel(label,*arg)
+                                ax.set_ylabel(label, *arg)
                             else:
                                 ax.get_yaxis().set_visible(False)
-
 
     def set_legends(self, *arg, **kwargs) -> None:
         """Set the legend of the plot."""
@@ -1030,43 +1375,56 @@ class oimWlTemplatePlots(Figure):
             text0, datatypes = arg
             x = y = 0.02
         elif len(arg) == 4:
-             x, y, text0, datatypes = arg
-        else :
-            raise TypeError("Wrong number of argument : Should be 2 "\
-                            "(text0, datatypes) or 4 (x, y, text0, datatypes)")
+            x, y, text0, datatypes = arg
+        else:
+            raise TypeError(
+                "Wrong number of argument : Should be 2 "
+                "(text0, datatypes) or 4 (x, y, text0, datatypes)"
+            )
 
-        if isinstance(datatypes,str):
+        if isinstance(datatypes, str):
             datatypes = [datatypes]
 
         for k in range(len(self.plotList)):
             for l in range(len(self.plotList[k])):
                 for ax, _, _, _, _, iB, dataType, *_ in self.plotList[k][l]:
-                    if  dataType in datatypes :
-                        try :
-                            LENGTH,PA = getBaselineLengthAndPA(
-                                self.data[0][k], arr=getDataArrname(dataType))
+                    if dataType in datatypes:
+                        try:
+                            LENGTH, PA = getBaselineLengthAndPA(
+                                self.data[0][k], arr=getDataArrname(dataType)
+                            )
                         except:
                             pass
                         BASELINE = getBaselineName(
-                            self.data[0][k], hduname=getDataArrname(dataType))
+                            self.data[0][k], hduname=getDataArrname(dataType)
+                        )
 
                         text = text0
-                        if ("$LENGTH$" in text0) :
-                            text = text.replace("$LENGTH$",f"{LENGTH[iB]:.1f}")
-                        if ("$PA$" in text0):
-                            text = text.replace("$PA$",f"{PA[iB]:.1f}")
+                        if "$LENGTH$" in text0:
+                            text = text.replace(
+                                "$LENGTH$", f"{LENGTH[iB]:.1f}"
+                            )
+                        if "$PA$" in text0:
+                            text = text.replace("$PA$", f"{PA[iB]:.1f}")
                         if ("$BASELINE$") in text0:
-                            text =  text.replace("$BASELINE$",f"{BASELINE[iB]}")
+                            text = text.replace(
+                                "$BASELINE$", f"{BASELINE[iB]}"
+                            )
 
                         ax.text(x, y, text, transform=ax.transAxes, **kwargs)
 
 
-def oimSimplePlotWavelength(oifitsList: fits.HDUList,
-                            ifile: int, dataType: str, iB: int,
-                            extver = None, axe: Optional[Axes] = None,
-                            plotFunction: Optional[Axes] = plt.Axes.plot,
-                            xunit: Optional[u.Quantity] = u.m,
-                            plotFunctionkwarg: Optional[Dict] = {}) -> None:
+def oimSimplePlotWavelength(
+    oifitsList: fits.HDUList,
+    ifile: int,
+    dataType: str,
+    iB: int,
+    extver=None,
+    axe: Optional[Axes] = None,
+    plotFunction: Optional[Axes] = plt.Axes.plot,
+    xunit: Optional[u.Quantity] = u.m,
+    plotFunctionkwarg: Optional[Dict] = {},
+) -> None:
     """Set the x-axis to the wavelength of the data.
 
     Parameters
@@ -1087,7 +1445,7 @@ def oimSimplePlotWavelength(oifitsList: fits.HDUList,
     arrName = oimPlotParamArr[idx]
     errorName = oimPlotParamError[idx]
 
-    oifitsi=oifitsList[ifile]
+    oifitsi = oifitsList[ifile]
     wl = getWlFromOifits(oifitsi, arrName, extver=extver)
 
     data = oifitsi[arrName, extver].data[dataType][iB, :]
@@ -1097,13 +1455,14 @@ def oimSimplePlotWavelength(oifitsList: fits.HDUList,
         axe = plt.gca()
 
     if plotFunction.__name__ == "plot":
-        plotFunction(axe, wl*xmult, data, **plotFunctionkwarg)
+        plotFunction(axe, wl * xmult, data, **plotFunctionkwarg)
     else:
-        plotFunction(axe, wl*xmult, data, err, **plotFunctionkwarg)
+        plotFunction(axe, wl * xmult, data, err, **plotFunctionkwarg)
 
 
 class oimAxes(plt.Axes):
     """Class derived from plt.Axes that allows easy plotting of oifits data"""
+
     name = "oimAxes"
     xtype, ytype = None, None
     colorbar = None
@@ -1112,7 +1471,9 @@ class oimAxes(plt.Axes):
         """Plot the uv coverage of the oifits data."""
         uvPlot(oifits, axe=self, **kwargs)
 
-    def oiplot(self, oifitsList: fits.HDUList, xname: str, yname: str, **kwargs):
+    def oiplot(
+        self, oifitsList: fits.HDUList, xname: str, yname: str, **kwargs
+    ):
         """Plot the data from the oifits files."""
         res = oimPlot(oifitsList, xname, yname, axe=self, **kwargs)
         self.xtype, self.ytype = xname, yname
@@ -1121,7 +1482,7 @@ class oimAxes(plt.Axes):
     def autolim(self):
         """Set the limits of the axes to the data."""
         if self.ytype in ["VIS2DATA", "VISAMP", "T3AMP"]:
-            if self.get_yscale() == 'linear':
+            if self.get_yscale() == "linear":
                 self.set_ylim(0, 1)
             else:
                 lines = self.get_lines()
@@ -1147,8 +1508,12 @@ class oimAxes(plt.Axes):
 
         # NOTE: Use to remove duplicate legend. Is Set Maybe better for that?
         legend_hangle = dict(zip(labels, handles))
-        super().legend(legend_hangle.values(), legend_hangle.keys(),
-                       handler_map=hmap, **kwargs)
+        super().legend(
+            legend_hangle.values(),
+            legend_hangle.keys(),
+            handler_map=hmap,
+            **kwargs,
+        )
 
     def set_xscale(self, value, **kwargs):
         """Set the xscale of the plot."""
@@ -1161,88 +1526,153 @@ class oimAxes(plt.Axes):
         self.autoscale_view()
 
 
+sta_name = np.array(
+    [
+        "A0",
+        "A1",
+        "B0",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "C0",
+        "C1",
+        "C2",
+        "C3",
+        "D0",
+        "D1",
+        "D2",
+        "E0",
+        "G0",
+        "G1",
+        "G2",
+        "H0",
+        "I1",
+        "J1",
+        "J2",
+        "J3",
+        "J4",
+        "J5",
+        "J6",
+        "K0",
+        "L0",
+        "M0",
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+    ]
+)
 
-sta_name=np.array(['A0','A1','B0','B1','B2','B3','B4','B5','C0','C1','C2','C3',
-                   'D0','D1','D2','E0','G0','G1','G2','H0','I1','J1','J2','J3',
-                   'J4','J5','J6','K0','L0','M0','U1','U2','U3','U4'])
+
+sta_pos = np.array(
+    [
+        [-32.001, -48.013, -14.642, -55.812],
+        [-32.001, -64.021, -9.434, -70.949],
+        [-23.991, -48.019, -7.065, -53.212],
+        [-23.991, -64.011, -1.863, -68.334],
+        [-23.991, -72.011, 0.739, -75.899],
+        [-23.991, -80.029, 3.348, -83.481],
+        [-23.991, -88.013, 5.945, -91.030],
+        [-23.991, -96.012, 8.547, -98.594],
+        [-16.002, -48.013, 0.487, -50.607],
+        [-16.002, -64.011, 5.691, -65.735],
+        [-16.002, -72.019, 8.296, -73.307],
+        [-16.002, -80.010, 10.896, -80.864],
+        [0.010, -48.012, 15.628, -45.397],
+        [0.010, -80.015, 26.039, -75.660],
+        [0.010, -96.012, 31.243, -90.787],
+        [16.011, -48.016, 30.760, -40.196],
+        [32.017, -48.0172, 45.896, -34.990],
+        [32.020, -112.010, 66.716, -95.501],
+        [31.995, -24.003, 38.063, -12.289],
+        [64.015, -48.007, 76.150, -24.572],
+        [72.001, -87.997, 96.711, -59.789],
+        [88.016, -71.992, 106.648, -39.444],
+        [88.016, -96.005, 114.460, -62.151],
+        [88.016, 7.996, 80.628, 36.193],
+        [88.016, 23.993, 75.424, 51.320],
+        [88.016, 47.987, 67.618, 74.009],
+        [88.016, 71.990, 59.810, 96.706],
+        [96.002, -48.006, 106.397, -14.165],
+        [104.021, -47.998, 113.977, -11.549],
+        [112.013, -48.000, 121.535, -8.951],
+        [-16.000, -16.000, -9.925, -20.335],
+        [24.000, 24.000, 14.887, 30.502],
+        [64.0013, 47.9725, 44.915, 66.183],
+        [112.000, 8.000, 103.306, 43.999],
+    ]
+)
 
 
-sta_pos=np.array([[-32.001,-48.013,-14.642,-55.812],[-32.001,-64.021, -9.434,-70.949],
-                  [-23.991,-48.019, -7.065,-53.212],[-23.991,-64.011, -1.863,-68.334],
-                  [-23.991,-72.011,  0.739,-75.899],[-23.991,-80.029,  3.348,-83.481],
-                  [-23.991,-88.013,  5.945,-91.030],[-23.991,-96.012,  8.547,-98.594],
-                  [-16.002,-48.013,  0.487,-50.607],[-16.002,-64.011,  5.691,-65.735],
-                  [-16.002,-72.019,  8.296,-73.307],[-16.002,-80.010, 10.896,-80.864],
-                  [  0.010,-48.012, 15.628,-45.397],[  0.010,-80.015, 26.039,-75.660],
-                  [  0.010,-96.012, 31.243,-90.787],[ 16.011,-48.016, 30.760,-40.196],
-                  [ 32.017,-48.0172,45.896,-34.990],[ 32.020,-112.010,66.716,-95.501],
-                  [ 31.995,-24.003, 38.063,-12.289],[ 64.015,-48.007, 76.150,-24.572],
-                  [ 72.001,-87.997, 96.711,-59.789],[ 88.016,-71.992,106.648,-39.444],
-                  [ 88.016,-96.005,114.460,-62.151],[ 88.016,  7.996,  80.628,36.193],
-                  [ 88.016,23.993,  75.424, 51.320],[ 88.016,47.987,  67.618, 74.009],
-                  [ 88.016,71.990,  59.810, 96.706],[ 96.002,-48.006,106.397,-14.165],
-                  [104.021,-47.998,113.977,-11.549],[112.013,-48.000,121.535, -8.951],
-                  [-16.000,-16.000, -9.925,-20.335],[ 24.000,24.000,  14.887, 30.502],
-                  [64.0013,47.9725, 44.915, 66.183],[112.000,8.000,  103.306,43.999]])
+def vltiplot(
+    axe=None,
+    configs=np.array([]),
+    marker="o",
+    markersize=10,
+    telcolor="k",
+    labels=True,
+    fontsize=2,
+):
 
-def vltiplot(axe=None,configs=np.array([]),marker="o",markersize=10,telcolor='k'
-             ,labels=True,fontsize=2):
-    
-   
-    UTs=sta_pos[-4:,:]
-    ATs=sta_pos[:-4,:]
-    
-    if axe==None:
-        fig,axe = plt.subplots()
+    UTs = sta_pos[-4:, :]
+    ATs = sta_pos[:-4, :]
+
+    if axe == None:
+        fig, axe = plt.subplots()
     else:
         fig = axe.get_figure()
-        
-    #axe.axis([np.min(sta_pos[:,2])-20,np.max(sta_pos[:,2])+20,np.min(sta_pos[:,3])-20,np.max(sta_pos[:,3])+20])
-    axe.scatter(UTs[:,2],UTs[:,3],marker=marker,s=8*markersize,color=telcolor)
-    axe.scatter(ATs[:,2],ATs[:,3],marker=marker,s=markersize,color=telcolor)
-    
+
+    # axe.axis([np.min(sta_pos[:,2])-20,np.max(sta_pos[:,2])+20,np.min(sta_pos[:,3])-20,np.max(sta_pos[:,3])+20])
+    axe.scatter(
+        UTs[:, 2], UTs[:, 3], marker=marker, s=8 * markersize, color=telcolor
+    )
+    axe.scatter(
+        ATs[:, 2], ATs[:, 3], marker=marker, s=markersize, color=telcolor
+    )
+
     if labels:
         for i in range(len(sta_name)):
-            mult=1
-            axe.text(sta_pos[i,2]+0.0*markersize,sta_pos[i,3]+0.5*markersize,
-                     sta_name[i],fontsize=3*fontsize*mult,color=telcolor)
-    
-    
-    if len(configs)>0:
-        for iconfig,configi in enumerate(configs):
+            mult = 1
+            axe.text(
+                sta_pos[i, 2] + 0.0 * markersize,
+                sta_pos[i, 3] + 0.5 * markersize,
+                sta_name[i],
+                fontsize=3 * fontsize * mult,
+                color=telcolor,
+            )
 
-            tels=configi.split("-")
-            idx=[np.where(sta_name==teli)[0][0] for teli in tels]
-            
-            
+    if len(configs) > 0:
+        for iconfig, configi in enumerate(configs):
+
+            tels = configi.split("-")
+            idx = [np.where(sta_name == teli)[0][0] for teli in tels]
+
             for idxi in idx:
                 for idxj in idx:
-                    if idxi!=idxj:
+                    if idxi != idxj:
                         col = oimPlotParamColorCycle[iconfig]
-                        axe.plot([sta_pos[idxi,2],sta_pos[idxj,2]],
-                                 [sta_pos[idxi,3],sta_pos[idxj,3]],color=col)
+                        axe.plot(
+                            [sta_pos[idxi, 2], sta_pos[idxj, 2]],
+                            [sta_pos[idxi, 3], sta_pos[idxj, 3]],
+                            color=col,
+                        )
 
-                
-    
-        
-            
-            
-    xlim=axe.get_xlim()
-    ylim=axe.get_ylim()
-    
-    xrange=xlim[1]-xlim[0]
-    yrange=ylim[1]-ylim[0]
-    x0=np.mean(xlim)
-    y0=np.mean(ylim)
-    
-    xyrange=np.max([xrange,yrange])+20
-    
-    
-    
-    axe.set_xlim(x0-xyrange/2,x0+xyrange/2)
-    axe.set_ylim(y0-xyrange/2,y0+xyrange/2)
+    xlim = axe.get_xlim()
+    ylim = axe.get_ylim()
+
+    xrange = xlim[1] - xlim[0]
+    yrange = ylim[1] - ylim[0]
+    x0 = np.mean(xlim)
+    y0 = np.mean(ylim)
+
+    xyrange = np.max([xrange, yrange]) + 20
+
+    axe.set_xlim(x0 - xyrange / 2, x0 + xyrange / 2)
+    axe.set_ylim(y0 - xyrange / 2, y0 + xyrange / 2)
     axe.get_xaxis().set_visible(False)
     axe.get_yaxis().set_visible(False)
-    axe.set_aspect('equal')
-    
+    axe.set_aspect("equal")
+
     return fig, axe

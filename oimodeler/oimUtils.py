@@ -471,7 +471,7 @@ def compute_photometric_slope(
     )
 
 
-def pad_image(image: np.ndarray, padfact= None) -> np.ndarray:
+def pad_image(image: np.ndarray, padfact=None) -> np.ndarray:
     """Pads an image with additional zeros for Fourier transform.
 
     Parameters
@@ -484,10 +484,10 @@ def pad_image(image: np.ndarray, padfact= None) -> np.ndarray:
     padded_image : numpy.ndarray
         The padded image.
     """
-    
+
     if padfact == None:
         padfact = oimOptions.ft.padding
-        
+
     im0 = np.sum(image, axis=(0, 1))
     dimy = im0.shape[0]
     dimx = im0.shape[1]
@@ -498,8 +498,8 @@ def pad_image(image: np.ndarray, padfact= None) -> np.ndarray:
     s0x = np.trim_zeros(im0x).size
     s0y = np.trim_zeros(im0y).size
 
-    min_sizex = s0x*padfact
-    min_sizey = s0y*padfact
+    min_sizex = s0x * padfact
+    min_sizey = s0y * padfact
 
     min_pow2x = 2 ** (min_sizex - 1).bit_length()
     min_pow2y = 2 ** (min_sizey - 1).bit_length()
@@ -1742,7 +1742,6 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
     if arr == ["all"]:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
 
-
     for iarr in range(len(data)):
         ok = True
         if data[iarr].name in arr:
@@ -1764,17 +1763,18 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
                     data, arr=arri, extver=extver, returnBand=True
                 )
                 nwl = np.size(eff_wave)
-                if arri!="OI_FLUX":
+                if arri != "OI_FLUX":
                     length, pa = getBaselineLengthAndPA(
-                        data, arr=arri, extver=extver, T3Max=True)
+                        data, arr=arri, extver=extver, T3Max=True
+                    )
                     nB = np.size(length)
                 else:
                     dim = data[iarr].data["FLUXDATA"].shape
-                    ndim =len(dim)
+                    ndim = len(dim)
                     if ndim == 2:
                         nB = dim[0]
-                        length = np.ones(nB)*np.nan
-                        pa = np.ones(nB)*np.nan
+                        length = np.ones(nB) * np.nan
+                        pa = np.ones(nB) * np.nan
 
                 EFF_WAVE = np.tile(eff_wave[None, :], (nB, 1))
                 EFF_BAND = np.tile(eff_band[None, :], (nB, 1))
@@ -1804,8 +1804,10 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
                     data[iarr].data["FLAG"] = flags
 
             except:
-                raise Warning(f"oifitsFlagWithExpression: " \
-                               f"Couldn't resolve expression {expr} in {arri} ")
+                raise Warning(
+                    f"oifitsFlagWithExpression: "
+                    f"Couldn't resolve expression {expr} in {arri} "
+                )
 
     return True
 
@@ -2004,22 +2006,26 @@ def setMinimumError(
 
 
 def _listFeatures(
-    baseClass, featureToTextFunction, details=False, save2csv=None, header=None
+    baseClass,
+    featureToTextFunction,
+    details: bool = False,
+    save2csv: bool = False,
+    header=None,
 ):
 
     list_features = []
-
     for obj in oim.__dict__:
         try:
             if issubclass(oim.__dict__[obj], baseClass):
                 list_features.append(obj)
         except:
             pass
+
     table = []
     if header:
         table.append(header)
-    names = []
 
+    names = []
     for cname in list_features:
         try:
             ti = featureToTextFunction(cname)
@@ -2029,6 +2035,7 @@ def _listFeatures(
             print(cname)
 
     if details:
+        # TODO: Change this to "with" generator
         if save2csv:
             f = open(save2csv, "w")
             w = csv.writer(f, delimiter="|")
@@ -2039,14 +2046,14 @@ def _listFeatures(
         return names
 
 
-def listComponents(details=False, save2csv=None, componentType="all"):
+def listComponents(
+    details: bool = False, save2csv: bool = False, componentType: str = "all"
+):
 
-    def _componentToTextfunction(cname):
-        tab = [cname]
+    def _componentToTextfunction(cname: str):
         c = oim.__dict__[cname]()
         p = c.params
-        name = c.name
-        tab.append(name)
+        tab = [cname, c.name]
         txt = ""
         for pname in p:
             txt += ":abbr:`"
@@ -2073,13 +2080,12 @@ def listComponents(details=False, save2csv=None, componentType="all"):
     )
 
 
-def listDataFilters(details=False, save2csv=None):
+def listDataFilters(details: bool = False, save2csv: bool = False):
     header = ["Filter Name", "Short description", "Class Keywords"]
 
-    def _datFilterToTextfunction(cname):
+    def _datFilterToTextfunction(cname: str):
         filt = oim.__dict__[cname]()
-        tab = [cname]
-        tab.append(filt.description)
+        tab = [cname, filt.description]
         txt = ""
         for pname in filt.params:
             txt += pname + ", "
@@ -2097,22 +2103,16 @@ def listDataFilters(details=False, save2csv=None):
     return res
 
 
-def listFitters(details=False, save2csv=None):
+def listFitters(details: bool = False, save2csv: bool = False):
     header = ["Fitter Name", "Description"]
 
-    def _fitterToTextfunction(cname):
-        fit = oim.__dict__[cname](None,None)
-        tab = [cname]
-        try:
-            description= fit.description
-            #print(description)
-        except:
-             description = " - "
-        tab.append(description)
-        
+    def _fitterToTextfunction(cname: str):
+        fit = oim.__dict__[cname](None, None)
+        tab = [cname, getattr(fit, "description", " - ")]
+
         """
         txt = ""
-        try:     
+        try:
             for pname in fit.params:
                 txt += pname + ", "
             txt = txt[:-2]
@@ -2128,7 +2128,8 @@ def listFitters(details=False, save2csv=None):
 
     return res
 
-def listParamInterpolators(details=False, save2csv=None):
+
+def listParamInterpolators(details: bool = False, save2csv: bool = False):
     header = ["Class Name", "oimInterp macro", "Description", "parameters"]
     p = oim.oimParam()
     interp_name = list(oim._interpolators.values())
@@ -2136,30 +2137,21 @@ def listParamInterpolators(details=False, save2csv=None):
 
     def _interpToTextfunction(cname):
         interp = oim.__dict__[cname](p)
-        
-        tab = [cname]
         try:
             macro = interp_macro[interp_name.index(cname)]
         except:
             macro = " - "
-        tab.append(macro)
-    
-        try:
-            description= interp.interpdescription
-            #print(description)
-        except:
-             description = " - "
-        tab.append(description)
-        
+
+        tab = [cname, macro, getattr(interp, "interpdescription", " - ")]
         txt = ""
-        try:     
+        try:
             for pname in interp.interparams:
                 txt += pname + ", "
             txt = txt[:-2]
         except:
             pass
         tab.append(txt)
-        
+
         return tab
 
     res = _listFeatures(
