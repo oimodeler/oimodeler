@@ -1905,19 +1905,16 @@ def oifitsKeepTelescopes(
 
     for arri in arr:
         try:
-            telescopes = getBaselineName(data, hduname=arri, extver=extver)
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
             
 
-            telescopes = np.array(telescopes)
+            baselines = np.array(baselines)
             telescopes_to_keep = np.array(telescopes_to_keep)
 
-            idx_to_keep = []
-            for Bi in telescopes_to_keep:
-                idx = np.where([Bi in BB for BB in telescopes])[0]
-                if len(idx != 0):
-                    idx_to_keep.extend(idx)
+            idx_to_keep = np.where([set(BB.split("-")).issubset(telescopes_to_keep) \
+                                    for BB in baselines])[0]
 
-            for iB, Bi in enumerate(telescopes):
+            for iB, Bi in enumerate(baselines):
                 if not (iB in idx_to_keep):
                     data[arri, extver].data["FLAG"][iB, :] = True
 
@@ -1936,19 +1933,16 @@ def oifitsRemoveTelescopes(
 
     for arri in arr:
         try:
-            telescopes = getBaselineName(data, hduname=arri, extver=extver)
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
             
 
-            telescopes = np.array(telescopes)
+            baselines = np.array(baselines)
             telescopes_to_remove = np.array(telescopes_to_remove)
 
-            idx_to_remove = []
-            for Bi in telescopes_to_remove:
-                idx = np.where([Bi in BB for BB in telescopes])[0]
-                if len(idx != 0):
-                    idx_to_remove.extend(idx)
+            idx_to_remove = np.where([bool(set(BB.split("-")) & set(telescopes_to_remove))\
+                                      for BB in baselines])[0]
 
-            for iB, Bi in enumerate(telescopes):
+            for iB, Bi in enumerate(baselines):
                 if (iB in idx_to_remove):
                     data[arri, extver].data["FLAG"][iB, :] = True
 
