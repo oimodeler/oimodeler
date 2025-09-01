@@ -1816,12 +1816,14 @@ def oifitsKeepBaselines(
     data, arr, baselines_to_keep, extver=None, keepOldFlag=True
 ):
 
-    if arr == ["all"]:
+    if arr == "all" or arr == ["all"] or arr is []:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
 
     for arri in arr:
         try:
-            baselines = getBaselineName(data, hduname=arr, extver=extver)
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
             baselines_to_keep_ordered = []
             for Bi in baselines_to_keep:
                 Bi = Bi.split("-")
@@ -1845,7 +1847,104 @@ def oifitsKeepBaselines(
 
             for iB, Bi in enumerate(baselines):
                 if not (iB in idx_to_keep):
-                    data[arr, extver].data["FLAG"][iB, :] = True
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+
+def oifitsRemoveBaselines(
+    data, arr, baselines_to_remove, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            baselines_to_remove_ordered = []
+            for Bi in baselines_to_remove:
+                Bi = Bi.split("-")
+                Bi.sort()
+                baselines_to_remove_ordered.append("".join(Bi))
+
+            baselines_ordered = []
+            for iB, Bi in enumerate(baselines):
+                Bi = Bi.split("-")
+                Bi.sort()
+                baselines_ordered.append("".join(Bi))
+
+            baselines_ordered = np.array(baselines_ordered)
+            baselines_to_remove_ordered = np.array(baselines_to_remove_ordered)
+
+            idx_to_remove = []
+            for Bi in baselines_to_remove_ordered:
+                idx = np.where(baselines_ordered == Bi)[0]
+                if len(idx != 0):
+                    idx_to_remove.extend(idx)
+
+            for iB, Bi in enumerate(baselines):
+                if (iB in idx_to_remove):
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+        
+def oifitsKeepTelescopes(
+    data, arr, telescopes_to_keep, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            
+
+            baselines = np.array(baselines)
+            telescopes_to_keep = np.array(telescopes_to_keep)
+
+            idx_to_keep = np.where([set(BB.split("-")).issubset(telescopes_to_keep) \
+                                    for BB in baselines])[0]
+
+            for iB, Bi in enumerate(baselines):
+                if not (iB in idx_to_keep):
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+        
+def oifitsRemoveTelescopes(
+    data, arr, telescopes_to_remove, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            
+
+            baselines = np.array(baselines)
+            telescopes_to_remove = np.array(telescopes_to_remove)
+
+            idx_to_remove = np.where([bool(set(BB.split("-")) & set(telescopes_to_remove))\
+                                      for BB in baselines])[0]
+
+            for iB, Bi in enumerate(baselines):
+                if (iB in idx_to_remove):
+                    data[arri, extver].data["FLAG"][iB, :] = True
 
         except:
             pass

@@ -131,10 +131,10 @@ def fastRotator(dim0, size, incl, rot, Tpole, lam, beta=0.25, a1=0, a2=0, a3=0, 
         im0[dim0//2-dim//2:dim0//2+dim//2, dim0//2-dim//2:dim0//2+dim//2, :] = im
         return im0
 
-def fastRotator_2(dim0, size, R_pol, incl, veq, Mstar, Tp, lam, beta=np.nan, distance=10, a1=0, a2=0, a3=0, a4=0, ldd=None):
+def fastRotator_2(dim0, R_eq, incl, veq, Mstar, Tp, lam, beta=np.nan, distance=10, a1=0, a2=0, a3=0, a4=0, ldd=None):
     
-    R_pol = R_pol * R_sun  
-    size = size
+    size = R_eq
+    R_eq = R_eq * R_sun  
     M= Mstar * M_sun 
     veq= veq * units.km/units.s
     
@@ -142,7 +142,7 @@ def fastRotator_2(dim0, size, R_pol, incl, veq, Mstar, Tp, lam, beta=np.nan, dis
     incl = np.deg2rad(incl)
 
     x0 = np.linspace(-size, size, num=dim0)
-    idx = np.where(np.abs(x0) <= 1.5)
+    idx = np.where(np.abs(x0) <= size)
     x = np.take(x0, idx)
     dim = np.size(x)
     unit = np.ones(dim)
@@ -159,17 +159,18 @@ def fastRotator_2(dim0, size, R_pol, incl, veq, Mstar, Tp, lam, beta=np.nan, dis
 
     theta = np.arccos(zp/r)
 
-    eps = ((veq**2 * R_pol) / (2 * G * M)).decompose()
+    eps = (1/(1 + (2 * G * M)/(veq**2 * R_eq))).decompose()
 
     ome = 1.5*(1-eps)*np.sqrt(3*eps)
 
     Rtheta = (1-eps)*np.sin(1/3*np.arcsin(ome*np.sin(theta)))/(1/3*ome*np.sin(theta))
-    Rtheta = Rtheta/Rtheta.min()
+    Rtheta = Rtheta/Rtheta.max() * size
 
     dr = (Rtheta-r) >= 0
 
-    Rtheta = Rtheta*R_pol
+    Rtheta = Rtheta*R_sun
     R_eq =  Rtheta.max()
+    R_pol =  Rtheta.min()
     
     geff_component = veq**2/R_eq**2*Rtheta*np.sin(theta)
     geff_r = -G*M/Rtheta**2 + geff_component*np.sin(theta)
@@ -198,8 +199,8 @@ def fastRotator_2(dim0, size, R_pol, incl, veq, Mstar, Tp, lam, beta=np.nan, dis
         ldd_im = 1
         
     dist = distance*units.pc
-    dpole = 2*R_pol
-    app_diam = (((dpole/dist).decompose()*units.rad).to(units.mas))
+    deq = 2*R_eq
+    app_diam = (((deq/dist).decompose()*units.rad).to(units.mas))
     
     if nlam == 1:
         flx = 1./(np.exp(K1/(lam*Teff))-1)*2*h*c**2/lam**5
@@ -447,7 +448,7 @@ class oimFastRotatorMasse(oimComponentImage):
         self.params["incl"] = oimParam(name="incl", value=0, description="Inclination angle", unit=units.deg)
         self.params["Veq"] = oimParam(name="Veq", value=300, description="Equatorial veloclty", unit=units.km/units.s)
         self.params["Tp"] = oimParam(name="Tp", value=7000, description="Equatorial Temperature", unit=units.K)
-        self.params["Rpole"] = oimParam(name="Rpole", value=1, description="Polar diameter", unit=units.R_sun)
+        self.params["Req"] = oimParam(name="Req", value=1, description="Equatorial diameter", unit=units.R_sun)
         self.params["Mstar"] = oimParam(name="Mstar", value=1, description="Stellar Masse", unit=units.M_sun)
         self.params["beta"] = oimParam(name="beta", value=0.25, description="Gravity Darkening Exponent", unit=units.one)
         self.params["distance"] = oimParam(name="distance", value=10, description="Distance to the object in pc", unit=units.pc)
@@ -468,10 +469,10 @@ class oimFastRotatorMasse(oimComponentImage):
     def _internalImage(self):
         dim = self.params["dim"].value
         incl = self.params["incl"].value
-        veq = self.params["Veq"].value
+        Veq = self.params["Veq"].value
         Tp = self.params["Tp"].value
         Mstar = self.params["Mstar"].value
-        Rpole = self.params["Rpole"].value
+        Req = self.params["Req"].value
         beta = self.params["beta"].value
         dist = self.params["distance"].value
         a1 = self.params["a1"].value
@@ -479,7 +480,7 @@ class oimFastRotatorMasse(oimComponentImage):
         a3 = self.params["a3"].value
         a4 = self.params["a4"].value
         
-        im, app_diam = fastRotator_2(dim, 1.5, Rpole, incl, veq, Mstar, Tp, self._wl, 
+        im, app_diam = fastRotator_2(dim, Req, incl, Veq, Mstar, Tp, self._wl, 
                                      beta=beta,ldd="non-linear", distance=dist,
                                      a1=a1, a2=a2, a3=a3, a4=a4)
 
@@ -487,6 +488,6 @@ class oimFastRotatorMasse(oimComponentImage):
         im = np.tile(np.moveaxis(im, -1, 0)[None, :, :, :], (1, 1, 1, 1))
         
         # computing the pixelSize based on the internal image size and the polar diameter
-        self._pixSize = 1.5*app_diam/dim*units.mas.to(units.rad)
+        self._pixSize = (app_diam/dim).to(units.rad)
         
         return im

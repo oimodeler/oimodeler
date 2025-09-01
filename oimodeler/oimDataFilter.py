@@ -12,6 +12,9 @@ from .oimUtils import (
     getDataType,
     oifitsFlagWithExpression,
     oifitsKeepBaselines,
+    oifitsRemoveBaselines,
+    oifitsKeepTelescopes,
+    oifitsRemoveTelescopes,
     setMinimumError,
     shiftWavelength,
     spectralSmoothing,
@@ -317,6 +320,75 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
                 data,
                 arri,
                 self.params["baselines"],
+                keepOldFlag=self.params["keepOldFlag"],
+            )
+            
+
+class oimRemoveBaselinesFilter(oimDataFilterComponent):
+    """Select baselines to remove"""
+
+    name = "Baseline selection filter"
+    shortname = "RemoveBAselineFilt"
+    description = "Selection based on baseline name(s)"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["baselines"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        for arri in self.params["arr"]:
+            oifitsRemoveBaselines(
+                data,
+                arri,
+                self.params["baselines"],
+                keepOldFlag=self.params["keepOldFlag"],
+            )
+
+
+class oimKeepTelescopesFilter(oimDataFilterComponent):
+    """Select telescopes to keep"""
+
+    name = "Telescopes selection filter"
+    shortname = "KeepTelescopeFilt"
+    description = "Selection based on telescope name(s)"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["telescopes"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        for arri in self.params["arr"]:
+            oifitsKeepTelescopes(
+                data,
+                arri,
+                self.params["telescopes"],
+                keepOldFlag=self.params["keepOldFlag"],
+            )
+
+            
+class oimRemoveTelescopesFilter(oimDataFilterComponent):
+    """Select telescopes to remove"""
+
+    name = "Telescope selection filter"
+    shortname = "RemoveTelescopeFilt"
+    description = "Selection based on telescope name(s)"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["telescopes"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        for arri in self.params["arr"]:
+            oifitsRemoveTelescopes(
+                data,
+                arri,
+                self.params["telescopes"],
                 keepOldFlag=self.params["keepOldFlag"],
             )
 
