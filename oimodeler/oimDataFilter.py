@@ -10,10 +10,11 @@ from .oimUtils import (
     cutWavelengthRange,
     getDataArrname,
     getDataType,
+    interpolate_wavelength,
     oifitsFlagWithExpression,
     oifitsKeepBaselines,
-    oifitsRemoveBaselines,
     oifitsKeepTelescopes,
+    oifitsRemoveBaselines,
     oifitsRemoveTelescopes,
     setMinimumError,
     shiftWavelength,
@@ -278,6 +279,29 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
         )
 
 
+class oimWavelengthInterpolationFilter(oimDataFilterComponent):
+    """Filter for binning wavelength"""
+
+    name = "Wavelength interpolation Filter"
+    shortname = "WlIntpFilt"
+    description = "Interpolation (smooth) to wavelength grid."
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["intpGrid"] = np.array([])
+        self.params["smooth"] = True
+        self.params["window"] = 0.1
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        interpolate_wavelength(
+            data,
+            self.params["intpGrid"],
+            smooth=self.params["smooth"],
+            window=self.params["window"],
+        )
+
+
 class oimFlagWithExpressionFilter(oimDataFilterComponent):
     """Flaging based on expression"""
 
@@ -322,7 +346,7 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
                 self.params["baselines"],
                 keepOldFlag=self.params["keepOldFlag"],
             )
-            
+
 
 class oimRemoveBaselinesFilter(oimDataFilterComponent):
     """Select baselines to remove"""
@@ -369,7 +393,7 @@ class oimKeepTelescopesFilter(oimDataFilterComponent):
                 keepOldFlag=self.params["keepOldFlag"],
             )
 
-            
+
 class oimRemoveTelescopesFilter(oimDataFilterComponent):
     """Select telescopes to remove"""
 
