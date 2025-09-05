@@ -11,7 +11,7 @@ from astropy.coordinates import Angle
 from astropy.io import fits
 from astropy.modeling import models
 from astroquery.simbad import Simbad
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import circmean, circstd
 
 import oimodeler as oim
@@ -1416,7 +1416,7 @@ def shiftWavelength(
         data[i].data["EFF_WAVE"] += shift
 
 
-# TODO: For phases smoothing should be done in complex plan
+# TODO: For phases smoothing should be done in complex plane
 def spectralSmoothing(
     oifits: fits.HDUList,
     kernel_size: float,
@@ -1533,6 +1533,177 @@ def spectralSmoothing(
                             data[i].data[coli.name] /= np.sqrt(kernel_size)
         except:
             pass
+
+
+# TODO: Make it possible to pass a window for each point?
+def _interpolate(
+    interpolation_grid: ArrayLike,
+    grid: ArrayLike,
+    values: ArrayLike,
+    smooth: bool,
+    window: float,
+    dim: int = 10,
+) -> ArrayLike:
+    """Rebins the grid to a higher factor and then interpolates and averages
+    to the original grid.
+
+    Parameters
+    ----------
+    grid_to_interpolate : array_like
+        The points to interpolate to.
+    grid : array_like
+        The grid to interpolate.
+    values : array_like
+        The values to interpolate.
+    smooth : bool
+        If True, does an interpolation where the average is
+        taken over adjacent elements.
+    window : float
+        The size of the window determining the average.
+    dim : int, optional
+        The dimension for the smooth interpolation grid.
+
+    Returns
+    -------
+    interpolated_values : array_like
+    """
+    if smooth:
+        average_grid = (
+            np.linspace(-0.5, 0.5, dim) * window * 1e-6
+        ).T + interpolation_grid[:, np.newaxis]
+
+        return (
+            np.interp(average_grid, grid, values)
+            .mean(axis=1)
+            .reshape(interpolation_grid.shape)
+        )
+
+    return np.interp(interpolation_grid, grid, values)
+
+
+# TODO: Pass interpolation dim to this function
+def _interpolate_HDU(
+    hdu: fits.BinTableHDU,
+    grid: ArrayLike,
+    original_grid: ArrayLike,
+    smooth: bool,
+    window: float,
+    exception: Optional[List[str]] = [],
+) -> fits.BinTableHDU:
+    """Rebin an HDU.
+
+    Parameters
+    ----------
+    hdu : astropy.io.fits.BinTableHDU
+        The HDU to rebin.
+    grid : array_like
+        The grid to interpolate to.
+    original_grid : array_like
+        The pre-interpolation grid.
+    smooth : bool
+        If True, does an interpolation where the average is
+        taken over adjacent elements.
+    window : float
+        The size of the window determining the average.
+    exception : list of str
+        The exceptions.
+
+    Returns
+    -------
+    newhdu : astropy.io.fits.BinTableHDU
+        The rebinned HDU.
+    """
+    cols = hdu.data.columns
+    newcols = []
+
+    if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
+        # TODO: Make this work as well
+        for coli in cols:
+            newformat = coli.format
+            shape = np.shape(hdu.data[coli.name])
+            if len(shape) == 2 and (coli.name not in exception):
+                interpi = []
+                for jB in range(shape[0]):
+                    interpij = _interpolate(
+                        grid,
+                        original_grid,
+                        hdu.data[coli.name][jB],
+                        smooth,
+                        window,
+                    )
+                    interpi.append(interpij)
+                interpi = np.array(interpi)
+                newformat = f"{grid.shape[0]}{coli.format[-1]}"
+            else:
+                interpi = hdu.data[coli.name]
+
+            newcoli = fits.Column(
+                name=coli.name, array=interpi, unit=coli.unit, format=newformat
+            )
+            newcols.append(newcoli)
+    else:
+        for coli in cols:
+            if coli.name == "EFF_WAVE":
+                interpi = grid
+            elif coli.name == "EFF_BAND":
+                interpi = np.append(np.diff(grid), np.diff(grid)[0])
+            else:
+                interpi = _interpolate(
+                    grid, original_grid, hdu.data[coli.name], smooth, window
+                )
+
+            newcoli = fits.Column(
+                name=coli.name,
+                array=interpi,
+                unit=coli.unit,
+                format=coli.format,
+            )
+            newcols.append(newcoli)
+
+    newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(newcols))
+    newhdu.header = hdu.header
+    newhdu.update_header()
+    return newhdu
+
+
+# TODO: For phases bining should be done in complex plane
+def interpolate_wavelength(
+    oifits: fits.HDUList,
+    grid: ArrayLike,
+    smooth: bool = True,
+    window: float = 0.1,
+) -> None:
+    """Bin the wavelength of an oifits file.
+
+    Parameters
+    ----------
+    oifits : astropy.io.fits.HDUList
+        An oifits file structure already opened with astropy.io.fits.
+    grid : array_like
+        The wavelength grid to interpolate to.
+    smooth : bool, optional
+        If True interpolates by taking the mean around the interpolation point
+        with a certain window. Default "True".
+    window : float, optional
+        The window for the smooth interpolation. Default "0.1".
+    """
+    if type(oifits) == type(""):
+        data = fits.open(oifits)
+    else:
+        data = oifits
+
+    to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    original_grid = data[to_interpolate[0]].data["EFF_WAVE"]
+    for i, _ in enumerate(data):
+        if data[i].name in to_interpolate:
+            data[i] = _interpolate_HDU(
+                data[i],
+                grid,
+                original_grid,
+                smooth,
+                window,
+                exception=["STA_INDEX"],
+            )
 
 
 def rebin_image(
@@ -1673,7 +1844,7 @@ def _rebinHdu(
             else:
                 circular = False
 
-            bini = _rebin(hdu.data[coli.name], binsize, circular=circular)
+            bini = _(hdu.data[coli.name], binsize, circular=circular)
             newcoli = fits.Column(
                 name=coli.name, array=bini, unit=coli.unit, format=coli.format
             )
@@ -1685,7 +1856,7 @@ def _rebinHdu(
     return newhdu
 
 
-# TODO: For phases bining should be done in complex plan
+# TODO: For phases bining should be done in complex plane
 def binWavelength(
     oifits: fits.HDUList, binsize: int, normalizeError: Optional[bool] = True
 ) -> None:
@@ -1887,13 +2058,13 @@ def oifitsRemoveBaselines(
                     idx_to_remove.extend(idx)
 
             for iB, Bi in enumerate(baselines):
-                if (iB in idx_to_remove):
+                if iB in idx_to_remove:
                     data[arri, extver].data["FLAG"][iB, :] = True
 
         except:
             pass
 
-        
+
 def oifitsKeepTelescopes(
     data, arr, telescopes_to_keep, extver=None, keepOldFlag=True
 ):
@@ -1906,13 +2077,16 @@ def oifitsKeepTelescopes(
     for arri in arr:
         try:
             baselines = getBaselineName(data, hduname=arri, extver=extver)
-            
 
             baselines = np.array(baselines)
             telescopes_to_keep = np.array(telescopes_to_keep)
 
-            idx_to_keep = np.where([set(BB.split("-")).issubset(telescopes_to_keep) \
-                                    for BB in baselines])[0]
+            idx_to_keep = np.where(
+                [
+                    set(BB.split("-")).issubset(telescopes_to_keep)
+                    for BB in baselines
+                ]
+            )[0]
 
             for iB, Bi in enumerate(baselines):
                 if not (iB in idx_to_keep):
@@ -1921,7 +2095,7 @@ def oifitsKeepTelescopes(
         except:
             pass
 
-        
+
 def oifitsRemoveTelescopes(
     data, arr, telescopes_to_remove, extver=None, keepOldFlag=True
 ):
@@ -1934,16 +2108,19 @@ def oifitsRemoveTelescopes(
     for arri in arr:
         try:
             baselines = getBaselineName(data, hduname=arri, extver=extver)
-            
 
             baselines = np.array(baselines)
             telescopes_to_remove = np.array(telescopes_to_remove)
 
-            idx_to_remove = np.where([bool(set(BB.split("-")) & set(telescopes_to_remove))\
-                                      for BB in baselines])[0]
+            idx_to_remove = np.where(
+                [
+                    bool(set(BB.split("-")) & set(telescopes_to_remove))
+                    for BB in baselines
+                ]
+            )[0]
 
             for iB, Bi in enumerate(baselines):
-                if (iB in idx_to_remove):
+                if iB in idx_to_remove:
                     data[arri, extver].data["FLAG"][iB, :] = True
 
         except:
@@ -2262,3 +2439,10 @@ def listParamInterpolators(details: bool = False, save2csv: bool = False):
     )
 
     return res
+
+
+def windowed_linspace(
+    start: float, end: float, spacing: float
+) -> NDArray[Any]:
+    """Creates a numpy.linspace within the start and end point at certain spacing."""
+    return np.linspace(start, end, int((end - start) // (2 * spacing / 2)) + 1)

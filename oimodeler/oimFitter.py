@@ -543,7 +543,7 @@ class oimFitterDynesty(oimFitter):
 
 class oimFitterMinimize(oimFitter):
     description = (
-        "a simple :math:`\chi^2` minimizer using the numpy Minimize function"
+        r"a simple :math:`\chi^2` minimizer using the numpy Minimize function"
     )
 
     def __init__(self, *args, **kwargs):
@@ -618,7 +618,7 @@ class oimFitterMinimize(oimFitter):
 
 
 class oimFitterRegularGrid(oimFitter):
-    description = " regular grid with :math:`\chi^2` explorer"
+    description = r"regular grid with :math:`\chi^2` explorer"
 
     def __init__(self, *args, **kwargs):
 
