@@ -10,7 +10,6 @@ from .oimUtils import (
     cutWavelengthRange,
     getDataArrname,
     getDataType,
-    interpolate_wavelength,
     oifitsFlagWithExpression,
     oifitsKeepBaselines,
     oifitsKeepTelescopes,
@@ -269,36 +268,16 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
         super().__init__(**kwargs)
         self.params["bin"] = 3
         self.params["normalizeError"] = True
+        self.params["binGrid"] = np.array([])
+        self.params["binWindow"] = 0.1
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
         binWavelength(
             data,
-            self.params["bin"],
+            binsize=self.params["bin"],
+            binGrid=self.params["binGrid"],
             normalizeError=self.params["normalizeError"],
-        )
-
-
-class oimWavelengthInterpolatedBinningFilter(oimDataFilterComponent):
-    """Filter for binning wavelength"""
-
-    name = "Wavelength Interpolated Binning Filter"
-    shortname = "WlIntpBinFilt"
-    description = "Binning an (smoothly) interpolated wavelength grid."
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.params["intpGrid"] = np.array([])
-        self.params["smooth"] = True
-        self.params["window"] = 0.1
-        self._eval(**kwargs)
-
-    def _filteringFunction(self, data):
-        interpolate_wavelength(
-            data,
-            self.params["intpGrid"],
-            smooth=self.params["smooth"],
-            window=self.params["window"],
         )
 
 
