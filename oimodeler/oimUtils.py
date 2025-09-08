@@ -1535,6 +1535,7 @@ def spectralSmoothing(
             pass
 
 
+# TODO: Replace the interpolation step with a windowing step
 # TODO: Make it possible to pass a window for each point?
 def _interpolate(
     interpolation_grid: ArrayLike,
@@ -1542,7 +1543,7 @@ def _interpolate(
     values: ArrayLike,
     smooth: bool,
     window: float,
-    dim: int = 10,
+    error: bool = False,
 ) -> ArrayLike:
     """Rebins the grid to a higher factor and then interpolates and averages
     to the original grid.
@@ -1560,23 +1561,29 @@ def _interpolate(
         taken over adjacent elements.
     window : float
         The size of the window determining the average.
-    dim : int, optional
-        The dimension for the smooth interpolation grid.
+    error : bool, optional
+        If True, will handle binning of the errors.
 
     Returns
     -------
     interpolated_values : array_like
     """
     if smooth:
+        dim = grid.size // interpolation_grid.size
         average_grid = (
             np.linspace(-0.5, 0.5, dim) * window * 1e-6
         ).T + interpolation_grid[:, np.newaxis]
 
-        return (
-            np.interp(average_grid, grid, values)
-            .mean(axis=1)
-            .reshape(interpolation_grid.shape)
-        )
+        interp_values = np.interp(average_grid, grid, values)
+        if error:
+            binned_values = (
+                np.sqrt(np.sum(interp_values**2, axis=1))
+                / interp_values.shape[-1]
+            )
+        else:
+            binned_values = interp_values.mean(axis=1)
+
+        return binned_values.reshape(interpolation_grid.shape)
 
     return np.interp(interpolation_grid, grid, values)
 
@@ -1620,6 +1627,7 @@ def _interpolate_HDU(
         # TODO: Make this work as well
         for coli in cols:
             newformat = coli.format
+            error = True if "err" in coli.name.lower() else False
             shape = np.shape(hdu.data[coli.name])
             if len(shape) == 2 and (coli.name not in exception):
                 interpi = []
@@ -1630,6 +1638,7 @@ def _interpolate_HDU(
                         hdu.data[coli.name][jB],
                         smooth,
                         window,
+                        error,
                     )
                     interpi.append(interpij)
                 interpi = np.array(interpi)
@@ -1648,8 +1657,14 @@ def _interpolate_HDU(
             elif coli.name == "EFF_BAND":
                 interpi = np.append(np.diff(grid), np.diff(grid)[0])
             else:
+                error = True if "err" in coli.name.lower() else False
                 interpi = _interpolate(
-                    grid, original_grid, hdu.data[coli.name], smooth, window
+                    grid,
+                    original_grid,
+                    hdu.data[coli.name],
+                    smooth,
+                    window,
+                    error,
                 )
 
             newcoli = fits.Column(

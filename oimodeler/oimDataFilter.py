@@ -282,9 +282,9 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 class oimWavelengthInterpolatedBinningFilter(oimDataFilterComponent):
     """Filter for binning wavelength"""
 
-    name = "Wavelength interpolation Filter"
-    shortname = "WlIntpFilt"
-    description = "Interpolation (smooth) to wavelength grid."
+    name = "Wavelength Interpolated Binning Filter"
+    shortname = "WlIntpBinFilt"
+    description = "Binning an (smoothly) interpolated wavelength grid."
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
