@@ -279,7 +279,7 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
         )
 
 
-class oimWavelengthInterpolationFilter(oimDataFilterComponent):
+class oimWavelengthInterpolatedBinningFilter(oimDataFilterComponent):
     """Filter for binning wavelength"""
 
     name = "Wavelength interpolation Filter"
@@ -467,7 +467,7 @@ class oimSetMinErrFilter(oimDataFilterComponent):
 
     name = "Differential Error Filter"
     shortname = "DiffErrFilt"
-    description = "Set minimum error on data in % for vis and deg for phases"
+    description = "Set minimum error on data in % for vis ans deg for phases"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
