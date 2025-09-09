@@ -14,8 +14,8 @@ import numpy as np
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
-from .oimUtils import blackbody, load_toml, linear_to_angular
 from .oimOptions import constants as const
+from .oimUtils import blackbody, linear_to_angular, load_toml
 
 _standardParameters: Dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "standard_parameters.toml"
@@ -251,8 +251,9 @@ class oimInterp:
 
 
 class oimParamInterpolator(oimParam):
-    interpdescription="Generic interpolator (to be subclassed)"
-    interpparams=[]
+    interpdescription = "Generic interpolator (to be subclassed)"
+    interpparams = []
+
     def __init__(self, param, **kwargs):
         self.name = param.name
         self.description = param.description
@@ -297,8 +298,16 @@ class oimParamInterpolator(oimParam):
 
 
 class oimParamInterpolatorKeyframes(oimParamInterpolator):
-    interpdescription="Interpolation between keyframes in wl or mjd"
-    interparams=["keyframes","keyvalues","kind","dependence","fixedRef","extrapolate"]
+    interpdescription = "Interpolation between keyframes in wl or mjd"
+    interparams = [
+        "keyframes",
+        "keyvalues",
+        "kind",
+        "dependence",
+        "fixedRef",
+        "extrapolate",
+    ]
+
     def _init(
         self,
         param,
@@ -368,8 +377,9 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
 
 class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
-    interpdescription="Interpolation between keyframes in wl"
-    interparams=["wl","values","kind","fixedRef","extrapolate"]
+    interpdescription = "Interpolation between keyframes in wl"
+    interparams = ["wl", "values", "kind", "fixedRef", "extrapolate"]
+
     def _init(self, param, wl=[], values=[], **kwargs):
         super()._init(
             param, dependence="wl", keyframes=wl, keyvalues=values, **kwargs
@@ -377,8 +387,9 @@ class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
 
 
 class oimParamInterpolatorTime(oimParamInterpolatorKeyframes):
-    interpdescription="Interpolation between keyframes in mjd"
-    interparams=["mjd","values","kind","fixedRef","extrapolate"]
+    interpdescription = "Interpolation between keyframes in mjd"
+    interparams = ["mjd", "values", "kind", "fixedRef", "extrapolate"]
+
     def _init(self, param, mjd=[], values=[], **kwargs):
         super()._init(
             param, dependence="mjd", keyframes=mjd, keyvalues=values, **kwargs
@@ -386,8 +397,9 @@ class oimParamInterpolatorTime(oimParamInterpolatorKeyframes):
 
 
 class oimParamCosineTime(oimParamInterpolator):
-    interpdescription="Assymetrical cosine time interpolator"
-    interparams=["T0","P","values","x0"]
+    interpdescription = "Assymetrical cosine time interpolator"
+    interparams = ["T0", "P", "values", "x0"]
+
     def _init(self, param, T0=0, P=1, values=[0, 1], x0=None, **kwargs):
         self.asymmetric = False
         self.T0 = oimParam(
@@ -439,8 +451,9 @@ class oimParamCosineTime(oimParamInterpolator):
 
 
 class oimParamGaussian(oimParamInterpolator):
-    interpdescription="Generic gaussian interpolator in wl or mjd"
-    interparams=["dependence","val0","value","x0","fwhm"]
+    interpdescription = "Generic gaussian interpolator in wl or mjd"
+    interparams = ["dependence", "val0", "value", "x0", "fwhm"]
+
     def _init(
         self, param, dependence="wl", val0=0, value=0, x0=0, fwhm=0, **kwargs
     ):
@@ -493,8 +506,9 @@ class oimParamGaussian(oimParamInterpolator):
 
 
 class oimParamGaussianWl(oimParamGaussian):
-    interpdescription=" Gaussian interpolator in wl"
-    interparams=["val0","value","x0","fwhm"]
+    interpdescription = " Gaussian interpolator in wl"
+    interparams = ["val0", "value", "x0", "fwhm"]
+
     def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
         super()._init(
             param, dependence="wl", val0=val0, value=value, x0=x0, fwhm=fwhm
@@ -502,8 +516,9 @@ class oimParamGaussianWl(oimParamGaussian):
 
 
 class oimParamGaussianTime(oimParamGaussian):
-    interpdescription="Gaussian interpolator in mjd"
-    interparams=["val0","value","x0","fwhm"]
+    interpdescription = "Gaussian interpolator in mjd"
+    interparams = ["val0", "value", "x0", "fwhm"]
+
     def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
         super()._init(
             param, dependence="mjd", val0=val0, value=value, x0=x0, fwhm=fwhm
@@ -511,8 +526,9 @@ class oimParamGaussianTime(oimParamGaussian):
 
 
 class oimParamMultipleGaussian(oimParamInterpolator):
-    interpdescription="Generic multiple gaussian interpolator in wl or mjd"
-    interparams=["dependence","val0","values","x0","fwhm"]
+    interpdescription = "Generic multiple gaussian interpolator in wl or mjd"
+    interparams = ["dependence", "val0", "values", "x0", "fwhm"]
+
     def _init(
         self,
         param,
@@ -593,8 +609,9 @@ class oimParamMultipleGaussian(oimParamInterpolator):
 
 
 class oimParamMultipleGaussianWl(oimParamMultipleGaussian):
-    interpdescription="Multiple Gaussian interpolator in wl"
-    interparams=["val0","values","x0","fwhm"]
+    interpdescription = "Multiple Gaussian interpolator in wl"
+    interparams = ["val0", "values", "x0", "fwhm"]
+
     def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
         super()._init(
             param, dependence="wl", val0=val0, values=values, x0=x0, fwhm=fwhm
@@ -602,8 +619,9 @@ class oimParamMultipleGaussianWl(oimParamMultipleGaussian):
 
 
 class oimParamMultipleGaussianTime(oimParamMultipleGaussian):
-    interpdescription="Multiple Gaussian interpolator in mjd"
-    interparams=["val0","values","x0","fwhm"]
+    interpdescription = "Multiple Gaussian interpolator in mjd"
+    interparams = ["val0", "values", "x0", "fwhm"]
+
     def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
         super()._init(
             param, dependence="mjd", val0=val0, values=values, x0=x0, fwhm=fwhm
@@ -611,8 +629,9 @@ class oimParamMultipleGaussianTime(oimParamMultipleGaussian):
 
 
 class oimParamPolynomial(oimParamInterpolator):
-    interpdescription="Generic polynomial interpolation in wl or mjd"
-    interparams=["dependence", "order", "coeffs","x0"]
+    interpdescription = "Generic polynomial interpolation in wl or mjd"
+    interparams = ["dependence", "order", "coeffs", "x0"]
+
     def _init(
         self, param, dependence="wl", order=2, coeffs=None, x0=None, **kwargs
     ):
@@ -659,8 +678,9 @@ class oimParamPolynomial(oimParamInterpolator):
 
 
 class oimParamPolynomialWl(oimParamPolynomial):
-    interpdescription="Polynomial interpolation in wl"
-    interparams=["order", "coeffs","x0"]
+    interpdescription = "Polynomial interpolation in wl"
+    interparams = ["order", "coeffs", "x0"]
+
     def _init(self, param, order=2, coeffs=None, x0=None, **kwargs):
         super()._init(
             param, dependence="wl", order=order, coeffs=coeffs, x0=x0
@@ -668,8 +688,9 @@ class oimParamPolynomialWl(oimParamPolynomial):
 
 
 class oimParamPolynomialTime(oimParamPolynomial):
-    interpdescription="Polynomial interpolation in mjd"
-    interparams=["order", "coeffs","x0"]
+    interpdescription = "Polynomial interpolation in mjd"
+    interparams = ["order", "coeffs", "x0"]
+
     def _init(self, param, order=2, coeffs=None, x0=None):
         super()._init(
             param, dependence="mjd", order=order, coeffs=coeffs, x0=x0
@@ -677,9 +698,10 @@ class oimParamPolynomialTime(oimParamPolynomial):
 
 
 class oimParamPowerLaw(oimParamInterpolator):
-    interpdescription="Powerlaw interpolation in wl or mjd"
+    interpdescription = "Powerlaw interpolation in wl or mjd"
     """Power-law interpolation, i.e. A*(x/x0)**p."""
-    interparams=["dependence","x0", "A","p"]
+    interparams = ["dependence", "x0", "A", "p"]
+
     def _init(self, param, dependence="wl", x0=0, A=0, p=1, **kwargs):
         self.dependence = dependence
 
@@ -719,22 +741,25 @@ class oimParamPowerLaw(oimParamInterpolator):
 
 
 class oimParamPowerLawTime(oimParamPowerLaw):
-    interpdescription="Powerlaw interpolation in mjd"
-    interparams=["x0", "A","p"]
+    interpdescription = "Powerlaw interpolation in mjd"
+    interparams = ["x0", "A", "p"]
+
     def _init(self, param, x0=0, A=0, p=1):
         super()._init(param, dependence="mjd", x0=x0, A=A, p=p)
 
 
 class oimParamPowerLawWl(oimParamPowerLaw):
-    interpdescription="Powerlaw interpolation in wl"
-    interparams=["x0", "A","p"]
+    interpdescription = "Powerlaw interpolation in wl"
+    interparams = ["x0", "A", "p"]
+
     def _init(self, param, x0=0, A=0, p=1):
         super()._init(param, dependence="wl", x0=x0, A=A, p=p)
 
 
 class oimParamLinearRangeWl(oimParamInterpolator):
-    interpdescription="Linear range interpolation in wl"
-    interparams=["wlmin", "wlmax","values"]
+    interpdescription = "Linear range interpolation in wl"
+    interparams = ["wlmin", "wlmax", "values"]
+
     def _init(
         self, param, wlmin=2e-6, wlmax=3e-6, values=[], kind="linear", **kwargs
     ):
@@ -787,8 +812,11 @@ class oimParamLinearRangeWl(oimParamInterpolator):
 
 
 class oimParamLinearTemplateWl(oimParamInterpolator):
-    interpdescription="Interpolation in wl using external regular grid template"
-    interparams=["wl0", "dwl","f_contrib","values","kind"]
+    interpdescription = (
+        "Interpolation in wl using external regular grid template"
+    )
+    interparams = ["wl0", "dwl", "f_contrib", "values", "kind"]
+
     def _init(
         self,
         param,
@@ -876,13 +904,15 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
     temp : .oimParam
     solid_angle : int, float or .oimParam
     """
-    interpdescription="Blackbody in wl for given temperature"
-    interparams=["temp", "solid_angle"]
+
+    interpdescription = "Blackbody in wl for given temperature"
+    interparams = ["temp", "solid_angle"]
+
     def _init(
         self,
         param: oimParam,
-        temp: Union[int, float]=0,
-        solid_angle: Union[int, float, oimParam]=0,
+        temp: Union[int, float] = 0,
+        solid_angle: Union[int, float, oimParam] = 0,
         **kwargs,
     ) -> None:
         """The subclass's constructor."""
@@ -960,13 +990,17 @@ class oimParamLinearStarWl(oimParamInterpolator):
     lum : .oimParam
         An oimParam containing the star's luminosity (Lsun).
     """
-    interpdescription="Blackbody in wl for given Teff, dist, and radius or lum"
-    interparams=["temp","dist", "lum","radius"]
+
+    interpdescription = (
+        "Blackbody in wl for given Teff, dist, and radius or lum"
+    )
+    interparams = ["temp", "dist", "lum", "radius"]
+
     def _init(
         self,
         param: oimParam,
-        temp: Union[int, float, ArrayLike]=0,
-        dist: Union[int, float]=0,
+        temp: Union[int, float, ArrayLike] = 0,
+        dist: Union[int, float] = 0,
         lum: Union[int, float, None] = 0,
         radius: Union[int, float, None] = None,
         **kwargs: Dict,

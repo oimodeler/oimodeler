@@ -1,35 +1,57 @@
 # -*- coding: utf-8 -*-
 """Photometric and spectrascopic data wrappers"""
 
-from astropy.io import fits
 import numpy as np
+from astropy.io import fits
+
 from .oimUtils import (
-    createOiFlux,
-    createOiWavelength,
     createOiArray,
+    createOiFlux,
     createOiTargetFromSimbad,
+    createOiWavelength,
 )
 
 
 class oimFluxData(fits.HDUList):
     """Base class for photometric and spectroscopic data wrappers into hdulist"""
 
-    def __init__(self, target, wl, dwl, flx, flxerr,
-                 insname="DUMMY", array="DUMMY", dateobs="1980-04-23T20:15:00",
-                 mjd=None, int_time=None, sta_index=[0], unit="Jy", flag=None):
+    def __init__(
+        self,
+        target,
+        wl,
+        dwl,
+        flx,
+        flxerr,
+        insname="DUMMY",
+        array="DUMMY",
+        dateobs="1980-04-23T20:15:00",
+        mjd=None,
+        int_time=None,
+        sta_index=[0],
+        unit="Jy",
+        flag=None,
+    ):
         super().__init__()
-        
-        flx=flx[None,:]
-        flxerr=flxerr[None,:]
+
+        flx = flx[None, :]
+        flxerr = flxerr[None, :]
 
         oi_tar = self._createOiTarget(target)
         oi_arr = self._createOiArray(array)
         arrname = oi_arr.header["ARRNAME"]
         oi_wl = self._createOiWavelength(wl, dwl, insname)
         oi_flx = self._createOiFlux(
-                flx, flxerr, arrname=arrname, insname=insname,
-                mjd=mjd, int_time=int_time, sta_index=sta_index,
-                unit=unit, flag=flag, dateobs=dateobs)
+            flx,
+            flxerr,
+            arrname=arrname,
+            insname=insname,
+            mjd=mjd,
+            int_time=int_time,
+            sta_index=sta_index,
+            unit=unit,
+            flag=flag,
+            dateobs=dateobs,
+        )
 
         self._setHdulist(None, oi_tar, oi_arr, oi_wl, oi_flx)
 
@@ -45,12 +67,19 @@ class oimFluxData(fits.HDUList):
     def _createOiArray(self, array):
         if array == "DUMMY":
             oi_arr = createOiArray(
-                arrname="DUMMY", FRAME="GEOCENTRIC",
-                arrayx=4580293.73, arrayy=572102.89,
-                arrayz=4386963.85, tel_name=["DUMMY"],
-                sta_name=["DUMMY"], sta_index=[0],
-                DIAMETER=[0], STAXYZ=[0, 0, 0],
-                FOV=[0], FOVTYPE=["FWHM"])
+                arrname="DUMMY",
+                FRAME="GEOCENTRIC",
+                arrayx=4580293.73,
+                arrayy=572102.89,
+                arrayz=4386963.85,
+                tel_name=["DUMMY"],
+                sta_name=["DUMMY"],
+                sta_index=[0],
+                DIAMETER=[0],
+                STAXYZ=[0, 0, 0],
+                FOV=[0],
+                FOVTYPE=["FWHM"],
+            )
         else:
             oi_arr = array
         return oi_arr
@@ -69,18 +98,26 @@ class oimFluxData(fits.HDUList):
             dwl = np.full(nwl, dwl)
         return createOiWavelength(insname=insname, eff_wave=wl, eff_band=dwl)
 
-    def _createOiFlux(self, flx, flxerr, arrname="DUMMY",
-                      insname="DUMMY", mjd=None, int_time=None, sta_index=[1],
-                      unit="Jy", flag=None, dateobs=None):
+    def _createOiFlux(
+        self,
+        flx,
+        flxerr,
+        arrname="DUMMY",
+        insname="DUMMY",
+        mjd=None,
+        int_time=None,
+        sta_index=[1],
+        unit="Jy",
+        flag=None,
+        dateobs=None,
+    ):
         nflx = flx.size
         if not (mjd):
             mjd = [0]
         if not (int_time):
             int_time = [0]
         if not (flag):
-            flag = np.full((1,nflx), False, dtype=bool)
-
-
+            flag = np.full((1, nflx), False, dtype=bool)
 
         return createOiFlux(
             dateobs=dateobs,

@@ -11,7 +11,7 @@ from astropy.coordinates import Angle
 from astropy.io import fits
 from astropy.modeling import models
 from astroquery.simbad import Simbad
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import circmean, circstd
 
 import oimodeler as oim
@@ -471,7 +471,7 @@ def compute_photometric_slope(
     )
 
 
-def pad_image(image: np.ndarray, padfact= None) -> np.ndarray:
+def pad_image(image: np.ndarray, padfact=None) -> np.ndarray:
     """Pads an image with additional zeros for Fourier transform.
 
     Parameters
@@ -484,10 +484,10 @@ def pad_image(image: np.ndarray, padfact= None) -> np.ndarray:
     padded_image : numpy.ndarray
         The padded image.
     """
-    
+
     if padfact == None:
         padfact = oimOptions.ft.padding
-        
+
     im0 = np.sum(image, axis=(0, 1))
     dimy = im0.shape[0]
     dimx = im0.shape[1]
@@ -498,8 +498,8 @@ def pad_image(image: np.ndarray, padfact= None) -> np.ndarray:
     s0x = np.trim_zeros(im0x).size
     s0y = np.trim_zeros(im0y).size
 
-    min_sizex = s0x*padfact
-    min_sizey = s0y*padfact
+    min_sizex = s0x * padfact
+    min_sizey = s0y * padfact
 
     min_pow2x = 2 ** (min_sizex - 1).bit_length()
     min_pow2y = 2 ** (min_sizey - 1).bit_length()
@@ -1416,7 +1416,7 @@ def shiftWavelength(
         data[i].data["EFF_WAVE"] += shift
 
 
-# TODO: For phases smoothing should be done in complex plan
+# TODO: For phases smoothing should be done in complex plane
 def spectralSmoothing(
     oifits: fits.HDUList,
     kernel_size: float,
@@ -1533,6 +1533,192 @@ def spectralSmoothing(
                             data[i].data[coli.name] /= np.sqrt(kernel_size)
         except:
             pass
+
+
+# TODO: Replace the interpolation step with a windowing step
+# TODO: Make it possible to pass a window for each point?
+def _interpolate(
+    interpolation_grid: ArrayLike,
+    grid: ArrayLike,
+    values: ArrayLike,
+    smooth: bool,
+    window: float,
+    error: bool = False,
+) -> ArrayLike:
+    """Rebins the grid to a higher factor and then interpolates and averages
+    to the original grid.
+
+    Parameters
+    ----------
+    grid_to_interpolate : array_like
+        The points to interpolate to.
+    grid : array_like
+        The grid to interpolate.
+    values : array_like
+        The values to interpolate.
+    smooth : bool
+        If True, does an interpolation where the average is
+        taken over adjacent elements.
+    window : float
+        The size of the window determining the average.
+    error : bool, optional
+        If True, will handle binning of the errors.
+
+    Returns
+    -------
+    interpolated_values : array_like
+    """
+    if smooth:
+        dim = grid.size // interpolation_grid.size
+        average_grid = (
+            np.linspace(-0.5, 0.5, dim) * window * 1e-6
+        ).T + interpolation_grid[:, np.newaxis]
+
+        interp_values = np.interp(average_grid, grid, values)
+        if error:
+            binned_values = (
+                np.sqrt(np.sum(interp_values**2, axis=1))
+                / interp_values.shape[-1]
+            )
+        else:
+            binned_values = interp_values.mean(axis=1)
+
+        return binned_values.reshape(interpolation_grid.shape)
+
+    return np.interp(interpolation_grid, grid, values)
+
+
+# TODO: Pass interpolation dim to this function
+def _interpolate_HDU(
+    hdu: fits.BinTableHDU,
+    grid: ArrayLike,
+    original_grid: ArrayLike,
+    smooth: bool,
+    window: float,
+    exception: Optional[List[str]] = [],
+) -> fits.BinTableHDU:
+    """Rebin an HDU.
+
+    Parameters
+    ----------
+    hdu : astropy.io.fits.BinTableHDU
+        The HDU to rebin.
+    grid : array_like
+        The grid to interpolate to.
+    original_grid : array_like
+        The pre-interpolation grid.
+    smooth : bool
+        If True, does an interpolation where the average is
+        taken over adjacent elements.
+    window : float
+        The size of the window determining the average.
+    exception : list of str
+        The exceptions.
+
+    Returns
+    -------
+    newhdu : astropy.io.fits.BinTableHDU
+        The rebinned HDU.
+    """
+    cols = hdu.data.columns
+    newcols = []
+
+    if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
+        # TODO: Make this work as well
+        for coli in cols:
+            newformat = coli.format
+            error = True if "err" in coli.name.lower() else False
+            shape = np.shape(hdu.data[coli.name])
+            if len(shape) == 2 and (coli.name not in exception):
+                interpi = []
+                for jB in range(shape[0]):
+                    interpij = _interpolate(
+                        grid,
+                        original_grid,
+                        hdu.data[coli.name][jB],
+                        smooth,
+                        window,
+                        error,
+                    )
+                    interpi.append(interpij)
+                interpi = np.array(interpi)
+                newformat = f"{grid.shape[0]}{coli.format[-1]}"
+            else:
+                interpi = hdu.data[coli.name]
+
+            newcoli = fits.Column(
+                name=coli.name, array=interpi, unit=coli.unit, format=newformat
+            )
+            newcols.append(newcoli)
+    else:
+        for coli in cols:
+            if coli.name == "EFF_WAVE":
+                interpi = grid
+            elif coli.name == "EFF_BAND":
+                interpi = np.append(np.diff(grid), np.diff(grid)[0])
+            else:
+                error = True if "err" in coli.name.lower() else False
+                interpi = _interpolate(
+                    grid,
+                    original_grid,
+                    hdu.data[coli.name],
+                    smooth,
+                    window,
+                    error,
+                )
+
+            newcoli = fits.Column(
+                name=coli.name,
+                array=interpi,
+                unit=coli.unit,
+                format=coli.format,
+            )
+            newcols.append(newcoli)
+
+    newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(newcols))
+    newhdu.header = hdu.header
+    newhdu.update_header()
+    return newhdu
+
+
+# TODO: For phases bining should be done in complex plane
+def interpolate_wavelength(
+    oifits: fits.HDUList,
+    grid: ArrayLike,
+    smooth: bool = True,
+    window: float = 0.1,
+) -> None:
+    """Bin the wavelength of an oifits file.
+
+    Parameters
+    ----------
+    oifits : astropy.io.fits.HDUList
+        An oifits file structure already opened with astropy.io.fits.
+    grid : array_like
+        The wavelength grid to interpolate to.
+    smooth : bool, optional
+        If True interpolates by taking the mean around the interpolation point
+        with a certain window. Default "True".
+    window : float, optional
+        The window for the smooth interpolation. Default "0.1".
+    """
+    if type(oifits) == type(""):
+        data = fits.open(oifits)
+    else:
+        data = oifits
+
+    to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    original_grid = data[to_interpolate[0]].data["EFF_WAVE"]
+    for i, _ in enumerate(data):
+        if data[i].name in to_interpolate:
+            data[i] = _interpolate_HDU(
+                data[i],
+                grid,
+                original_grid,
+                smooth,
+                window,
+                exception=["STA_INDEX"],
+            )
 
 
 def rebin_image(
@@ -1673,7 +1859,7 @@ def _rebinHdu(
             else:
                 circular = False
 
-            bini = _rebin(hdu.data[coli.name], binsize, circular=circular)
+            bini = _(hdu.data[coli.name], binsize, circular=circular)
             newcoli = fits.Column(
                 name=coli.name, array=bini, unit=coli.unit, format=coli.format
             )
@@ -1685,7 +1871,7 @@ def _rebinHdu(
     return newhdu
 
 
-# TODO: For phases bining should be done in complex plan
+# TODO: For phases bining should be done in complex plane
 def binWavelength(
     oifits: fits.HDUList, binsize: int, normalizeError: Optional[bool] = True
 ) -> None:
@@ -1742,17 +1928,16 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
     if arr == ["all"]:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
 
-
     for iarr in range(len(data)):
         ok = True
         if data[iarr].name in arr:
             arri = data[iarr].name
             try:
                 if extver0:
-                    if extver0 != data[iarr].header["EXTVER"]:
+                    if extver0 != data[iarr].header.get("EXTVER", 1):
                         ok = False
                 else:
-                    extver = data[iarr].header["EXTVER"]
+                    extver = data[iarr].header.get("EXTVER", 1)
             except:
                 pass
         else:
@@ -1764,17 +1949,18 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
                     data, arr=arri, extver=extver, returnBand=True
                 )
                 nwl = np.size(eff_wave)
-                if arri!="OI_FLUX":
+                if arri != "OI_FLUX":
                     length, pa = getBaselineLengthAndPA(
-                        data, arr=arri, extver=extver, T3Max=True)
+                        data, arr=arri, extver=extver, T3Max=True
+                    )
                     nB = np.size(length)
                 else:
                     dim = data[iarr].data["FLUXDATA"].shape
-                    ndim =len(dim)
+                    ndim = len(dim)
                     if ndim == 2:
                         nB = dim[0]
-                        length = np.ones(nB)*np.nan
-                        pa = np.ones(nB)*np.nan
+                        length = np.ones(nB) * np.nan
+                        pa = np.ones(nB) * np.nan
 
                 EFF_WAVE = np.tile(eff_wave[None, :], (nB, 1))
                 EFF_BAND = np.tile(eff_band[None, :], (nB, 1))
@@ -1804,8 +1990,10 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
                     data[iarr].data["FLAG"] = flags
 
             except:
-                raise Warning(f"oifitsFlagWithExpression: " \
-                               f"Couldn't resolve expression {expr} in {arri} ")
+                raise Warning(
+                    f"oifitsFlagWithExpression: "
+                    f"Couldn't resolve expression {expr} in {arri} "
+                )
 
     return True
 
@@ -1814,12 +2002,14 @@ def oifitsKeepBaselines(
     data, arr, baselines_to_keep, extver=None, keepOldFlag=True
 ):
 
-    if arr == ["all"]:
+    if arr == "all" or arr == ["all"] or arr is []:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
 
     for arri in arr:
         try:
-            baselines = getBaselineName(data, hduname=arr, extver=extver)
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
             baselines_to_keep_ordered = []
             for Bi in baselines_to_keep:
                 Bi = Bi.split("-")
@@ -1843,7 +2033,110 @@ def oifitsKeepBaselines(
 
             for iB, Bi in enumerate(baselines):
                 if not (iB in idx_to_keep):
-                    data[arr, extver].data["FLAG"][iB, :] = True
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+
+def oifitsRemoveBaselines(
+    data, arr, baselines_to_remove, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            baselines_to_remove_ordered = []
+            for Bi in baselines_to_remove:
+                Bi = Bi.split("-")
+                Bi.sort()
+                baselines_to_remove_ordered.append("".join(Bi))
+
+            baselines_ordered = []
+            for iB, Bi in enumerate(baselines):
+                Bi = Bi.split("-")
+                Bi.sort()
+                baselines_ordered.append("".join(Bi))
+
+            baselines_ordered = np.array(baselines_ordered)
+            baselines_to_remove_ordered = np.array(baselines_to_remove_ordered)
+
+            idx_to_remove = []
+            for Bi in baselines_to_remove_ordered:
+                idx = np.where(baselines_ordered == Bi)[0]
+                if len(idx != 0):
+                    idx_to_remove.extend(idx)
+
+            for iB, Bi in enumerate(baselines):
+                if iB in idx_to_remove:
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+
+def oifitsKeepTelescopes(
+    data, arr, telescopes_to_keep, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+
+            baselines = np.array(baselines)
+            telescopes_to_keep = np.array(telescopes_to_keep)
+
+            idx_to_keep = np.where(
+                [
+                    set(BB.split("-")).issubset(telescopes_to_keep)
+                    for BB in baselines
+                ]
+            )[0]
+
+            for iB, Bi in enumerate(baselines):
+                if not (iB in idx_to_keep):
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+
+def oifitsRemoveTelescopes(
+    data, arr, telescopes_to_remove, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+
+            baselines = np.array(baselines)
+            telescopes_to_remove = np.array(telescopes_to_remove)
+
+            idx_to_remove = np.where(
+                [
+                    bool(set(BB.split("-")) & set(telescopes_to_remove))
+                    for BB in baselines
+                ]
+            )[0]
+
+            for iB, Bi in enumerate(baselines):
+                if iB in idx_to_remove:
+                    data[arri, extver].data["FLAG"][iB, :] = True
 
         except:
             pass
@@ -2004,22 +2297,26 @@ def setMinimumError(
 
 
 def _listFeatures(
-    baseClass, featureToTextFunction, details=False, save2csv=None, header=None
+    baseClass,
+    featureToTextFunction,
+    details: bool = False,
+    save2csv: bool = False,
+    header=None,
 ):
 
     list_features = []
-
     for obj in oim.__dict__:
         try:
             if issubclass(oim.__dict__[obj], baseClass):
                 list_features.append(obj)
         except:
             pass
+
     table = []
     if header:
         table.append(header)
-    names = []
 
+    names = []
     for cname in list_features:
         try:
             ti = featureToTextFunction(cname)
@@ -2029,6 +2326,7 @@ def _listFeatures(
             print(cname)
 
     if details:
+        # TODO: Change this to "with" generator
         if save2csv:
             f = open(save2csv, "w")
             w = csv.writer(f, delimiter="|")
@@ -2039,14 +2337,14 @@ def _listFeatures(
         return names
 
 
-def listComponents(details=False, save2csv=None, componentType="all"):
+def listComponents(
+    details: bool = False, save2csv: bool = False, componentType: str = "all"
+):
 
-    def _componentToTextfunction(cname):
-        tab = [cname]
+    def _componentToTextfunction(cname: str):
         c = oim.__dict__[cname]()
         p = c.params
-        name = c.name
-        tab.append(name)
+        tab = [cname, c.name]
         txt = ""
         for pname in p:
             txt += ":abbr:`"
@@ -2073,13 +2371,12 @@ def listComponents(details=False, save2csv=None, componentType="all"):
     )
 
 
-def listDataFilters(details=False, save2csv=None):
+def listDataFilters(details: bool = False, save2csv: bool = False):
     header = ["Filter Name", "Short description", "Class Keywords"]
 
-    def _datFilterToTextfunction(cname):
+    def _datFilterToTextfunction(cname: str):
         filt = oim.__dict__[cname]()
-        tab = [cname]
-        tab.append(filt.description)
+        tab = [cname, filt.description]
         txt = ""
         for pname in filt.params:
             txt += pname + ", "
@@ -2097,22 +2394,16 @@ def listDataFilters(details=False, save2csv=None):
     return res
 
 
-def listFitters(details=False, save2csv=None):
+def listFitters(details: bool = False, save2csv: bool = False):
     header = ["Fitter Name", "Description"]
 
-    def _fitterToTextfunction(cname):
-        fit = oim.__dict__[cname](None,None)
-        tab = [cname]
-        try:
-            description= fit.description
-            #print(description)
-        except:
-             description = " - "
-        tab.append(description)
-        
+    def _fitterToTextfunction(cname: str):
+        fit = oim.__dict__[cname](None, None)
+        tab = [cname, getattr(fit, "description", " - ")]
+
         """
         txt = ""
-        try:     
+        try:
             for pname in fit.params:
                 txt += pname + ", "
             txt = txt[:-2]
@@ -2128,7 +2419,8 @@ def listFitters(details=False, save2csv=None):
 
     return res
 
-def listParamInterpolators(details=False, save2csv=None):
+
+def listParamInterpolators(details: bool = False, save2csv: bool = False):
     header = ["Class Name", "oimInterp macro", "Description", "parameters"]
     p = oim.oimParam()
     interp_name = list(oim._interpolators.values())
@@ -2136,30 +2428,21 @@ def listParamInterpolators(details=False, save2csv=None):
 
     def _interpToTextfunction(cname):
         interp = oim.__dict__[cname](p)
-        
-        tab = [cname]
         try:
             macro = interp_macro[interp_name.index(cname)]
         except:
             macro = " - "
-        tab.append(macro)
-    
-        try:
-            description= interp.interpdescription
-            #print(description)
-        except:
-             description = " - "
-        tab.append(description)
-        
+
+        tab = [cname, macro, getattr(interp, "interpdescription", " - ")]
         txt = ""
-        try:     
+        try:
             for pname in interp.interparams:
                 txt += pname + ", "
             txt = txt[:-2]
         except:
             pass
         tab.append(txt)
-        
+
         return tab
 
     res = _listFeatures(
@@ -2171,3 +2454,10 @@ def listParamInterpolators(details=False, save2csv=None):
     )
 
     return res
+
+
+def windowed_linspace(
+    start: float, end: float, spacing: float
+) -> NDArray[Any]:
+    """Creates a numpy.linspace within the start and end point at certain spacing."""
+    return np.linspace(start, end, int((end - start) // (2 * spacing / 2)) + 1)

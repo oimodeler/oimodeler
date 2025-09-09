@@ -5,33 +5,33 @@ Created on Tue Nov 23 15:26:42 2021
 @author: Ame
 """
 import inspect
-from pathlib import Path
 from os.path import split
+from pathlib import Path
 
 import matplotlib.projections as proj
 import numpy as np
 
-from .oimComponent import *
 from .oimBasicFourierComponents import *
+from .oimComponent import *
 from .oimCustomComponents import *
 from .oimData import *
-from .oimFluxData import *
 from .oimDataFilter import *
-from .oimFTBackends import numpyFFTBackend, FFTWBackend,setFTBackend
 from .oimFitter import *
+from .oimFluxData import *
+from .oimFTBackends import FFTWBackend, numpyFFTBackend, setFTBackend
 from .oimModel import *
 from .oimOptions import oimOptions
 from .oimParam import *
-from .oimParam import _standardParameters, _interpolators
+from .oimParam import _interpolators, _standardParameters
 from .oimPlots import *
 from .oimSimulator import *
 from .oimUtils import *
-from .oimUtils import  _oimDataType, _oimDataTypeArr, _oimDataTypeErr
+from .oimUtils import _oimDataType, _oimDataTypeArr, _oimDataTypeErr
 
-np.seterr(invalid='ignore')
+np.seterr(invalid="ignore")
 proj.register_projection(oimAxes)
 
-__version__ = "0.8.7"
+__version__ = "0.8.12"
 __pkg_dir__ = Path(inspect.getfile(inspect.currentframe())).parent
 
 if split(__pkg_dir__)[-1] == "":

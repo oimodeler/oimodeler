@@ -25,6 +25,7 @@ from .oimOptions import oimOptions
 try:
     # NOTE: Check if `FFTW` backend is properly installed.
     import pyfftw
+
     test_array = pyfftw.empty_aligned(100, dtype="complex128")
     fft_object = pyfftw.FFTW(test_array, test_array, axes=(0,))
     transformed = fft_object(test_array)
@@ -39,10 +40,19 @@ class numpyFFTBackend:
     Empty ``check`` and ``prepare`` methods. interpolation of the
     FFT done with scipy.interpolate.interpn in the ``compute`` method.
     """
-    def check(self, backendPreparation: bool, im: np.ndarray,
-              pix: float, wlin: np.ndarray, tin: np.ndarray,
-              ucoord: ArrayLike, vcoord: ArrayLike,
-              wl: ArrayLike, t: ArrayLike) -> bool:
+
+    def check(
+        self,
+        backendPreparation: bool,
+        im: np.ndarray,
+        pix: float,
+        wlin: np.ndarray,
+        tin: np.ndarray,
+        ucoord: ArrayLike,
+        vcoord: ArrayLike,
+        wl: ArrayLike,
+        t: ArrayLike,
+    ) -> bool:
         """Checks if the backend is ready to compute the FFT.
 
         In the case of the simple numpy FFT backend no preparation are needed.
@@ -77,10 +87,17 @@ class numpyFFTBackend:
         """
         return True
 
-    def prepare(self, im: np.ndarray, pix: float,
-                wlin: np.ndarray, tin: np.ndarray,
-                ucoord: ArrayLike, vcoord: ArrayLike,
-                wl: ArrayLike, t: ArrayLike) -> bool:
+    def prepare(
+        self,
+        im: np.ndarray,
+        pix: float,
+        wlin: np.ndarray,
+        tin: np.ndarray,
+        ucoord: ArrayLike,
+        vcoord: ArrayLike,
+        wl: ArrayLike,
+        t: ArrayLike,
+    ) -> bool:
         """Prepares the backend to compute the FFT if not ready.
 
         In the case of the simple numpy FFT backend no preparation are needed.
@@ -113,10 +130,18 @@ class numpyFFTBackend:
         """
         return True
 
-    def compute(self, backendPreparation: bool, im: np.ndarray,
-                pix: float, wlin: np.ndarray, tin: np.ndarray,
-                ucoord: ArrayLike, vcoord: ArrayLike,
-                wl: ArrayLike, t: ArrayLike) -> np.ndarray:
+    def compute(
+        self,
+        backendPreparation: bool,
+        im: np.ndarray,
+        pix: float,
+        wlin: np.ndarray,
+        tin: np.ndarray,
+        ucoord: ArrayLike,
+        vcoord: ArrayLike,
+        wl: ArrayLike,
+        t: ArrayLike,
+    ) -> np.ndarray:
         """Computes the FFT and interpolate the results at the
         required coordinates.
 
@@ -154,18 +179,22 @@ class numpyFFTBackend:
            proper spatial, spectral and temporal coordinates.
         """
         dim = im.shape[3]
-        fft2D = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
-            im, axes=[-2, -1]), axes=[-2, -1]), axes=[-2, -1])
+        fft2D = np.fft.ifftshift(
+            np.fft.fft2(np.fft.fftshift(im, axes=[-2, -1]), axes=[-2, -1]),
+            axes=[-2, -1],
+        )
 
         freqVectYX = np.fft.fftshift(np.fft.fftfreq(dim, pix))
         grid = (tin, wlin, freqVectYX, freqVectYX)
 
         coord = np.transpose([t, wl, vcoord, ucoord])
-        real = interpolate.interpn(grid, np.real(
-            fft2D), coord, bounds_error=False, fill_value=None)
-        imag = interpolate.interpn(grid, np.imag(
-            fft2D), coord, bounds_error=False, fill_value=None)
-        return real+imag*1j
+        real = interpolate.interpn(
+            grid, np.real(fft2D), coord, bounds_error=False, fill_value=None
+        )
+        imag = interpolate.interpn(
+            grid, np.imag(fft2D), coord, bounds_error=False, fill_value=None
+        )
+        return real + imag * 1j
 
 
 class FFTWBackend:
@@ -186,6 +215,7 @@ class FFTWBackend:
     (pyfftw.empty_aligned), fft_out (pyfftw.empty_aligned), fft_object
     (pyfftw.FFTW), dim (int), nwl (int), nt (int).
     """
+
     @property
     def initialized(self) -> bool:
         """Checks if the FFTW library is properly initialized."""
@@ -197,15 +227,25 @@ class FFTWBackend:
     def _err(self) -> None:
         """Import error function that gets called when the FFTWBackend
         dependendy pyfftw has not been properly imported."""
-        raise ImportError("This `FFTWBackend`-class has not been defined for "
-                          "`oimodeler`. This means that the `FFTW` library is "
-                          "either missing or has not been properly "
-                          "installed.")
+        raise ImportError(
+            "This `FFTWBackend`-class has not been defined for "
+            "`oimodeler`. This means that the `FFTW` library is "
+            "either missing or has not been properly "
+            "installed."
+        )
 
-    def check(self, backendPreparation: bool, im: np.ndarray,
-              pix: float, wlin: np.ndarray, tin: np.ndarray,
-              ucoord: ArrayLike, vcoord: ArrayLike,
-              wl: ArrayLike, t: ArrayLike) -> bool:
+    def check(
+        self,
+        backendPreparation: bool,
+        im: np.ndarray,
+        pix: float,
+        wlin: np.ndarray,
+        tin: np.ndarray,
+        ucoord: ArrayLike,
+        vcoord: ArrayLike,
+        wl: ArrayLike,
+        t: ArrayLike,
+    ) -> bool:
         """Checks if the backend is ready to compute the FFT.
 
         Parameters
@@ -245,10 +285,17 @@ class FFTWBackend:
         nwl1, nt1, dim1 = wlin.size, tin.size, im.shape[3]
         return (dim0, nwl0, nt0) == (dim1, nwl1, nt1)
 
-    def prepare(self, im: np.ndarray, pix: float,
-                wlin: np.ndarray, tin: np.ndarray,
-                ucoord: ArrayLike, vcoord: ArrayLike,
-                wl: ArrayLike, t: ArrayLike) -> Tuple:
+    def prepare(
+        self,
+        im: np.ndarray,
+        pix: float,
+        wlin: np.ndarray,
+        tin: np.ndarray,
+        ucoord: ArrayLike,
+        vcoord: ArrayLike,
+        wl: ArrayLike,
+        t: ArrayLike,
+    ) -> Tuple:
         """Prepares the backend  to compute the FFT if not ready.
 
         The preparation is done by initializing two `pyfftw.empty_aligned`
@@ -285,17 +332,23 @@ class FFTWBackend:
             return
 
         nwl, nt, dim = wlin.size, tin.size, im.shape[3]
-        fft_in = pyfftw.empty_aligned(
-            (nt, nwl, dim, dim), dtype='complex128')
-        fft_out = pyfftw.empty_aligned(
-            (nt, nwl, dim, dim), dtype='complex128')
+        fft_in = pyfftw.empty_aligned((nt, nwl, dim, dim), dtype="complex128")
+        fft_out = pyfftw.empty_aligned((nt, nwl, dim, dim), dtype="complex128")
         fft_object = pyfftw.FFTW(fft_in, fft_out, axes=(2, 3))
         return fft_in, fft_out, fft_object, dim, nwl, nt
 
-    def compute(self, backendPreparation: Tuple, im: np.ndarray,
-                pix: float, wlin: np.ndarray, tin: np.ndarray,
-                ucoord: ArrayLike, vcoord: ArrayLike,
-                wl: ArrayLike, t: ArrayLike) -> np.ndarray:
+    def compute(
+        self,
+        backendPreparation: Tuple,
+        im: np.ndarray,
+        pix: float,
+        wlin: np.ndarray,
+        tin: np.ndarray,
+        ucoord: ArrayLike,
+        vcoord: ArrayLike,
+        wl: ArrayLike,
+        t: ArrayLike,
+    ) -> np.ndarray:
         """Computes the FFT and interpolate the results at the
         required coordinates.
 
@@ -328,34 +381,41 @@ class FFTWBackend:
         grid = (tin, wlin, freqVectYX, freqVectYX)
         coord = np.transpose([t, wl, vcoord, ucoord])
 
-        real = interpolate.interpn(grid, np.real(
-            fft2D), coord, bounds_error=False, fill_value=None)
-        imag = interpolate.interpn(grid, np.imag(
-            fft2D), coord, bounds_error=False, fill_value=None)
-        return real+imag*1j
+        real = interpolate.interpn(
+            grid, np.real(fft2D), coord, bounds_error=False, fill_value=None
+        )
+        imag = interpolate.interpn(
+            grid, np.imag(fft2D), coord, bounds_error=False, fill_value=None
+        )
+        return real + imag * 1j
 
 
 # NOTE: Set the FFT backends
 oimOptions.ft.backend.active = numpyFFTBackend
 
-oimOptions.ft.backend.dict={"numpyfft":numpyFFTBackend}
+oimOptions.ft.backend.dict = {"numpyfft": numpyFFTBackend}
 oimOptions.ft.backend.available = [numpyFFTBackend]
 if oimOptions.ft.fftw.initialized:
     oimOptions.ft.backend.available.append(FFTWBackend)
-    oimOptions.ft.backend.names=["numpyfft"]
-    oimOptions.ft.backend.dict["fftw"]=FFTWBackend
+    oimOptions.ft.backend.names = ["numpyfft"]
+    oimOptions.ft.backend.dict["fftw"] = FFTWBackend
+
 
 def setFTBackend(nameOrObj):
-    if type(nameOrObj)==str:
+    if type(nameOrObj) == str:
         try:
-            oimOptions.ft.backend.active = oimOptions.ft.backend.dict[nameOrObj]
+            oimOptions.ft.backend.active = oimOptions.ft.backend.dict[
+                nameOrObj
+            ]
         except:
-            names="\n".join(list(oimOptions.ft.backend.dict.keys()))
-            raise NameError (f"No FT backends named {nameOrObj} available. \nChoose between\n{names}")
-        
+            names = "\n".join(list(oimOptions.ft.backend.dict.keys()))
+            raise NameError(
+                f"No FT backends named {nameOrObj} available. \nChoose between\n{names}"
+            )
+
     else:
         try:
             oimOptions.ft.backend.active = nameOrObj
         except:
-            raise TypeError (f"No object name {nameOrObj}")
-    
+            raise TypeError(f"No object name {nameOrObj}")
+

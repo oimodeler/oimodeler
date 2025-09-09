@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 """Components defined in Fourier or image planes"""
+from pathlib import Path
 from typing import Any
 
-import numpy as np
 import astropy.units as u
-from astropy.io import fits
+import numpy as np
 from astropy import units as units
-from scipy import interpolate, integrate
+from astropy.io import fits
+from scipy import integrate, interpolate
 from scipy.special import j0
-from pathlib import Path
 
 from . import __dict__ as oimDict
 from .oimOptions import oimOptions
 from .oimParam import (
+    _standardParameters,
     oimInterp,
     oimParam,
     oimParamInterpolator,
-    _standardParameters,
-    oimParamNorm,
     oimParamLinker,
+    oimParamNorm,
 )
 from .oimUtils import (
     getWlFromFitsImageCube,
@@ -225,15 +225,13 @@ class oimComponent:
         return np.exp(-2 * 1j * np.pi * (ucoord * x + vcoord * y))
 
     def _directTranslate(self, x, y, wl, t):
-        x = x - self.params["x"](wl, t)
-        y = y - self.params["y"](wl, t)
-        return x, y
-    
+        return x - self.params["x"](wl, t), y - self.params["y"](wl, t)
+
     def getNonRegularImage(self, xx, yy, wl=None, t=None):
-        """ Compute and return a non-regular image function at the xx, yy and 
+        """Compute and return a non-regular image function at the xx, yy and
         optional wl and t coordinates)"""
-    
-        return 0*xx
+
+        return 0 * xx
 
 
 class oimComponentFourier(oimComponent):
@@ -335,21 +333,21 @@ class oimComponentFourier(oimComponent):
                         * self.params["f"](wli, ti)
                     )
         return image
-    
-    
+
     def getNonRegularImage(self, xx, yy, wl=None, t=None):
-        
+
         xx, yy = self._directTranslate(xx, yy, wl, t)
 
         if self.elliptic:
 
-            pa_rad = (self.params["pa"](wl, t)) * \
-                self.params["pa"].unit.to(units.rad)
+            pa_rad = (self.params["pa"](wl, t)) * self.params["pa"].unit.to(
+                units.rad
+            )
 
-            xp = xx*np.cos(pa_rad)-yy*np.sin(pa_rad)
-            yp = xx*np.sin(pa_rad)+yy*np.cos(pa_rad)
+            xp = xx * np.cos(pa_rad) - yy * np.sin(pa_rad)
+            yp = xx * np.sin(pa_rad) + yy * np.cos(pa_rad)
 
-            xx = xp*self.params["elong"](wl, t)
+            xx = xp * self.params["elong"](wl, t)
             yy = yp
 
         image = self._imageFunction(xx, yy, wl, t)
@@ -366,7 +364,6 @@ class oimComponentFourier(oimComponent):
                         / tot[it, iwl]*self.params["f"](wli, ti)
         """
         return image
-        
 
     def _imageFunction(self, xx, yy, wl, t):
         raise ValueError(
@@ -411,10 +408,10 @@ class oimComponentImage(oimComponent):
 
         if oimOptions.ft.binning is not None:
             im = rebin_image(im, oimOptions.ft.binning)
- 
+
         im = pad_image(im)
-        
-        if self._pixSize!=0 :
+
+        if self._pixSize != 0:
             pix = self._pixSize
         else:
             pix = self.getPixelSize()
@@ -515,7 +512,8 @@ class oimComponentImage(oimComponent):
             coord = np.transpose(np.array([t_arr, wl_arr, x_arr, y_arr]))
 
             im = interpolate.interpn(
-                grid, im0, coord, bounds_error=False, fill_value=0)
+                grid, im0, coord, bounds_error=False, fill_value=0
+            )
             f0 = np.sum(im0)
             f = np.sum(im)
             im = im / f * f0
@@ -573,15 +571,13 @@ class oimComponentImage(oimComponent):
 
         dim = self.params["dim"](wl, t)
 
-        
-        #pix = self._pixSize * units.rad.to(units.mas)
-        
-        if self._pixSize!=0 :
-            pix = self._pixSize* units.rad.to(units.mas)
+        # pix = self._pixSize * units.rad.to(units.mas)
+
+        if self._pixSize != 0:
+            pix = self._pixSize * units.rad.to(units.mas)
         else:
-            pix = self.getPixelSize()* units.rad.to(units.mas)
-        
-        
+            pix = self.getPixelSize() * units.rad.to(units.mas)
+
         v = np.linspace(-0.5, 0.5, dim)
         xy = v * pix * dim
 
@@ -610,8 +606,10 @@ class oimComponentImage(oimComponent):
                 return t_arr, wl_arr, x_arr, y_arr
 
     def getPixelSize(self):
-        raise ValueError("setPixelSize Method not implemented"
-                         " while self._pixSize = None")
+        raise ValueError(
+            "setPixelSize Method not implemented" " while self._pixSize = None"
+        )
+
 
 class oimComponentRadialProfile(oimComponent):
     """Base class for components define by their radial profile"""

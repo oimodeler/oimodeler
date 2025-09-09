@@ -1,25 +1,21 @@
 # -*- coding: utf-8 -*-
 """Data for optical interferometry"""
-import os
 from enum import IntFlag
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union, Dict
+from typing import Any, List, Optional, Tuple, Union
 
-
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
-
-from .oimUtils import hdulistDeepCopy, _oimDataTypeArr
-from .oimDataFilter import oimDataFilter, oimDataFilterComponent
-
-
-import astropy.units as u
 from matplotlib.axes import Axes
-import matplotlib.pyplot as plt
+
+from .oimDataFilter import oimDataFilter, oimDataFilterComponent
+from .oimUtils import _oimDataTypeArr, hdulistDeepCopy
 
 
-def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
-                 dwl: Optional[bool] = True) -> np.ndarray:
+def oimDataGetWl(
+    data: fits.HDUList, array: fits.BinTableHDU, dwl: Optional[bool] = True
+) -> np.ndarray:
     """Gets the wavelengths from the data.
 
     Parameters
@@ -34,9 +30,14 @@ def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
     wavelengths : numpy.ndarray
     """
     instrument = array.header["INSNAME"]
-    oi_wavelengths = [arri for arri in data
-                      if (arri.name == "OI_WAVELENGTH"
-                          and arri.header["INSNAME"] == instrument)][0]
+    oi_wavelengths = [
+        arri
+        for arri in data
+        if (
+            arri.name == "OI_WAVELENGTH"
+            and arri.header["INSNAME"] == instrument
+        )
+    ][0]
     if not dwl:
         return oi_wavelengths.data["EFF_WAVE"]
     return oi_wavelengths.data["EFF_WAVE"], oi_wavelengths.data["EFF_BAND"]
@@ -44,6 +45,7 @@ def oimDataGetWl(data: fits.HDUList, array: fits.BinTableHDU,
 
 class oimDataType(IntFlag):
     """Data types for the oifits data."""
+
     NONE = 0
     VIS2DATA = 1
     VISAMP_ABS = 2
@@ -181,7 +183,9 @@ def oimDataCheckData(table: fits.BinTableHDU) -> List[str]:
     return cdata
 
 
-def oimDataGetVectCoord(data: fits.HDUList, arr: fits.BinTableHDU) -> Tuple[np.ndarray]:
+def oimDataGetVectCoord(
+    data: fits.HDUList, arr: fits.BinTableHDU
+) -> Tuple[np.ndarray]:
     """Get the (u, v)-coordinates from the data.
 
     Parameters
@@ -219,16 +223,20 @@ def oimDataGetVectCoord(data: fits.HDUList, arr: fits.BinTableHDU) -> Tuple[np.n
     mjd = np.outer(mjd0, np.ones(nwl)).flatten()
 
     # NOTE: Zero freq vector for vis normalization
-    uv0 = wl*0
+    uv0 = wl * 0
 
     if arr.name == "OI_T3":
-        nB = np.shape(arr.data["T3PHI"])[0]*3+1
+        nB = np.shape(arr.data["T3PHI"])[0] * 3 + 1
         um1, um2 = map(lambda x: arr.data[f"U{x}COORD"], (1, 2))
         vm1, vm2 = map(lambda x: arr.data[f"V{x}COORD"], (1, 2))
-        um3, vm3 = um1+um2, vm1+vm2
+        um3, vm3 = um1 + um2, vm1 + vm2
 
-        u1, u2, u3 = map(lambda x: np.outer(x, 1./wl).flatten(), (um1, um2, um3))
-        v1, v2, v3 = map(lambda x: np.outer(x, 1./wl).flatten(), (vm1, vm2, vm3))
+        u1, u2, u3 = map(
+            lambda x: np.outer(x, 1.0 / wl).flatten(), (um1, um2, um3)
+        )
+        v1, v2, v3 = map(
+            lambda x: np.outer(x, 1.0 / wl).flatten(), (vm1, vm2, vm3)
+        )
         u = np.concatenate((u1, u2, u3))
         v = np.concatenate((v1, v2, v3))
 
@@ -237,13 +245,13 @@ def oimDataGetVectCoord(data: fits.HDUList, arr: fits.BinTableHDU) -> Tuple[np.n
             nB = np.shape(arr.data["FLUXDATA"])[0]
         except:
             nB = np.shape(arr.data["FLUX"])[0]
-        u = np.zeros(nB*nwl)
-        v = np.zeros(nB*nwl)
+        u = np.zeros(nB * nwl)
+        v = np.zeros(nB * nwl)
 
     else:
         um, vm = arr.data["UCOORD"], arr.data["VCOORD"]
-        nB = np.size(um)+1
-        u, v = map(lambda x: np.outer(x, 1./wl).flatten(), (um, vm))
+        nB = np.size(um) + 1
+        u, v = map(lambda x: np.outer(x, 1.0 / wl).flatten(), (um, vm))
 
     if arr.name != "OI_FLUX":
         u = np.concatenate((uv0, u))
@@ -260,9 +268,10 @@ class oimData:
         self.data = data
 
 
-def loadOifitsData(input: Union[str, Path, List[str],
-                                List[Path], fits.HDUList, oimData],
-                   mode: Optional[str] = "listOfHdlulist") -> oimData:
+def loadOifitsData(
+    input: Union[str, Path, List[str], List[Path], fits.HDUList, oimData],
+    mode: Optional[str] = "listOfHdlulist",
+) -> oimData:
     """Return the oifits data from either filenames, already opened oifts or a
     oimData boject as either a list of hdlulist (default) or as a oimData
     object using the option mode="oimData".
@@ -300,14 +309,18 @@ def loadOifitsData(input: Union[str, Path, List[str],
                     try:
                         data.append(fits.open(elem))
                     except:
-                        raise ValueError("The path does not exist or is not a"\
-                                         " valid fits files")
+                        raise ValueError(
+                            "The path does not exist or is not a"
+                            " valid fits files"
+                        )
         else:
-            raise TypeError("Only oimData, hdulist, Path or string, or list of"\
-                            " these kind of objects allowed ")
+            raise TypeError(
+                "Only oimData, hdulist, Path or string, or list of"
+                " these kind of objects allowed "
+            )
 
         if mode == "oimData":
-             data = oimData(data)
+            data = oimData(data)
     return data
 
 
@@ -323,8 +336,11 @@ class oimData(object):
         The filter to use. The default is None.
     """
 
-    def __init__(self, dataOrFilename: Optional[Any] = None,
-                 filt: Optional[oimDataFilter] = None) -> None:
+    def __init__(
+        self,
+        dataOrFilename: Optional[Any] = None,
+        filt: Optional[oimDataFilter] = None,
+    ) -> None:
         """Initialize the class with the data and the filter to use."""
         self._data = []
         self.dataInfo = []
@@ -343,7 +359,7 @@ class oimData(object):
 
         if dataOrFilename:
             self.addData(dataOrFilename)
-        
+
         if filt is not None:
             self.setFilter(filt)
 
@@ -388,10 +404,10 @@ class oimData(object):
             Whether to prepare the data or not. The default is True.
         """
         self._data.extend(loadOifitsData(dataOrFilename))
-        
+
         self.prepared = False
         self._filteredDataReady = False
-        
+
         if prepare == True:
             self.prepareData()
 
@@ -409,8 +425,11 @@ class oimData(object):
         self._filteredDataReady = False
         self.prepareData()
 
-    def setFilter(self, filt: Optional[oimDataFilter] = None,
-                  useFilter: Optional[bool] = True) -> None:
+    def setFilter(
+        self,
+        filt: Optional[oimDataFilter] = None,
+        useFilter: Optional[bool] = True,
+    ) -> None:
         """Set the filter to use.
 
         Parameters
@@ -423,7 +442,7 @@ class oimData(object):
         # NOTE: Check type of filter
         if isinstance(filt, (list, oimDataFilterComponent)):
             filt = oimDataFilter(filt)
-        
+
         self._filter = filt
         self._filteredDataReady = False
         self.useFilter = useFilter
@@ -463,14 +482,14 @@ class oimData(object):
             The data to analyze.
         """
         dataInfo = []
-        for datai in data :
-            dataInfoi=[]
+        for datai in data:
+            dataInfoi = []
             for iarr, arri in enumerate(datai):
                 info = None
                 if arri.name in _oimDataTypeArr:
                     info = {"arr": arri.name, "idx": iarr}
                     if arri.name == "OI_VIS2":
-                        nB=np.shape(arri.data["VIS2DATA"])
+                        nB = np.shape(arri.data["VIS2DATA"])
                     if arri.name == "OI_VIS":
                         nB = np.shape(arri.data["VISAMP"])
                     if arri.name == "OI_T3":
@@ -486,8 +505,7 @@ class oimData(object):
                     dataInfoi.append(info)
             dataInfo.append(dataInfoi)
         self.dataInfo = dataInfo
-        
-        
+
     def info(self) -> None:
         """print info on the oimData object
 
@@ -496,21 +514,21 @@ class oimData(object):
 
         """
         dataInfo = []
-        
-        for idata,datai in enumerate(self.data):
-            print("\u2550"*80)
+
+        for idata, datai in enumerate(self.data):
+            print("\u2550" * 80)
             try:
                 path = Path(self.data[idata].filename()).name
             except:
                 path = ""
             print(f"file {idata}: {path}")
-            print("\u2500"*80)
+            print("\u2500" * 80)
             for iarr, arri in enumerate(datai):
                 if arri.name in _oimDataTypeArr:
-                    txt=f"{iarr})\t {arri.name.ljust(8)}:\t "
+                    txt = f"{iarr})\t {arri.name.ljust(8)}:\t "
                     info = {"arr": arri.name, "idx": iarr}
                     if arri.name == "OI_VIS2":
-                        nB=np.shape(arri.data["VIS2DATA"])
+                        nB = np.shape(arri.data["VIS2DATA"])
                     if arri.name == "OI_VIS":
                         nB = np.shape(arri.data["VISAMP"])
                     if arri.name == "OI_T3":
@@ -520,44 +538,43 @@ class oimData(object):
                             nB = np.shape(arri.data["FLUXDATA"])
                         except Exception:
                             nB = np.shape(arri.data["FLUX"])
-                    txt+=f"(nB,n\u03BB) = {nB} "
-                    txt+=f"\t dataTypes = {oimDataCheckData(arri)}"
+                    txt += f"(nB,n\u03bb) = {nB} "
+                    txt += f"\t dataTypes = {oimDataCheckData(arri)}"
                     print(txt)
-        print("\u2550"*80)   
+        print("\u2550" * 80)
 
     def removeUselessArrays(self):
-        for idata,datai in enumerate(self.data):
-            toRemove=[]
+        for idata, datai in enumerate(self.data):
+            toRemove = []
             for iarr, arri in enumerate(datai):
                 if arri.name in _oimDataTypeArr:
-                    if len(oimDataCheckData(arri))==0:
+                    if len(oimDataCheckData(arri)) == 0:
                         toRemove.append(arri)
-                        
+
             for arri in toRemove:
                 datai.pop(arri)
-            toRemove=[]
+            toRemove = []
             for arri in datai:
-                if arri.name=="OI_ARRAY":
-                    useful=False
+                if arri.name == "OI_ARRAY":
+                    useful = False
                     arrname = arri.header["arrname"]
                     for arrj in datai:
                         if arrj.name in _oimDataTypeArr:
                             if arrname == arrj.header["arrname"]:
-                                useful=True
-                    if useful==False:
+                                useful = True
+                    if useful == False:
                         toRemove.append(arri)
-                if arri.name=="OI_WAVELENGTH":
-                    useful=False
+                if arri.name == "OI_WAVELENGTH":
+                    useful = False
                     arrname = arri.header["insname"]
                     for arrj in datai:
                         if arrj.name in _oimDataTypeArr:
                             if arrname == arrj.header["insname"]:
-                                useful=True
-                    if useful==False:
-                        toRemove.append(arri) 
+                                useful = True
+                    if useful == False:
+                        toRemove.append(arri)
             for arri in toRemove:
                 datai.pop(arri)
-            
 
     def prepareData(self) -> None:
         """Prepare the data for further analysis."""
@@ -599,11 +616,14 @@ class oimData(object):
 
             for iarr, arri in enumerate(datai):
                 if arri.name in _oimDataTypeArr:
-                    dataTypeFlag, val, err, flag = oimGetDataValErrAndTypeFlag(arri)
+                    dataTypeFlag, val, err, flag = oimGetDataValErrAndTypeFlag(
+                        arri
+                    )
 
                     if dataTypeFlag != oimDataType.NONE:
                         u, v, wl, dwl, mjd, nB, nwl = oimDataGetVectCoord(
-                            datai, arri)
+                            datai, arri
+                        )
 
                         self.vect_u = np.concatenate((self.vect_u, u))
                         self.vect_v = np.concatenate((self.vect_v, v))
@@ -636,9 +656,12 @@ class oimData(object):
                     self.struct_flag[-1].append(flag)
         self._prepared = True
 
-    def writeto(self, filename: Optional[Union[str, Path]] = None,
-                overwrite: Optional[bool] = False,
-                directory: Optional[Union[str, Path]] = None) -> None:
+    def writeto(
+        self,
+        filename: Optional[Union[str, Path]] = None,
+        overwrite: Optional[bool] = False,
+        directory: Optional[Union[str, Path]] = None,
+    ) -> None:
         """Write the data to a file.
 
         Parameters
@@ -668,9 +691,15 @@ class oimData(object):
             except:
                 raise TypeError("Can't save the data!")
 
-
-    def plot(self, xname: str, yname: str, axe: Optional[Axes] = None,
-             removeFilter=False, savefig=None, **kwargs):
+    def plot(
+        self,
+        xname: str,
+        yname: str,
+        axe: Optional[Axes] = None,
+        removeFilter=False,
+        savefig=None,
+        **kwargs,
+    ):
         """
         Plot the data contained in the oimData.
 
@@ -697,44 +726,61 @@ class oimData(object):
 
         """
         if removeFilter:
-            data=self._data
+            data = self._data
         else:
-            data=self.data
-        
+            data = self.data
+
         if isinstance(yname, list):
-            nplots= len(yname)
-            
-            fig, axe = plt.subplots(nplots, 1, sharex=True, figsize=(8, 6),
-                                   subplot_kw=dict(projection='oimAxes'))
+            nplots = len(yname)
+
+            fig, axe = plt.subplots(
+                nplots,
+                1,
+                sharex=True,
+                figsize=(8, 6),
+                subplot_kw=dict(projection="oimAxes"),
+            )
 
             plt.subplots_adjust(left=0.09, top=0.98, right=0.98, hspace=0.14)
-            
-            for iax,axi in enumerate(axe):
-                
-                self.plot(xname, yname[iax], axe=axi,
-                          removeFilter=removeFilter, **kwargs)
+
+            for iax, axi in enumerate(axe):
+
+                self.plot(
+                    xname,
+                    yname[iax],
+                    axe=axi,
+                    removeFilter=removeFilter,
+                    **kwargs,
+                )
         else:
 
-            if not(axe):
+            if not (axe):
                 fig = plt.figure()
-                axe = plt.subplot(projection='oimAxes')
+                axe = plt.subplot(projection="oimAxes")
             else:
                 fig = axe.get_figure()
-    
-            if  axe.name=="oimAxes":
+
+            if axe.name == "oimAxes":
                 axe.oiplot(data, xname, yname, **kwargs)
             else:
-                raise TypeError("Matplotlib axe wasn't created with projection='oimAxes'")
-                
+                raise TypeError(
+                    "Matplotlib axe wasn't created with projection='oimAxes'"
+                )
+
         if savefig != None:
             plt.savefig(savefig)
 
-        return fig,axe
-           
-    def uvplot(self, axe: Optional[Axes] = None,removeFilter=False, 
-               savefig=None, **kwargs):
+        return fig, axe
+
+    def uvplot(
+        self,
+        axe: Optional[Axes] = None,
+        removeFilter=False,
+        savefig=None,
+        **kwargs,
+    ):
         """
-        
+
 
         Parameters
         ----------
@@ -754,27 +800,27 @@ class oimData(object):
             The matplotlib axe.
 
         """
-        
+
         if removeFilter:
-            data=self._data
+            data = self._data
         else:
-            data=self.data
-            
-        if not(axe):
+            data = self.data
+
+        if not (axe):
             fig = plt.figure()
-            axe = plt.subplot(projection='oimAxes')
+            axe = plt.subplot(projection="oimAxes")
         else:
             fig = axe.get_figure()
 
-        if  axe.name=="oimAxes":
+        if axe.name == "oimAxes":
             axe.uvplot(data, **kwargs)
         else:
-            raise TypeError("Matplotlib axe wasn't created with projection='oimAxes'")
-         
+            raise TypeError(
+                "Matplotlib axe wasn't created with projection='oimAxes'"
+            )
+
         if savefig != None:
-            plt.savefig(savefig)   
-             
-        return fig,axe
-            
-            
-            
+            plt.savefig(savefig)
+
+        return fig, axe
+
