@@ -1874,7 +1874,7 @@ def _rebinHdu(
             else:
                 circular = False
 
-            bini = _(hdu.data[coli.name], binsize, circular=circular)
+            bini = _rebin(hdu.data[coli.name], binsize, circular=circular)
             newcoli = fits.Column(
                 name=coli.name, array=bini, unit=coli.unit, format=coli.format
             )
