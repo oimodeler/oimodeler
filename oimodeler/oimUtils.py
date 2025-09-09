@@ -1652,7 +1652,7 @@ def _rebin(
     return res
 
 
-def _rebinHdu(
+def _rebinHDU(
     hdu: fits.BinTableHDU,
     binsize: Optional[int] = None,
     binGrid: Optional[ArrayLike] = None,
@@ -1791,7 +1791,7 @@ def binWavelength(
     tobin = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
         if data[i].name in tobin:
-            data[i] = _rebinHdu(
+            data[i] = _rebinHDU(
                 data[i], binsize, binGrid, binMasks, exception=["STA_INDEX"]
             )
             if normalizeError:

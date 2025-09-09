@@ -267,9 +267,8 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["bin"] = 3
-        self.params["normalizeError"] = True
         self.params["binGrid"] = np.array([])
-        self.params["binWindow"] = 0.1
+        self.params["normalizeError"] = True
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
