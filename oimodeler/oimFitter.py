@@ -170,8 +170,17 @@ class oimFitterEmcee(oimFitter):
         return initialParams
 
     def _run(self, **kwargs):
-        self.sampler.run_mcmc(self.initialParams, **kwargs)
+        if "reset" in kwargs:
+            if kwargs["reset"]==True:
+                state=self.initialParams
+        else:
+            if self.sampler.iteration==0:
+                state=self.initialParams
+            else:
+                state=None
+        self.sampler.run_mcmc(state, **kwargs)
         self.getResults()
+    
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
