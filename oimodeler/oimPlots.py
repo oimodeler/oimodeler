@@ -27,6 +27,7 @@ from .oimUtils import (
 
 # TODO: Move global variables somewhere else and make their name in capital letters
 # (python standard)
+
 oimPlotParamName = np.array(
     [
         "LENGTH",
@@ -41,6 +42,7 @@ oimPlotParamName = np.array(
         "T3AMP",
         "T3PHI",
         "FLUXDATA",
+        "FLUX",
         "MJD",
         "VISDATA",
     ]
@@ -58,6 +60,7 @@ oimPlotParamError = np.array(
         "VISPHIERR",
         "T3AMPERR",
         "T3PHIERR",
+        "FLUXERR",
         "FLUXERR",
         "",
         "",
@@ -77,6 +80,7 @@ oimPlotParamArr = np.array(
         "OI_T3",
         "OI_T3",
         "OI_FLUX",
+        "OI_FLUX",
         "",
         "OI_VIS2",
     ]
@@ -94,6 +98,7 @@ oimPlotParamLabel = np.array(
         "Phase",
         "Closure Amplitude",
         "Closure Phase",
+        "Flux",
         "Flux",
         "MJD",
         "Visibility",
@@ -113,6 +118,7 @@ oimPlotParamLabelShort = np.array(
         "Clos. Amp.",
         "CP",
         "Flux",
+        "Flux",
         "MJD",
         "V",
     ]
@@ -131,11 +137,13 @@ oimPlotParamUnit0 = np.array(
         u.one,
         u.deg,
         u.one,
+        u.one,
         u.day,
         u.one,
     ]
 )
-oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
 
 oimPlotParamColorCycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -271,6 +279,7 @@ def _colorPlot(
     return res
 
 
+
 def uvPlot(
     oifitsList: fits.HDUList,
     arrname: Optional[str] = "OI_VIS2",
@@ -284,6 +293,7 @@ def uvPlot(
     xytitle: Optional[List[bool]] = [True, True],
     showLegend: Optional[bool] = True,
     showColorbar: Optional[bool] = True,
+    showFlagged: Optional[bool] = False,
     colorTab: Optional = None,
     axe: Optional = None,
     title: Optional[str] = None,
@@ -291,6 +301,7 @@ def uvPlot(
     legendkwargs: Optional[Dict] = {},
     **kwargs,
 ) -> Axes:
+
     """Plot the uv coverage of the data.
 
     Parameters
@@ -319,6 +330,8 @@ def uvPlot(
         Show the legend. The default is True.
     showColorbar : bool, optional
         Show the colorbar. The default is True.
+    showFlagged  : bool, optional
+        Show the u,v point even when data are flagged. The default is False.
 
     Returns
     -------
@@ -369,14 +382,17 @@ def uvPlot(
     )
 
     for datai in oifitsList:
-        _, _, ui, vi = getBaselineLengthAndPA(
-            datai, arr=arrname, squeeze=False, returnUV=True
+
+        _,_, ui, vi = getBaselineLengthAndPA(
+            datai, arr=arrname, squeeze=False, returnUV=True,
+            showFlagged=showFlagged
         )
         idx_arr = [
-            jdata
-            for jdata, dataij in enumerate(datai)
-            if dataij.name == arrname
+            jdata 
+            for jdata,dataij in enumerate(datai) 
+            if dataij.name==arrname
         ]
+
         for iext in range(len(ui)):
             wlii = getWlFromOifits(
                 datai, arr=datai[idx_arr[iext]], extver=iext + 1
