@@ -1704,14 +1704,7 @@ def _rebinHDU(
                 else:
                     newformat = f"{bini.shape[1]}{coli.format[-1]}"
             else:
-                if binGrid is not None and hdu.name == "OI_WAVELENGTH":
-                    newformat = f"{binGrid.size}{coli.format[-1]}"
-                    if coli.name == "EFF_WAVE":
-                        bini = binGrid
-                    elif coli.name == "EFF_BAND":
-                        bini = np.append(np.diff(binGrid), np.diff(binGrid)[0])
-                else:
-                    bini = hdu.data[coli.name]
+                bini = hdu.data[coli.name]
 
             newcoli = fits.Column(
                 name=coli.name, array=bini, unit=coli.unit, format=newformat
@@ -1719,6 +1712,7 @@ def _rebinHDU(
             newcols.append(newcoli)
     else:
         for coli in cols:
+            newformat = coli.format
             circular = True if "PHI" in coli.name else False
             error = True if "ERR" in coli.name else False
             if binGrid is not None and hdu.name == "OI_WAVELENGTH":
@@ -1734,16 +1728,15 @@ def _rebinHDU(
                     circular=circular,
                     error=error,
                 )
-
-            if binGrid is None:
-                format = coli.format
-            else:
-                format = f"{binGrid.size}{coli.format[-1]}"
+                newformat = f"{binGrid.size}{coli.format[-1]}"
 
             newcoli = fits.Column(
-                name=coli.name, array=bini, unit=coli.unit, format=format
+                name=coli.name, array=bini, unit=coli.unit, format=newformat
             )
             newcols.append(newcoli)
+
+    for col in newcols:
+        print(col.name, ":", col.format)
 
     newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(newcols))
     newhdu.header = hdu.header
