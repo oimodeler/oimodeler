@@ -297,6 +297,15 @@ class oimSimulator:
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
 
+            
+    def computeAll(self,checkSimulatedData=True, dataTypes=None, cprior=None):
+        self.compute(
+            computeChi2=True, computeSimulatedData=True,
+            checkSimulatedData=checkSimulatedData, 
+            dataTypes=dataTypes, cprior=cprior
+        )
+
+
     def plotWlTemplate(
         self,
         shape,
