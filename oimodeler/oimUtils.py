@@ -1691,7 +1691,7 @@ def _rebinHDU(
                 bini = []
                 for jB in range(shape[0]):
                     binij = _rebin(
-                        hdu.data[coli.name][jB, :],
+                        hdu.data[coli.name][jB],
                         binsize,
                         binMasks,
                         circular=circular,
@@ -1736,9 +1736,9 @@ def _rebinHDU(
                 )
 
             if binGrid is None:
-                format = f"{binGrid.size}{coli.format[-1]}"
-            else:
                 format = coli.format
+            else:
+                format = f"{binGrid.size}{coli.format[-1]}"
 
             newcoli = fits.Column(
                 name=coli.name, array=bini, unit=coli.unit, format=format
@@ -1787,6 +1787,8 @@ def binWavelength(
             binMasks.append(
                 (wl >= (bin - halfWindow)) & (wl <= (bin + halfWindow))
             )
+    else:
+        binMasks = None
 
     tobin = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
