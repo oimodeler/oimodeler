@@ -16,9 +16,9 @@ from .oimComponent import *
 from .oimCustomComponents import *
 from .oimData import *
 from .oimDataFilter import *
+from .oimFTBackends import *
 from .oimFitter import *
 from .oimFluxData import *
-from .oimFTBackends import FFTWBackend, numpyFFTBackend, setFTBackend
 from .oimModel import *
 from .oimOptions import oimOptions
 from .oimParam import *
