@@ -10,6 +10,7 @@ from .oimUtils import (
     cutWavelengthRange,
     getDataArrname,
     getDataType,
+    intpBinWavelength,
     oifitsFlagWithExpression,
     oifitsKeepBaselines,
     oifitsKeepTelescopes,
@@ -275,9 +276,26 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
         binWavelength(
             data,
             binsize=self.params["bin"],
-            binGrid=self.params["binGrid"],
             normalizeError=self.params["normalizeError"],
         )
+
+
+class oimWavelengthIntpBinFilter(oimDataFilterComponent):
+    """Filter for binning wavelength"""
+
+    name = "Wavelength Interpolation Binning Filter"
+    shortname = "WlIntpBinFilt"
+    description = (
+        "Binning to wavelength grid with interpolation at window edges."
+    )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["binGrid"] = None
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        intpBinWavelength(data, self.params["binGrid"])
 
 
 class oimFlagWithExpressionFilter(oimDataFilterComponent):
