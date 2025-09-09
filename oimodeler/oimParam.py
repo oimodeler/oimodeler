@@ -3,6 +3,7 @@
 :func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers,
 normalizers and interpolators.
 """
+import pickle
 import operator
 import sys
 from functools import reduce
@@ -129,6 +130,34 @@ class oimParam:
             )
         except:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
+
+    def serialize(self):
+        return self.__dict__
+        
+    def deserialize(ser):
+        p = oimParam()
+        for key,val in ser.items():
+            p.__dict__[key] = val
+        return p
+    
+
+    def unpickle(f,openfile=True):
+        
+        if openfile:
+            file = open(f, 'rb')
+        else:
+            file = f
+        ser = pickle.load(file)
+        p = oimParam.deserialize(ser)
+        return p
+    
+    def pickle(self,f,openfile=True):
+        
+        if openfile:
+            file = open(f, 'wb')
+        else:
+            file = f
+        pickle.dump(self.serialize(),file)
 
 
 class oimParamLinker:
