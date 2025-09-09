@@ -1735,9 +1735,6 @@ def _rebinHDU(
             )
             newcols.append(newcoli)
 
-    for col in newcols:
-        print(col.name, ":", col.format)
-
     newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(newcols))
     newhdu.header = hdu.header
     newhdu.update_header()
