@@ -22,6 +22,8 @@ from scipy import interpolate
 
 from .oimOptions import oimOptions
 
+from time import time
+
 try:
     # NOTE: Check if `FFTW` backend is properly installed.
     import pyfftw
@@ -390,11 +392,369 @@ class FFTWBackend:
         return real + imag * 1j
 
 
+class DFTBackend:
+    """DFT backend using the numpy
+
+    Empty ``check`` and ``prepare`` methods. 
+    """
+    def check(self, backendPreparation: bool, im: np.ndarray,
+              pix: float, wlin: np.ndarray, tin: np.ndarray,
+              ucoord: ArrayLike, vcoord: ArrayLike,
+              wl: ArrayLike, t: ArrayLike) -> bool:
+        """Checks if the backend is ready to compute the FFT.
+
+        In the case of the simple numpy FFT backend no preparation are needed.
+        Always return True
+
+        Parameters
+        ----------
+        backendPreparation : bool
+            The FFTBackendPreparation structure. Always True for the
+            numpy backend.
+        im : numpy.ndarray
+            4D image (t,wl,x,y) to be FFTed.
+        pix : float
+            pixel size of the image in rad.
+        wlin : numpy.ndarray
+            the input wavelength vector of the image.
+        tin : numpy.ndarray
+            the input time vector of the image.
+        ucoord : array_like
+            the u coordinate of the baselines.
+        vcoord : array_like
+            the v coordinate of the baselines.
+        wl : array_like
+            the wl coordinate of the baselines.
+        t : array_like
+            the t coordinate of the baselines.
+
+        Returns
+        -------
+        bool
+            In the case of the numpy FFT backend it is always equal to True.
+        """
+        return True
+
+    def prepare(self, im: np.ndarray, pix: float,
+                wlin: np.ndarray, tin: np.ndarray,
+                ucoord: ArrayLike, vcoord: ArrayLike,
+                wl: ArrayLike, t: ArrayLike) -> bool:
+        """Prepares the backend to compute the FFT if not ready.
+
+        In the case of the simple numpy FFT backend no preparation are needed.
+        Always return True.
+
+        Parameters
+        ----------
+        im : numpy.ndarray
+            4D image (t,wl,x,y) to be FFTed.
+        pix : float
+            pixel size of the image in rad.
+        wlin : numpy.ndarray
+            the input wavelength vector of the image.
+        tin : numpy.ndarray
+            the input time vector of the image.
+        ucoord : array_like
+            the u coordinate of the baselines.
+        vcoord : array_like
+            the v coordinate of the baselines.
+        wl : array_like
+            the wl coordinate of the baselines.
+        t : array_like
+            the t coordinate of the baselines.
+
+        Returns
+        -------
+        bool
+            The FFTBackendPreparation structure. Always True for the numpy
+            backend.
+        """
+        return True
+    
+    def compute_old(self, backendPreparation: Tuple, im: np.ndarray,
+                    pix: float, wlin: np.ndarray, tin: np.ndarray,
+                    ucoord: ArrayLike, vcoord: ArrayLike,
+                    wl: ArrayLike, t: ArrayLike) -> np.ndarray:
+        """Computes the DFT
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        numpy.ndarray (complex)
+           The computed and interpolated complex FFT of the image at the
+           proper spatial, spectral and temporal coordinates.
+
+        """
+        dim=im.shape[3]
+        nwlin=wlin.size
+        ntin=tin.size
+        
+        mtwopi = -2.0*np.pi
+        xycoord = (np.arange(dim)-dim//2)*pix
+        
+        xcoord_2D,ycoord_2D= np.meshgrid(xycoord,xycoord)
+        xcoord_2D=xcoord_2D.flatten()
+        ycoord_2D=ycoord_2D.flatten()
+        
+        xu = np.outer(xcoord_2D, np.ravel(mtwopi*ucoord))
+        yv = np.outer(ycoord_2D, np.ravel(mtwopi*vcoord))
+        
+        mtwopi = -2.0*np.pi
+        xycoord = (np.arange(dim)-dim//2)*pix
+
+        xcoord_2D,ycoord_2D= np.meshgrid(xycoord,xycoord)
+        xcoord_2D=xcoord_2D.flatten()
+        ycoord_2D=ycoord_2D.flatten()
+        
+        #TODO : check if we can use unique 
+        #u_unique = np.unique(ucoord)
+        #v_unique = np.unique(vcoord)
+        #wl_unique = np.unique(wl)
+        #t_unique = np.unique(t)
+        
+
+        xu = np.outer(xcoord_2D, np.ravel(mtwopi*ucoord))
+        yv = np.outer(ycoord_2D, np.ravel(mtwopi*vcoord))
+       
+        xuyv=(xu+yv)[np.newaxis,np.newaxis,:,:]
+        im2=im.reshape(ntin,nwlin,dim*dim,1)
+
+
+        DFT0_re = np.sum(im2*np.cos(xuyv), axis=2)
+        DFT0_im = np.sum(im2*np.sin(xuyv), axis=2)
+
+        iuv=np.arange(xuyv.shape[3])
+        grid = (tin, wlin, iuv)
+        coord = np.transpose([t, wl, iuv])
+                
+        real = interpolate.interpn(grid, DFT0_re, coord, 
+                                   bounds_error=False, fill_value=None)
+        imag = interpolate.interpn(grid, DFT0_im, coord, 
+                                   bounds_error=False, fill_value=None)
+        return real+imag*1j
+
+    def compute_old2(self, backendPreparation: Tuple, im: np.ndarray,
+                    pix: float, wlin: np.ndarray, tin: np.ndarray,
+                    ucoord: ArrayLike, vcoord: ArrayLike,
+                    wl: ArrayLike, t: ArrayLike) -> np.ndarray:
+        """Computes the DFT
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        numpy.ndarray (complex)
+           The computed and interpolated complex FFT of the image at the
+           proper spatial, spectral and temporal coordinates.
+
+        """
+        t0=time()
+        
+        dim=im.shape[3]
+        nwlin=wlin.size
+        ntin=tin.size
+        
+        mtwopi = -2.0*np.pi
+        xycoord = (np.arange(dim)-dim//2)*pix
+        
+        xcoord_2D,ycoord_2D= np.meshgrid(xycoord,xycoord)
+        xcoord_2D=xcoord_2D.flatten()
+        ycoord_2D=ycoord_2D.flatten()
+        
+        xu = np.outer(xcoord_2D, np.ravel(mtwopi*ucoord))
+        yv = np.outer(ycoord_2D, np.ravel(mtwopi*vcoord))
+        
+        mtwopi = -2.0*np.pi
+        xycoord = (np.arange(dim)-dim//2)*pix
+
+        xcoord_2D,ycoord_2D= np.meshgrid(xycoord,xycoord)
+        xcoord_2D=xcoord_2D.flatten()
+        ycoord_2D=ycoord_2D.flatten()
+        
+        #TODO : check if we can use unique 
+        #u_unique = np.unique(ucoord)
+        #v_unique = np.unique(vcoord)
+        #wl_unique = np.unique(wl)
+        #t_unique = np.unique(t)
+        
+        xu = np.outer(xcoord_2D, np.ravel(mtwopi*ucoord))
+        yv = np.outer(ycoord_2D, np.ravel(mtwopi*vcoord))
+       
+        xuyv=(xu+yv)[np.newaxis,np.newaxis,:,:]
+        
+        ixy = np.arange(dim*dim)
+        wl_unique = np.sort(np.unique(wl))
+        t_unique = np.sort(np.unique(t))
+        grid = (tin, wlin,ixy)
+        
+        t_arr, wl_arr, ixy_arr = np.meshgrid(t_unique,wl_unique,ixy)
+        
+
+        t_arr_flat  = t_arr.flatten()
+        wl_arr_flat  = wl_arr.flatten()
+        ixy_arr_flat= ixy_arr.flatten()
+        
+        coord = np.transpose([t_arr_flat, wl_arr_flat,ixy_arr_flat])
+        
+        im0=im.reshape(ntin,nwlin,dim*dim)
+        
+
+        nt = t_unique.size
+        nwl = wl_unique.size
+        
+
+        t1=time()
+
+        im2 = interpolate.interpn(grid, im0, coord,  bounds_error=False, fill_value=None)
+
+        im2=im2.reshape(nt,nwl,dim*dim,1)
+        t2=time()
+
+        DFT0_re = np.sum(im2*np.cos(xuyv), axis=2)
+        DFT0_im = np.sum(im2*np.sin(xuyv), axis=2)
+        t3=time()
+
+
+        iuv=np.arange(xuyv.shape[3])
+        grid = (t_unique, wl_unique, iuv)
+        coord = np.transpose([t, wl, iuv])
+        
+
+                
+        real = interpolate.interpn(grid, DFT0_re, coord, 
+                                   bounds_error=False, fill_value=None)
+        imag = interpolate.interpn(grid, DFT0_im, coord, 
+                                   bounds_error=False, fill_value=None)
+        t4=time()
+        
+        print(f"nwlin={nwlin}, ntin={ntin}, dim={dim}, nuv={ucoord.size}")
+        print(f"init tables dt={t1-t0:.2f}s")
+        print(f"interp image dt={t2-t1:.2f}s")
+        print(f"DFT0 comp dt={t3-t2:.2f}s")
+        print(f"interp DFT dt={t4-t3:.2f}s")
+  
+        return real+imag*1j
+
+    def compute(self, backendPreparation: Tuple, im: np.ndarray,
+                    pix: float, wlin: np.ndarray, tin: np.ndarray,
+                    ucoord: ArrayLike, vcoord: ArrayLike,
+                    wl: ArrayLike, t: ArrayLike) -> np.ndarray:
+        """Computes the DFT
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+        numpy.ndarray (complex)
+           The computed and interpolated complex FFT of the image at the
+           proper spatial, spectral and temporal coordinates.
+
+        """
+        npts = ucoord.size
+   
+        
+        
+        t0=time()
+        
+        dim=im.shape[3]
+        nwlin=wlin.size
+        ntin=tin.size
+        
+        mtwopi = -2.0*np.pi
+        
+        
+        xycoord = (np.arange(dim)-dim//2)*pix
+        xcoord_2D,ycoord_2D= np.meshgrid(xycoord,xycoord)
+        xcoord_2D=xcoord_2D.flatten()
+        ycoord_2D=ycoord_2D.flatten()
+        
+        xu = np.outer(xcoord_2D, np.ravel(mtwopi*ucoord))
+        yv = np.outer(ycoord_2D, np.ravel(mtwopi*vcoord))
+        
+        mtwopi = -2.0*np.pi
+        xycoord = (np.arange(dim)-dim//2)*pix
+
+        xcoord_2D,ycoord_2D= np.meshgrid(xycoord,xycoord)
+        xcoord_2D=xcoord_2D.flatten()
+        ycoord_2D=ycoord_2D.flatten()
+        
+        #TODO : check if we can use unique 
+        #u_unique = np.unique(ucoord)
+        #v_unique = np.unique(vcoord)
+        #wl_unique = np.unique(wl)
+        #t_unique = np.unique(t)
+        
+        xu = np.outer(xcoord_2D, np.ravel(mtwopi*ucoord))
+        yv = np.outer(ycoord_2D, np.ravel(mtwopi*vcoord))
+       
+        xuyv=(xu+yv)[np.newaxis,np.newaxis,:,:]
+        
+        ixy = np.arange(dim*dim)
+        wl_unique = np.sort(np.unique(wl))
+        t_unique = np.sort(np.unique(t))
+        grid = (tin, wlin,ixy)
+        
+        t_arr, wl_arr, ixy_arr = np.meshgrid(t_unique,wl_unique,ixy)
+        
+
+        t_arr_flat  = t_arr.flatten()
+        wl_arr_flat  = wl_arr.flatten()
+        ixy_arr_flat= ixy_arr.flatten()
+        
+        coord = np.transpose([t_arr_flat, wl_arr_flat,ixy_arr_flat])
+        
+        im0=im.reshape(ntin,nwlin,dim*dim)
+        
+
+        nt = t_unique.size
+        nwl = wl_unique.size
+        
+
+        t1=time()
+
+        im2 = interpolate.interpn(grid, im0, coord,  bounds_error=False, fill_value=None)
+
+        im2=im2.reshape(nt,nwl,dim*dim,1)
+        t2=time()
+
+        DFT0_re = np.sum(im2*np.cos(xuyv), axis=2)
+        DFT0_im = np.sum(im2*np.sin(xuyv), axis=2)
+        t3=time()
+
+
+        iuv=np.arange(xuyv.shape[3])
+        grid = (t_unique, wl_unique, iuv)
+        coord = np.transpose([t, wl, iuv])
+        
+
+                
+        real = interpolate.interpn(grid, DFT0_re, coord, 
+                                   bounds_error=False, fill_value=None)
+        imag = interpolate.interpn(grid, DFT0_im, coord, 
+                                   bounds_error=False, fill_value=None)
+        t4=time()
+        
+        print(f"nwlin={nwlin}, ntin={ntin}, dim={dim}, nuv={ucoord.size}")
+        print(f"init tables dt={t1-t0:.2f}s")
+        print(f"interp image dt={t2-t1:.2f}s")
+        print(f"DFT0 comp dt={t3-t2:.2f}s")
+        print(f"interp DFT dt={t4-t3:.2f}s")
+  
+        return real+imag*1j
+    
+
 # NOTE: Set the FFT backends
 oimOptions.ft.backend.active = numpyFFTBackend
+oimOptions.ft.backend.dict={"numpyfft":numpyFFTBackend,"dft":DFTBackend}
+oimOptions.ft.backend.available = [numpyFFTBackend,DFTBackend]
 
-oimOptions.ft.backend.dict = {"numpyfft": numpyFFTBackend}
-oimOptions.ft.backend.available = [numpyFFTBackend]
 if oimOptions.ft.fftw.initialized:
     oimOptions.ft.backend.available.append(FFTWBackend)
     oimOptions.ft.backend.names = ["numpyfft"]
