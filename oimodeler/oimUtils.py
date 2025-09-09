@@ -1702,9 +1702,10 @@ def _rebinHdu(
                 if binGrid is None:
                     newformat = f"{shape[1]//binsize}{coli.format[-1]}"
                 else:
-                    newformat = f"{binGrid.size}{coli.format[-1]}"
+                    newformat = f"{bini.size}{coli.format[-1]}"
             else:
                 if binGrid is not None and hdu.name == "OI_WAVELENGTH":
+                    newformat = f"{binGrid.size}{coli.format[-1]}"
                     if coli.name == "EFF_WAVE":
                         bini = binGrid
                     elif coli.name == "EFF_BAND":
