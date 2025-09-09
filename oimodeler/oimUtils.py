@@ -1702,7 +1702,7 @@ def _rebinHDU(
                 if binGrid is None:
                     newformat = f"{shape[1]//binsize}{coli.format[-1]}"
                 else:
-                    newformat = f"{bini.size}{coli.format[-1]}"
+                    newformat = f"{bini.shape[1]}{coli.format[-1]}"
             else:
                 if binGrid is not None and hdu.name == "OI_WAVELENGTH":
                     newformat = f"{binGrid.size}{coli.format[-1]}"
