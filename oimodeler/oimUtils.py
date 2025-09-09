@@ -47,6 +47,7 @@ _cutArr = [
     "T3AMPERR",
     "T3PHI",
     "T3PHIERR",
+    "FLUX",
     "FLUXDATA",
     "FLUXERR",
     "FLAG",
@@ -749,6 +750,7 @@ def getBaselineLengthAndPA(
     squeeze: Optional[bool] = True,
     returnUV: Optional[bool] = False,
     T3Max: Optional[bool] = False,
+    showFlagged: Optional[bool] = True,
 ) -> Tuple[np.ndarray]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
@@ -792,6 +794,19 @@ def getBaselineLengthAndPA(
     for datai in data:
         if arr != "OI_T3":
             u, v = datai.data["UCOORD"], datai.data["VCOORD"]
+            if showFlagged==False:
+                flag = datai.data["FLAG"]
+                if (len(flag.shape)==2) & (u.size==flag.shape[0]):
+                    flag=np.all(flag,axis=1)
+                    print(flag)
+                    print(u)
+                    u = u[np.logical_not(flag)]
+                    print(u)
+                    v = v[np.logical_not(flag)]
+                    print("****")
+                
+                
+                
             ucoord.append(u)
             vcoord.append(v)
 
