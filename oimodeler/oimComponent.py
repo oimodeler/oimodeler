@@ -2,7 +2,8 @@
 """Components defined in Fourier or image planes"""
 from pathlib import Path
 from typing import Any
-
+import pickle
+import numpy as np
 import astropy.units as u
 import numpy as np
 from astropy import units as units
@@ -232,6 +233,41 @@ class oimComponent:
         optional wl and t coordinates)"""
 
         return 0 * xx
+
+    
+    def serialize(self):
+        
+        ser=dict(params={}, other={})
+            
+        for pname,p in self.params.items():
+            ser["params"][pname]=p.serialize()
+        
+        return ser 
+        
+    @classmethod
+    def deserialize(cls,ser):
+        c = cls()
+        for key,val in ser["params"].items():
+            c.params[key] = oimParam.deserialize(val)
+        return c
+    
+    def unpickle(f,openfile=True):
+        
+        if openfile:
+            file = open(f, 'rb')
+        else:
+            file = f
+        
+        ser = pickle.load(file)
+        p=oimParam.deserialize(ser)
+        return p
+    
+    def pickle(self,f,openfile=True):
+        if openfile:
+            file = open(f, 'wb')
+        else:
+            file = f
+        pickle.dump(self.serialize(),file)
 
 
 class oimComponentFourier(oimComponent):
@@ -921,3 +957,7 @@ class oimComponentFitsImage(oimComponentImage):
         self.params["dim"].value = self._dim
         self._pixSize = self._pixSize0 * self.params["scale"].value
         return self._image
+
+    def getPixelSize(self):
+        self._pixSize = self._pixSize0 * self.params["scale"].value
+        return self._pixSize
