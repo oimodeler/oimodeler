@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
 import csv
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -794,19 +795,17 @@ def getBaselineLengthAndPA(
     for datai in data:
         if arr != "OI_T3":
             u, v = datai.data["UCOORD"], datai.data["VCOORD"]
-            if showFlagged==False:
+            if showFlagged == False:
                 flag = datai.data["FLAG"]
-                if (len(flag.shape)==2) & (u.size==flag.shape[0]):
-                    flag=np.all(flag,axis=1)
+                if (len(flag.shape) == 2) & (u.size == flag.shape[0]):
+                    flag = np.all(flag, axis=1)
                     print(flag)
                     print(u)
                     u = u[np.logical_not(flag)]
                     print(u)
                     v = v[np.logical_not(flag)]
                     print("****")
-                
-                
-                
+
             ucoord.append(u)
             vcoord.append(v)
 
@@ -1550,83 +1549,70 @@ def spectralSmoothing(
             pass
 
 
-# TODO: Replace the interpolation step with a windowing step
-# TODO: Make it possible to pass a window for each point?
-def _interpolate(
-    interpolation_grid: ArrayLike,
-    grid: ArrayLike,
+def _intpBinning(
+    binMasks: ArrayLike,
+    binEdgeValues: ArrayLike,
     values: ArrayLike,
-    smooth: bool,
-    window: float,
-    error: bool = False,
+    circular: bool,
+    error: bool,
 ) -> ArrayLike:
-    """Rebins the grid to a higher factor and then interpolates and averages
-    to the original grid.
+    """Interpolates the edges of the binning window and bins all values in the
+    mask.
 
     Parameters
     ----------
-    grid_to_interpolate : array_like
-        The points to interpolate to.
-    grid : array_like
-        The grid to interpolate.
+    binMasks : array_like
+        Mask of the old grid for the bins.
+    binEdgeValues : array_like
+        The interpolated values at the edge of the bins.
     values : array_like
-        The values to interpolate.
-    smooth : bool
-        If True, does an interpolation where the average is
-        taken over adjacent elements.
-    window : float
-        The size of the window determining the average.
+        The pre-bin values.
+    circular : bool, optional
+        If True, treats the values periodically.
     error : bool, optional
-        If True, will handle binning of the errors.
+        If True, propagates the errors.
 
     Returns
     -------
-    interpolated_values : array_like
+    binned_values : array_like
     """
-    if smooth:
-        dim = grid.size // interpolation_grid.size
-        average_grid = (
-            np.linspace(-0.5, 0.5, dim) * window * 1e-6
-        ).T + interpolation_grid[:, np.newaxis]
+    mean_func = partial(circmean, low=-180, high=180) if circular else np.mean
 
-        interp_values = np.interp(average_grid, grid, values)
+    # TODO: Find way to insert interpolated values here
+    res = []
+    for (lower, upper), mask in zip(binEdgeValues, binMasks):
+        val = np.array([lower, *values[mask], upper])
         if error:
-            binned_values = (
-                np.sqrt(np.sum(interp_values**2, axis=1))
-                / interp_values.shape[-1]
-            )
+            # TODO: Check if there is a better approach for the phases
+            res.append(np.sqrt(np.sum(val**2)) / val.size)
         else:
-            binned_values = interp_values.mean(axis=1)
+            res.append(mean_func(val))
 
-        return binned_values.reshape(interpolation_grid.shape)
-
-    return np.interp(interpolation_grid, grid, values)
+    return np.array(res)
 
 
-# TODO: Pass interpolation dim to this function
-def _interpolate_HDU(
+def _interpolateBinHDU(
     hdu: fits.BinTableHDU,
+    binGrid: ArrayLike,
+    binMasks: ArrayLike,
+    binEdgeGrid: ArrayLike,
     grid: ArrayLike,
-    original_grid: ArrayLike,
-    smooth: bool,
-    window: float,
     exception: Optional[List[str]] = [],
 ) -> fits.BinTableHDU:
-    """Rebin an HDU.
+    """Bin an HDU via interpolation.
 
     Parameters
     ----------
     hdu : astropy.io.fits.BinTableHDU
         The HDU to rebin.
+    binGrid : array_like
+        The binned grid.
+    binMasks : array_like
+        The masks for the bin contents.
+    binEdgeGrid : array_like
+        The window edges of the binned grid.
     grid : array_like
-        The grid to interpolate to.
-    original_grid : array_like
-        The pre-interpolation grid.
-    smooth : bool
-        If True, does an interpolation where the average is
-        taken over adjacent elements.
-    window : float
-        The size of the window determining the average.
+        The pre-bin grid.
     exception : list of str
         The exceptions.
 
@@ -1635,56 +1621,56 @@ def _interpolate_HDU(
     newhdu : astropy.io.fits.BinTableHDU
         The rebinned HDU.
     """
-    cols = hdu.data.columns
-    newcols = []
-
+    cols, newcols = hdu.data.columns, []
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
-        # TODO: Make this work as well
         for coli in cols:
-            newformat = coli.format
-            error = True if "err" in coli.name.lower() else False
-            shape = np.shape(hdu.data[coli.name])
+            circular = True if "PHI" in coli.name else False
+            error = True if "ERR" in coli.name else False
+            newformat, shape = coli.format, hdu.data[coli.name].shape
             if len(shape) == 2 and (coli.name not in exception):
-                interpi = []
+                bini = []
                 for jB in range(shape[0]):
-                    interpij = _interpolate(
-                        grid,
-                        original_grid,
-                        hdu.data[coli.name][jB],
-                        smooth,
-                        window,
+                    values = hdu.data[coli.name][jB]
+                    binEdgeValues = np.interp(binEdgeGrid, grid, values)
+                    binij = _intpBinning(
+                        binMasks,
+                        binEdgeValues,
+                        values,
+                        circular,
                         error,
                     )
-                    interpi.append(interpij)
-                interpi = np.array(interpi)
-                newformat = f"{grid.shape[0]}{coli.format[-1]}"
+                    bini.append(binij)
+                bini = np.array(bini)
+                newformat = f"{binGrid.shape[0]}{coli.format[-1]}"
             else:
-                interpi = hdu.data[coli.name]
+                bini = hdu.data[coli.name]
 
             newcoli = fits.Column(
-                name=coli.name, array=interpi, unit=coli.unit, format=newformat
+                name=coli.name, array=bini, unit=coli.unit, format=newformat
             )
             newcols.append(newcoli)
     else:
         for coli in cols:
             if coli.name == "EFF_WAVE":
-                interpi = grid
+                bini = binGrid
             elif coli.name == "EFF_BAND":
-                interpi = np.append(np.diff(grid), np.diff(grid)[0])
+                bini = np.append(np.diff(binGrid), np.diff(binGrid)[0])
             else:
-                error = True if "err" in coli.name.lower() else False
-                interpi = _interpolate(
-                    grid,
-                    original_grid,
-                    hdu.data[coli.name],
-                    smooth,
-                    window,
+                circular = True if "PHI" in coli.name else False
+                error = True if "ERR" in coli.name else False
+                values = hdu.data[coli.name]
+                binEdgeValues = np.interp(binEdgeGrid, grid, values)
+                bini = _intpBinning(
+                    binMasks,
+                    binEdgeValues,
+                    values,
+                    circular,
                     error,
                 )
 
             newcoli = fits.Column(
                 name=coli.name,
-                array=interpi,
+                array=bini,
                 unit=coli.unit,
                 format=coli.format,
             )
@@ -1696,42 +1682,36 @@ def _interpolate_HDU(
     return newhdu
 
 
-# TODO: For phases bining should be done in complex plane
-def interpolate_wavelength(
-    oifits: fits.HDUList,
-    grid: ArrayLike,
-    smooth: bool = True,
-    window: float = 0.1,
-) -> None:
+def intpBinWavelength(oifits: fits.HDUList, binGrid: ArrayLike) -> None:
     """Bin the wavelength of an oifits file.
 
     Parameters
     ----------
     oifits : astropy.io.fits.HDUList
         An oifits file structure already opened with astropy.io.fits.
-    grid : array_like
-        The wavelength grid to interpolate to.
-    smooth : bool, optional
-        If True interpolates by taking the mean around the interpolation point
-        with a certain window. Default "True".
-    window : float, optional
-        The window for the smooth interpolation. Default "0.1".
+    binGrid : array_like
+        The binned wavelength grid.
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
     else:
         data = oifits
 
+    wl, window = data["OI_WAVELENGTH"].data["EFF_WAVE"], np.diff(binGrid)[0]
+    binEdgeGrid = np.array(
+        [(bin - window / 2, bin + window / 2) for bin in binGrid]
+    )
+    binMasks = [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
+
     to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
-    original_grid = data[to_interpolate[0]].data["EFF_WAVE"]
     for i, _ in enumerate(data):
         if data[i].name in to_interpolate:
-            data[i] = _interpolate_HDU(
+            data[i] = _interpolateBinHDU(
                 data[i],
-                grid,
-                original_grid,
-                smooth,
-                window,
+                binGrid,
+                binMasks,
+                binEdgeGrid,
+                wl,
                 exception=["STA_INDEX"],
             )
 
@@ -1782,29 +1762,28 @@ def rebin_image(
     return image.reshape(shape).mean(-1).mean(-2)
 
 
+# TODO: Should the median here be replaced with the circmean?
 def _rebin(
-    array: np.ndarray,
-    binsize: int,
-    median: Optional[bool] = True,
-    circular: Optional[bool] = False,
-) -> np.ndarray:
+    array: ArrayLike, binsize: int, median: bool = True, circular: bool = False
+) -> ArrayLike:
     """Rebin an array.
 
     Parameters
     ----------
-    arr : numpy.ndarray
+    array : numpy.ndarray
         The array to rebin.
-    binsize : int
+    binsize : int, optiona
         The bin size.
-    median : bool
+    median : bool, optional
         If True return the median.
+    circular : bool, optional
+        Treats the data as periodic if toggled.
 
     Returns
     -------
     res : numpy.ndarray
         The rebinned array.
     """
-
     newsize = (array.shape[0] // int(binsize)) * binsize
     array = array[:newsize]
     shape = (array.shape[0] // binsize, binsize)
@@ -1820,8 +1799,10 @@ def _rebin(
     return res
 
 
-def _rebinHdu(
-    hdu: fits.BinTableHDU, binsize: int, exception: Optional[List[str]] = []
+def _rebinHDU(
+    hdu: fits.BinTableHDU,
+    binsize: int,
+    exception: Optional[List[str]] = [],
 ) -> fits.BinTableHDU:
     """Rebin an HDU.
 
@@ -1839,23 +1820,18 @@ def _rebinHdu(
     newhdu : astropy.io.fits.BinTableHDU
         The rebinned HDU.
     """
-
-    cols = hdu.data.columns
-    newcols = []
-
+    cols, newcols = hdu.data.columns, []
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
         for coli in cols:
-            if "PHI" in coli.name:
-                circular = True
-            else:
-                circular = False
             newformat = coli.format
             shape = np.shape(hdu.data[coli.name])
+            circular = True if "PHI" in coli.name else False
+
             if len(shape) == 2 and not (coli.name in exception):
                 bini = []
                 for jB in range(shape[0]):
                     binij = _rebin(
-                        hdu.data[coli.name][jB, :], binsize, circular=circular
+                        hdu.data[coli.name][jB], binsize, circular=circular
                     )
                     bini.append(binij)
                 bini = np.array(bini)
@@ -1869,14 +1845,11 @@ def _rebinHdu(
             newcols.append(newcoli)
     else:
         for coli in cols:
-            if "PHI" in coli.name:
-                circular = True
-            else:
-                circular = False
-
+            newformat = coli.format
+            circular = True if "PHI" in coli.name else False
             bini = _rebin(hdu.data[coli.name], binsize, circular=circular)
             newcoli = fits.Column(
-                name=coli.name, array=bini, unit=coli.unit, format=coli.format
+                name=coli.name, array=bini, unit=coli.unit, format=newformat
             )
             newcols.append(newcoli)
 
@@ -1886,9 +1859,11 @@ def _rebinHdu(
     return newhdu
 
 
-# TODO: For phases bining should be done in complex plane
+# TODO: For phases binning should be done in complex plane
 def binWavelength(
-    oifits: fits.HDUList, binsize: int, normalizeError: Optional[bool] = True
+    oifits: fits.HDUList,
+    binsize: Optional[int] = None,
+    normalizeError: bool = True,
 ) -> None:
     """Bin the wavelength of an oifits file.
 
@@ -1896,20 +1871,20 @@ def binWavelength(
     ----------
     oifits : astropy.io.fits.HDUList
         An oifits file structure already opened with astropy.io.fits.
-    binsize : int
+    binsize : int, optional
         The bin size.
-    normalizeError : bool
-        If True normalize the error
+    normalizeError : bool, optional
+        If True normalize the error.
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
     else:
         data = oifits
 
-    tobin = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    to_bin = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
-        if data[i].name in tobin:
-            data[i] = _rebinHdu(data[i], binsize, exception=["STA_INDEX"])
+        if data[i].name in to_bin:
+            data[i] = _rebinHDU(data[i], binsize, exception=["STA_INDEX"])
             if normalizeError:
                 errname = getDataTypeError(data[i].name)
                 for errnamei in errname:
@@ -2471,8 +2446,20 @@ def listParamInterpolators(details: bool = False, save2csv: bool = False):
     return res
 
 
-def windowed_linspace(
-    start: float, end: float, spacing: float
-) -> NDArray[Any]:
-    """Creates a numpy.linspace within the start and end point at certain spacing."""
-    return np.linspace(start, end, int((end - start) // (2 * spacing / 2)) + 1)
+def windowed_linspace(start: float, end: float, window: float) -> NDArray[Any]:
+    """Creates bins centred around points with half-window spacing on each side.
+
+    Parameters
+    ----------
+    start : float
+        Centre of the first bin.
+    end : float
+        Centre of the last bin.
+    window : float
+        Total width of each bin.
+
+    Returns
+    -------
+    bin_array : array_like
+    """
+    return np.linspace(start, end, int((end - start) // (window)) + 1)
