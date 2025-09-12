@@ -101,7 +101,9 @@ walkers positions. Two options are available depending on the value of the keywo
    - **gaussian** : random positions from a normal (Gaussian) distribution around the current position defined by the :func:`oimParam.value <oimodeler.oimParam.oimParam.value>`  with standard deviation of :func:`oimParam.error <oimodeler.oimParam.oimParam.error>`
 
 The :func:`oimFitterEmcee <oimodeler.oimFitter.oimFitterEmcee>` class offers two additionnal functionalities 
-of the **emcee** package. The first one is the possiblity of changing the walker 
+of the **emcee** package. 
+
+The first one is the possiblity of changing the walker 
 `moves <https://emcee.readthedocs.io/en/stable/user/moves/>`_ to optimize the parameter space exploration.
 
 The user can also load and save the sampler using the `HDF5 backend <https://emcee.readthedocs.io/en/stable/user/backends/>`_.
@@ -121,9 +123,17 @@ progress bar.
 
    fit.run(nsteps=5000, progress=True)
 
+After the MCMC run, the results can be plotted with three methods:
+
 
 
 **Example on MIRCX data of a binary star**
+
+To demonstrate the use of the :func:`oimFitterEmcee <oimodeler.oimFitter.oimFitterEmcee>` class we will use a single
+`MIRCX <http://www.astro.ex.ac.uk/people/kraus/mircx.html>`_ observation of the binary star :math:`\beta` Ari. 
+The code for this section is in `emceeFitting.py <https://github.com/oimodeler/oimodeler/tree/main/examples/Modules/emceeFitting.py>`_
+
+
 
 
 Chi2 Minimizer
