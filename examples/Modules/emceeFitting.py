@@ -41,31 +41,49 @@ data=oim.oimData(file)
 filt=oim.oimRemoveArrayFilter(arr="OI_VIS")
 data.setFilter(filt)
 #%%
-# Create a new fitter with 32 walkers and the list of oifits files and the model
+# Create a new fitter with 20 walkers and the list of oifits files and the model
 fit = oim.oimFitterEmcee(data, model, nwalkers=20,dataTypes=["VIS2DATA","T3PHI"])
 # pprint(fit._logProbability([0,10,1,5]))
 
 # Prepare the fitter. Here we set the intial positions of all walkers to
 # the current parameters values of our model.
-fit.prepare(init="random")
+fit.prepare()
 
 # pprinting the initial values of the walkers
 pprint(fit.initialParams)
 
 # run a 1000 steps fit with fixed starting inital and 1000 steps
-fit.run(nsteps=40000, progress=True)
-#%%
-# Get results from the fit (updates the class internal logic)
-best, err_l, err_u, err = fit.getResults(mode="best", discard=30000, chi2limfact=3)
-
+fit.run(nsteps=20000, progress=True)
 # %%
 sampler = fit.sampler
 chain = fit.sampler.chain
 lnprob = fit.sampler.lnprobability
 
 # %%
-figWalkers, axeWalkers = fit.walkersPlot(chi2limfact=20)
-figCorner, axeCorner = fit.cornerPlot(discard=30000, chi2limfact=3)
+figWalkers, axeWalkers = fit.walkersPlot(chi2limfact=10, 
+                                        savefig=save_dir / "emceeFitting_walkerPlot1.png")
+#%%
+fit.run(nsteps=20000, progress=True)
+# %%
+figWalkers2, axeWalkers2 = fit.walkersPlot(chi2limfact=10, 
+                                        savefig=save_dir / "emceeFitting_walkerPlot2.png")
+#%%
+figCorner, axeCorner = fit.cornerPlot(discard=35000, chi2limfact=3, 
+                                        savefig=save_dir / "emceeFitting_corner1.png")
+
+#%%
+# Get results from the fit (updates the class internal logic)
+best, err_l, err_u, err = fit.getResults(mode="best", discard=35000, chi2limfact=3)
+
+# %%
+fig0, ax0 = fit.simulator.plot(["VIS2DATA", "T3PHI"],
+                               savefig=save_dir / "emceeFitting_fittedData.png")
+
+#%% residual plot
+fig2, ax2 = fit.simulator.plotResiduals(["VIS2DATA", "T3PHI"],levels=[1,2],
+                     savefig=save_dir / "emceeFitting_residuals.png")
+
+
 #%%
 fit2 = oim.oimFitterEmcee(data, model, nwalkers=20,dataTypes=["VIS2DATA","T3PHI"])
 # pprint(fit._logProbability([0,10,1,5]))
@@ -75,27 +93,26 @@ fit2 = oim.oimFitterEmcee(data, model, nwalkers=20,dataTypes=["VIS2DATA","T3PHI"
 fit2.prepare(init="gaussian")
 fit2.run(nsteps=5000, progress=True)
 # %%
-figWalkers, axeWalkers = fit2.walkersPlot(chi2limfact=5)
-figCorner, axeCorner = fit2.cornerPlot(discard=2000)
+figWalkers, axeWalkers = fit2.walkersPlot(chi2limfact=5,
+                                          savefig=save_dir / "emceeFitting_walkerPlot3.png")
 
-# %%
-fig0, ax0 = fit.simulator.plot(["VIS2DATA", "T3PHI"])#kwargsData=dict(marker=".",ls=""),
-                              # savefig=save_dir / f"Example{class_name}_fittedData.png")
-#%%
-#%% residual plot
-fig2, ax2 = fit.simulator.plot_residuals(["VIS2DATA", "T3PHI"],levels=[1,2])
-                     #savefig=save_dir / "ExampleOimSimulator_residuals_plot.png")
+figCorner, axeCorner = fit2.cornerPlot(discard=2000,
+                                       savefig=save_dir / "emceeFitting_corner2.png")
+
+
+fit2.printResults(mode="best", discard=2000)
+
                      
 #%%
-fig2, ax2 = fit.simulator.plotWithResiduals(["VIS2DATA", "T3PHI"],levels=[1,2,3],
+fig2, ax2 = fit2.simulator.plotWithResiduals(["VIS2DATA", "T3PHI"],levels=[1,2,3],
                                             xunit="cycle/mas",
                                             kwargsData=dict(color="byBaseline"
-                                                            ,marker="."))
-                     #savefig=save_dir / "ExampleOimSimulator_residuals_plot.png")
-ax2[0].legend(fontsize=6)    
-#%%
+                                                            ,marker="."),
+                     savefig=save_dir / "emceeFitting_plotwithresiduals.png")
 
-lmfit = oim.oimFitterMinimize(data, model,dataTypes=["VIS2DATA", "T3PHI"])
-lmfit.prepare()
-lmfit.run()
+#%%
+best, err_l, err_u, err  = fit2.getResults(mode="best", discard=2000)
+
+fit2.printResults(mode="best", discard=2000)
+
 
