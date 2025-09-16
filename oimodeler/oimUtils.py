@@ -1626,6 +1626,12 @@ def _interpolateBinHDU(
     newhdu : astropy.io.fits.BinTableHDU
         The rebinned HDU.
     """
+    if not np.all(np.diff(grid) > 0):
+        indices = np.argsort(grid)
+        grid = grid[indices]
+    else:
+        indices = grid.astype(bool)
+
     cols, newcols = hdu.data.columns, []
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
         for coli in cols:
@@ -1636,10 +1642,10 @@ def _interpolateBinHDU(
             if len(shape) == 2 and (coli.name not in exception):
                 bini = []
                 for jB in range(shape[0]):
-                    values = hdu.data[coli.name][jB]
+                    values = hdu.data[coli.name][jB][indices]
                     binEdgeValues = np.interp(binEdgeGrid, grid, values)
                     binij = _intpBinning(
-                        binMasks,
+                        binMasks[:, indices],
                         binEdgeValues,
                         values,
                         circular,
@@ -1667,11 +1673,11 @@ def _interpolateBinHDU(
             else:
                 circular = True if "PHI" in coli.name else False
                 error = True if "ERR" in coli.name else False
-                values = hdu.data[coli.name]
-                # TODO: Check the interpolation edge -> Does it change the values?
+                values = hdu.data[coli.name][indices]
+                indices = np.argsort(grid)
                 binEdgeValues = np.interp(binEdgeGrid, grid, values)
                 bini = _intpBinning(
-                    binMasks,
+                    binMasks[:, indices],
                     binEdgeValues,
                     values,
                     circular,
@@ -1719,7 +1725,9 @@ def intpBinWavelength(
     binEdgeGrid = np.array(
         [(bin - window / 2, bin + window / 2) for bin in binGrid]
     )
-    binMasks = [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
+    binMasks = np.array(
+        [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
+    )
     to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
         if data[i].name not in to_interpolate:
