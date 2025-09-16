@@ -1671,7 +1671,6 @@ def _interpolateBinHDU(
                     binEdgeValues,
                     values,
                     circular,
-                    error,
                     False if average_error else error,
                 )
 
