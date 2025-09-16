@@ -1553,8 +1553,8 @@ def _intpBinning(
     binMasks: ArrayLike,
     binEdgeValues: ArrayLike,
     values: ArrayLike,
-    circular: bool,
-    error: bool,
+    circular: bool = False,
+    error: bool = False,
 ) -> ArrayLike:
     """Interpolates the edges of the binning window and bins all values in the
     mask.
@@ -1568,9 +1568,9 @@ def _intpBinning(
     values : array_like
         The pre-bin values.
     circular : bool, optional
-        If True, treats the values periodically.
+        If True, treats the values periodically. Default is "False".
     error : bool, optional
-        If True, propagates the errors.
+        If True, propagates the errors. Default is "False".
 
     Returns
     -------
@@ -1578,12 +1578,11 @@ def _intpBinning(
     """
     mean_func = partial(circmean, low=-180, high=180) if circular else np.mean
 
-    # TODO: Find way to insert interpolated values here
     res = []
     for (lower, upper), mask in zip(binEdgeValues, binMasks):
         val = np.array([lower, *values[mask], upper])
         if error:
-            # TODO: Check if there is a better approach for the phases
+            # TODO: This is incorrect for the closure phases -> Fix
             res.append(np.sqrt(np.sum(val**2)) / val.size)
         else:
             res.append(mean_func(val))
