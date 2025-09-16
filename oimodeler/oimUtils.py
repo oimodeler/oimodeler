@@ -1591,6 +1591,7 @@ def _intpBinning(
     return np.array(res)
 
 
+# TODO: Change this to masked arrays somehow to make it even more robust?
 def _interpolateBinHDU(
     hdu: fits.BinTableHDU,
     binGrid: ArrayLike,
@@ -1650,6 +1651,9 @@ def _interpolateBinHDU(
             else:
                 bini = hdu.data[coli.name]
 
+            if coli.name == "FLAG":
+                bini = np.full(bini.shape, False)
+
             newcoli = fits.Column(
                 name=coli.name, array=bini, unit=coli.unit, format=newformat
             )
@@ -1673,6 +1677,9 @@ def _interpolateBinHDU(
                     circular,
                     False if average_error else error,
                 )
+
+            if coli.name == "FLAG":
+                bini = np.full(bini.shape, False)
 
             newcoli = fits.Column(
                 name=coli.name,
@@ -1715,16 +1722,18 @@ def intpBinWavelength(
     binMasks = [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
     to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
-        if data[i].name in to_interpolate:
-            data[i] = _interpolateBinHDU(
-                data[i],
-                binGrid,
-                binMasks,
-                binEdgeGrid,
-                wl,
-                average_error=average_error,
-                exception=["STA_INDEX"],
-            )
+        if data[i].name not in to_interpolate:
+            continue
+
+        data[i] = _interpolateBinHDU(
+            data[i],
+            binGrid,
+            binMasks,
+            binEdgeGrid,
+            wl,
+            average_error=average_error,
+            exception=["STA_INDEX"],
+        )
 
 
 def rebin_image(
