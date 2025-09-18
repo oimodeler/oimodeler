@@ -292,10 +292,13 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["binGrid"] = None
+        self.params["averageError"] = False
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
-        intpBinWavelength(data, self.params["binGrid"])
+        intpBinWavelength(
+            data, self.params["binGrid"], self.params["averageError"]
+        )
 
 
 class oimFlagWithExpressionFilter(oimDataFilterComponent):

@@ -1583,6 +1583,7 @@ def _intpBinning(
         val = np.array([lower, *values[mask], upper])
         if error:
             # TODO: This is incorrect for the closure phases -> Fix
+            # TODO: Replace this with the derivative for the error propagation
             res.append(np.sqrt(np.sum(val**2)) / val.size)
         else:
             res.append(mean_func(val))
@@ -1590,12 +1591,14 @@ def _intpBinning(
     return np.array(res)
 
 
+# TODO: Change this to masked arrays somehow to make it even more robust?
 def _interpolateBinHDU(
     hdu: fits.BinTableHDU,
     binGrid: ArrayLike,
     binMasks: ArrayLike,
     binEdgeGrid: ArrayLike,
     grid: ArrayLike,
+    average_error: bool = False,
     exception: Optional[List[str]] = [],
 ) -> fits.BinTableHDU:
     """Bin an HDU via interpolation.
@@ -1612,6 +1615,9 @@ def _interpolateBinHDU(
         The window edges of the binned grid.
     grid : array_like
         The pre-bin grid.
+    average_error : bool, optional
+        If True, will average the error instead of propagating it.
+        Useful if the systematic error dominates.
     exception : list of str
         The exceptions.
 
@@ -1620,29 +1626,39 @@ def _interpolateBinHDU(
     newhdu : astropy.io.fits.BinTableHDU
         The rebinned HDU.
     """
+    if not np.all(np.diff(grid) > 0):
+        indices = np.argsort(grid)
+        grid = grid[indices]
+    else:
+        indices = grid.astype(bool)
+
     cols, newcols = hdu.data.columns, []
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
         for coli in cols:
             circular = True if "PHI" in coli.name else False
             error = True if "ERR" in coli.name else False
+
             newformat, shape = coli.format, hdu.data[coli.name].shape
             if len(shape) == 2 and (coli.name not in exception):
                 bini = []
                 for jB in range(shape[0]):
-                    values = hdu.data[coli.name][jB]
+                    values = hdu.data[coli.name][jB][indices]
                     binEdgeValues = np.interp(binEdgeGrid, grid, values)
                     binij = _intpBinning(
-                        binMasks,
+                        binMasks[:, indices],
                         binEdgeValues,
                         values,
                         circular,
-                        error,
+                        False if average_error else error,
                     )
                     bini.append(binij)
                 bini = np.array(bini)
                 newformat = f"{binGrid.shape[0]}{coli.format[-1]}"
             else:
                 bini = hdu.data[coli.name]
+
+            if coli.name == "FLAG":
+                bini = np.full(bini.shape, False)
 
             newcoli = fits.Column(
                 name=coli.name, array=bini, unit=coli.unit, format=newformat
@@ -1657,15 +1673,19 @@ def _interpolateBinHDU(
             else:
                 circular = True if "PHI" in coli.name else False
                 error = True if "ERR" in coli.name else False
-                values = hdu.data[coli.name]
+                values = hdu.data[coli.name][indices]
+                indices = np.argsort(grid)
                 binEdgeValues = np.interp(binEdgeGrid, grid, values)
                 bini = _intpBinning(
-                    binMasks,
+                    binMasks[:, indices],
                     binEdgeValues,
                     values,
                     circular,
-                    error,
+                    False if average_error else error,
                 )
+
+            if coli.name == "FLAG":
+                bini = np.full(bini.shape, False)
 
             newcoli = fits.Column(
                 name=coli.name,
@@ -1681,7 +1701,9 @@ def _interpolateBinHDU(
     return newhdu
 
 
-def intpBinWavelength(oifits: fits.HDUList, binGrid: ArrayLike) -> None:
+def intpBinWavelength(
+    oifits: fits.HDUList, binGrid: ArrayLike, average_error: bool = False
+) -> None:
     """Bin the wavelength of an oifits file.
 
     Parameters
@@ -1690,6 +1712,9 @@ def intpBinWavelength(oifits: fits.HDUList, binGrid: ArrayLike) -> None:
         An oifits file structure already opened with astropy.io.fits.
     binGrid : array_like
         The binned wavelength grid.
+    average_error : bool, optional
+        If True, will average the error instead of propagating it.
+        Useful if the systematic error dominates.
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
@@ -1700,19 +1725,23 @@ def intpBinWavelength(oifits: fits.HDUList, binGrid: ArrayLike) -> None:
     binEdgeGrid = np.array(
         [(bin - window / 2, bin + window / 2) for bin in binGrid]
     )
-    binMasks = [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
-
+    binMasks = np.array(
+        [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
+    )
     to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
-        if data[i].name in to_interpolate:
-            data[i] = _interpolateBinHDU(
-                data[i],
-                binGrid,
-                binMasks,
-                binEdgeGrid,
-                wl,
-                exception=["STA_INDEX"],
-            )
+        if data[i].name not in to_interpolate:
+            continue
+
+        data[i] = _interpolateBinHDU(
+            data[i],
+            binGrid,
+            binMasks,
+            binEdgeGrid,
+            wl,
+            average_error=average_error,
+            exception=["STA_INDEX"],
+        )
 
 
 def rebin_image(

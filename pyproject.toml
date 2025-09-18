@@ -5,51 +5,48 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "oimodeler"
 dynamic = ["version"]
-authors = [
-    { name = "Anthony meilland", email = "ame@oca.eu" },
-]
+authors = [{ name = "Anthony meilland", email = "ame@oca.eu" }]
 description = "Optical interferometry modelling tool"
 keywords = ["optical", "interferometry", "modeling"]
 classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Operating System :: MacOS :: MacOS X",
-    "Operating System :: POSIX :: AIX",
-    "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3 :: Only",
-    "Topic :: Scientific/Engineering :: Astronomy",
-    "Natural Language :: English",
-    "Typing :: Typed",
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: POSIX :: AIX",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Scientific/Engineering :: Astronomy",
+  "Natural Language :: English",
+  "Typing :: Typed",
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "astropy>=6.0.1",
-    "astroquery>=0.4.9.post1",
-    "corner>=2.2.3",
-    "dynesty>=2.1.5",
-    "emcee>=3.1.6",
-    "matplotlib>=3.9.4",
-    "numpy>=1.26.4",
-    "pyfftw>=0.14.0",
-    "scipy>=1.13.1",
-    "toml>=0.10.2",
-    "tqdm>=4.67.1",
+  "astropy>=6.0.1",
+  "astroquery>=0.4.9.post1",
+  "corner>=2.2.3",
+  "dynesty>=2.1.5",
+  "emcee>=3.1.6",
+  "matplotlib>=3.9.4",
+  "numpy>=1.26.4",
+  "pyfftw>=0.14.0",
+  "scipy>=1.13.1",
+  "toml>=0.10.2",
+  "tqdm>=4.67.1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest >= 7.2.1",
-    "pytest-cov >= 4.0.0",
-    "sphinx == 5.3",
-    "sphinx-autobuild == 2021.3.14",
-    "sphinx-autodoc-typehints == 1.23",
-    "sphinx_rtd_theme == 1.2.0",
-    "numpydoc==1.5.0",
+  "pytest >= 7.2.1",
+  "pytest-cov >= 4.0.0",
+  "sphinx == 5.3",
+  "sphinx-autobuild == 2021.3.14",
+  "sphinx-autodoc-typehints == 1.23",
+  "sphinx_rtd_theme == 1.2.0",
+  "numpydoc==1.5.0",
 ]
 
 [project.readme]
@@ -63,21 +60,14 @@ text = "GPLv3"
 Github = "https://gitlab.oca.eu/oimodeler/oimodeler"
 
 [tool.setuptools]
-license-files = [
-    "LICENSE",
-]
+license-files = ["LICENSE"]
 include-package-data = true
 
 [tool.setuptools.packages.find]
-exclude = [
-    "docs*",
-    "images*",
-    "examples*",
-    "requirements*",
-]
+exclude = ["docs*", "images*", "examples*", "requirements*"]
 
 [tool.setuptools.dynamic]
-version = {attr = "oimodeler.__version__"}
+version = { attr = "oimodeler.__version__" }
 
 [tool.black]
 line-length = 79
