@@ -263,7 +263,7 @@ here we a simple filter to remove the edge of our MATISSE data with
 the :func:`oimWavelengthRangeFilter <oimodeler.oimDataFilter.oimWavelengthRangeFilter>`.
 class. 
 
-.. code-block:: python 
+.. code-block:: ipython3
     
     filt_wl = oim.oimWavelengthRangeFilter(wlRange=[3.1e-6, 4e-6])
   
@@ -286,7 +286,7 @@ has two keywords:
 
 We then apply the filter using th :func:`oimData.setFilter <oimodeler.oimData.setFilter>` method
 
-.. code-block:: python 
+.. code-block:: ipython3 
 
     data.setFilter(filt_wl)
     
@@ -302,14 +302,14 @@ this object will contain both the filtered and unfiltered data as two private me
 We can temporary remove the filter by setting the 
 :func:`oimData.useFilter <oimodeler.oimData.oimData.useFilter>` member to **False**
 
-.. code-block:: python 
+.. code-block:: ipython3 
 
    data.useFilter = False
    
 or we can remove the filter once and for all using the the 
 :func:`oimData.setFilter <oimodeler.oimData.oimData.setFilter>` method without argument.
 
-.. code-block:: python 
+.. code-block:: ipython3 
 
    data.setFilter()
    
@@ -322,7 +322,7 @@ Finally let's plot the square visibility as the function of the spatial frequenc
 To plot the unfiltered data without removing the filter we can use the ``removeFilter=True``
  option of the :func:`oimData.plot <oimodeler.oimData.oimData.plot>` method.
 
-.. code-block:: python 
+.. code-block:: ipython3 
 
     figcut,axcut = data.plot("SPAFREQ","VIS2DATA",yscale="log",xunit="cycle/mas",removeFilter=True,
                               label="Original data",color="orange",lw=4)

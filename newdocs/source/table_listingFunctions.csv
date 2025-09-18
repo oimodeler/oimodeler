@@ -1,0 +1,5 @@
+Listing function  | oimodeler class targeted | options
+:func:`listComponents <oimodeler.oimUtils.listComponents>` | :func:`oimComponent <oimodeler.oimComponent.oimComponent>` | details, save2csv, componentType
+:func:`listDataFilters <oimodeler.oimUtils.listDataFilters>` | :func:`oimDataFilterComponent <oimodeler.oimDataFilter.oimDataFilterComponent>` | details, save2csv
+:func:`listFitters <oimodeler.oimUtils.listFitters>`| :func:`oimFitter <oimodeler.oimFitter.oimFitter>` | details, save2csv
+:func:`listParamInterpolators <oimodeler.oimUtils.listParamInterpolators>` | :func:`oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>` |  details, save2csv

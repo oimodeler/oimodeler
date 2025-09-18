@@ -37,6 +37,7 @@ extensions = [
     'nbsphinx',
     'nbsphinx_link',
     'myst_parser',
+    #'sphinx_gallery.gen_gallery',
 ]
 
 napoleon_google_docstring = False
@@ -83,3 +84,8 @@ autodoc_member_order = 'bysource'
 
 autodoc_default_options = {'autosummary': True,
                            'autosummary-no-nesting':False}
+
+#sphinx_gallery_conf = {
+#    'examples_dirs': ['../../examples/tests'],
+#    'gallery_dirs': ['auto_examples'],
+#}

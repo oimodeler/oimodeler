@@ -52,7 +52,7 @@ First, we can plot the simple uv coverage using the
 list of OIFITS files (filename or opened) or an instance of a :func:`oimData <oimodeler.oimData.oimData>`
 class.
 
-.. code-block:: python
+.. code-block:: ipython3
 
     ax1.uvplot(data)
 
