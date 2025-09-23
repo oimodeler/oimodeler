@@ -1554,8 +1554,10 @@ def _intpBinning(
     array: ArrayLike,
     binMasks: ArrayLike,
     binEdgeValues: ArrayLike,
-    circular: bool = False,
     values: Union[ArrayLike, None] = None,
+    nSpecChannels: float = 1.0,
+    circular: bool = False,
+    **kwargs,
 ) -> ArrayLike:
     """Interpolates the edges of the binning window and bins all values in the
     mask.
@@ -1568,11 +1570,17 @@ def _intpBinning(
         Mask of the old grid for the bins.
     binEdgeValues : array_like
         The interpolated values at the edge of the bins.
-    circular : bool, optional
-        If True, treats the values periodically. Default is "False".
     values : array_like, optional
         If provided will treat the "array" as errors and use the values
         for error propagation. Default is "None".
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
+
+    circular : bool, optional
+        If True, treats the values periodically. Default is "False".
 
     Returns
     -------
@@ -1586,7 +1594,8 @@ def _intpBinning(
     for (lower, upper), mask in zip(binEdgeValues, binMasks):
         val = np.array([lower, *array[mask], upper])
         if values is not None:
-            res.append(np.sqrt(np.sum(val**2)) / val.size)
+            divisor = val.size / nSpecChannels
+            res.append(np.sqrt(np.sum(val**2)) / divisor)
         else:
             res.append(mean_func(val))
 
@@ -1619,6 +1628,11 @@ def _interpolateBinHDU(
         The pre-bin grid.
     exception : list of str
         The exceptions.
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
 
     Returns
     -------
@@ -1640,9 +1654,11 @@ def _interpolateBinHDU(
                 bini = []
                 for jB in range(shape[0]):
                     if "ERR" in col.name:
-                        val_key = col.name.replace(
-                            "ERR", "" if "VIS2" not in col.name else "DATA"
-                        )
+                        if any(x in col.name for x in ["VIS2", "FLUX"]):
+                            val_key = col.name.replace("ERR", "DATA")
+                        else:
+                            val_key = col.name.replace("ERR", "")
+
                         values = hdu.data[val_key][jB][indices]
                     else:
                         values = None
@@ -1653,8 +1669,10 @@ def _interpolateBinHDU(
                         array,
                         binMasks[:, indices],
                         binEdgeValues,
-                        circular,
                         values=values,
+                        nSpecChannels=kwargs["spectralChannels"],
+                        circular=circular,
+                        **kwargs,
                     )
                     bini.append(binij)
                 bini = np.array(bini)
@@ -1681,23 +1699,26 @@ def _interpolateBinHDU(
                 bini = np.append(np.diff(binGrid), np.diff(binGrid)[0])
             else:
                 if "ERR" in col.name:
-                    val_key = col.name.replace(
-                        "ERR", "" if "VIS2" not in col.name else "DATA"
-                    )
+                    if any(x in col.name for x in ["VIS2", "FLUX"]):
+                        val_key = col.name.replace("ERR", "DATA")
+                    else:
+                        val_key = col.name.replace("ERR", "")
+
                     values = hdu.data[val_key][indices]
                 else:
                     values = None
 
                 circular = True if "PHI" in col.name else False
                 array = hdu.data[col.name][indices]
-                indices = np.argsort(grid)
                 binEdgeValues = np.interp(binEdgeGrid, grid, array)
                 bini = _intpBinning(
                     array,
                     binMasks[:, indices],
                     binEdgeValues,
-                    circular,
                     values=values,
+                    nSpecChannels=kwargs["spectralChannels"],
+                    circular=circular,
+                    **kwargs,
                 )
 
             if col.name == "FLAG" and kwargs.get("resetFlags", True):
@@ -1729,6 +1750,20 @@ def intpBinWavelength(
         An oifits file structure already opened with astropy.io.fits.
     binGrid : array_like
         The binned wavelength grid.
+    binWindow : array_like, optional
+        The bin windows that correspond to the binGrid elements.
+        If None, computes the bin windows from the distance between two
+        elements in the binGrid. Default is None.
+    resetFlags : bool, optional
+        If True, resets the flags after binning. Default is True.
+    averageError : bool, optional
+        If True, forgoes error propagation and simply averages the errors
+        for each bin. Default is False.
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
@@ -1736,13 +1771,19 @@ def intpBinWavelength(
         data = oifits
 
     # TODO: This might not work with GRAVITY. Think of how to fix?
-    wl, window = data["OI_WAVELENGTH"].data["EFF_WAVE"], np.diff(binGrid)[0]
+    wl = data["OI_WAVELENGTH"].data["EFF_WAVE"]
+    if kwargs["binWindow"] is None:
+        window = np.full(binGrid.shape, np.diff(binGrid)[0])
+    else:
+        window = kwargs["binWindow"]
+
     binEdgeGrid = np.array(
-        [(bin - window / 2, bin + window / 2) for bin in binGrid]
+        [(bin - win / 2, bin + win / 2) for win, bin in zip(window, binGrid)]
     )
     binMasks = np.array(
         [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
     )
+
     to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
         if data[i].name not in to_interpolate:
