@@ -281,7 +281,15 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
 
 class oimWavelengthIntpBinFilter(oimDataFilterComponent):
-    """Filter for binning wavelength"""
+    """Filter that bins the wavelength to a specified grid.
+    It also interpolates at the edges of the bins, to ensure a minimum
+    number of elements.
+
+    Notes
+    -----
+    The flags of are reset after binning, as averaging booleans will mostly
+    return True.
+    """
 
     name = "Wavelength Interpolation Binning Filter"
     shortname = "WlIntpBinFilt"
@@ -292,12 +300,12 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["binGrid"] = None
-        self.params["averageError"] = False
+        self.params["resetFlags"] = True
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
         intpBinWavelength(
-            data, self.params["binGrid"], self.params["averageError"]
+            data, self.params["binGrid"], resetFlags=self.params["resetFlags"]
         )
 
 
