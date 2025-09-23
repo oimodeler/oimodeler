@@ -1578,16 +1578,15 @@ def _intpBinning(
     -------
     binned_values : array_like
     """
-    # TODO: Reimplement this
+    # TODO: Reimplement this with proper error propagation
     # mean_func = partial(circmean, low=-180, high=180) if circular else np.mean
     mean_func = np.mean
 
     res = []
     for (lower, upper), mask in zip(binEdgeValues, binMasks):
         val = np.array([lower, *array[mask], upper])
-        # TODO: Implement this
         if values is not None:
-            ...
+            res.append(np.sqrt(np.sum(val**2)) / val.size)
         else:
             res.append(mean_func(val))
 
@@ -1637,21 +1636,25 @@ def _interpolateBinHDU(
         for col in cols:
             circular = True if "PHI" in col.name else False
             newformat, shape = col.format, hdu.data[col.name].shape
-            if "ERR" in col.name:
-                val_key = col.name.replace(
-                    "ERR", "" if "VIS2" not in col.name else "DATA"
-                )
-
             if len(shape) == 2 and (col.name not in exception):
                 bini = []
                 for jB in range(shape[0]):
-                    values = hdu.data[col.name][jB][indices]
-                    binEdgeValues = np.interp(binEdgeGrid, grid, values)
+                    if "ERR" in col.name:
+                        val_key = col.name.replace(
+                            "ERR", "" if "VIS2" not in col.name else "DATA"
+                        )
+                        values = hdu.data[val_key][jB][indices]
+                    else:
+                        values = None
+
+                    array = hdu.data[col.name][jB][indices]
+                    binEdgeValues = np.interp(binEdgeGrid, grid, array)
                     binij = _intpBinning(
-                        values,
+                        array,
                         binMasks[:, indices],
                         binEdgeValues,
                         circular,
+                        values=values,
                     )
                     bini.append(binij)
                 bini = np.array(bini)
@@ -1677,15 +1680,24 @@ def _interpolateBinHDU(
             elif col.name == "EFF_BAND":
                 bini = np.append(np.diff(binGrid), np.diff(binGrid)[0])
             else:
+                if "ERR" in col.name:
+                    val_key = col.name.replace(
+                        "ERR", "" if "VIS2" not in col.name else "DATA"
+                    )
+                    values = hdu.data[val_key][indices]
+                else:
+                    values = None
+
                 circular = True if "PHI" in col.name else False
-                values = hdu.data[col.name][indices]
+                array = hdu.data[col.name][indices]
                 indices = np.argsort(grid)
-                binEdgeValues = np.interp(binEdgeGrid, grid, values)
+                binEdgeValues = np.interp(binEdgeGrid, grid, array)
                 bini = _intpBinning(
-                    values,
+                    array,
                     binMasks[:, indices],
                     binEdgeValues,
                     circular,
+                    values=values,
                 )
 
             if col.name == "FLAG" and kwargs.get("resetFlags", True):
