@@ -360,7 +360,7 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
     """Select baselines to keep"""
 
     name = "Baseline selection filter"
-    shortname = "KeepBAselineFilt"
+    shortname = "KeepBaselinesFilt"
     description = "Selection based on baseline name(s)"
 
     def __init__(self, **kwargs):
@@ -406,7 +406,7 @@ class oimKeepTelescopesFilter(oimDataFilterComponent):
     """Select telescopes to keep"""
 
     name = "Telescopes selection filter"
-    shortname = "KeepTelescopeFilt"
+    shortname = "KeepTelescopesFilt"
     description = "Selection based on telescope name(s)"
 
     def __init__(self, **kwargs):
