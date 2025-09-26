@@ -1781,7 +1781,7 @@ def intpBinWavelength(
         [(bin - win / 2, bin + win / 2) for win, bin in zip(window, binGrid)]
     )
     binMasks = np.array(
-        [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
+        [(wl > lower) & (wl < upper) for lower, upper in binEdgeGrid]
     )
 
     to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
