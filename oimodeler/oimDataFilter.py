@@ -281,7 +281,31 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
 
 class oimWavelengthIntpBinFilter(oimDataFilterComponent):
-    """Filter for binning wavelength"""
+    """Filter that bins the wavelength to a specified grid.
+    It also interpolates at the edges of the bins, to ensure a minimum
+    number of elements.
+
+    Parameters
+    ----------
+    binGrid : array_like
+        The grid to bin to.
+    binWindow : array_like, optional
+        The bin windows that correspond to the binGrid elements.
+        If None, computes the bin windows from the distance between two
+        elements in the binGrid. Default is None.
+    resetFlags : bool, optional
+        If True, resets the flags after binning. Default is True.
+    averageError : bool, optional
+        If True, forgoes error propagation and simply averages the errors
+        for each bin. Default is False.
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
+
+
+    """
 
     name = "Wavelength Interpolation Binning Filter"
     shortname = "WlIntpBinFilt"
@@ -292,12 +316,20 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.params["binGrid"] = None
+        self.params["binWindow"] = None
+        self.params["resetFlags"] = True
         self.params["averageError"] = False
+        self.params["spectralChannels"] = 1
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
         intpBinWavelength(
-            data, self.params["binGrid"], self.params["averageError"]
+            data,
+            self.params["binGrid"],
+            binWindow=self.params["binWindow"],
+            resetFlags=self.params["resetFlags"],
+            averageError=self.params["averageError"],
+            spectralChannels=self.params["spectralChannels"],
         )
 
 
@@ -328,7 +360,7 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
     """Select baselines to keep"""
 
     name = "Baseline selection filter"
-    shortname = "KeepBAselineFilt"
+    shortname = "KeepBaselinesFilt"
     description = "Selection based on baseline name(s)"
 
     def __init__(self, **kwargs):
@@ -374,7 +406,7 @@ class oimKeepTelescopesFilter(oimDataFilterComponent):
     """Select telescopes to keep"""
 
     name = "Telescopes selection filter"
-    shortname = "KeepTelescopeFilt"
+    shortname = "KeepTelescopesFilt"
     description = "Selection based on telescope name(s)"
 
     def __init__(self, **kwargs):

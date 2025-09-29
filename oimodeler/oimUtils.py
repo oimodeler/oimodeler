@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
 import csv
-from functools import partial
+
+# from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -1550,41 +1551,51 @@ def spectralSmoothing(
 
 
 def _intpBinning(
+    array: ArrayLike,
     binMasks: ArrayLike,
     binEdgeValues: ArrayLike,
-    values: ArrayLike,
+    values: Union[ArrayLike, None] = None,
+    nSpecChannels: float = 1.0,
     circular: bool = False,
-    error: bool = False,
+    **kwargs,
 ) -> ArrayLike:
     """Interpolates the edges of the binning window and bins all values in the
     mask.
 
     Parameters
     ----------
+    array : array_like
+        The pre-bin values.
     binMasks : array_like
         Mask of the old grid for the bins.
     binEdgeValues : array_like
         The interpolated values at the edge of the bins.
-    values : array_like
-        The pre-bin values.
+    values : array_like, optional
+        If provided will treat the "array" as errors and use the values
+        for error propagation. Default is "None".
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
+
     circular : bool, optional
         If True, treats the values periodically. Default is "False".
-    error : bool, optional
-        If True, propagates the errors. Default is "False".
 
     Returns
     -------
     binned_values : array_like
     """
-    mean_func = partial(circmean, low=-180, high=180) if circular else np.mean
+    # TODO: Reimplement this with proper error propagation
+    # mean_func = partial(circmean, low=-180, high=180) if circular else np.mean
+    mean_func = np.mean
 
     res = []
     for (lower, upper), mask in zip(binEdgeValues, binMasks):
-        val = np.array([lower, *values[mask], upper])
-        if error:
-            # TODO: This is incorrect for the closure phases -> Fix
-            # TODO: Replace this with the derivative for the error propagation
-            res.append(np.sqrt(np.sum(val**2)) / val.size)
+        val = np.array([lower, *array[mask], upper])
+        if values is not None:
+            divisor = val.size / nSpecChannels
+            res.append(np.sqrt(np.sum(val**2)) / divisor)
         else:
             res.append(mean_func(val))
 
@@ -1598,8 +1609,8 @@ def _interpolateBinHDU(
     binMasks: ArrayLike,
     binEdgeGrid: ArrayLike,
     grid: ArrayLike,
-    average_error: bool = False,
     exception: Optional[List[str]] = [],
+    **kwargs,
 ) -> fits.BinTableHDU:
     """Bin an HDU via interpolation.
 
@@ -1615,11 +1626,13 @@ def _interpolateBinHDU(
         The window edges of the binned grid.
     grid : array_like
         The pre-bin grid.
-    average_error : bool, optional
-        If True, will average the error instead of propagating it.
-        Useful if the systematic error dominates.
     exception : list of str
         The exceptions.
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
 
     Returns
     -------
@@ -1632,77 +1645,102 @@ def _interpolateBinHDU(
     else:
         indices = grid.astype(bool)
 
-    cols, newcols = hdu.data.columns, []
+    cols, new_cols = hdu.data.columns, []
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
-        for coli in cols:
-            circular = True if "PHI" in coli.name else False
-            error = True if "ERR" in coli.name else False
-
-            newformat, shape = coli.format, hdu.data[coli.name].shape
-            if len(shape) == 2 and (coli.name not in exception):
+        for col in cols:
+            circular = True if "PHI" in col.name else False
+            newformat, shape = col.format, hdu.data[col.name].shape
+            if len(shape) == 2 and (col.name not in exception):
                 bini = []
                 for jB in range(shape[0]):
-                    values = hdu.data[coli.name][jB][indices]
-                    binEdgeValues = np.interp(binEdgeGrid, grid, values)
+                    if "ERR" in col.name:
+                        if any(x in col.name for x in ["VIS2", "FLUX"]):
+                            val_key = col.name.replace("ERR", "DATA")
+                        else:
+                            val_key = col.name.replace("ERR", "")
+
+                        values = hdu.data[val_key][jB][indices]
+                    else:
+                        values = None
+
+                    array = hdu.data[col.name][jB][indices]
+                    binEdgeValues = np.interp(binEdgeGrid, grid, array)
                     binij = _intpBinning(
+                        array,
                         binMasks[:, indices],
                         binEdgeValues,
-                        values,
-                        circular,
-                        False if average_error else error,
+                        values=values,
+                        nSpecChannels=kwargs["spectralChannels"],
+                        circular=circular,
+                        **kwargs,
                     )
                     bini.append(binij)
                 bini = np.array(bini)
-                newformat = f"{binGrid.shape[0]}{coli.format[-1]}"
+                newformat = f"{binGrid.shape[0]}{col.format[-1]}"
             else:
-                bini = hdu.data[coli.name]
+                bini = hdu.data[col.name]
 
-            if coli.name == "FLAG":
+            if col.name == "FLAG" and kwargs.get("resetFlags", True):
                 bini = np.full(bini.shape, False)
 
-            newcoli = fits.Column(
-                name=coli.name, array=bini, unit=coli.unit, format=newformat
+            new_cols.append(
+                fits.Column(
+                    name=col.name,
+                    array=bini,
+                    unit=col.unit,
+                    format=newformat,
+                )
             )
-            newcols.append(newcoli)
     else:
-        for coli in cols:
-            if coli.name == "EFF_WAVE":
+        for col in cols:
+            if col.name == "EFF_WAVE":
                 bini = binGrid
-            elif coli.name == "EFF_BAND":
+            elif col.name == "EFF_BAND":
                 bini = np.append(np.diff(binGrid), np.diff(binGrid)[0])
             else:
-                circular = True if "PHI" in coli.name else False
-                error = True if "ERR" in coli.name else False
-                values = hdu.data[coli.name][indices]
-                indices = np.argsort(grid)
-                binEdgeValues = np.interp(binEdgeGrid, grid, values)
+                if "ERR" in col.name:
+                    if any(x in col.name for x in ["VIS2", "FLUX"]):
+                        val_key = col.name.replace("ERR", "DATA")
+                    else:
+                        val_key = col.name.replace("ERR", "")
+
+                    values = hdu.data[val_key][indices]
+                else:
+                    values = None
+
+                circular = True if "PHI" in col.name else False
+                array = hdu.data[col.name][indices]
+                binEdgeValues = np.interp(binEdgeGrid, grid, array)
                 bini = _intpBinning(
+                    array,
                     binMasks[:, indices],
                     binEdgeValues,
-                    values,
-                    circular,
-                    False if average_error else error,
+                    values=values,
+                    nSpecChannels=kwargs["spectralChannels"],
+                    circular=circular,
+                    **kwargs,
                 )
 
-            if coli.name == "FLAG":
+            if col.name == "FLAG" and kwargs.get("resetFlags", True):
                 bini = np.full(bini.shape, False)
 
-            newcoli = fits.Column(
-                name=coli.name,
-                array=bini,
-                unit=coli.unit,
-                format=coli.format,
+            new_cols.append(
+                fits.Column(
+                    name=col.name,
+                    array=bini,
+                    unit=col.unit,
+                    format=col.format,
+                )
             )
-            newcols.append(newcoli)
 
-    newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(newcols))
+    newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(new_cols))
     newhdu.header = hdu.header
     newhdu.update_header()
     return newhdu
 
 
 def intpBinWavelength(
-    oifits: fits.HDUList, binGrid: ArrayLike, average_error: bool = False
+    oifits: fits.HDUList, binGrid: ArrayLike, **kwargs
 ) -> None:
     """Bin the wavelength of an oifits file.
 
@@ -1712,22 +1750,40 @@ def intpBinWavelength(
         An oifits file structure already opened with astropy.io.fits.
     binGrid : array_like
         The binned wavelength grid.
-    average_error : bool, optional
-        If True, will average the error instead of propagating it.
-        Useful if the systematic error dominates.
+    binWindow : array_like, optional
+        The bin windows that correspond to the binGrid elements.
+        If None, computes the bin windows from the distance between two
+        elements in the binGrid. Default is None.
+    resetFlags : bool, optional
+        If True, resets the flags after binning. Default is True.
+    averageError : bool, optional
+        If True, forgoes error propagation and simply averages the errors
+        for each bin. Default is False.
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
     else:
         data = oifits
 
-    wl, window = data["OI_WAVELENGTH"].data["EFF_WAVE"], np.diff(binGrid)[0]
+    # TODO: This might not work with GRAVITY. Think of how to fix?
+    wl = data["OI_WAVELENGTH"].data["EFF_WAVE"]
+    if kwargs["binWindow"] is None:
+        window = np.full(binGrid.shape, np.diff(binGrid)[0])
+    else:
+        window = kwargs["binWindow"]
+
     binEdgeGrid = np.array(
-        [(bin - window / 2, bin + window / 2) for bin in binGrid]
+        [(bin - win / 2, bin + win / 2) for win, bin in zip(window, binGrid)]
     )
     binMasks = np.array(
-        [(wl >= lower) & (wl <= upper) for lower, upper in binEdgeGrid]
+        [(wl > lower) & (wl < upper) for lower, upper in binEdgeGrid]
     )
+
     to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
         if data[i].name not in to_interpolate:
@@ -1739,8 +1795,8 @@ def intpBinWavelength(
             binMasks,
             binEdgeGrid,
             wl,
-            average_error=average_error,
             exception=["STA_INDEX"],
+            **kwargs,
         )
 
 
