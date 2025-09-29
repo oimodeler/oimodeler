@@ -587,7 +587,7 @@ class oimFitterMinimize(oimFitter):
 
     def _run(self, **kwargs):
 
-        self.res = minimize(self._getChi2r, self.initialParams)
+        self.res = minimize(self._getChi2r, self.initialParams,**kwargs)
         # self.res = least_squares(self._getChi2r, self.initialParams,method=
         #                         self.params["method"].value)
         self.getResults()
