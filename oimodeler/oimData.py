@@ -800,7 +800,7 @@ class oimData(object):
             The matplotlib axe.
 
         """
-
+        print(axe)
         if removeFilter:
             data = self._data
         else:
@@ -813,7 +813,8 @@ class oimData(object):
             fig = axe.get_figure()
 
         if axe.name == "oimAxes":
-            axe.uvplot(data, **kwargs)
+            
+            axe.uvplot(data,axe=axe, **kwargs)
         else:
             raise TypeError(
                 "Matplotlib axe wasn't created with projection='oimAxes'"

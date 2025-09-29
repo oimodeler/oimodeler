@@ -1485,6 +1485,8 @@ class oimAxes(plt.Axes):
 
     def uvplot(self, oifits: fits.HDUList, **kwargs):
         """Plot the uv coverage of the oifits data."""
+        if "axe" in kwargs:
+            kwargs.pop("axe")
         uvPlot(oifits, axe=self, **kwargs)
 
     def oiplot(
