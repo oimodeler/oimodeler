@@ -532,7 +532,7 @@ For instance to use the Broyden–Fletcher–Goldfarb–Shanno (BFGS) algorithm:
    lmfit2 = oim.oimFitterMinimize(data, model, 
                      dataTypes=["VIS2DATA", "T3PHI"], method="BFGS")
 
-. note::
+.. note::
    One of the main advantages of the minimizer fitter is that it provides an alternative 
    estimation of the uncertainties on the free parameters, i.e., based on the covariance matrix, 
    compared to the MCMC method, which relies on the statistics of the posterior probability function.
@@ -540,6 +540,15 @@ For instance to use the Broyden–Fletcher–Goldfarb–Shanno (BFGS) algorithm:
 Regular Grid exploration
 ------------------------
 
+**oimodeler** implements, :func:`oimFitterGrid <oimodeler.oimFitter.oimFitterGrid>`, a simple tool to 
+create grids of :math:`\chi^2_r` as a function of parameters values. Here we explain how to use this fitter to 
+explore the parameter space of two set of data:
+ 
+- VLTI/PIONIER of the stellar surfacxe  of the giant star Canopus.
+- VLTI/MATISSE data of the binary star 94 Aqr.
+
+The code is available on the **oimodeler** github: `gridFitting.py <https://github.com/oimodeler/oimodeler/tree/main/examples/Modules/gridFitting.py>`_ .
+:
 
 
 Dynesty fitter
