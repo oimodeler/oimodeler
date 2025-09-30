@@ -734,7 +734,8 @@ Finally, we create a new 2D grid fitter with the same parameters as before and p
 .. code-block:: ipython3
       
    grid3 = oim.oimFitterRegularGrid(data,mpldd,dataTypes=["VIS2DATA","T3PHI"])
-   grid3.prepare(params=[pld.params["d"],pld.params["a"]],min=[6,0],max=[9,2],steps=[0.05,0.05])
+   grid3.prepare(params=[pld.params["d"],pld.params["a"]],
+                 min=[6,0],max=[9,2],steps=[0.05,0.05])
    grid3.run()
 
    fig_grid3, ax_grid3 = grid3.plotMap(plotContour=True,
@@ -756,14 +757,15 @@ Let's finish this section by having a look at some binary data.
 Dynesty fitter
 --------------
 
-The ``oimodeler`` package also implements :func:`oimFitterDynesty <oimodeler.oimFitter.oimFitterDynesty>`, 
+The **oimodeler** package also implements :func:`oimFitterDynesty <oimodeler.oimFitter.oimFitterDynesty>`, 
 a fitter based on the `dynesty <https://dynesty.readthedocs.io/>`_ package. This fitter uses 
 Dynamic Nested Sampling (DNS) to estimate Bayesian posteriors and model evidences.
 
 Documentation on that fitter will be added later.
 
-About Uncertainties on the best-fit parameters
-----------------------------------------------
+
+About uncertainties on parameters
+---------------------------------
 
 
 
