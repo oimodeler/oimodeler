@@ -154,3 +154,6 @@ classes deriving from a parent class.
 
 
 These functions can be used to test which components are available in your version of **oimodeler**
+
+By default the functions only returns the list of the features available. Specifying  details=True will 
+return a additionnal information such as a description and the list of parameters.

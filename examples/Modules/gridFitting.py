@@ -8,7 +8,7 @@ Created on Wed Sep 24 14:02:23 2025
 import oimodeler as oim
 from pathlib import Path
 import matplotlib.pyplot as plt
-
+import matplotlib.colors as colors
 
 dir0=Path(__file__).parents[2]
 dirdata= dir0 / "data" / "realData"
@@ -21,18 +21,18 @@ fdata = list((dirdata / "PIONIER"/ "canopus" ).glob("*.fits"))
 
 data = oim.oimData(fdata)
 
-fig,ax = plt.subplots(1,2,subplot_kw=dict(projection='oimAxes'),figsize=(15,6))
+fig,ax = plt.subplots(1,2,subplot_kw=dict(projection='oimAxes'),
+                      figsize=(15,6))
 data.uvplot(color="byBaseline",axe=ax[0])
-data.plot("SPAFREQ","VIS2DATA",color="byBaseline",axe=ax[1],xunit="cycle/mas",errorbar=True)
+data.plot("SPAFREQ","VIS2DATA",color="byBaseline",axe=ax[1],
+          xunit="cycle/mas",errorbar=True)
 ax[1].set_yscale("log")
-fig.savefig(dirdata / "gridFitting_uv_and_v2_plot.png")
+fig.savefig(dirplot / "gridFitting_uv_and_v2_plot.png")
 
 #%%
 ud = oim.oimUD(d=45)
 mud = oim.oimModel(ud)
 mud.normalizeFlux()
-
-
 
 grid = oim.oimFitterRegularGrid(data,mud,dataTypes=["VIS2DATA","T3PHI"])
 grid.prepare(params=[ud.params["d"]],min=[6],max=[9],steps=[0.05])
@@ -70,7 +70,7 @@ grid2 = oim.oimFitterRegularGrid(data,mpldd,dataTypes=["VIS2DATA","T3PHI"])
 grid2.prepare(params=[pld.params["d"],pld.params["a"]],min=[6,0],max=[9,2],steps=[0.05,0.05])
 grid2.run()
 #%%
-import matplotlib.colors as colors
+
 
 fig2_grid2, ax_grid2 = grid2.plotMap(plotContour=True,
                                      contour_kwargs=dict(levels=[2,4]),
@@ -93,3 +93,24 @@ ax_sim2[0].set_yscale("log")
 ax_sim2[0].set_ylim(1e-4,1)
 fig_sim2.savefig(dirplot / "gridFitting_simulator2.png")
 #%%
+filt_B = oim.oimFlagWithExpressionFilter(expr="LENGTH>40")
+data.setFilter(filt_B)
+
+fig,ax = data.plot("SPAFREQ","VIS2DATA",color="byBaseline")
+ax.legend()
+fig.savefig(dirplot / "gridFitting_v2_B40.png")
+#%%
+grid3 = oim.oimFitterRegularGrid(data,mpldd,dataTypes=["VIS2DATA","T3PHI"])
+grid3.prepare(params=[pld.params["d"],pld.params["a"]],min=[6,0],max=[9,2],steps=[0.05,0.05])
+grid3.run()
+
+fig_grid3, ax_grid3 = grid3.plotMap(plotContour=True,
+                                     contour_kwargs=dict(levels=[2,4]),
+                                     norm=colors.LogNorm(),cmap="plasma")
+fig_grid3.savefig(dirplot / "gridFitting_grid2D_B40.png")
+
+#%%
+
+
+
+

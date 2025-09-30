@@ -541,18 +541,229 @@ Regular Grid exploration
 ------------------------
 
 **oimodeler** implements, :func:`oimFitterGrid <oimodeler.oimFitter.oimFitterGrid>`, a simple tool to 
-create grids of :math:`\chi^2_r` as a function of parameters values. Here we explain how to use this fitter to 
-explore the parameter space of two set of data:
- 
-- VLTI/PIONIER of the stellar surfacxe  of the giant star Canopus.
-- VLTI/MATISSE data of the binary star 94 Aqr.
+create grids of :math:`\chi^2_r` as a function of parameters values. 
 
-The code is available on the **oimodeler** github: `gridFitting.py <https://github.com/oimodeler/oimodeler/tree/main/examples/Modules/gridFitting.py>`_ .
-:
+Here, we explain how to use this fitter to explore the parameter space of omdels of the stellar surface of the giant 
+star Canopus observed by VLTI/PIONIER instrument.
+
+The code is available on the **oimodeler** github:
+`gridFitting.py <https://github.com/oimodeler/oimodeler/tree/main/examples/Modules/gridFitting.py>`_ .
+
+Let's first load the data and plot the uu plan and the square visibility:
+
+.. code-block:: ipython3
+
+   data = oim.oimData(fdata)
+
+   fig,ax = plt.subplots(1,2,subplot_kw=dict(projection='oimAxes'),
+                        figsize=(15,6))
+   data.uvplot(color="byBaseline",axe=ax[0])
+   data.plot("SPAFREQ","VIS2DATA",color="byBaseline",
+            axe=ax[1],xunit="cycle/mas",errorbar=True)
+   ax[1].set_yscale("log")
+
+.. image:: ../../images/gridFitting_uv_and_v2_plot.png
+   :alt: Alternative text
+
+
+The visibility plot show that Canopus is over-resolved by most of the baselines and we clearly see the 
+second and third lobe of the visibility so that we should be able to constrain the limb-darkening.
+
+But first, we'll fit the data using a uniform disk model. Let's build this model
+
+.. code-block:: ipython3
+
+   ud = oim.oimUD()
+   mud = oim.oimModel(ud)
+   mud.normalizeFlux()
+
+We will use  :func:`oimFitterGrid <oimodeler.oimFitter.oimFitterGrid>` fitter to explore the unique 
+parameter of this model: the uniform disk diameter.
+
+First, as for all **oimodeler** fitters, we create the instance and give it some data and some model.
+We can specify  which data types should be included in the :math:`\chi^2_r` computation using the 
+``dataTypes`` option. Here we chose to include both the square visibility and closure phase.
+
+.. code-block:: ipython3
+
+   grid = oim.oimFitterRegularGrid(data,mud,dataTypes=["VIS2DATA","T3PHI"])
+
+We then prepare the grid by specifying :
+
+- the parameter(s) to explore using the ``params`` options.
+- range to explore for each parameter using the ``min`` and ``max`` options.
+- the ``steps`` size for each parameter, here 0.05 mas.
+
+Finally, we can run the grid:
+
+.. code-block:: ipython3
+
+   grid.run()
+
+This one-dimensional grid is fast to compute, as there are only 62 models for which
+the :math:`\chi^2_r` needs to be evaluated.
+
+
+We can now plot the result using the :func:`oimFitterGrid.plotMap <oimodeler.oimFitter.oimFitterGrid.plotMap>` 
+method. 
+
+.. code-block:: ipython3
+
+   fig_grid, ax_grid = grid.plotMap()
+   ax_grid.set_yscale("log")
+
+
+.. image:: ../../images/gridFitting_grid1D.png
+   :alt: Alternative text
+
+The "best-fit" from the grid exploration can be returned using the 
+:func:`oimFitter.getResults <oimodeler.oimFitter.oimFitter>`
+:func:`oimFitter.getResults <oimodeler.oimFitter.oimFitter.getResults>` or
+:func:`oimFitter.plotResults <oimodeler.oimFitter.oimFitter.plotResults>` mehtods.
+
+.. code-block:: ipython3
+
+   grid.printResults()
+
+.. parsed-literal::
+
+   d = 7.00000 mas
+   chi2r = 11.97244
+
+.. note::
+
+   Unlike other fitters, no uncertainties are computed from the grid exploration, and the best-fit
+   parameters obtained do not correspond to a true :math:`\chi^2_r` minimum, but are limited by the step size. 
+
+In order to go beyond this limit one can combined the :func:`oimFitterGrid <oimodeler.oimFitter.oimFitterGrid>` 
+with a :func:`oimFitterMinimize<oimodeler.oimFitter.oimFitterMinimize>` fitter.
+
+Our starting point for the :math:`\chi^2_r` minimizer is the best-fit parameter from the grid.
+
+.. code-block:: ipython3
+
+   miniz = oim.oimFitterMinimize(data,mud,dataTypes=["VIS2DATA","T3PHI"])
+   miniz.prepare()
+   miniz.run()
+   miniz.printResults()
+
+.. parsed-literal::
+
+   c1_UD_d = 7.02461 ± 0.00118 mas
+   chi2r = 11.65689
+
+
+We can now plot the fitted data using the :func:`oimSimulator.plot <oimodeler.oimSimulator.oimSimulator.plot>` method
+
+.. code-block:: ipython3
+
+   fig_sim, ax_sim = grid.simulator.plot(["VIS2DATA","T3PHI"])
+   ax_sim[0].set_yscale("log")
+   ax_sim[0].set_ylim(1e-4,1)
+
+.. image:: ../../images/gridFitting_simulator.png
+   :alt: Alternative text
+
+Let's now perform a 2D grid exploration using the power-law limb darkened model.
+
+
+.. code-block:: ipython3
+
+   pld = oim.oimPowerLawLDD()
+   mpldd=oim.oimModel(pld)
+   mpldd.normalizeFlux()
+
+   grid2 = oim.oimFitterRegularGrid(data,mpldd,dataTypes=["VIS2DATA","T3PHI"])
+   grid2.prepare(params=[pld.params["d"],pld.params["a"]],min=[6,0],max=[9,2],steps=[0.05,0.05])
+   grid2.run()
+
+Here we explore the limb-darkened diameter ``d`` and the limb-darkened power ``a``.
+
+We then plot the resulting 2D map of the :math:`\chi^2_r`. 
+
+.. code-block:: ipython3
+
+   fig2_grid2, ax_grid2 = grid2.plotMap(plotContour=True,
+                                       contour_kwargs=dict(levels=[2,4]),
+                                       norm=colors.LogNorm(),cmap="plasma")
+
+.. image:: ../../images/gridFitting_grid2D.png
+   :alt: Alternative text
+
+
+As seen in the example above the :func:`oimFitterGrid.plotMap <oimodeler.oimFitter.oimFitterGrid.plotMap>` 
+method allows some plot customization:
+- ``plotContour`` allows to plot contours of :math:`\chi^2_r`
+- ``contour_kwargs`` are keywords passed to the `matplotlib contour function <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.contour.html>`_
+- ``norm`` allows the image `colors normalization <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.contour.html>`_
+
+.. note::
+
+   The ``levels`` are defined as multiples of the minimum :math:`\chi^2_r`.
+   In this case, we have plotted the contours at 2 and 4 times the minimum :math:`\chi^2_r`.
+
+
+Grid exploration isparticularly interesting to vizualize:
+- correlations or even degeneracy between  parameters
+- the presence of multiple :math:`\chi^2_r` local minima
+
+In the plot above, we clearly see a correlation between the disk diameter ``d`` and the exponent ``a`` of the 
+limb-darkening law. This correlation would become a degeneracy if we did not have measurements beyond 
+the first zero of the visibility.
+
+Let's filter out the baselines longer than 40m using the 
+:func:`oimFlagWithExpressionFilter <oimodeler.oimDataFilter.oimFlagWithExpressionFilter>` filter.
+
+.. code-block:: ipython3
+
+   filt_B = oim.oimFlagWithExpressionFilter(expr="LENGTH>40")
+   data.setFilter(filt_B)
+
+We plot the ``VIS2DATA`` to verify that we do not reach the first zero of the visibility.
+
+   fig,ax = data.plot("SPAFREQ","VIS2DATA",color="byBaseline")
+   ax.legend()
+
+.. image:: ../../images/gridFitting_v2_B40.png
+   :alt: Alternative text
+
+
+Finally, we create a new 2D grid fitter with the same parameters as before and plot the resulting
+:math:`\chi^2_r` map.
+
+.. code-block:: ipython3
+      
+   grid3 = oim.oimFitterRegularGrid(data,mpldd,dataTypes=["VIS2DATA","T3PHI"])
+   grid3.prepare(params=[pld.params["d"],pld.params["a"]],min=[6,0],max=[9,2],steps=[0.05,0.05])
+   grid3.run()
+
+   fig_grid3, ax_grid3 = grid3.plotMap(plotContour=True,
+                                       contour_kwargs=dict(levels=[2,4]),
+                                       norm=colors.LogNorm(),cmap="plasma")
+
+
+.. image:: ../../images/gridFitting_grid2D_B40.png
+   :alt: Alternative text
+
+Now, we clearly see the degeneracy between the disk diameter ``d`` and the exponent ``a`` of the limb-darkening law, 
+which highlights the need to obtain measurements beyond the first zero of visibility to better constrain the 
+limb-darkening of stars.
+
+Let's finish this section by having a look at some binary data.
+
 
 
 Dynesty fitter
 --------------
 
-TODO
+The ``oimodeler`` package also implements :func:`oimFitterDynesty <oimodeler.oimFitter.oimFitterDynesty>`, 
+a fitter based on the `dynesty <https://dynesty.readthedocs.io/>`_ package. This fitter uses 
+Dynamic Nested Sampling (DNS) to estimate Bayesian posteriors and model evidences.
+
+Documentation on that fitter will be added later.
+
+About Uncertainties on the best-fit parameters
+----------------------------------------------
+
+
 
