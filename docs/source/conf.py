@@ -34,7 +34,7 @@ extensions = [
     'autodocsumm',
     'sphinx_rtd_theme',
     'matplotlib.sphinxext.plot_directive',
-    'myst_parser',
+    #'myst_parser',
     #'sphinx_gallery.gen_gallery',
 ]
 
