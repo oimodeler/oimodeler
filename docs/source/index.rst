@@ -17,22 +17,22 @@ Index
     Introduction
     ============
 
-The **oimodeler** project aims at developing a modular and easily expandable python-based
-modelling software for optical interferometry. The project started end of 2021, and the software is now in a fully functional beta version.
+The **oimodeler** project aims to develop modular, easily expandable Python software for optical
+interferometry modeling. Initiated in late 2021, it now offers a fully functional beta version.
 
-It allows to manipulate data in the OIFITS format, build complex models from various
-components, simulate data from the model at the spatial frequencies of your observations,
-compute chi2, perform model fitting (using mcmc or other fitters), and plot results easily.
+It supports manipulation of OIFITS format data, building complex models from diverse components,
+simulating data at observed spatial frequencies, computing chi2, performing fits (MCMC or others),
+and easy result plotting.
 
-Components can be defined in the image or Fourier plan using analytical formulas or precomputed images.
-Components or model parameters can be chromatic and/or time dependent.
+Components can be defined in image or Fourier space via analytical formulas or precomputed images.
+Model parameters or components may be chromatic and/or time-dependent.
 
-The software is modular and object oriented, in order to make it easy to expand it by creating new model components or other features from abstract classes.
+The software is modular and object-oriented, facilitating expansion by creating new components or
+features from abstract classes.
 
-**oiomdeler** was presented at the 2024 SPIE conference in Yokohama (paper on
-(`HAL <https://cnrs.hal.science/hal-04797236>`_, `ADS <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/abstract>`_, `BibTeX <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/exportcitation>`_).
-
-
+**oimodeler** was presented at the 2024 SPIE conference in Yokohama (paper on
+(`HAL <https://cnrs.hal.science/hal-04797236>`_, `ADS <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/abstract>`_,
+`BibTeX <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/exportcitation>`_).
 
 .. image:: _static/oimComponents.png
   :alt: Alternative text
@@ -46,6 +46,13 @@ The software is modular and object oriented, in order to make it easy to expand 
    modularity
    installation
    getting_started
+
+
+.. toctree::
+   :hidden: 
+   :caption: Examples   
+   
+   notebooks
     
 .. toctree:: 
    :hidden:
@@ -66,11 +73,6 @@ The software is modular and object oriented, in order to make it easy to expand 
    expanding
 
 
-.. toctree::
-   :hidden: 
-   :caption: Examples   
-   
-   notebooks
    
 .. toctree:: 
    :hidden: 

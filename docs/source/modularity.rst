@@ -5,33 +5,34 @@ Modularity & Expandability
 
 
 Description oimodeler modules
---------------------------
+-----------------------------
 
-As described in the following and shown in the diagram below, **oimodeler** is a
-modular software:
+As described below and shown in the diagram, **oimodeler** is a modular software:
 
-- Models can be created with the :mod:`oimModel <oimodeler.oimModel>` module and various
-  base components contained in the :mod:`oimComponent <oimodeler.oimComponent>` module
-  which contain model parameters from the :mod:`oimParam <oimodeler.oimParam>` module.
-- Interferometric data can be loaded with functionality from the :mod:`oimData <oimodeler.oimData>`
-  module from standard OIFITS files. This module also allows to load flux/spectra in
-  various formats with the :func:`oimData.oimData <oimodeler.oimData>` class that can
-  optionallly be filtered using the :func:`oimData.oimDataFilter <oimodeler.oimData.oimDataFilter>`
-  class with various filters from the :mod:`oimDataFilter <oimodeler.oimDataFilter>` module.
-- Data simulation/calculation can be done with the :mod:`oimSimulator <oimodeler.oimSimulator>` module
-  that takes :func:`oimData.oimData <oimodeler.oimData.oimData>` and
-  :func:`oimModel.oimModel <oimodeler.oimModel.oimModel>` classes as input to simulate
-  data from the model at the same spatial/spectral coordinates as the data. The module
-  also allows to compute the model/data chi2.
-- The fitting is done with fitters contained in the :mod:`oimFitter <oimodeler.oimFitter>`
-  module that as its input also takes the :func:`oimData.oimData <oimodeler.oimData.oimData>`
-  and :func:`oimModel.oimModel <oimodeler.oimModel.oimModel>` classes to perform model
-  fitting.
-- The :mod:`oimPlots <oimodeler.oimPlots>` module contains plotting functions for
-  OIFITS data and **oimodeler** objects.
-- The :mod:`oimUtils <oimodeler.oimUtils>` module contains various functions to
-  manipulate OIFITS data.
+- Models are created with the :mod:`oimModel <oimodeler.oimModel>` module and base components in 
+  :mod:`oimComponent <oimodeler.oimComponent>`, which include model parameters from 
+  :mod:`oimParam <oimodeler.oimParam>`.
 
+- Interferometric data can be loaded from standard OIFITS files using the :mod:`oimData <oimodeler.oimData>` 
+  module. This also supports loading flux/spectra in various formats with the 
+  :func:`oimData.oimFluxData <oimodeler.oimFluxData>` class, which can be optionally filtered by the 
+  :func:`oimData.oimDataFilter <oimodeler.oimData.oimDataFilter>` class, using filters from the 
+  :mod:`oimDataFilter <oimodeler.oimDataFilter>` module.
+
+- Data simulation and calculation are handled by the :mod:`oimSimulator <oimodeler.oimSimulator>` module, 
+  which takes :func:`oimData.oimData <oimodeler.oimData.oimData>` and 
+  :func:`oimModel.oimModel <oimodeler.oimModel.oimModel>` objects as input to simulate data at the same 
+  spatial and spectral coordinates as the observations. It also computes model/data chi2.
+
+- Model fitting is performed by fitters in the :mod:`oimFitter <oimodeler.oimFitter>` module, which also 
+  takes :func:`oimData.oimData <oimodeler.oimData.oimData>` and 
+  :func:`oimModel.oimModel <oimodeler.oimModel.oimModel>` classes as input.
+
+- The :mod:`oimPlots <oimodeler.oimPlots>` module provides plotting functions for OIFITS data and 
+  **oimodeler** objects.
+
+- The :mod:`oimUtils <oimodeler.oimUtils>` module contains various utility functions for manipulating 
+  OIFITS data.
 .. image:: _static/diagram.png
   :alt: Alternative text
 
@@ -39,38 +40,36 @@ modular software:
 oimModel
 ^^^^^^^^
 
-The :mod:`oimModel <oimodeler.oimModel>` module is dedicated to the creation of
-models for optical interferometry. The models are modular and composed of one or many
-:func:`oimComponent.oimComponent <oimodeler.oimComponent.oimComponent>` objects.
-They can produce complex coherent flux and images and can subsequently be plugged into 
-an :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>` object and/or
-any of the fitters contained in the :mod:`oimFitter <oimodeler.oimFitter>`
-for data analysis and/or modelling. See :ref:`model` section for more details.
+The :mod:`oimModel <oimodeler.oimModel>` module focuses on creating models for optical interferometry. 
+Models are modular and consist of one or more 
+:func:`oimComponent.oimComponent <oimodeler.oimComponent.oimComponent>` objects. They can generate 
+complex coherent fluxes and images, which can then be integrated into an 
+:func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>` object and/or any fitter in the 
+:mod:`oimFitter <oimodeler.oimFitter>` module for data analysis and modeling. See the :ref:`model` 
+section for more details.
+
 
 oimComponent
 ^^^^^^^^^^^^
 
-The :mod:`oimComponent <oimodeler.oimComponent>` module deals with model components
-that can be defined analytically in the Fourier plane (e.g., Uniform Disks, 
-2D-Gaussian distribution, etc.) or image plane (useful if there exists no analytical
-formula in the Fourier plane). An :mod:`oimComponent <oimodeler.oimComponent>`
-can also be used to wrap external code (functions computing images,
-radial profiles, and hyperspectral cubes), or image-fit files (for instance
-produced using a radiative transfer model). An :mod:`oimComponent <oimodeler.oimComponent>`
-can, in addition, be easily inherited from to create new custom components.
+The :mod:`oimComponent <oimodeler.oimComponent>` module manages model components that can be defined 
+analytically in the Fourier plan (e.g., Uniform Disks, 2D Gaussian distributions) or in the image plane 
+(useful when no analytical Fourier formula exists). An :mod:`oimComponent <oimodeler.oimComponent>` can 
+also wrap external code, such as functions computing images, radial profiles, or hyperspectral cubes, 
+or image-fit files (e.g., from radiative transfer models). Additionally, components can be easily 
+inherited to create new custom components.
 
 oimParam
 ^^^^^^^^
 
-The :mod:`oimParam <oimodeler.oimParam>` module contains basic model parameters. It 
-:func:`oim.Param.oimParam <oimodeler.oimParam.oimParam>` class is used for the
-definition of components' parameters (Built from any of the base classes from the
-:mod:`oimComponent <oimodeler.oimComponent>` module). There are also parameter linkers
-(:func:`oimParam.oimParamLinker <oimodeler.oimParam.oimParamLinker>`) as well as
-normalizers (:func:`oimParam.oimParamNormalize <oimodeler.oimParam.oimParamNormalize>`),
-and advanced parameter interpolators 
-(:func:`oimParam.oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>`)
-that allow to build chromatic and time dependent models. 
+The :mod:`oimParam <oimodeler.oimParam>` module contains basic model parameters. Its 
+:func:`oimParam.oimParam <oimodeler.oimParam.oimParam>` class defines component parameters 
+(based on base classes from the :mod:`oimComponent <oimodeler.oimComponent>` module). It also 
+includes parameter linkers (:func:`oimParam.oimParamLinker <oimodeler.oimParam.oimParamLinker>`), 
+normalizers (:func:`oimParam.oimParamNormalize <oimodeler.oimParam.oimParamNormalize>`), and advanced 
+interpolators (:func:`oimParam.oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>`) 
+that enable building chromatic and time-dependent models.
+
 
 oimData
 ^^^^^^^
@@ -85,80 +84,71 @@ but also provide optimization of the data as vector/structure for faster model f
 oimFluxData
 ^^^^^^^^^^^
 
-The :mod:`oimFluxData <oimodeler.oimFluxData>` module is dedicated to the import of 
-spectroscopic and photometric data into to use in a oimodeler simulation or fit.
-It converts normalized or calibrated flux measurement into the OIFITS format OI_FLUX table 
-so that they can be added to a oimData object.  
+The :mod:`oimData <oimodeler.oimData>` module encapsulates interferometric, photometric, and spectroscopic data. 
+The :func:`oimData.oimData <oimodeler.oimData.oimData>` class holds the original OIFITS data as a list of 
+`astropy.io.fits.hdulist <https://docs.astropy.org/en/stable/io/fits/api/hdulists.html>`_ objects and 
+also provides optimized data structures (vectors) for faster model fitting.
 
 
 oimDataFilter
 ^^^^^^^^^^^^^
 
-The :mod:`oimDataFilter <oimodeler.oimDataFilter>` module is dedicated to filtering and
-modifying data contained in :func:`oimData.oimData <oimodeler.oimData.oimData>` classes.
-It allows data selection (truncating, removing arrays, and flagging)
-based on various criteria (wavelengths, SNR ...), and other data manipulation, such as
-smoothing and binning of the data, errors computation ...
+The :mod:`oimDataFilter <oimodeler.oimDataFilter>` module handles filtering and modifying data within 
+:func:`oimData.oimData <oimodeler.oimData.oimData>` classes. It supports data selection (truncation, 
+array removal, flagging) based on criteria like wavelength or SNR, as well as data manipulation 
+methods such as smoothing, binning, and error computation.
+
 
 oimSimulator
 ^^^^^^^^^^^^
 
-The :mod:`oimSimulator <oimodeler.oimSimulator>` module is the basic module for model
+The :mod:`oimSimulator <oimodeler.oimSimulator>` module is the core for comparing models 
 (:func:`oimModel.oimModel <oimodeler.oimModel.oimModel>`) and data 
-(:func:`oimData.oimData <oimodeler.oimData.oimData>`) comparison. It allows to
-simulate a new dataset  with the same quantities and spatial/spectral coordinates 
-of the data and a model. It also allows to compute ``chi2`` for data and model comparison. 
-The :func:`oimSimulator.oimSimulator <oimodeler.oimSimulator.oimSimulator>`
-class is fully compatible with the OIFITS2 format and can simulated any kind of data type
-from an OIFITS file (VIS2DATA, VISAMP in absolute, differential and correlated
-flux...).
+(:func:`oimData.oimData <oimodeler.oimData.oimData>`). It simulates datasets with matching 
+quantities and spatial/spectral coordinates from both data and model. It also computes :math:`\chi^2_r`
+for comparison. The :func:`oimSimulator.oimSimulator <oimodeler.oimSimulator.oimSimulator>` class 
+is fully compatible with OIFITS2 and can simulate any data type from an OIFITS file 
+(e.g., VIS2DATA, VISAMP in absolute, differential, and correlated flux).
 
 oimFitter
-^^^^^^^^^
 
-The :mod:`oimFitter <oimodeler.oimFitter>` module is dedicated to model fitting. The
-parent class :func:`oimFitter.oimFitter <oimodeler.oimFitter.oimFitter>` is an abstract
-class that can be inherited from to implement various fitters. Current fitters includes 
-a MCMC sampler based on the famous emcee library, a simple grid exploration, and a 
-simple minimizer based on scipy minimize function.
+^^^^^^^^^
+The :mod:`oimFitter <oimodeler.oimFitter>` module is dedicated to model fitting. The parent class 
+:func:`oimFitter.oimFitter <oimodeler.oimFitter.oimFitter>` is an abstract class to be inherited 
+for implementing various fitters. Current fitters include an MCMC sampler based on the popular 
+emcee library, a simple grid search, and a minimizer using the scipy minimize function.
 
 oimPlots
 ^^^^^^^^
 
-The :mod:`oimPlots <oimodeler.oimPlots>` module contains various plotting tools for
-OIFITS data and ``oimodeler`` objects. The :func:`oimPlots.oimAxes <oimodeler.oimPlots.oimAxes>`
-is a subclass of the 
-`matplotlib.pyplot.Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.axes.html>`_
-class with methods dedicated to produce plotted OIFITS data from the 
-`astropy.io.fits.hdulist <https://docs.astropy.org/en/stable/io/fits/api/hdulists.html>`_
-format.
+The :mod:`oimPlots <oimodeler.oimPlots>` module provides plotting tools for OIFITS data and 
+**oimodeler** objects. The :func:`oimPlots.oimAxes <oimodeler.oimPlots.oimAxes>` subclass extends 
+`matplotlib.pyplot.Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.axes.html>`_ 
+with methods tailored to plot OIFITS data from the 
+`astropy.io.fits.hdulist <https://docs.astropy.org/en/stable/io/fits/api/hdulists.html>`_ format.
 
 oimUtils
 ^^^^^^^^
 
-The :mod:`oimUtils <oimodeler.oimUtils>` module contains various functions to
-manipulate OIFITS data such as,
+The :mod:`oimUtils <oimodeler.oimUtils>` module contains functions to manipulate OIFITS data, such as:
 
-- Retrieving baselines names, length, orientation, getting spatial frequencies
+- Retrieving baseline names, lengths, orientations, and spatial frequencies
 - Creating new OIFITS arrays in 
-  `astropy.io.fits.hudlist <https://docs.astropy.org/en/stable/io/fits/api/hdulists.html>`_
-  format.
-
+  `astropy.io.fits.hdulist <https://docs.astropy.org/en/stable/io/fits/api/hdulists.html>`_ format
 and more.
 
 
 Expandability
 -------------
 
-**oimodeler** is written to allow easy implementation of new model components,
-fitters, data filters, parameter intepolators, data importer (e.g., for non-OIFITS
-format data), and plots. 
+**oimodeler** is designed for easy implementation of new model components, fitters, data filters, 
+parameter interpolators, data importers (e.g., for non-OIFITS formats), and plotting tools.
 
-Feel free to contact `Anthony Meilland <mailto://ame@oca.eu>`_ 
-if you developped custom features and want them to be included in the **oimodeler** 
-distribution or make a pull-request on the 
-`Github repository <https://github.com/oimodeler/oimodeler>`_ and become a **oimodeler** contributer. 
+Feel free to contact `Anthony Meilland <mailto://ame@oca.eu>`_ if you develop custom features and 
+would like them included in the **oimodeler** distribution. Alternatively, submit a pull request 
+on the `GitHub repository <https://github.com/oimodeler/oimodeler>`_ and become an **oimodeler** 
+contributor.
 
-For bug-reports and feature requests,
-please use the `GitHub issue tracker <https://github.com/oimodeler/oimodeler/issues>`_.
+For bug reports and feature requests, please use the 
+`GitHub issue tracker <https://github.com/oimodeler/oimodeler/issues>`_.
 
