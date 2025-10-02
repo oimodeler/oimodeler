@@ -525,6 +525,7 @@ class oimData(object):
             print("\u2500" * 80)
             for iarr, arri in enumerate(datai):
                 if arri.name in _oimDataTypeArr:
+                    insname = arri.header["INSNAME"]
                     txt = f"{iarr})\t {arri.name.ljust(8)}:\t "
                     info = {"arr": arri.name, "idx": iarr}
                     if arri.name == "OI_VIS2":
@@ -538,8 +539,9 @@ class oimData(object):
                             nB = np.shape(arri.data["FLUXDATA"])
                         except Exception:
                             nB = np.shape(arri.data["FLUX"])
-                    txt += f"(nB,n\u03bb) = {nB} "
-                    txt += f"\t dataTypes = {oimDataCheckData(arri)}"
+                    txt += f"(nB,n\u03bb) = {nB} ".ljust(20)
+                    txt += f"\t dataTypes = {oimDataCheckData(arri)}".ljust(35)
+                    txt += f"\t insname = {insname}"
                     print(txt)
         print("\u2550" * 80)
 
