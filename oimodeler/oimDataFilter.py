@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Data filtering/modifying"""
 import numpy as np
+from fnmatch import fnmatch
 
 from .oimUtils import (
     _oimDataType,
@@ -60,6 +61,14 @@ class oimDataFilterComponent:
         for datai in [data[i] for i in idx]:
             self._filteringFunction(datai)
 
+    def __str__(self):
+        txt=self.name 
+        for key,value in self.params.items():
+            txt+="\n"
+            txt+= f"{key}:".ljust(10)
+            txt+= f"{value}"
+        return txt
+        
 
 class oimDataFilter:
     """Class for data filter stack"""
@@ -107,12 +116,17 @@ class oimRemoveInsnameFilter(oimDataFilterComponent):
 
     def _filteringFunction(self, data):
         to_remove = []
+        insnameToRemove = self.params["insname"]
+        if type(insnameToRemove)!=type([]):
+            insnameToRemove=[insnameToRemove]
+        #print(insnameToRemove)
         for di in data:
-
             if "INSNAME" in di.header:
-                if di.header["INSNAME"] == self.params["insname"]:
-                    to_remove.append(di)
+                for insnamei in insnameToRemove:   
+                    if fnmatch(di.header["INSNAME"],insnamei):
+                        to_remove.append(di)
 
+        
         for di in to_remove:
             data.pop(di)
 

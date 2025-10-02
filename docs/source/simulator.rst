@@ -247,12 +247,12 @@ Such plot are very useful to plot high spectral resolution observation center on
 :math:`alpha` Col VLTI/AMBER observation and modelling with a rotating disk model as described in the examples section.
 
 
-Finally, residuals can be plotted using the :func:`plot_residuals <oimodeler.oimSimulator.oimSimulator.plot_residuals>`
+Finally, residuals can be plotted using the :func:`plot_residuals <oimodeler.oimSimulator.oimSimulator.plotResiduals>`
 method.
 
 .. code-block:: ipython3
 
-    fig2, ax2 = sim.plot_residuals(["VIS2DATA", "T3PHI"])
+    fig2, ax2 = sim.plotResiduals(["VIS2DATA", "T3PHI"])
 
 .. image:: ../../images/ExampleOimSimulator_residuals_plot.png
   :alt: Alternative text
