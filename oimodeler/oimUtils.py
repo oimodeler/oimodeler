@@ -2337,7 +2337,7 @@ def setMinimumError(
     extnames = np.unique([getDataArrname(dti) for dti in dataTypes])
     for datai in data[1:]:
         if datai.name in extnames:
-            if datai.header["EXTVER"] in extver or extver == [None]:
+            if datai.header.get("EXTVER", 1) in extver or extver == [None]:
 
                 for dataTypei in getDataType(datai.name):
                     if dataTypei in dataTypes:
