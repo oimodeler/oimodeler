@@ -1,0 +1,11 @@
+name;Short description;Class Keywords
+oimRemoveArrayFilter;Removing arrays by type: OI_VIS2, OI_T3...; target, arr
+oimWavelengthRangeFilter;Cutting wavelength range(s); target, arr, wlRange, addCut
+oimDataTypeFilter;Filtering by datatype(s)  : VIS2DATA, VISAMP...; target, arr, dataType
+oimKeepDataType;Keeping datatype(s)  : VIS2DATA, VISAMP...; target, arr, dataType,  removeArrIfPossible
+oimWavelengthShiftFilter;shifting wavelength; target, arr, wlShift
+oimWavelengthSmoothingFilter;Spectral smoothing; target, arr, smoothPix, normalizeError
+oimWavelengthBinningFilter;Spectral Binning; target, arr, bin, normalizeError
+oimFlagWithExpressionFilter;Flaging based on boolean expressions; target, arr, expr, keepOldFlag
+oimDiffErrFilter;Differential error from std  inside or outside a range; target, arr, dataType, ranges, rangeType, excludeRange
+oimSetMinErrFilter;Set minimum error on data in % for vis ans deg for phases; target, arr, dataType, values

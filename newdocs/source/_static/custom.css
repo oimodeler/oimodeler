@@ -1,8 +1,0 @@
-@import 'css/theme.css';
-@import 'pygments.css';
-
-.wy-table-responsive table td {
-white-space: normal;
-}
-
-section.hide-me > h2 {display: none;}

@@ -173,8 +173,17 @@ class oimFitterEmcee(oimFitter):
         return initialParams
 
     def _run(self, **kwargs):
-        self.sampler.run_mcmc(self.initialParams, **kwargs)
+        if "reset" in kwargs:
+            if kwargs["reset"]==True:
+                state=self.initialParams
+        else:
+            if self.sampler.iteration==0:
+                state=self.initialParams
+            else:
+                state=None
+        self.sampler.run_mcmc(state, **kwargs)
         self.getResults()
+    
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
@@ -543,7 +552,7 @@ class oimFitterDynesty(oimFitter):
 
 class oimFitterMinimize(oimFitter):
     description = (
-        "a simple :math:`\chi^2` minimizer using the numpy Minimize function"
+        r"a simple :math:`\chi^2` minimizer using the numpy Minimize function"
     )
 
     def __init__(self, *args, **kwargs):
@@ -578,7 +587,7 @@ class oimFitterMinimize(oimFitter):
 
     def _run(self, **kwargs):
 
-        self.res = minimize(self._getChi2r, self.initialParams)
+        self.res = minimize(self._getChi2r, self.initialParams,**kwargs)
         # self.res = least_squares(self._getChi2r, self.initialParams,method=
         #                         self.params["method"].value)
         self.getResults()
@@ -618,7 +627,7 @@ class oimFitterMinimize(oimFitter):
 
 
 class oimFitterRegularGrid(oimFitter):
-    description = " regular grid with :math:`\chi^2` explorer"
+    description = r"regular grid with :math:`\chi^2` explorer"
 
     def __init__(self, *args, **kwargs):
 

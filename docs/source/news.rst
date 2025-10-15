@@ -3,6 +3,26 @@
 News and Changelog
 ==================
 
+2025-10-01
+----------
+
+v0.9.0:  2nd Beta Version
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+New Features:
+:::::::::::::
+
+- added :math:`\chi^2_r` grid exploration: :func:`oimFitterGrid <oimodeler.oimFitter.oimFitterGrid>`
+
+- added simple :math:`\chi^2_r` minimizer based on Minimize scipy function:  :func:`oimFitterMinimize <oimodeler.oimFitter.oimFitterMinimize>`
+
+- added Dynamic Nested Sampling fitter based on  `dynesty <https://dynesty.readthedocs.io/>`_ package :  :func:`oimFitterDynesty <oimodeler.oimFitter.oimFitterDynesty>`
+
+- New models: updated fast rotator, temperature gradient disk,
+
+- new residual plots for simulator: :func:`plotWithResidual <oimodeler.oimSimulator.oimSimulator.plotWithResidual>`
+
+- new documentation including examples from the 2024 VLTI School
 
 2023-07-12
 ----------

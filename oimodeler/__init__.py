@@ -16,9 +16,9 @@ from .oimComponent import *
 from .oimCustomComponents import *
 from .oimData import *
 from .oimDataFilter import *
+from .oimFTBackends import *
 from .oimFitter import *
 from .oimFluxData import *
-from .oimFTBackends import FFTWBackend, numpyFFTBackend, setFTBackend
 from .oimModel import *
 from .oimOptions import oimOptions
 from .oimParam import *
@@ -31,7 +31,7 @@ from .oimUtils import _oimDataType, _oimDataTypeArr, _oimDataTypeErr
 np.seterr(invalid="ignore")
 proj.register_projection(oimAxes)
 
-__version__ = "0.8.7"
+__version__ = "0.9.0"
 __pkg_dir__ = Path(inspect.getfile(inspect.currentframe())).parent
 
 if split(__pkg_dir__)[-1] == "":

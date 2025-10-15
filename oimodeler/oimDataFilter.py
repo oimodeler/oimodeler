@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Data filtering/modifying"""
 import numpy as np
+from fnmatch import fnmatch
 
 from .oimUtils import (
     _oimDataType,
@@ -10,8 +11,12 @@ from .oimUtils import (
     cutWavelengthRange,
     getDataArrname,
     getDataType,
+    intpBinWavelength,
     oifitsFlagWithExpression,
     oifitsKeepBaselines,
+    oifitsKeepTelescopes,
+    oifitsRemoveBaselines,
+    oifitsRemoveTelescopes,
     setMinimumError,
     shiftWavelength,
     spectralSmoothing,
@@ -56,6 +61,14 @@ class oimDataFilterComponent:
         for datai in [data[i] for i in idx]:
             self._filteringFunction(datai)
 
+    def __str__(self):
+        txt=self.name 
+        for key,value in self.params.items():
+            txt+="\n"
+            txt+= f"{key}:".ljust(10)
+            txt+= f"{value}"
+        return txt
+        
 
 class oimDataFilter:
     """Class for data filter stack"""
@@ -103,12 +116,17 @@ class oimRemoveInsnameFilter(oimDataFilterComponent):
 
     def _filteringFunction(self, data):
         to_remove = []
+        insnameToRemove = self.params["insname"]
+        if type(insnameToRemove)!=type([]):
+            insnameToRemove=[insnameToRemove]
+        #print(insnameToRemove)
         for di in data:
-
             if "INSNAME" in di.header:
-                if di.header["INSNAME"] == self.params["insname"]:
-                    to_remove.append(di)
+                for insnamei in insnameToRemove:   
+                    if fnmatch(di.header["INSNAME"],insnamei):
+                        to_remove.append(di)
 
+        
         for di in to_remove:
             data.pop(di)
 
@@ -263,15 +281,69 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["bin"] = 3
+        self.params["bin"] = None
+        self.params["binGrid"] = None
         self.params["normalizeError"] = True
         self._eval(**kwargs)
 
     def _filteringFunction(self, data):
         binWavelength(
             data,
-            self.params["bin"],
+            binsize=self.params["bin"],
             normalizeError=self.params["normalizeError"],
+        )
+
+
+class oimWavelengthIntpBinFilter(oimDataFilterComponent):
+    """Filter that bins the wavelength to a specified grid.
+    It also interpolates at the edges of the bins, to ensure a minimum
+    number of elements.
+
+    Parameters
+    ----------
+    binGrid : array_like
+        The grid to bin to.
+    binWindow : array_like, optional
+        The bin windows that correspond to the binGrid elements.
+        If None, computes the bin windows from the distance between two
+        elements in the binGrid. Default is None.
+    resetFlags : bool, optional
+        If True, resets the flags after binning. Default is True.
+    averageError : bool, optional
+        If True, forgoes error propagation and simply averages the errors
+        for each bin. Default is False.
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
+
+
+    """
+
+    name = "Wavelength Interpolation Binning Filter"
+    shortname = "WlIntpBinFilt"
+    description = (
+        "Binning to wavelength grid with interpolation at window edges."
+    )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["binGrid"] = None
+        self.params["binWindow"] = None
+        self.params["resetFlags"] = True
+        self.params["averageError"] = False
+        self.params["spectralChannels"] = 1
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        intpBinWavelength(
+            data,
+            self.params["binGrid"],
+            binWindow=self.params["binWindow"],
+            resetFlags=self.params["resetFlags"],
+            averageError=self.params["averageError"],
+            spectralChannels=self.params["spectralChannels"],
         )
 
 
@@ -302,7 +374,7 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
     """Select baselines to keep"""
 
     name = "Baseline selection filter"
-    shortname = "KeepBAselineFilt"
+    shortname = "KeepBaselinesFilt"
     description = "Selection based on baseline name(s)"
 
     def __init__(self, **kwargs):
@@ -317,6 +389,75 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
                 data,
                 arri,
                 self.params["baselines"],
+                keepOldFlag=self.params["keepOldFlag"],
+            )
+
+
+class oimRemoveBaselinesFilter(oimDataFilterComponent):
+    """Select baselines to remove"""
+
+    name = "Baseline selection filter"
+    shortname = "RemoveBAselineFilt"
+    description = "Selection based on baseline name(s)"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["baselines"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        for arri in self.params["arr"]:
+            oifitsRemoveBaselines(
+                data,
+                arri,
+                self.params["baselines"],
+                keepOldFlag=self.params["keepOldFlag"],
+            )
+
+
+class oimKeepTelescopesFilter(oimDataFilterComponent):
+    """Select telescopes to keep"""
+
+    name = "Telescopes selection filter"
+    shortname = "KeepTelescopesFilt"
+    description = "Selection based on telescope name(s)"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["telescopes"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        for arri in self.params["arr"]:
+            oifitsKeepTelescopes(
+                data,
+                arri,
+                self.params["telescopes"],
+                keepOldFlag=self.params["keepOldFlag"],
+            )
+
+
+class oimRemoveTelescopesFilter(oimDataFilterComponent):
+    """Select telescopes to remove"""
+
+    name = "Telescope selection filter"
+    shortname = "RemoveTelescopeFilt"
+    description = "Selection based on telescope name(s)"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.params["telescopes"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data):
+        for arri in self.params["arr"]:
+            oifitsRemoveTelescopes(
+                data,
+                arri,
+                self.params["telescopes"],
                 keepOldFlag=self.params["keepOldFlag"],
             )
 

@@ -8,3 +8,6 @@ corner
 autodocsumm
 pyFFTW
 sphinx_rtd_theme
+toml
+dynesty
+tqdm

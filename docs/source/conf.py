@@ -1,46 +1,30 @@
 # Configuration file for the Sphinx documentation builder.
 #
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
+# For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Path setup --------------------------------------------------------------
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
 import os
 import sys
 from pathlib import Path
-
 
 print("Python version")
 print (sys.version)
 sys.path.insert(0,str(Path(__file__).parent.parent.parent ))
 sys.path.insert(0,str(Path(__file__).parent.parent.parent / "oimodeler"))
+sys.path.insert(0,str(Path(__file__).parent.parent.parent / "examples" / "notebooks"))
 sys.path.insert(0,str(Path("sphinxext").resolve()))
 print(sys.path)
 
-import oimodeler as oim
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here.
-
-# -- Project information -----------------------------------------------------
 
 project = 'oimodeler'
-release = oim.__version__
-copyright = '2023, A. Meilland'
-author = 'A. Meilland'
+copyright = '2024, Anthony Meilland'
+author = 'Anthony Meilland'
+release = 'v1.0'
 
-print(f"OIMODELER v{release}")
-# -- General configuration ---------------------------------------------------
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.duration',
@@ -50,6 +34,8 @@ extensions = [
     'autodocsumm',
     'sphinx_rtd_theme',
     'matplotlib.sphinxext.plot_directive',
+    #'myst_parser',
+    #'sphinx_gallery.gen_gallery',
 ]
 
 napoleon_google_docstring = False
@@ -89,21 +75,15 @@ html_theme_options = {
 
 html_context = {
     'css_files': ['_static/custom.css'],
-}
+    }
 autodoc_member_order = 'bysource'
 # numpydoc_class_members_toctree = False
-"""
-autodoc_default_options = {
-    'members': 'var1, var2',
-    'member-order': 'bysource',
-    'special-members': '__init__',
-    'undoc-members': True,
-    'exclude-members': '__weakref__',
-    'show-inheritance': False
-}
-"""
+
 
 autodoc_default_options = {'autosummary': True,
                            'autosummary-no-nesting':False}
 
-
+#sphinx_gallery_conf = {
+#    'examples_dirs': ['../../examples/tests'],
+#    'gallery_dirs': ['auto_examples'],
+#}

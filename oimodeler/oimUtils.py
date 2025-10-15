@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
 import csv
+
+# from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -11,7 +13,7 @@ from astropy.coordinates import Angle
 from astropy.io import fits
 from astropy.modeling import models
 from astroquery.simbad import Simbad
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import circmean, circstd
 
 import oimodeler as oim
@@ -47,6 +49,7 @@ _cutArr = [
     "T3AMPERR",
     "T3PHI",
     "T3PHIERR",
+    "FLUX",
     "FLUXDATA",
     "FLUXERR",
     "FLAG",
@@ -749,6 +752,7 @@ def getBaselineLengthAndPA(
     squeeze: Optional[bool] = True,
     returnUV: Optional[bool] = False,
     T3Max: Optional[bool] = False,
+    showFlagged: Optional[bool] = True,
 ) -> Tuple[np.ndarray]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
@@ -792,6 +796,17 @@ def getBaselineLengthAndPA(
     for datai in data:
         if arr != "OI_T3":
             u, v = datai.data["UCOORD"], datai.data["VCOORD"]
+            if showFlagged == False:
+                flag = datai.data["FLAG"]
+                if (len(flag.shape) == 2) & (u.size == flag.shape[0]):
+                    flag = np.all(flag, axis=1)
+                    print(flag)
+                    print(u)
+                    u = u[np.logical_not(flag)]
+                    print(u)
+                    v = v[np.logical_not(flag)]
+                    print("****")
+
             ucoord.append(u)
             vcoord.append(v)
 
@@ -1416,7 +1431,7 @@ def shiftWavelength(
         data[i].data["EFF_WAVE"] += shift
 
 
-# TODO: For phases smoothing should be done in complex plan
+# TODO: For phases smoothing should be done in complex plane
 def spectralSmoothing(
     oifits: fits.HDUList,
     kernel_size: float,
@@ -1535,6 +1550,256 @@ def spectralSmoothing(
             pass
 
 
+def _intpBinning(
+    array: ArrayLike,
+    binMasks: ArrayLike,
+    binEdgeValues: ArrayLike,
+    values: Union[ArrayLike, None] = None,
+    nSpecChannels: float = 1.0,
+    circular: bool = False,
+    **kwargs,
+) -> ArrayLike:
+    """Interpolates the edges of the binning window and bins all values in the
+    mask.
+
+    Parameters
+    ----------
+    array : array_like
+        The pre-bin values.
+    binMasks : array_like
+        Mask of the old grid for the bins.
+    binEdgeValues : array_like
+        The interpolated values at the edge of the bins.
+    values : array_like, optional
+        If provided will treat the "array" as errors and use the values
+        for error propagation. Default is "None".
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
+
+    circular : bool, optional
+        If True, treats the values periodically. Default is "False".
+
+    Returns
+    -------
+    binned_values : array_like
+    """
+    # TODO: Reimplement this with proper error propagation
+    # mean_func = partial(circmean, low=-180, high=180) if circular else np.mean
+    mean_func = np.mean
+
+    res = []
+    for (lower, upper), mask in zip(binEdgeValues, binMasks):
+        val = np.array([lower, *array[mask], upper])
+        if values is not None:
+            divisor = val.size / nSpecChannels
+            res.append(np.sqrt(np.sum(val**2)) / divisor)
+        else:
+            res.append(mean_func(val))
+
+    return np.array(res)
+
+
+# TODO: Change this to masked arrays somehow to make it even more robust?
+def _interpolateBinHDU(
+    hdu: fits.BinTableHDU,
+    binGrid: ArrayLike,
+    binMasks: ArrayLike,
+    binEdgeGrid: ArrayLike,
+    grid: ArrayLike,
+    exception: Optional[List[str]] = [],
+    **kwargs,
+) -> fits.BinTableHDU:
+    """Bin an HDU via interpolation.
+
+    Parameters
+    ----------
+    hdu : astropy.io.fits.BinTableHDU
+        The HDU to rebin.
+    binGrid : array_like
+        The binned grid.
+    binMasks : array_like
+        The masks for the bin contents.
+    binEdgeGrid : array_like
+        The window edges of the binned grid.
+    grid : array_like
+        The pre-bin grid.
+    exception : list of str
+        The exceptions.
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
+
+    Returns
+    -------
+    newhdu : astropy.io.fits.BinTableHDU
+        The rebinned HDU.
+    """
+    if not np.all(np.diff(grid) > 0):
+        indices = np.argsort(grid)
+        grid = grid[indices]
+    else:
+        indices = grid.astype(bool)
+
+    cols, new_cols = hdu.data.columns, []
+    if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
+        for col in cols:
+            circular = True if "PHI" in col.name else False
+            newformat, shape = col.format, hdu.data[col.name].shape
+            if len(shape) == 2 and (col.name not in exception):
+                bini = []
+                for jB in range(shape[0]):
+                    if "ERR" in col.name:
+                        if any(x in col.name for x in ["VIS2", "FLUX"]):
+                            val_key = col.name.replace("ERR", "DATA")
+                        else:
+                            val_key = col.name.replace("ERR", "")
+
+                        values = hdu.data[val_key][jB][indices]
+                    else:
+                        values = None
+
+                    array = hdu.data[col.name][jB][indices]
+                    binEdgeValues = np.interp(binEdgeGrid, grid, array)
+                    binij = _intpBinning(
+                        array,
+                        binMasks[:, indices],
+                        binEdgeValues,
+                        values=values,
+                        nSpecChannels=kwargs["spectralChannels"],
+                        circular=circular,
+                        **kwargs,
+                    )
+                    bini.append(binij)
+                bini = np.array(bini)
+                newformat = f"{binGrid.shape[0]}{col.format[-1]}"
+            else:
+                bini = hdu.data[col.name]
+
+            if col.name == "FLAG" and kwargs.get("resetFlags", True):
+                bini = np.full(bini.shape, False)
+
+            new_cols.append(
+                fits.Column(
+                    name=col.name,
+                    array=bini,
+                    unit=col.unit,
+                    format=newformat,
+                )
+            )
+    else:
+        for col in cols:
+            if col.name == "EFF_WAVE":
+                bini = binGrid
+            elif col.name == "EFF_BAND":
+                bini = np.append(np.diff(binGrid), np.diff(binGrid)[0])
+            else:
+                if "ERR" in col.name:
+                    if any(x in col.name for x in ["VIS2", "FLUX"]):
+                        val_key = col.name.replace("ERR", "DATA")
+                    else:
+                        val_key = col.name.replace("ERR", "")
+
+                    values = hdu.data[val_key][indices]
+                else:
+                    values = None
+
+                circular = True if "PHI" in col.name else False
+                array = hdu.data[col.name][indices]
+                binEdgeValues = np.interp(binEdgeGrid, grid, array)
+                bini = _intpBinning(
+                    array,
+                    binMasks[:, indices],
+                    binEdgeValues,
+                    values=values,
+                    nSpecChannels=kwargs["spectralChannels"],
+                    circular=circular,
+                    **kwargs,
+                )
+
+            if col.name == "FLAG" and kwargs.get("resetFlags", True):
+                bini = np.full(bini.shape, False)
+
+            new_cols.append(
+                fits.Column(
+                    name=col.name,
+                    array=bini,
+                    unit=col.unit,
+                    format=col.format,
+                )
+            )
+
+    newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(new_cols))
+    newhdu.header = hdu.header
+    newhdu.update_header()
+    return newhdu
+
+
+def intpBinWavelength(
+    oifits: fits.HDUList, binGrid: ArrayLike, **kwargs
+) -> None:
+    """Bin the wavelength of an oifits file.
+
+    Parameters
+    ----------
+    oifits : astropy.io.fits.HDUList
+        An oifits file structure already opened with astropy.io.fits.
+    binGrid : array_like
+        The binned wavelength grid.
+    binWindow : array_like, optional
+        The bin windows that correspond to the binGrid elements.
+        If None, computes the bin windows from the distance between two
+        elements in the binGrid. Default is None.
+    resetFlags : bool, optional
+        If True, resets the flags after binning. Default is True.
+    averageError : bool, optional
+        If True, forgoes error propagation and simply averages the errors
+        for each bin. Default is False.
+    spectralChannels : int, optional
+        The number of channels of the set bin resolution. Will be used to
+        calculate the divisor within the error propagation. Default is 1.0.
+
+        .. math:: divisor = bin_elements / spectralChannels
+    """
+    if type(oifits) == type(""):
+        data = fits.open(oifits)
+    else:
+        data = oifits
+
+    # TODO: This might not work with GRAVITY. Think of how to fix?
+    wl = data["OI_WAVELENGTH"].data["EFF_WAVE"]
+    if kwargs["binWindow"] is None:
+        window = np.full(binGrid.shape, np.diff(binGrid)[0])
+    else:
+        window = kwargs["binWindow"]
+
+    binEdgeGrid = np.array(
+        [(bin - win / 2, bin + win / 2) for win, bin in zip(window, binGrid)]
+    )
+    binMasks = np.array(
+        [(wl > lower) & (wl < upper) for lower, upper in binEdgeGrid]
+    )
+
+    to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    for i, _ in enumerate(data):
+        if data[i].name not in to_interpolate:
+            continue
+
+        data[i] = _interpolateBinHDU(
+            data[i],
+            binGrid,
+            binMasks,
+            binEdgeGrid,
+            wl,
+            exception=["STA_INDEX"],
+            **kwargs,
+        )
+
+
 def rebin_image(
     image: np.ndarray,
     binning_factor: Optional[int] = None,
@@ -1581,29 +1846,28 @@ def rebin_image(
     return image.reshape(shape).mean(-1).mean(-2)
 
 
+# TODO: Should the median here be replaced with the circmean?
 def _rebin(
-    array: np.ndarray,
-    binsize: int,
-    median: Optional[bool] = True,
-    circular: Optional[bool] = False,
-) -> np.ndarray:
+    array: ArrayLike, binsize: int, median: bool = True, circular: bool = False
+) -> ArrayLike:
     """Rebin an array.
 
     Parameters
     ----------
-    arr : numpy.ndarray
+    array : numpy.ndarray
         The array to rebin.
-    binsize : int
+    binsize : int, optiona
         The bin size.
-    median : bool
+    median : bool, optional
         If True return the median.
+    circular : bool, optional
+        Treats the data as periodic if toggled.
 
     Returns
     -------
     res : numpy.ndarray
         The rebinned array.
     """
-
     newsize = (array.shape[0] // int(binsize)) * binsize
     array = array[:newsize]
     shape = (array.shape[0] // binsize, binsize)
@@ -1619,8 +1883,10 @@ def _rebin(
     return res
 
 
-def _rebinHdu(
-    hdu: fits.BinTableHDU, binsize: int, exception: Optional[List[str]] = []
+def _rebinHDU(
+    hdu: fits.BinTableHDU,
+    binsize: int,
+    exception: Optional[List[str]] = [],
 ) -> fits.BinTableHDU:
     """Rebin an HDU.
 
@@ -1638,23 +1904,18 @@ def _rebinHdu(
     newhdu : astropy.io.fits.BinTableHDU
         The rebinned HDU.
     """
-
-    cols = hdu.data.columns
-    newcols = []
-
+    cols, newcols = hdu.data.columns, []
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
         for coli in cols:
-            if "PHI" in coli.name:
-                circular = True
-            else:
-                circular = False
             newformat = coli.format
             shape = np.shape(hdu.data[coli.name])
+            circular = True if "PHI" in coli.name else False
+
             if len(shape) == 2 and not (coli.name in exception):
                 bini = []
                 for jB in range(shape[0]):
                     binij = _rebin(
-                        hdu.data[coli.name][jB, :], binsize, circular=circular
+                        hdu.data[coli.name][jB], binsize, circular=circular
                     )
                     bini.append(binij)
                 bini = np.array(bini)
@@ -1668,14 +1929,11 @@ def _rebinHdu(
             newcols.append(newcoli)
     else:
         for coli in cols:
-            if "PHI" in coli.name:
-                circular = True
-            else:
-                circular = False
-
+            newformat = coli.format
+            circular = True if "PHI" in coli.name else False
             bini = _rebin(hdu.data[coli.name], binsize, circular=circular)
             newcoli = fits.Column(
-                name=coli.name, array=bini, unit=coli.unit, format=coli.format
+                name=coli.name, array=bini, unit=coli.unit, format=newformat
             )
             newcols.append(newcoli)
 
@@ -1685,9 +1943,11 @@ def _rebinHdu(
     return newhdu
 
 
-# TODO: For phases bining should be done in complex plan
+# TODO: For phases binning should be done in complex plane
 def binWavelength(
-    oifits: fits.HDUList, binsize: int, normalizeError: Optional[bool] = True
+    oifits: fits.HDUList,
+    binsize: Optional[int] = None,
+    normalizeError: bool = True,
 ) -> None:
     """Bin the wavelength of an oifits file.
 
@@ -1695,20 +1955,20 @@ def binWavelength(
     ----------
     oifits : astropy.io.fits.HDUList
         An oifits file structure already opened with astropy.io.fits.
-    binsize : int
+    binsize : int, optional
         The bin size.
-    normalizeError : bool
-        If True normalize the error
+    normalizeError : bool, optional
+        If True normalize the error.
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
     else:
         data = oifits
 
-    tobin = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    to_bin = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
     for i, _ in enumerate(data):
-        if data[i].name in tobin:
-            data[i] = _rebinHdu(data[i], binsize, exception=["STA_INDEX"])
+        if data[i].name in to_bin:
+            data[i] = _rebinHDU(data[i], binsize, exception=["STA_INDEX"])
             if normalizeError:
                 errname = getDataTypeError(data[i].name)
                 for errnamei in errname:
@@ -1816,12 +2076,14 @@ def oifitsKeepBaselines(
     data, arr, baselines_to_keep, extver=None, keepOldFlag=True
 ):
 
-    if arr == ["all"]:
+    if arr == "all" or arr == ["all"] or arr is []:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
 
     for arri in arr:
         try:
-            baselines = getBaselineName(data, hduname=arr, extver=extver)
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
             baselines_to_keep_ordered = []
             for Bi in baselines_to_keep:
                 Bi = Bi.split("-")
@@ -1845,7 +2107,110 @@ def oifitsKeepBaselines(
 
             for iB, Bi in enumerate(baselines):
                 if not (iB in idx_to_keep):
-                    data[arr, extver].data["FLAG"][iB, :] = True
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+
+def oifitsRemoveBaselines(
+    data, arr, baselines_to_remove, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            baselines_to_remove_ordered = []
+            for Bi in baselines_to_remove:
+                Bi = Bi.split("-")
+                Bi.sort()
+                baselines_to_remove_ordered.append("".join(Bi))
+
+            baselines_ordered = []
+            for iB, Bi in enumerate(baselines):
+                Bi = Bi.split("-")
+                Bi.sort()
+                baselines_ordered.append("".join(Bi))
+
+            baselines_ordered = np.array(baselines_ordered)
+            baselines_to_remove_ordered = np.array(baselines_to_remove_ordered)
+
+            idx_to_remove = []
+            for Bi in baselines_to_remove_ordered:
+                idx = np.where(baselines_ordered == Bi)[0]
+                if len(idx != 0):
+                    idx_to_remove.extend(idx)
+
+            for iB, Bi in enumerate(baselines):
+                if iB in idx_to_remove:
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+
+def oifitsKeepTelescopes(
+    data, arr, telescopes_to_keep, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+
+            baselines = np.array(baselines)
+            telescopes_to_keep = np.array(telescopes_to_keep)
+
+            idx_to_keep = np.where(
+                [
+                    set(BB.split("-")).issubset(telescopes_to_keep)
+                    for BB in baselines
+                ]
+            )[0]
+
+            for iB, Bi in enumerate(baselines):
+                if not (iB in idx_to_keep):
+                    data[arri, extver].data["FLAG"][iB, :] = True
+
+        except:
+            pass
+
+
+def oifitsRemoveTelescopes(
+    data, arr, telescopes_to_remove, extver=None, keepOldFlag=True
+):
+
+    if arr == "all" or arr == ["all"] or arr is []:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
+    elif arr is not list:
+        arr = [arr]
+
+    for arri in arr:
+        try:
+            baselines = getBaselineName(data, hduname=arri, extver=extver)
+
+            baselines = np.array(baselines)
+            telescopes_to_remove = np.array(telescopes_to_remove)
+
+            idx_to_remove = np.where(
+                [
+                    bool(set(BB.split("-")) & set(telescopes_to_remove))
+                    for BB in baselines
+                ]
+            )[0]
+
+            for iB, Bi in enumerate(baselines):
+                if iB in idx_to_remove:
+                    data[arri, extver].data["FLAG"][iB, :] = True
 
         except:
             pass
@@ -1972,7 +2337,7 @@ def setMinimumError(
     extnames = np.unique([getDataArrname(dti) for dti in dataTypes])
     for datai in data[1:]:
         if datai.name in extnames:
-            if datai.header["EXTVER"] in extver or extver == [None]:
+            if datai.header.get("EXTVER", 1) in extver or extver == [None]:
 
                 for dataTypei in getDataType(datai.name):
                     if dataTypei in dataTypes:
@@ -2163,3 +2528,22 @@ def listParamInterpolators(details: bool = False, save2csv: bool = False):
     )
 
     return res
+
+
+def windowed_linspace(start: float, end: float, window: float) -> NDArray[Any]:
+    """Creates bins centred around points with half-window spacing on each side.
+
+    Parameters
+    ----------
+    start : float
+        Centre of the first bin.
+    end : float
+        Centre of the last bin.
+    window : float
+        Total width of each bin.
+
+    Returns
+    -------
+    bin_array : array_like
+    """
+    return np.linspace(start, end, int((end - start) // (window)) + 1)
