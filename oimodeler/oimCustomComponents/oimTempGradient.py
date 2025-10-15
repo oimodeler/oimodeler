@@ -146,8 +146,12 @@ class oimTempGrad(oimComponentRadialProfile):
         # Does not account for time, improves computation time.
         # TODO: Check if this is still needed and if not remove it
         wl = np.unique(wl)
-        dist = self.params["dist"](wl, t)
-        kappa_abs = self.params["kappa_abs"](wl, t)
+        if np.shape(wl) == np.shape(self._wl):
+            dist = self.params["dist"](wl, t)
+            kappa_abs = self.params["kappa_abs"](wl, t)
+        else:
+            dist = self.params["dist"](wl, t)
+            kappa_abs = np.interp(wl,self._wl,self.params["kappa_abs"](self._wl, t))
         if len(r.shape) == 3:
             r = r[0, 0][np.newaxis, np.newaxis, :]
             wl, kappa_abs = map(
@@ -156,7 +160,6 @@ class oimTempGrad(oimComponentRadialProfile):
         else:
             wl, kappa_abs = map(lambda x: x[:, np.newaxis], [wl, kappa_abs])
             r = r[np.newaxis, :]
-
         rin, rout = map(lambda x: self.params[x](wl, t), ["rin", "rout"])
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
         dust_mass = self.params["dust_mass"](wl, t) * self.params[
@@ -164,28 +167,27 @@ class oimTempGrad(oimComponentRadialProfile):
         ].unit.to(u.g)
 
         r0 = linear_to_angular(self.params["r0"](wl, t), dist) * 1e3
-        temp = self.params["temp0"](wl, t) * (r / r0) ** (-q)
+        temp = self.params["temp0"](wl, t) * (r / r0) ** (q)
         rin_cm, rout_cm = map(
             lambda x: x * self.params["rin"].unit.to(u.cm), [rin, rout]
         )
-        if p == 2:
+        if p == -2:
             sigma0 = dust_mass / (
                 2.0 * np.pi * np.log(rout_cm / rin_cm) * rin_cm**2
             )
         else:
-            f = ((rout_cm / rin_cm) ** (2 - p) - 1) / (2 - p)
+            f = ((rout_cm / rin_cm) ** (2 + p) - 1) / (2 + p)
             sigma0 = dust_mass / (2.0 * np.pi * f * rin_cm**2)
-
-        sigma = sigma0 * (r / r0) ** (-p)
+        
+        sigma = sigma0 * (r / r0) ** (p)
         epsilon = 1 - np.exp(-sigma * kappa_abs)
-        spectral_density = blackbody(temp, const.c / wl) * epsilon
-
+        nu=const.c/wl
+        spectral_density = blackbody(temp, nu) * epsilon
         rin_mas, rout_mas = map(
             lambda x: linear_to_angular(x, dist) * 1e3, [rin, rout]
         )
         radial_profile = ((r > rin_mas) & (r < rout_mas)).astype(int)
         image = np.nan_to_num(radial_profile * spectral_density, nan=0)
-
         if len(r.shape) == 3:
             return image
 
@@ -216,7 +218,7 @@ class oimTempGrad(oimComponentRadialProfile):
 
     @_r.setter
     def _r(self, value):
-        """Sets the radial profile [mas]."""
+        """Sets the radial profile [mas]."""
         return
 
 
