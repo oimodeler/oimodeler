@@ -70,12 +70,12 @@ print("Chi2r = {}".format(sim.chi2r))
 # # NOTE: Perfoming the model-fitting
 fit = oim.oimFitterEmcee(data, model, nwalkers=25)
 fit.prepare(init="random")
-fit.run(nsteps=100, progress=True)
+fit.run(nsteps=2000, progress=True)
 
 figWalkers, axeWalkers = fit.walkersPlot()
 fig0, ax0 = sim.plot(["VIS2DATA", "T3PHI"])
 
-best, err_l, err_u, err = fit.getResults(mode="best", discard=10)
+best, err_l, err_u, err = fit.getResults(mode="best", discard=200)
 
 # NOTE: Plotting images of the model
 tg._wl = None
