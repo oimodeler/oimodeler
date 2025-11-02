@@ -264,67 +264,6 @@ def oimDataGetVectCoord(
 
 
 class oimData:
-    def __init__(self, data: Any) -> None:
-        self.data = data
-
-
-def loadOifitsData(
-    input: Union[str, Path, List[str], List[Path], fits.HDUList, oimData],
-    mode: Optional[str] = "listOfHdlulist",
-) -> oimData:
-    """Return the oifits data from either filenames, already opened oifts or a
-    oimData boject as either a list of hdlulist (default) or as a oimData
-    object using the option mode="oimData".
-
-    Parameters
-    ----------
-    input : string or pathlib.Path or list of str or list of pathlib.Path
-            or astropy.io.fits.hdu.hdulist.HDUList or oimodeler.oimData
-        The data to deal with. Can be a oimData object, a hdulist, a string
-        representing a filename or a list of these kind of object
-    mode : str, optional
-        The type of the return data, either "listOfHdlulist" or "oimData"
-        The default is "listOfHdlulist"
-
-    Returns
-    -------
-    data : .oimData
-    """
-    if isinstance(input, oimData):
-        if mode == "oimData":
-            data = input
-        else:
-            data = input.data
-    else:
-        if isinstance(input, (fits.hdu.hdulist.HDUList, str, Path)):
-            input = [input]
-
-        if isinstance(input, list):
-            data = []
-
-            for elem in input:
-                if isinstance(elem, fits.hdu.hdulist.HDUList):
-                    data.append(elem)
-                else:
-                    try:
-                        data.append(fits.open(elem))
-                    except:
-                        raise ValueError(
-                            "The path does not exist or is not a"
-                            " valid fits files"
-                        )
-        else:
-            raise TypeError(
-                "Only oimData, hdulist, Path or string, or list of"
-                " these kind of objects allowed "
-            )
-
-        if mode == "oimData":
-            data = oimData(data)
-    return data
-
-
-class oimData(object):
     """A class to hold and manipulate data
 
     Parameters
@@ -815,8 +754,8 @@ class oimData(object):
             fig = axe.get_figure()
 
         if axe.name == "oimAxes":
-            
-            axe.uvplot(data,axe=axe, **kwargs)
+
+            axe.uvplot(data, axe=axe, **kwargs)
         else:
             raise TypeError(
                 "Matplotlib axe wasn't created with projection='oimAxes'"
@@ -827,3 +766,58 @@ class oimData(object):
 
         return fig, axe
 
+
+def loadOifitsData(
+    input: Union[str, Path, List[str], List[Path], fits.HDUList, oimData],
+    mode: Optional[str] = "listOfHdlulist",
+) -> oimData:
+    """Return the oifits data from either filenames, already opened oifts or a
+    oimData boject as either a list of hdlulist (default) or as a oimData
+    object using the option mode="oimData".
+
+    Parameters
+    ----------
+    input : string or pathlib.Path or list of str or list of pathlib.Path
+            or astropy.io.fits.hdu.hdulist.HDUList or oimodeler.oimData
+        The data to deal with. Can be a oimData object, a hdulist, a string
+        representing a filename or a list of these kind of object
+    mode : str, optional
+        The type of the return data, either "listOfHdlulist" or "oimData"
+        The default is "listOfHdlulist"
+
+    Returns
+    -------
+    data : .oimData
+    """
+    if isinstance(input, oimData):
+        if mode == "oimData":
+            data = input
+        else:
+            data = input.data
+    else:
+        if isinstance(input, (fits.hdu.hdulist.HDUList, str, Path)):
+            input = [input]
+
+        if isinstance(input, list):
+            data = []
+
+            for elem in input:
+                if isinstance(elem, fits.hdu.hdulist.HDUList):
+                    data.append(elem)
+                else:
+                    try:
+                        data.append(fits.open(elem))
+                    except:
+                        raise ValueError(
+                            "The path does not exist or is not a"
+                            " valid fits files"
+                        )
+        else:
+            raise TypeError(
+                "Only oimData, hdulist, Path or string, or list of"
+                " these kind of objects allowed "
+            )
+
+        if mode == "oimData":
+            data = oimData(data)
+    return data

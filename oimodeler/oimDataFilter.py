@@ -62,13 +62,13 @@ class oimDataFilterComponent:
             self._filteringFunction(datai)
 
     def __str__(self):
-        txt=self.name 
-        for key,value in self.params.items():
-            txt+="\n"
-            txt+= f"{key}:".ljust(10)
-            txt+= f"{value}"
+        txt = self.name
+        for key, value in self.params.items():
+            txt += "\n"
+            txt += f"{key}:".ljust(10)
+            txt += f"{value}"
         return txt
-        
+
 
 class oimDataFilter:
     """Class for data filter stack"""
@@ -117,16 +117,15 @@ class oimRemoveInsnameFilter(oimDataFilterComponent):
     def _filteringFunction(self, data):
         to_remove = []
         insnameToRemove = self.params["insname"]
-        if type(insnameToRemove)!=type([]):
-            insnameToRemove=[insnameToRemove]
-        #print(insnameToRemove)
+        if type(insnameToRemove) != type([]):
+            insnameToRemove = [insnameToRemove]
+        # print(insnameToRemove)
         for di in data:
             if "INSNAME" in di.header:
-                for insnamei in insnameToRemove:   
-                    if fnmatch(di.header["INSNAME"],insnamei):
+                for insnamei in insnameToRemove:
+                    if fnmatch(di.header["INSNAME"], insnamei):
                         to_remove.append(di)
 
-        
         for di in to_remove:
             data.pop(di)
 
