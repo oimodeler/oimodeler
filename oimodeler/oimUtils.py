@@ -2402,7 +2402,7 @@ def _listFeatures(
     if details:
         # TODO: Change this to "with" generator
         if save2csv:
-            f = open(save2csv, "w")
+            f = open(save2csv, "w",newline='')
             w = csv.writer(f, delimiter="|")
             w.writerows(table)
             f.close()

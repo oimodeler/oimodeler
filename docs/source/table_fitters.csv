@@ -1,6 +1,6 @@
-Fitter Name|Description
-oimFitter|Abstract class for model-fitting
-oimFitterEmcee|MCMC sampler based on the emcee python module
-oimFitterDynesty|a dynamic nested sampler based on the dynesty python module
-oimFitterMinimize|a simple :math:`\chi^2` minimizer using the numpy Minimize function
-oimFitterRegularGrid| regular grid with :math:`\chi^2` explorer
+Fitter Name|Description
+oimFitter|Abstract class for model-fitting
+oimFitterEmcee|MCMC sampler based on the emcee python module
+oimFitterDynesty|a dynamic nested sampler based on the dynesty python module
+oimFitterMinimize|a simple :math:`\chi^2` minimizer using the numpy Minimize function
+oimFitterRegularGrid|regular grid with :math:`\chi^2` explorer

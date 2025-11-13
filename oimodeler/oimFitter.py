@@ -97,7 +97,13 @@ class oimFitterEmcee(oimFitter):
 
     def __init__(self, *args, **kwargs):
         self.params["nwalkers"] = oimParam(
-            name="nwalkers", value=16, mini=1, description="Number of walkers"
+            name="nwalkers", value=16, 
+            mini=1, description="Number of walkers"
+        )
+        
+        self.params["chi2fact"] = oimParam(
+            name="chi2fact",value=1,
+            mini=1,description="chi2fact",
         )
 
         super().__init__(*args, **kwargs)
@@ -201,7 +207,7 @@ class oimFitterEmcee(oimFitter):
         self.simulator.compute(
             computeChi2=True, dataTypes=self.dataTypes, cprior=self.cprior
         )
-        return -0.5 * self.simulator.chi2
+        return -0.5 * self.simulator.chi2/self.params["chi2fact"].value
 
     def getResults(self, mode="best", discard=0, chi2limfact=20, **kwargs):
         chi2 = -2 * self.sampler.get_log_prob(discard=discard, flat=True)
@@ -563,6 +569,13 @@ class oimFitterMinimize(oimFitter):
             mini=1,
             description="minimization method",
         )
+        self.params["chi2fact"] = oimParam(
+            name="chi2fact",
+            value=1,
+            mini=1,
+            description="chi2fact",
+        )
+        
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
@@ -583,7 +596,7 @@ class oimFitterMinimize(oimFitter):
             computeChi2=True, dataTypes=self.dataTypes, cprior=self.cprior
         )
 
-        return self.simulator.chi2
+        return self.simulator.chi2/self.params["chi2fact"].value
 
     def _run(self, **kwargs):
 
@@ -734,6 +747,7 @@ class oimFitterRegularGrid(oimFitter):
         contour_kwargs={},
         clabel_kwargs={},
         min_kwargs={},
+        axe=None,
         **kwargs,
     ):
 
@@ -755,12 +769,17 @@ class oimFitterRegularGrid(oimFitter):
             kwargs["aspect"] = "auto"
 
         ndims = len(self.gridSize)
+        
+        if axe:
+            ax = axe
+            fig = ax.get_figure() 
+        else:
+            fig, ax = plt.subplots()
 
         min_idx = np.argmin(self.chi2rMap)
         chi2rmin = np.min(self.chi2rMap)
         chi2rmax = np.max(self.chi2rMap)
         if ndims == 1:
-            fig, ax = plt.subplots()
             xmin = self.grid[0][min_idx]
 
             ax.plot(self.grid[0], self.chi2rMap, color="r")
@@ -826,7 +845,6 @@ class oimFitterRegularGrid(oimFitter):
 
             min_idx = np.unravel_index(min_idx, self.chi2rMap.shape)
 
-            fig, ax = plt.subplots()
 
             contour_kwargs["levels"] = (
                 np.array(contour_kwargs["levels"]) * chi2rmin
