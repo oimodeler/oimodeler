@@ -1258,7 +1258,7 @@ class oimConvolutor(oimComponentFourier):
                         )
             images.append(img)
 
-        img = np.zeros_like(images[0].shape)
+        img = np.zeros_like(img)
         for iwl in range(nwl):
             for it in range(nt):
                 img[it, iwl] = convolve2d(

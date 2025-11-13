@@ -179,17 +179,16 @@ class oimFitterEmcee(oimFitter):
         return initialParams
 
     def _run(self, **kwargs):
-        if "reset" in kwargs:
-            if kwargs["reset"]==True:
-                state=self.initialParams
+        if kwargs.get("reset", False):
+            state = self.initialParams
         else:
-            if self.sampler.iteration==0:
-                state=self.initialParams
+            if self.sampler.iteration == 0:
+                state = self.initialParams
             else:
-                state=None
+                state = None
         self.sampler.run_mcmc(state, **kwargs)
         self.getResults()
-    
+
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
@@ -253,6 +252,8 @@ class oimFitterEmcee(oimFitter):
 
         return res, err, err_m, err_p
 
+    # TODO: Change the chi2limfact implementation so it doesn't break if
+    # over-fitting takes place
     def cornerPlot(self, discard=0, chi2limfact=20, savefig=None, **kwargs):
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
@@ -600,7 +601,7 @@ class oimFitterMinimize(oimFitter):
 
     def _run(self, **kwargs):
 
-        self.res = minimize(self._getChi2r, self.initialParams,**kwargs)
+        self.res = minimize(self._getChi2r, self.initialParams, **kwargs)
         # self.res = least_squares(self._getChi2r, self.initialParams,method=
         #                         self.params["method"].value)
         self.getResults()
