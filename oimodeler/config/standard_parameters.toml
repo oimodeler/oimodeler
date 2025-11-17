@@ -169,3 +169,11 @@ value = 1
 description = "Power exponent"
 unit = "one"
 
+[A_V]
+name = 'A_V'
+value = 0
+description = 'Extinction in V band'
+unit = 'mag'
+free = false
+mini = 0
+maxi = 50
