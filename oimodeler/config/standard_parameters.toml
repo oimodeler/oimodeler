@@ -56,7 +56,7 @@ description = "Inner radius"
 unit = "au"
 
 [rout]
-name = "rin"
+name = "rout"
 value = 0
 description = "Outer radius"
 unit = "au"
@@ -153,7 +153,13 @@ value = 0
 description = "The interferometric field of view"
 unit = "mas"
 free = false
-mini = 0
+
+[dist]
+name = "dist"
+value = 0
+description = "Distance"
+unit = "pc"
+free = false
 
 [amp]
 name = "amplitude"
@@ -168,4 +174,5 @@ name = "pow"
 value = 1
 description = "Power exponent"
 unit = "one"
-
+mini = 0
+maxi = 1

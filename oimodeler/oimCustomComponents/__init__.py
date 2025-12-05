@@ -11,12 +11,18 @@ the customComponent module
 from .oimAsymRing import oimAEIRing
 from .oimBox import oimBox
 from .oimExpRing import oimExpRing
-from .oimFastRotator import oimFastRotator,oimFastRotatorLLDD,oimFastRotatorQuadLDD, oimFastRotatorNLLDD, oimFastRotatorMasse
+from .oimFastRotator import (
+    oimFastRotator,
+    oimFastRotatorLLDD,
+    oimFastRotatorQuadLDD,
+    oimFastRotatorNLLDD,
+    oimFastRotatorMasse,
+)
 from .oimGaussLorentz import oimGaussLorentz
 from .oimKinematicDisk import oimKinematicDisk
 from .oimRadialRing import oimRadialRing
 from .oimRadialRing2 import oimRadialRing2
 from .oimSpiral import oimSpiral
 from .oimStarHaloDisc import oimStarHaloGaussLorentz, oimStarHaloIRing
-from .oimTempGradient import oimTempGrad, oimAsymTempGrad
+from .oimTempGradient import oimTempGrad
 from .oimKinematicDisk import oimKinematicDisk
