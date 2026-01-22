@@ -96,7 +96,7 @@ oim.oimOptions.model.grid.type = "logarithmic"
 oim.oimOptions.ft.padding = 1
 
 # NOTE: Define a point source for the central start with a flux defined with a blackbody interpolator
-s = oim.oimPt(f=oim.oimInterp("starWl", temp=4600, dist=121, lum=2.23, wl=wave_data))
+s = oim.oimPt(f=oim.oimInterp("starWl", temp=4600, dist=121, lum=2.23, wl=None))
 
 
 # NOTE: Define a first instance of the temperature gradient model for the circumstellar emission
