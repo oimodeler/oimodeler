@@ -90,6 +90,8 @@ class oimFitter:
 
     def _run(self, **kwargs):
         return kwargs
+    
+       
 
 
 class oimFitterEmcee(oimFitter):
@@ -699,8 +701,11 @@ class oimFitterRegularGrid(oimFitter):
         self.chi2rMap = np.zeros(self.gridSize)
 
         n = self.chi2rMap.size
+        progress=True
+        if "progress" in kwargs:
+            progress=kwargs["progress"]
 
-        for i in tqdm(range(n)):
+        for i in tqdm(range(n), disable=not(progress)):
             igrid = np.unravel_index(i, self.gridSize)
             for iparam in range(len(igrid)):
                 self.gridParams[iparam].value = self.grid[iparam][
@@ -910,3 +915,41 @@ class oimFitterRegularGrid(oimFitter):
             fig.colorbar(sm, ax=ax, label="$\\chi^2_r$")
 
         return fig, ax
+
+
+
+
+def oimComputeChi2PlusOneUncertainties(fit,factErr=500,npts=100,plot=False):
+    grids=[]
+    errs=[]
+    valps=[]
+    res,_,_,err=fit.getResults(discard=int(fit.sampler.chain.shape[1]*0.8),chi2limfact=3)
+    chi2min=fit.simulator.chi2r
+    for ip,pi in enumerate(tqdm(fit.freeParams)):
+        fit.getResults(discard=int(fit.sampler.chain.shape[1]*0.8),chi2limfact=3)
+        gridi = oimFitterRegularGrid(fit.data,fit.model,dataTypes=["VIS2DATA","T3PHI"])
+        mini=res[ip]-factErr*err[ip]
+        maxi=res[ip]+factErr*err[ip]    
+        step=(maxi-mini)/npts
+        gridi.prepare(min=[mini],max=[maxi],steps=[step],params=[fit.model.getFreeParameters()[pi]])
+        gridi.run(progress=False)
+        valp1=gridi.grid[0][np.where(gridi.chi2rMap<(chi2min+1))]
+        valps.append(valp1)
+        errp1=(valp1.max()-valp1.min())/2
+        grids.append(gridi)
+        errs.append(errp1)
+        
+    if plot:
+        nparams=fit.nfree
+        fig,ax = plt.subplots(1,nparams,figsize=(4*nparams,4),sharey=True)
+        for ip,pi in enumerate(fit.freeParams):
+            grids[ip].plotMap(axe=ax[ip])
+            ax[ip].plot([valps[ip].min(),valps[ip].max()],[chi2min+1]*2,color="b",ls="--")
+            ax[ip].text(valps[ip].max(),chi2min+1,f"$\\sigma$={errs[ip]:.3f}",va="center",ha="left",color="b")
+        ax[0].set_ylim([chi2min,chi2min*20])
+        ax[0].set_yscale("log")
+        return errs,fig,ax
+
+    
+    return errs
+        
