@@ -6,6 +6,7 @@ normalizers and interpolators.
 import pickle
 import operator
 import sys
+import inspect
 from functools import reduce
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -133,31 +134,30 @@ class oimParam:
 
     def serialize(self):
         return self.__dict__
-        
+
     def deserialize(ser):
         p = oimParam()
-        for key,val in ser.items():
+        for key, val in ser.items():
             p.__dict__[key] = val
         return p
-    
 
-    def unpickle(f,openfile=True):
-        
+    def unpickle(f, openfile=True):
+
         if openfile:
-            file = open(f, 'rb')
+            file = open(f, "rb")
         else:
             file = f
         ser = pickle.load(file)
         p = oimParam.deserialize(ser)
         return p
-    
-    def pickle(self,f,openfile=True):
-        
+
+    def pickle(self, f, openfile=True):
+
         if openfile:
-            file = open(f, 'wb')
+            file = open(f, "wb")
         else:
             file = f
-        pickle.dump(self.serialize(),file)
+        pickle.dump(self.serialize(), file)
 
 
 class oimParamLinker:
@@ -1120,3 +1120,49 @@ class oimParamLinearStarWl(oimParamInterpolator):
             * self.angular_stellar_radius**2
             * 1e23
         )
+
+
+class oimParamUserFunc(oimParamInterpolator):
+    interpdescription = "Interpolate from user-supplied function"
+    interparams = []
+
+    def _init(self, param, userfunc, dependence="wl", **kwargs):
+        self.dependence = dependence
+        self.userfunc = userfunc
+
+        if (dependence == "wl") or (dependence == "mjd"):
+            args = inspect.getfullargspec(userfunc).args[1:]
+        elif dependence == "both":
+            args = inspect.getfullargspec(userfunc).args[2:]
+        elif dependence == "none":
+            args = inspect.getfullargspec(userfunc).args
+        else:
+            raise NotImplementedError(
+                'No support for interpolation along "%s"' % self.dependence
+            )
+
+        # NOTE: This is done to match the behavior of other oimInterp instances,
+        # where self.params is a list instead of a dict, and the actual
+        # parameters are in self.par1 etc
+        for arg in args:
+            param = oimParam(name=arg)
+            self.interparams.append(param)
+            setattr(self, arg, param)
+
+    def _interpFunction(self, wl, t):
+
+        if self.dependence == "wl":
+            argvals = [wl]
+        elif self.dependence == "mjd":
+            argvals = [t]
+        elif self.dependence == "both":
+            argvals = [wl, t]
+        else:
+            argvals = []
+
+        argvals += [x() for x in self.interparams]
+
+        return self.userfunc(*argvals)
+
+    def _getParams(self):
+        return self.interparams

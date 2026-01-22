@@ -26,7 +26,7 @@ from .oimUtils import (
     pad_image,
     rebin_image,
 )
-
+from .oimExtinction import extlaw_FitzIndeb as extlaw
 
 # TODO: Move somewhere else
 def getFourierComponents():
@@ -281,6 +281,7 @@ class oimComponentFourier(oimComponent):
     """
 
     elliptic = False
+    extincted = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -290,7 +291,10 @@ class oimComponentFourier(oimComponent):
             self.params["elong"] = oimParam(**_standardParameters["elong"])
             self.params["pa"] = oimParam(**_standardParameters["pa"])
             self.elliptic = True
-
+        # Add extinction if A_V is specified in kwargs
+        if ("A_V" in kwargs):
+            self.params["A_V"] = oimParam(**_standardParameters["A_V"])
+            self.extincted = True
         self._eval(**kwargs)
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
@@ -304,11 +308,17 @@ class oimComponentFourier(oimComponent):
         else:
             fxp, fyp = ucoord, vcoord
 
+        if self.extincted:
+            extfactor = 10**(-0.4*extlaw(wl, self.params["A_V"]()))
+        else:
+            extfactor = 1.0
+
         vc = self._visFunction(fxp, fyp, np.hypot(fxp, fyp), wl, t)
         return (
             vc
             * self._ftTranslateFactor(ucoord, vcoord, wl, t)
             * self.params["f"](wl, t)
+            * extfactor
         )
 
     def _visFunction(self, ucoord, vcoord, rho, wl, t):
@@ -350,12 +360,18 @@ class oimComponentFourier(oimComponent):
             x_arr = xp * self.params["elong"](wl_arr, t_arr)
             y_arr = yp
 
+        if self.extincted:
+            extfactor = 10**(-0.4*extlaw(wl, self.params["A_V"]()))
+        else:
+            extfactor = 1.0
+
+        # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = self._imageFunction(
             x_arr.reshape(dims),
             y_arr.reshape(dims),
             wl_arr.reshape(dims),
             t_arr.reshape(dims),
-        )
+        ) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
 
         tot = np.sum(image, axis=(2, 3))
 
@@ -386,7 +402,13 @@ class oimComponentFourier(oimComponent):
             xx = xp * self.params["elong"](wl, t)
             yy = yp
 
-        image = self._imageFunction(xx, yy, wl, t)
+        if self.extincted:
+            extfactor = 10**(-0.4*extlaw(wl, self.params["A_V"]()))
+        else:
+            extfactor = 1.0
+
+        # FIXME: Did I correctly infer the dimensions of the image? (PAB)
+        image = self._imageFunction(xx, yy, wl, t) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
 
         """
         tot = np.sum(image, axis=(2, 3))
@@ -413,6 +435,7 @@ class oimComponentImage(oimComponent):
     """Base class for components define in 2D : x,y (regular grid) in the image plan"""
 
     elliptic = False
+    extincted = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -425,6 +448,11 @@ class oimComponentImage(oimComponent):
         # NOTE: Add ellipticity
         if self.elliptic:
             self.params["elong"] = oimParam(**_standardParameters["elong"])
+
+        # Add extinction if A_V is specified in kwargs
+        if ("A_V" in kwargs):
+            self.params["A_V"] = oimParam(**_standardParameters["A_V"])
+            self.extincted = True
 
         if "FTBackend" in kwargs:
             self.FTBackend = kwargs["FTBackend"]()
@@ -480,6 +508,11 @@ class oimComponentImage(oimComponent):
         else:
             t0 = self._t
 
+        if self.extincted:
+            extfactor = 10**(-0.4*extlaw(wl, self.params["A_V"]()))
+        else:
+            extfactor = 1.0
+
         if (
             self.FTBackend.check(
                 self.FTBackendData, im, pix, wl0, t0, ucoord, vcoord, wl, t
@@ -495,7 +528,7 @@ class oimComponentImage(oimComponent):
             self.FTBackendData, im, pix, wl0, t0, ucoord, vcoord, wl, t
         )
 
-        return vc * tr * self.params["f"](wl, t)
+        return vc * tr * self.params["f"](wl, t) * extfactor
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
@@ -538,6 +571,11 @@ class oimComponentImage(oimComponent):
             else:
                 x_arr = xp
 
+        if self.extincted:
+            extfactor = 10**(-0.4*extlaw(wl, self.params["A_V"]()))
+        else:
+            extfactor = 1.0
+
         im0 = self._internalImage()
 
         if im0 is None:
@@ -554,7 +592,8 @@ class oimComponentImage(oimComponent):
             f = np.sum(im)
             im = im / f * f0
 
-        im = im.reshape(dims)
+        # FIXME: Did I correctly infer the dimensions of the image? (PAB)
+        im = im.reshape(dims) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
 
         if self.normalizeImage == True:
             # TODO: No loop for normalization
@@ -653,6 +692,7 @@ class oimComponentRadialProfile(oimComponent):
     elliptic = False
     asymmetric = False
     modulation_order = 1
+    extincted = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -675,6 +715,11 @@ class oimComponentRadialProfile(oimComponent):
                 self.params[f"skwPa{i}"] = oimParam(
                     **_standardParameters["skwPa"]
                 )
+
+        # Add A_V
+        if ("A_V" in kwargs):
+            self.params["A_V"] = oimParam(**_standardParameters["A_V"])
+            self.extincted = True
 
         self.params["dim"] = oimParam(**_standardParameters["dim"])
 
@@ -811,9 +856,15 @@ class oimComponentRadialProfile(oimComponent):
             y_arr = yp
             x_arr = xp * self.params["elong"](wl_arr, t_arr)
 
+        if self.extincted:
+            extfactor = 10**(-0.4*extlaw(wl, self.params["A_V"]()))
+        else:
+            extfactor = 1.0
+
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
-        im = im.reshape(dims)
+        # FIXME: Did I correctly infer the dimensions of the image? (PAB)
+        im = im.reshape(dims) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
 
         if self.normalizeImage:
             # TODO: No loop for normalization
@@ -843,6 +894,11 @@ class oimComponentRadialProfile(oimComponent):
             fyp = ucoord * si + vcoord * co
             vcoord, ucoord = fyp, fxp / self.params["elong"](wl, t)
 
+        if self.extincted:
+            extfactor = 10**(-0.4*extlaw(wl, self.params["A_V"]()))
+        else:
+            extfactor = 1.0
+
         spf = np.hypot(ucoord, vcoord)
         psi = np.arctan2(vcoord, ucoord) if self.asymmetric else None
         wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
@@ -866,13 +922,13 @@ class oimComponentRadialProfile(oimComponent):
             return (
                 vc
                 * self._ftTranslateFactor(ucoord, vcoord, wl, t)
-                * ftot_Jy_interp
+                * ftot_Jy_interp * extfactor
             )
         else:
             return (
                 vc
                 * self._ftTranslateFactor(ucoord, vcoord, wl, t)
-                * self.params["f"](wl, t)
+                * self.params["f"](wl, t) * extfactor
             )
 
 
@@ -880,6 +936,7 @@ class oimComponentFitsImage(oimComponentImage):
     """Component load load images or chromatic-cubes from fits files"""
 
     elliptic = False
+    extincted = False
     name = "Fits Image Component"
     shortname = "Fits_Comp"
 
@@ -889,7 +946,10 @@ class oimComponentFitsImage(oimComponentImage):
             self.loadImage(fitsImage, useinternalPA=useinternalPA)
         self.params["pa"] = oimParam(**_standardParameters["pa"])
         self.params["scale"] = oimParam(**_standardParameters["scale"])
-
+        # Add extinction if A_V is specified in kwargs
+        if ("A_V" in kwargs):
+            self.params["A_V"] = oimParam(**_standardParameters["A_V"])
+            self.extincted = True
         self._eval(**kwargs)
 
     def loadImage(self, fitsImage, useinternalPA=False):
