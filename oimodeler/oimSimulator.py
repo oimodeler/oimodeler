@@ -17,6 +17,19 @@ from .oimPlots import (
 from .oimUtils import hdulistDeepCopy
 
 
+
+oimDataArrDict=dict()
+
+oimDataArrDict["OI_VIS2"]=dict(data=["VIS2DATA"],err=["VIS2ERR"])
+oimDataArrDict["OI_VIS"]=dict(data=["VISAMP","VISPHI"],err=["VISAMPERR","VISPHIERR"])
+oimDataArrDict["OI_T3"]=dict(data=["T3AMP","T3PHI"],err=["T3AMPERR","T3PHIERR"])
+oimDataArrDict["OI_VIS2"]=dict(data=["VIS2DATA"],err=["VIS2ERR"])
+oimDataArrDict["OI_FLUX"]=dict(data=["FLUXDATA"],err=["FLUXERR"])
+
+
+
+
+
 def corrFlux2Vis2(vcompl):
     nB = vcompl.shape[0]
     norm = np.outer(np.ones(nB - 1), vcompl[0, :])
@@ -119,6 +132,26 @@ class oimSimulator:
         for datai in self.data.data:
             self.simulatedData.addData(hdulistDeepCopy(datai))
 
+    def prepareBootstrap(self):
+        self.data.prepareData()
+        self.bootstrapData = oimData()
+        for datai in self.simulatedData.data:
+            dataic = hdulistDeepCopy(datai)
+            
+            for dataij in dataic:
+                if dataij.name in oimDataArrDict:
+                    for dataName,errName in \
+                            zip(oimDataArrDict[dataij.name]["data"], 
+                                oimDataArrDict[dataij.name]["err"]):
+                            
+                            shape = dataij.data[dataName].shape
+                            err = dataij.data[errName]
+                            
+                            
+                            dataij.data[dataName]+=np.random.randn(*shape)*err
+                
+            self.bootstrapData.addData(dataic)   
+
     def compute(
         self,
         computeChi2=False,
@@ -147,6 +180,7 @@ class oimSimulator:
         nelChi2 = 0
         chi2 = 0
         chi2List = []
+        residuals = []
 
         if computeSimulatedData == True and (
             checkSimulatedData == True or self.simulatedData == None
@@ -157,7 +191,7 @@ class oimSimulator:
 
         data = self.data
 
-        if (computeChi2 == True) | (computeSimulatedData == True):
+        if (computeChi2 == True) | (computeSimulatedData == True) :
             idx = 0
             nfiles = len(data.struct_u)
             for ifile in range(nfiles):
@@ -255,17 +289,20 @@ class oimSimulator:
                                             )
                                         )
                                     )
-                                    chi2i = (
+                                    resi  = (
                                         dphi
                                         * np.logical_not(flag[ival])
                                         / dataErr[ival]
-                                    ) ** 2
+                                    )
+                                    chi2i = resi**2
+
                                 else:
-                                    chi2i = (
+                                    resi  = (
                                         (dataVal[ival] - val[ival])
                                         * np.logical_not(flag[ival])
                                         / dataErr[ival]
-                                    ) ** 2
+                                    )
+                                    chi2i = resi**2
 
                                 nelChi2 += np.sum(
                                     (dataErr[ival] != 0)
@@ -274,12 +311,16 @@ class oimSimulator:
                                 chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
 
                                 chi2List.append(chi2i)
-                                # print(chi2i)
+                                residuals.append(resi)
+                    
+                
+
         if computeChi2 and self.cprior is None:
             self.chi2 = chi2
             self.chi2r = chi2 / (nelChi2 - len(self.model.getFreeParameters()))
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
+            self.residuals = residuals
         elif computeChi2:
             chi2_prior = (
                 chi2 + self.cprior(self.model.getParameters()) * nelChi2
@@ -296,6 +337,7 @@ class oimSimulator:
 
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
+            self.residuals = residuals
 
     def computeAll(self, checkSimulatedData=True, dataTypes=None, cprior=None):
         self.compute(
