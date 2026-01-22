@@ -940,8 +940,9 @@ def oimComputeChi2PlusOneUncertainties(fit,factErr=500,npts=100,plot=False):
         errs.append(errp1)
         
     if plot:
-        nparams=fit.nfree
-        fig,ax = plt.subplots(1,nparams,figsize=(4*nparams,4),sharey=True)
+        fig,ax = plt.subplots(1,fit.nfree,figsize=(4*fit.nfree,4),sharey=True)
+        if fit.nfree==1:
+            ax=[ax]
         for ip,pi in enumerate(fit.freeParams):
             grids[ip].plotMap(axe=ax[ip])
             ax[ip].plot([valps[ip].min(),valps[ip].max()],[chi2min+1]*2,color="b",ls="--")
