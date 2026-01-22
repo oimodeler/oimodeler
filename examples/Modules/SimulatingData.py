@@ -52,7 +52,7 @@ fig0, ax0 = sim.plot(["VIS2DATA", "T3PHI"],
 pprint(f"Chi2r = {sim.chi2r}")
 
 #Using the dataTypes option of the oimSimulator compute method allows to 
-#compute chi2 only on certain data types such as square-visibility and closure phase
+#compute chi2 only on certain data types such as V² and CP
 sim.compute(computeChi2=True, dataTypes=["VIS2DATA","T3PHI"])
 pprint(f"Chi2r = {sim.chi2r}")
 
