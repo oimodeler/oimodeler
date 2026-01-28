@@ -919,7 +919,7 @@ class oimFitterRegularGrid(oimFitter):
 
 
 
-def oimComputeChi2PlusOneUncertainties(fit,factErr=500,npts=100,plot=False):
+def oimComputeChi2PlusOneUncertainties(fit,factErr=500,npts=100,plot=False,dataTypes=None):
     grids=[]
     errs=[]
     valps=[]
@@ -927,7 +927,7 @@ def oimComputeChi2PlusOneUncertainties(fit,factErr=500,npts=100,plot=False):
     chi2min=fit.simulator.chi2r
     for ip,pi in enumerate(tqdm(fit.freeParams)):
         fit.getResults(discard=int(fit.sampler.chain.shape[1]*0.8),chi2limfact=3)
-        gridi = oimFitterRegularGrid(fit.data,fit.model,dataTypes=["VIS2DATA","T3PHI"])
+        gridi = oimFitterRegularGrid(fit.data,fit.model,dataTypes=dataTypes)
         mini=res[ip]-factErr*err[ip]
         maxi=res[ip]+factErr*err[ip]    
         step=(maxi-mini)/npts
