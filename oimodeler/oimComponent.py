@@ -363,7 +363,7 @@ class oimComponentFourier(oimComponent):
         if self.extincted:
             extfactor = 10**(-0.4*extlaw(wl, self.params["A_V"]()))
         else:
-            extfactor = 1.0
+            extfactor = np.array([1.0])
 
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = self._imageFunction(
