@@ -76,6 +76,8 @@ def radialVelocity(time,T,t0,e,omega,Ka,V0):
 class oimBinaryOrbit(oimComponentFourier):
     
     _params = {}
+    name = "Binary Orbit"
+    shortname = "orbit"
     @property
     def params(self):
         
@@ -91,7 +93,7 @@ class oimBinaryOrbit(oimComponentFourier):
         return res
     
     def __init__(self, **kwargs):
-        #super().__init__(**kwargs)
+
         
         self._params["x"] = oimParam(**_standardParameters["x"])
         self._params["y"] = oimParam(**_standardParameters["y"])
@@ -103,10 +105,12 @@ class oimBinaryOrbit(oimComponentFourier):
         self._params["i"]=oimParam(name="i",value=30,description="Inclination angle",unit=u.deg,free=True,mini=-90,maxi=90)
         self._params["O"]=oimParam(name="O",value=30,description="Longitude of the ascending node ",unit=u.deg,free=True,mini=-180,maxi=180)
         self._params["o"]=oimParam(name="o",value=30,description="Argument of periapsis",unit=u.deg,free=True,mini=-180,maxi=180)     
-        
+        self._params["f"].free = False
         self.primary = oimPt()
         self.secondary = oimPt()
         self._eval(**kwargs)
+        
+        
         
     def _getSeparation(self,t,mas=False):
         e = self.params["e"].value
