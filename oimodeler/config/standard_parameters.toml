@@ -88,6 +88,14 @@ description = "Elongation Ratio"
 unit = "one"
 mini = 1
 
+[cosi]
+name = "cosi"
+value = 0
+description = "The cosine of the inclination"
+unit = "one"
+mini = 0
+maxi = 1
+
 [pa]
 name = "pa"
 value = 0
