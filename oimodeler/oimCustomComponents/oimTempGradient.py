@@ -136,8 +136,10 @@ class oimTempGrad(oimComponentRadialProfile):
         dist = self.params["dist"].value
         kappa_abs = self.get_kappa(wl)
 
-        # TODO: Make this also possible with flattened?
-        elong = self.params["elong"].value
+        if self.flat:
+            elong = 1 / self.params["cosi"].value
+        else:
+            elong = self.params["elong"].value
 
         # HACK: Adding the correct dimensions to the radial grid, wavelength array and opacity table
         if len(r.shape) == 3:
