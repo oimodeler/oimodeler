@@ -42,6 +42,12 @@ description = "Diameter"
 unit = "mas"
 mini = 0
 
+[r]
+name = "r"
+value = 0
+description = "Radius"
+unit = "mas"
+
 [w]
 name = "w"
 value = 0
