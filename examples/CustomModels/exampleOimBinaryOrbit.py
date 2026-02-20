@@ -115,3 +115,44 @@ ax[0].set_title("East-West Baselines")
 ax[1].set_xlabel("B/$\\lambda$ (cycles/rad)")
 ax[1].set_ylabel("time (days)")
 ax[1].set_title("North-South Baselines")
+
+#%% Chromatic components with very different temperatures
+dist = 100
+orb = oim.oimBinaryOrbit(e=e, a=a, T=T, i=i, o=o,O=O)
+orb.primary = oim.oimUD(d=1, f=oim.oimInterp("starWl",temp=5000, dist=dist, radius=1))
+orb.secondary = oim.oimPt(f=oim.oimInterp("starWl",temp=50000, dist=dist, radius=0.1))
+morb=oim.oimModel(orb)
+
+
+nB = 5000  # number of baselines
+nwl = 10  # number of walvengths
+
+wl = np.linspace(1e-6, 4e-6, num=nwl)
+B = np.linspace(1, 400, num=nB)
+
+Bs = np.tile(B, (nwl, 1)).flatten()
+wls = np.transpose(np.tile(wl, (nB, 1))).flatten()
+spf = Bs/wls
+spf0 = spf*0
+
+vis = np.abs(morb.getComplexCoherentFlux(spf, spf*0, wls,t=spf*0+0.1)).reshape(len(wl), len(B))
+vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
+
+figGv, axGv = plt.subplots(1, 1, figsize=(14, 8))
+sc = axGv.scatter(spf, vis, c=wls*1e6, s=0.2, cmap="plasma")
+figGv.colorbar(sc, ax=axGv, label="$\\lambda$ ($\\mu$m)")
+axGv.set_xlabel("B/$\\lambda$ (cycles/rad)")
+axGv.set_ylabel("Visiblity")
+axGv.margins(0, 0)
+
+#%% plot of the flux of both components
+fp=orb.primary.params["f"](wl)
+fs=orb.secondary.params["f"](wl)
+
+fig,ax=plt.subplots()
+
+ax.plot(wl,fp,label="primary: T=3000K R=10Ro")
+ax.plot(wl,fs,label="secondary: T=50000K R=0.1Ro")
+ax.legend()
+ax.set_yscale("log")
+
