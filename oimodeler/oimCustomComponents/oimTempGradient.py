@@ -56,6 +56,7 @@ class oimTempGrad(oimComponentRadialProfile):
 
     name = "Temperature Gradient"
     shortname = "TempGrad"
+    compute_sigma0 = True
     elliptic = True
 
     def __init__(self, **kwargs):
@@ -76,19 +77,24 @@ class oimTempGrad(oimComponentRadialProfile):
             unit=u.K,
             description="Temperature at reference radius",
         )
-        self.params["sigma0"] = oimParam(
-            name="sigma0",
-            value=0,
-            unit=u.g / u.cm**2,
-            description="Dust surface density at reference radius",
-        )
-        self.params["dust_mass"] = oimParam(
-            name="dust_mass",
-            value=0,
-            unit=u.M_sun,
-            description="Mass of the dusty disk",
-        )
-        # TODO: Shift these two to standard parameters and flip their sign
+
+        if "sigma0" in kwargs or not self.compute_sigma0:
+            self.compute_sigma0 = False
+            self.params["sigma0"] = oimParam(
+                name="sigma0",
+                value=1e-2,
+                unit=u.g / u.cm**2,
+                description="Dust surface density at reference radius",
+            )
+        else:
+            self.compute_sigma0 = True
+            self.params["dust_mass"] = oimParam(
+                name="dust_mass",
+                value=0.2,
+                unit=u.M_sun,
+                description="Mass of the dusty disk",
+            )
+
         self.params["q"] = oimParam(
             name="q",
             value=-0.5,
@@ -99,17 +105,60 @@ class oimTempGrad(oimComponentRadialProfile):
         )
         self.params["p"] = oimParam(
             name="p",
-            value=-1,
+            value=-0.5,
             unit=u.one,
             description="Power-law exponent for the dust surface density",
             mini=-1,
             maxi=0,
         )
+        self.params["kappa_abs"] = oimParam(
+            name="kappa_abs",
+            value=0,
+            unit=u.cm**2 / u.g,
+            description="Absorption (silicate) opacity",
+            free=False,
+        )
+
+        # TODO: Potentially generalis this for many different contributions
+        if "kappa_cont" in kwargs:
+            self.params["kappa_cont"] = oimParam(
+                name="kappa_cont",
+                value=0,
+                unit=u.cm**2 / u.g,
+                description="Absorption continuum opacity",
+                free=False,
+            )
+            self.params["kappa_ratio"] = oimParam(
+                name="kappa_ratio",
+                value=1,
+                unit=u.one,
+                description="Silicate to continuum ratio",
+                mini=0,
+                maxi=1,
+            )
+
         self.params["dist"] = oimParam(**_standardParameters["dist"])
         self.params["f"].free = False
-        self._wl_kappa_abs, self._kappa_abs = None, None
         self._wl, self._t = None, [0]
         self._eval(**kwargs)
+
+    @property
+    def _r(self):
+        """Gets the radial profile (mas)."""
+        rin, rout = self.params["rin"].value, self.params["rout"].value
+        dim, dist = self.params["dim"].value
+        rin = linear_to_angular(rout, dist) * 1e3
+        rout = linear_to_angular(rout, dist) * 1e3
+        if oimOptions.model.grid.type == "linear":
+            return np.linspace(rin, rout, dim)
+        return np.logspace(
+            0.0 if rin == 0 else np.log10(rin), np.log10(rout), dim
+        )
+
+    @_r.setter
+    def _r(self, value) -> None:
+        """Sets the radial profile [mas]."""
+        return None
 
     def _radialProfileFunction(
         self, r: np.ndarray, wl: np.ndarray, t: np.ndarray
@@ -134,7 +183,11 @@ class oimTempGrad(oimComponentRadialProfile):
         # Does not account for time, improves computation time.
         wl = np.unique(wl)
         dist = self.params["dist"].value
-        kappa_abs = self.get_kappa(wl)
+        kappa_abs = self.params["kappa_abs"](wl, t)
+        if "kappa_cont" in self.params:
+            ratio = self.params["kappa_ratio"].value
+            kappa_cont = self.params["kappa_cont"](wl, t)
+            kappa_abs = (1 - ratio) * kappa_abs + ratio * kappa_cont
 
         if self.flat:
             elong = 1 / self.params["cosi"].value
@@ -162,10 +215,7 @@ class oimTempGrad(oimComponentRadialProfile):
         r0 = linear_to_angular(r0, dist) * 1e3
         temp = self.params["temp0"](wl, t) * (r / r0) ** q
 
-        # TODO: Make this in a different way than 0, could cause problems?
-        # As if not user defined will always be non-zero (as parameter is free).
-        sigma0 = self.params["sigma0"](wl, t)
-        if sigma0 == 0:
+        if self.compute_sigma0:
             dust_mass = self.params["dust_mass"](wl, t) * self.params[
                 "dust_mass"
             ].unit.to(u.g)
@@ -176,11 +226,13 @@ class oimTempGrad(oimComponentRadialProfile):
             else:
                 f = (rout_cm ** (2 + p) - rin_cm ** (2 + p)) / (2 + p)
                 sigma0 = dust_mass / (2.0 * np.pi * f * r0_cm ** (-p))
+        else:
+            sigma0 = self.params["sigma0"](wl, t)
 
         sigma = sigma0 * (r / r0) ** p
         emissivity = 1 - np.exp(-sigma * kappa_abs * elong)
         spectral_density = (
-            blackbody(temp, const.c / wl) * emissivity * (1.0 / elong)
+            blackbody(temp, const.c / wl) * emissivity * (1 / elong)
         )
         rin_mas, rout_mas = map(
             lambda x: linear_to_angular(x, dist) * 1e3, [rin, rout]
@@ -191,38 +243,3 @@ class oimTempGrad(oimComponentRadialProfile):
             return image
 
         return image
-
-    @property
-    def _r(self):
-        """Gets the radial profile (mas)."""
-        rin, rout = self.params["rin"].value, self.params["rout"].value
-        dim, dist = self.params["dim"].value
-        rin = linear_to_angular(rout, dist) * 1e3
-        rout = linear_to_angular(rout, dist) * 1e3
-        if oimOptions.model.grid.type == "linear":
-            return np.linspace(rin, rout, dim)
-        return np.logspace(
-            0.0 if rin == 0 else np.log10(rin), np.log10(rout), dim
-        )
-
-    @_r.setter
-    def _r(self, value) -> None:
-        """Sets the radial profile [mas]."""
-        return None
-
-    # TODO: Both of these could be rewritten with a getter and setter
-    def get_kappa(self, wl: np.ndarray) -> NDArray[np.float64]:
-        """Gets the absorption opacity."""
-        if np.array_equal(wl, self._wl_kappa_abs):
-            return self._kappa_abs
-
-        return np.interp(wl, self._wl_kappa_abs, self._kappa_abs)
-
-    def setKappaAbs(self, kappa_file: str | Path, um: int = 1) -> None:
-        """Sets the absorption opacity."""
-        kappa_data = np.loadtxt(kappa_file, usecols=(0, 1))
-        if um == 1:
-            self._wl_kappa_abs = kappa_data[:, 0] * 1e-6
-        else:
-            self._wl_kappa_abs = kappa_data[:, 0]
-        self._kappa_abs = kappa_data[:, 1]
