@@ -295,11 +295,11 @@ class oimComponentFourier(oimComponent):
         super().__init__(**kwargs)
 
         # NOTE: Add ellipticity if either elong or pa is specified in kwargs
-        if any(x in kwargs for x in ["cosi", "elong", "pa"]) or kwargs.get(
+        if any(x in kwargs for x in ["cosi", "elong", "pa"]) or kwargs.pop(
             "elliptic", self.elliptic
         ):
             self.elliptic = True
-            if "cosi" in kwargs or kwargs.get("flat", self.flat):
+            if "cosi" in kwargs or kwargs.pop("flat", self.flat):
                 self.flat = True
                 self.params["cosi"] = oimParam(**_standardParameters["cosi"])
             else:
@@ -459,11 +459,11 @@ class oimComponentImage(oimComponent):
         self.params["dim"] = oimParam(**_standardParameters["dim"])
 
         # NOTE: Add ellipticity
-        if any(x in kwargs for x in ["cosi", "elong"]) or kwargs.get(
+        if any(x in kwargs for x in ["cosi", "elong"]) or kwargs.pop(
             "elliptic", self.elliptic
         ):
             self.elliptic = True
-            if "cosi" in kwargs or kwargs.get("flat", self.flat):
+            if "cosi" in kwargs or kwargs.pop("flat", self.flat):
                 self.flat = True
                 self.params["cosi"] = oimParam(**_standardParameters["cosi"])
             else:
@@ -719,11 +719,11 @@ class oimComponentRadialProfile(oimComponent):
         self.precision = None  # Precision for the Hankel transform
 
         # NOTE: Add ellipticity if either elong or pa is specified in kwargs
-        if any(x in kwargs for x in ["cosi", "elong", "pa"]) or kwargs.get(
+        if any(x in kwargs for x in ["cosi", "elong", "pa"]) or kwargs.pop(
             "elliptic", self.elliptic
         ):
             self.elliptic = True
-            if "cosi" in kwargs or kwargs.get("flat", self.flat):
+            if "cosi" in kwargs or kwargs.pop("flat", self.flat):
                 self.flat = True
                 self.params["cosi"] = oimParam(**_standardParameters["cosi"])
             else:
@@ -732,9 +732,9 @@ class oimComponentRadialProfile(oimComponent):
             self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add asymmetry
-        if kwargs.get("asymmetric", self.asymmetric):
+        if kwargs.pop("asymmetric", self.asymmetric):
             for i in range(
-                1, kwargs.get("modulation_order", self.modulation_order) + 1
+                1, kwargs.pop("modulation_order", self.modulation_order) + 1
             ):
                 self.params[f"skw{i}"] = oimParam(**_standardParameters["skw"])
                 self.params[f"skwPa{i}"] = oimParam(
