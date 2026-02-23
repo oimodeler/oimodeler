@@ -331,7 +331,7 @@ class oimComponentFourier(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         vc = self._visFunction(fxp, fyp, np.hypot(fxp, fyp), wl, t)
         return (
@@ -381,7 +381,7 @@ class oimComponentFourier(oimComponent):
 
         extfactor = np.array([1.0])
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = (
@@ -425,7 +425,7 @@ class oimComponentFourier(oimComponent):
 
         extfactor = np.array([1.0])
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         return (
@@ -529,7 +529,7 @@ class oimComponentImage(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         if not (
             self.FTBackend.check(
@@ -590,7 +590,7 @@ class oimComponentImage(oimComponent):
 
         extfactor = np.array([1.0])
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         im0 = self._internalImage()
         if im0 is None:
@@ -886,7 +886,7 @@ class oimComponentRadialProfile(oimComponent):
 
         extfactor = np.array([1.0])
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
@@ -930,7 +930,7 @@ class oimComponentRadialProfile(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         spf, psi = np.hypot(fxp, fyp), (
             np.arctan2(fyp, fxp) if self.asymmetric else None
