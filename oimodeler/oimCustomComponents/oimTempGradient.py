@@ -149,7 +149,7 @@ class oimTempGrad(oimComponentRadialProfile):
         """Gets the radial profile (mas)."""
         rin, rout = self.params["rin"].value, self.params["rout"].value
         dim, dist = self.params["dim"].value, self.params["dist"].value
-        rin = linear_to_angular(rout, dist) * 1e3
+        rin = linear_to_angular(rin, dist) * 1e3
         rout = linear_to_angular(rout, dist) * 1e3
         if oimOptions.model.grid.type == "linear":
             return np.linspace(rin, rout, dim)
