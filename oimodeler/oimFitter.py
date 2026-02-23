@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
+
 # from multiprocessing import Pool
 
+from pathlib import Path
 import astropy.units as unit
 import corner
 import emcee
@@ -90,8 +92,6 @@ class oimFitter:
 
     def _run(self, **kwargs):
         return kwargs
-    
-       
 
 
 class oimFitterEmcee(oimFitter):
@@ -99,13 +99,14 @@ class oimFitterEmcee(oimFitter):
 
     def __init__(self, *args, **kwargs):
         self.params["nwalkers"] = oimParam(
-            name="nwalkers", value=16, 
-            mini=1, description="Number of walkers"
+            name="nwalkers", value=16, mini=1, description="Number of walkers"
         )
-        
+
         self.params["chi2fact"] = oimParam(
-            name="chi2fact",value=1,
-            mini=1,description="chi2fact",
+            name="chi2fact",
+            value=1,
+            mini=1,
+            description="chi2fact",
         )
 
         super().__init__(*args, **kwargs)
@@ -127,7 +128,7 @@ class oimFitterEmcee(oimFitter):
             ],
         )
 
-        samplerFile = kwargs.pop("samplerFile", None)
+        samplerFile = Path(kwargs.pop("samplerFile", None))
         if samplerFile is None:
             self.sampler = emcee.EnsembleSampler(
                 self.params["nwalkers"].value,
@@ -137,6 +138,9 @@ class oimFitterEmcee(oimFitter):
                 **kwargs,
             )
         else:
+            if samplerFile.exists() and kwargs.get("removePreviousRun", True):
+                samplerFile.unlink()
+
             backend = emcee.backends.HDFBackend(samplerFile)
             self.sampler = emcee.EnsembleSampler(
                 self.params["nwalkers"].value,
@@ -208,7 +212,7 @@ class oimFitterEmcee(oimFitter):
         self.simulator.compute(
             computeChi2=True, dataTypes=self.dataTypes, cprior=self.cprior
         )
-        return -0.5 * self.simulator.chi2/self.params["chi2fact"].value
+        return -0.5 * self.simulator.chi2 / self.params["chi2fact"].value
 
     def getResults(self, mode="best", discard=0, chi2limfact=20, **kwargs):
         chi2 = -2 * self.sampler.get_log_prob(discard=discard, flat=True)
@@ -578,7 +582,7 @@ class oimFitterMinimize(oimFitter):
             mini=1,
             description="chi2fact",
         )
-        
+
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
@@ -599,7 +603,7 @@ class oimFitterMinimize(oimFitter):
             computeChi2=True, dataTypes=self.dataTypes, cprior=self.cprior
         )
 
-        return self.simulator.chi2/self.params["chi2fact"].value
+        return self.simulator.chi2 / self.params["chi2fact"].value
 
     def _run(self, **kwargs):
 
@@ -701,11 +705,11 @@ class oimFitterRegularGrid(oimFitter):
         self.chi2rMap = np.zeros(self.gridSize)
 
         n = self.chi2rMap.size
-        progress=True
+        progress = True
         if "progress" in kwargs:
-            progress=kwargs["progress"]
+            progress = kwargs["progress"]
 
-        for i in tqdm(range(n), disable=not(progress)):
+        for i in tqdm(range(n), disable=not (progress)):
             igrid = np.unravel_index(i, self.gridSize)
             for iparam in range(len(igrid)):
                 self.gridParams[iparam].value = self.grid[iparam][
@@ -775,10 +779,10 @@ class oimFitterRegularGrid(oimFitter):
             kwargs["aspect"] = "auto"
 
         ndims = len(self.gridSize)
-        
+
         if axe:
             ax = axe
-            fig = ax.get_figure() 
+            fig = ax.get_figure()
         else:
             fig, ax = plt.subplots()
 
@@ -851,7 +855,6 @@ class oimFitterRegularGrid(oimFitter):
 
             min_idx = np.unravel_index(min_idx, self.chi2rMap.shape)
 
-
             contour_kwargs["levels"] = (
                 np.array(contour_kwargs["levels"]) * chi2rmin
             )
@@ -917,40 +920,61 @@ class oimFitterRegularGrid(oimFitter):
         return fig, ax
 
 
-
-
-def oimComputeChi2PlusOneUncertainties(fit,factErr=500,npts=100,plot=False,dataTypes=None):
-    grids=[]
-    errs=[]
-    valps=[]
-    res,_,_,err=fit.getResults(discard=int(fit.sampler.chain.shape[1]*0.8),chi2limfact=3)
-    chi2min=fit.simulator.chi2r
-    for ip,pi in enumerate(tqdm(fit.freeParams)):
-        fit.getResults(discard=int(fit.sampler.chain.shape[1]*0.8),chi2limfact=3)
-        gridi = oimFitterRegularGrid(fit.data,fit.model,dataTypes=dataTypes)
-        mini=res[ip]-factErr*err[ip]
-        maxi=res[ip]+factErr*err[ip]    
-        step=(maxi-mini)/npts
-        gridi.prepare(min=[mini],max=[maxi],steps=[step],params=[fit.model.getFreeParameters()[pi]])
+def oimComputeChi2PlusOneUncertainties(
+    fit, factErr=500, npts=100, plot=False, dataTypes=None
+):
+    grids = []
+    errs = []
+    valps = []
+    res, _, _, err = fit.getResults(
+        discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
+    )
+    chi2min = fit.simulator.chi2r
+    for ip, pi in enumerate(tqdm(fit.freeParams)):
+        fit.getResults(
+            discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
+        )
+        gridi = oimFitterRegularGrid(fit.data, fit.model, dataTypes=dataTypes)
+        mini = res[ip] - factErr * err[ip]
+        maxi = res[ip] + factErr * err[ip]
+        step = (maxi - mini) / npts
+        gridi.prepare(
+            min=[mini],
+            max=[maxi],
+            steps=[step],
+            params=[fit.model.getFreeParameters()[pi]],
+        )
         gridi.run(progress=False)
-        valp1=gridi.grid[0][np.where(gridi.chi2rMap<(chi2min+1))]
+        valp1 = gridi.grid[0][np.where(gridi.chi2rMap < (chi2min + 1))]
         valps.append(valp1)
-        errp1=(valp1.max()-valp1.min())/2
+        errp1 = (valp1.max() - valp1.min()) / 2
         grids.append(gridi)
         errs.append(errp1)
-        
-    if plot:
-        fig,ax = plt.subplots(1,fit.nfree,figsize=(4*fit.nfree,4),sharey=True)
-        if fit.nfree==1:
-            ax=[ax]
-        for ip,pi in enumerate(fit.freeParams):
-            grids[ip].plotMap(axe=ax[ip])
-            ax[ip].plot([valps[ip].min(),valps[ip].max()],[chi2min+1]*2,color="b",ls="--")
-            ax[ip].text(valps[ip].max(),chi2min+1,f"$\\sigma$={errs[ip]:.3f}",va="center",ha="left",color="b")
-        ax[0].set_ylim([chi2min,chi2min*20])
-        ax[0].set_yscale("log")
-        return errs,fig,ax
 
-    
+    if plot:
+        fig, ax = plt.subplots(
+            1, fit.nfree, figsize=(4 * fit.nfree, 4), sharey=True
+        )
+        if fit.nfree == 1:
+            ax = [ax]
+        for ip, pi in enumerate(fit.freeParams):
+            grids[ip].plotMap(axe=ax[ip])
+            ax[ip].plot(
+                [valps[ip].min(), valps[ip].max()],
+                [chi2min + 1] * 2,
+                color="b",
+                ls="--",
+            )
+            ax[ip].text(
+                valps[ip].max(),
+                chi2min + 1,
+                f"$\\sigma$={errs[ip]:.3f}",
+                va="center",
+                ha="left",
+                color="b",
+            )
+        ax[0].set_ylim([chi2min, chi2min * 20])
+        ax[0].set_yscale("log")
+        return errs, fig, ax
+
     return errs
-        
