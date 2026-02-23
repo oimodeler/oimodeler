@@ -78,7 +78,9 @@ class oimTempGrad(oimComponentRadialProfile):
             description="Temperature at reference radius",
         )
 
-        if "sigma0" in kwargs or not self.compute_sigma0:
+        if "sigma0" in kwargs or not kwargs.get(
+            "compute_sigma0", self.compute_sigma0
+        ):
             self.compute_sigma0 = False
             self.params["sigma0"] = oimParam(
                 name="sigma0",
