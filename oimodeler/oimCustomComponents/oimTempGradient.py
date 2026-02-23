@@ -153,6 +153,7 @@ class oimTempGrad(oimComponentRadialProfile):
         rout = linear_to_angular(rout, dist) * 1e3
         if oimOptions.model.grid.type == "linear":
             return np.linspace(rin, rout, dim)
+
         return np.logspace(
             0.0 if rin == 0 else np.log10(rin), np.log10(rout), dim
         )
