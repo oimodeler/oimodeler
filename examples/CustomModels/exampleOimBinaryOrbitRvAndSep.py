@@ -16,9 +16,16 @@ import astropy.units as u
 plt.rcParams['xtick.minor.visible'] = True
 plt.rcParams['ytick.minor.visible'] = True
 
-dir0=Path(r"C:\Travail\GitHub\oimodeler\data\NonInterferometricData")
+path = Path(__file__).parent.parent.parent
 
-fname_pos= dir0 / "delsco_position.dat"
+# NOTE: Change this path if you want to save the products at another location
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
+    
+#%% Loading the separation and radial velocity data from Meilland et al. 2011
+
+fname_pos= path / "data" / "NonInterferometricData" /  "delsco_position.dat"
 data=ascii.read(fname_pos)
 mjd = np.array(data["mjd"])
 x = np.array(data["x"])
@@ -27,36 +34,38 @@ err_x = np.array(data["err_x"])
 err_y = np.array(data["err_y"])
 source = np.array(data["source"])
 
-fname_rv= dir0 / "delsco_rv.dat"
+fname_rv= path / "data" / "NonInterferometricData" / "delsco_rv.dat"
 data_rv=ascii.read(fname_rv)
-mjdRv = Time(np.array((data_rv["col1"]-544.5)/365.+2000.),format="byear").mjd
-rv  =   np.array(data_rv["col2"])
-#%%
-t0=Time(2000.6941,format="byear").mjd
-e = 0.94
-a = 98.7403
+mjdRv = Time(data_rv["yr"],format="byear").mjd
+rv  =   np.array(data_rv["rv"])
+#%% 
+T0=Time(2000.6941,format="byear").mjd
 T = 10.811*u.yr.to(u.day)
-i = 30.2
-o = 0.7
-O = 174.0
-v0 = -6.7
-Ka = 23.9
 
-orb = oim.oimBinaryOrbit(e=e, a=a, T=T,T0=t0, i=i, o=o,O=O,V0=v0,Ka=Ka)
+orb = oim.oimBinaryOrbit(e  = 0.94,   # Eccentricity
+                         a  = 98.74,  # semi-major axis (mas)
+                         T0 = T0,     # Time Periastron passage (MJD by default or decimal year)
+                         T  = T,      # Period (in days by default or any compatible astropy unit if specified)
+                         i = 30.2,    # inclination angle (deg)
+                         O = 174,     # Longitude of ascending node (deg)
+                         o =0.7,      # Argument of periastron
+                         Ka = 23.9,   # Radial Velocity semi-amplitude of the first component (km/s by default)
+                         V0 = -6.7    # Systemic velocity  (km/s by default)
+                         )
 morb = oim.oimModel(orb)
 
 #%% defining parameter space
 
-orb.params["a"].set(min=0,max=200)
-orb.params["T"].set(min=0,max=365*20)
+orb.params["a"].set(min=80,max=100)
+orb.params["T"].set(min=8*365.25,max=12*365.25)
 orb.params["T0"].set(min=51000,max=52000)
 orb.params["primary_f"].free=False
 orb.params["secondary_f"].free=False
-orb.params["O"].set(min=0,max=180)
-orb.params["o"].set(min=-180,max=180)
+orb.params["O"].set(min=150,max=180)
+orb.params["o"].set(min=-20,max=20)
 orb.params["i"].set(min=0,max=90)    
-orb.params["Ka"].set(min=0,max=100,free=True)
-orb.params["V0"].set(min=-50,max=50,free=True)
+orb.params["Ka"].set(min=20,max=25,free=True)
+orb.params["V0"].set(min=-10,max=0,free=True)
 
 #%% defining the external constraint prior
 
@@ -70,23 +79,22 @@ def sepRvPrior(whatever):
     chi2r = chi2r_sep + 10*chi2r_rv
     return chi2r
 
-
 #%%
-sim=oim.oimSimulator(oim.oimData(),morb,cprior=sepRvPrior)
-fit=oim.oimFitterEmcee(sim,nwalkers=50)
+fit=oim.oimFitterEmcee(oim.oimData(),morb,nwalkers=20)
+fit.simulator.cprior = sepRvPrior
 fit.prepare()
 #%%........................................................................................................................................................................................................................................................................................................................................
-fit.run(nsteps=40000,progress=True)
+fit.run(nsteps=20000,progress=True)
 #%%
-fit.walkersPlot(chi2limfact=4,ncolors=8)
+fit.walkersPlot(chi2limfact=2,ncolors=8)
 #%%
-fit.cornerPlot(discard=35000,chi2limfact=2,fontsize=6)
+fit.cornerPlot(discard=15000,chi2limfact=2,fontsize=6)
 #%%
 
 fit.printResults(discard=15000,chi2limfact=2)
-
+#%%
 nt=10000
-tmod = np.linspace(t0-T/2,t0+T/2,nt)
+tmod = np.linspace(T0-T/2,T0+T/2,nt)
 x_mod0,y_mod0=orb.getSeparation(tmod, mas=True)
 
 x_mod,y_mod = orb.getSeparation(mjd, mas=True)
@@ -113,7 +121,7 @@ ax2.grid(which="major",lw=1,alpha=0.2)
 ax2.grid(which="minor",lw=0.5,alpha=0.2)
 
 nt=10000
-tmod = np.linspace(t0-T/8,t0+T/8,nt)
+tmod = np.linspace(T0-T/8,T0+T/8,nt)
 rv_mod=orb.getPrimaryRadialVelocity(tmod)
 ax2.plot(Time(tmod,format="mjd").byear,rv_mod,color="b",label="model Rv")
 ax2.scatter(Time(mjdRv,format="mjd").byear,rv,color="r",label='data',marker=".")

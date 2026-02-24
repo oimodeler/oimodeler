@@ -8,6 +8,8 @@ import oimodeler as oim
 import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u
+from pathlib import Path
+
 
 plt.rcParams['xtick.minor.visible'] = True
 plt.rcParams['ytick.minor.visible'] = True
@@ -20,11 +22,12 @@ if not save_dir.exists():
     save_dir.mkdir(parents=True)
     
 #%% Setting the oimBinaryOrbit component
-
+T0 = 0
+T  = 1
 orb = oim.oimBinaryOrbit(e=0.4, # Eccentricity
                          a=10,  # semi-major axis (mas)
-                         T0=0,  # Time Periastron passage (MJD)
-                         T=1,   # Period (in days by default or an astropy unit if specified)
+                         T0 = T0,     # Time Periastron passage (MJD by default or decimal year)
+                         T  = T,      # Period (in days by default or any compatible astropy unit if specified)
                          i=45,   # inclination angle (deg)
                          O=40,   # Longitude of ascending node (deg)
                          o=-20    # Argument of periastron
@@ -32,8 +35,8 @@ orb = oim.oimBinaryOrbit(e=0.4, # Eccentricity
 
 #%% getting separation at various time to plot the orbit
 nt2=7
-t = np.linspace(t0,t0+T,100)
-t2 = np.linspace(t0,t0+T,nt2)
+t = np.linspace(T0,T0+T,100)
+t2 = np.linspace(T0,T0+T,nt2)
 x,y = orb.getSeparation(t,mas=True)
 x2,y2 = orb.getSeparation(t2,mas=True)        
 #%% plot the full orbit
@@ -98,7 +101,7 @@ plt.savefig(save_dir / "ExampleBinary_visi_through_full_orbit.png")
 #%% multi spafreq and time simulatenously in one getComplexCoherentFlux call
 
 nt=500 # number of epochs in one period
-t = np.linspace(t0,t0+T,nt)
+t = np.linspace(T0,T0+T,nt)
 nB = 500  # number of baselines
 wl = 2.1e-6 # fixed wavelength
 B = np.linspace(0.0, 100, num=nB)
@@ -180,7 +183,7 @@ orb.params["Ka"].value=5
 orb.params["Kb"].value=50
 orb.params["V0"].value = -5
 
-t = np.linspace(0,0+2,nt*2)
+t = np.linspace(T0,T0+2*T,nt*2)
 rv=orb.getPrimaryRadialVelocity(t)
 
 rv_a,rv_b=orb.getRadialVelocities(t)

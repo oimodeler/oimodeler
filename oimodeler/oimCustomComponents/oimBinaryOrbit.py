@@ -13,7 +13,7 @@ from ..oimBasicFourierComponents import oimPt
 from ..oimParam import oimParam,_standardParameters
 import astropy.units as u
 import astropy.constants as cst
-
+from astropy.time import Time
 
 def Rotate_2D(Coord,theta):
     rotMat = np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta), np.cos(theta)]])
@@ -126,7 +126,7 @@ class oimBinaryOrbit(oimComponentFourier):
         e = self.params["e"].value
         a = self.params["a"].value*self.params["a"].unit.to(u.rad)
         T = self.params["T"].value*self.params["T"].unit.to(u.day)
-        T0 = self.params["T0"].value
+        T0 = self._T0inMJD()
         i = self.params["i"].value*self.params["i"].unit.to(u.rad)
         O = self.params["O"].value*self.params["O"].unit.to(u.rad)
         o = self.params["o"].value*self.params["o"].unit.to(u.rad)
@@ -147,8 +147,8 @@ class oimBinaryOrbit(oimComponentFourier):
     
     def getPrimaryRadialVelocity(self,t):
         e = self.params["e"].value
-        T = self.params["T"].value
-        T0 = self.params["T0"].value
+        T = self.params["T"].value*self.params["T"].unit.to(u.day)
+        T0 = self._T0inMJD()
         o = self.params["o"].value*self.params["o"].unit.to(u.rad)
         V0 = self.params["V0"].value
         Ka = self.params["Ka"].value
@@ -157,8 +157,8 @@ class oimBinaryOrbit(oimComponentFourier):
     
     def getRadialVelocities(self,t):
         e = self.params["e"].value
-        T = self.params["T"].value
-        T0 = self.params["T0"].value
+        T = self.params["T"].value*self.params["T"].unit.to(u.day)
+        T0 = self._T0inMJD()
         o = self.params["o"].value*self.params["o"].unit.to(u.rad)
         V0 = self.params["V0"].value
         Ka = self.params["Ka"].value
@@ -173,3 +173,10 @@ class oimBinaryOrbit(oimComponentFourier):
         a = self.params["a"].value*self.params["a"].unit.to(u.rad)
         MajAxis = a*dist
         return orbit2Mass(T,MajAxis)
+    
+    def _T0inMJD(self):
+        if self.params["T0"].unit == u.yr:
+            T = Time(self.params["T0"].value,format="byear").mjd*u.day
+        else: 
+            T = self.params["T0"].value*self.params["T0"].unit.to(u.day)
+        return T
