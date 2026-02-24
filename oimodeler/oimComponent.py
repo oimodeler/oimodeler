@@ -168,6 +168,10 @@ class oimComponent:
                         )
                 else:
                     self.params[key].value = value
+                    if type(value)==u.Quantity:
+                        self.params[key].value = value.value
+                        self.params[key].unit = value.unit
+  
             elif checkParam:
                 if not (key in ["pa", "elong"]):
                     warnings.warn(
