@@ -121,7 +121,7 @@ class oimTempGrad(oimComponentRadialProfile):
             free=False,
         )
 
-        # TODO: Potentially generalis this for many different contributions
+        # TODO: Potentially generalise this for many different contributions
         if "kappa_cont" in kwargs:
             self.params["kappa_cont"] = oimParam(
                 name="kappa_cont",
