@@ -312,14 +312,20 @@ class oimSimulator:
 
                                 chi2List.append(chi2i)
                                 residuals.append(resi)
-                    
-                
 
         if computeChi2 and self.cprior is None:
             self.chi2 = chi2
             self.chi2r = chi2 / (nelChi2 - len(self.model.getFreeParameters()))
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
+            self.residuals = residuals
+        elif computeChi2 and nelChi2==0:
+            chi2_prior=self.cprior(self.model.getParameters())
+
+            self.chi2 = chi2_prior
+            self.chi2r = chi2_prior
+            self.chi2List = None
+            self.nelChi2 = 1
             self.residuals = residuals
         elif computeChi2:
             chi2_prior = (
