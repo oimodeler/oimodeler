@@ -741,7 +741,6 @@ class oimData:
             The matplotlib axe.
 
         """
-        print(axe)
         if removeFilter:
             data = self._data
         else:
