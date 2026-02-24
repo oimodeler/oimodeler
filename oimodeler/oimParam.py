@@ -88,10 +88,10 @@ class oimParam:
         self.free = free
         self.description = description
         self.unit = unit
-        
-        if type(value)==u.Quantity:
-          self.value = value.value
-          self.unit  = value.unit
+
+        if type(value) == u.Quantity:
+            self.value = value.value
+            self.unit = value.unit
 
     def set(self, **kwargs):
         for key, value in kwargs.items():

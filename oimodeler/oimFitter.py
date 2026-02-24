@@ -128,7 +128,7 @@ class oimFitterEmcee(oimFitter):
             ],
         )
 
-        samplerFile = Path(kwargs.pop("samplerFile", None))
+        samplerFile = kwargs.pop("samplerFile", None)
         if samplerFile is None:
             self.sampler = emcee.EnsembleSampler(
                 self.params["nwalkers"].value,
@@ -138,6 +138,7 @@ class oimFitterEmcee(oimFitter):
                 **kwargs,
             )
         else:
+            samplerFile = Path(samplerFile)
             if samplerFile.exists() and kwargs.get("removePreviousRun", True):
                 samplerFile.unlink()
 
