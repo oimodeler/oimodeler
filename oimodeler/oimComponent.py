@@ -89,7 +89,7 @@ class oimComponent:
         self.params["x"] = oimParam(**_standardParameters["x"])
         self.params["y"] = oimParam(**_standardParameters["y"])
         self.params["f"] = oimParam(**_standardParameters["f"])
-        self._eval(**kwargs,checkParam=False)
+        self._eval(**kwargs, checkParam=False)
 
     def _paramstr(self):
         txt = []
@@ -158,7 +158,7 @@ class oimComponent:
             value = [value]
         self.__t = np.array(value)
 
-    def _eval(self, checkParam=True,**kwargs) -> None:
+    def _eval(self, checkParam=True, **kwargs) -> None:
         for key, value in kwargs.items():
             if key in self.params.keys():
                 if isinstance(value, oimInterp):
@@ -169,13 +169,10 @@ class oimComponent:
                 else:
                     self.params[key].value = value
             elif checkParam:
-                if not(key in ["pa","elong"]):
-                    warnings.warn(f"{key} not a parameter of {self.name}: ignored")
-
-                    
-                    
-                    
-    
+                if not (key in ["pa", "elong"]):
+                    warnings.warn(
+                        f"{key} not a parameter of {self.name}: ignored"
+                    )
 
     def getComplexCoherentFlux(self, u, v, wl=None, t=None) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
@@ -298,13 +295,16 @@ class oimComponentFourier(oimComponent):
         super().__init__(**kwargs)
 
         # NOTE: Add ellipticity if either elong or pa is specified in kwargs
-        if any(x in kwargs for x in ["cosi", "elong", "pa"]) or self.elliptic:
+        if any(x in kwargs for x in ["cosi", "elong", "pa"]) or kwargs.pop(
+            "elliptic", self.elliptic
+        ):
             self.elliptic = True
-            if self.flat or "cosi" in kwargs:
+            if "cosi" in kwargs or kwargs.pop("flat", self.flat):
                 self.flat = True
                 self.params["cosi"] = oimParam(**_standardParameters["cosi"])
             else:
                 self.params["elong"] = oimParam(**_standardParameters["elong"])
+
             self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add extinction if A_V is specified in kwargs
@@ -312,7 +312,7 @@ class oimComponentFourier(oimComponent):
             self.extincted = True
             self.params["A_V"] = oimParam(**_standardParameters["A_V"])
 
-        self._eval(**kwargs,checkParam=False)
+        self._eval(**kwargs, checkParam=False)
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
         fxp, fyp = ucoord, vcoord
@@ -331,7 +331,7 @@ class oimComponentFourier(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         vc = self._visFunction(fxp, fyp, np.hypot(fxp, fyp), wl, t)
         return (
@@ -381,7 +381,7 @@ class oimComponentFourier(oimComponent):
 
         extfactor = np.array([1.0])
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = (
@@ -425,7 +425,7 @@ class oimComponentFourier(oimComponent):
 
         extfactor = np.array([1.0])
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         return (
@@ -459,9 +459,11 @@ class oimComponentImage(oimComponent):
         self.params["dim"] = oimParam(**_standardParameters["dim"])
 
         # NOTE: Add ellipticity
-        if any(x in kwargs for x in ["cosi", "elong"]) or self.elliptic:
+        if any(x in kwargs for x in ["cosi", "elong"]) or kwargs.pop(
+            "elliptic", self.elliptic
+        ):
             self.elliptic = True
-            if self.flat or "cosi" in kwargs:
+            if "cosi" in kwargs or kwargs.pop("flat", self.flat):
                 self.flat = True
                 self.params["cosi"] = oimParam(**_standardParameters["cosi"])
             else:
@@ -478,7 +480,7 @@ class oimComponentImage(oimComponent):
             self.FTBackend = oimOptions.ft.backend.active()
 
         self.FTBackendData = None
-        self._eval(**kwargs,checkParam=False)
+        self._eval(**kwargs, checkParam=False)
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
         if wl is None:
@@ -527,7 +529,7 @@ class oimComponentImage(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         if not (
             self.FTBackend.check(
@@ -588,7 +590,7 @@ class oimComponentImage(oimComponent):
 
         extfactor = np.array([1.0])
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         im0 = self._internalImage()
         if im0 is None:
@@ -717,18 +719,23 @@ class oimComponentRadialProfile(oimComponent):
         self.precision = None  # Precision for the Hankel transform
 
         # NOTE: Add ellipticity if either elong or pa is specified in kwargs
-        if any(x in kwargs for x in ["cosi", "elong", "pa"]) or self.elliptic:
+        if any(x in kwargs for x in ["cosi", "elong", "pa"]) or kwargs.pop(
+            "elliptic", self.elliptic
+        ):
             self.elliptic = True
-            if self.flat or "cosi" in kwargs:
+            if "cosi" in kwargs or kwargs.pop("flat", self.flat):
                 self.flat = True
                 self.params["cosi"] = oimParam(**_standardParameters["cosi"])
             else:
                 self.params["elong"] = oimParam(**_standardParameters["elong"])
+
             self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add asymmetry
-        if self.asymmetric:
-            for i in range(1, self.modulation_order + 1):
+        if kwargs.pop("asymmetric", self.asymmetric):
+            for i in range(
+                1, kwargs.pop("modulation_order", self.modulation_order) + 1
+            ):
                 self.params[f"skw{i}"] = oimParam(**_standardParameters["skw"])
                 self.params[f"skwPa{i}"] = oimParam(
                     **_standardParameters["skwPa"]
@@ -740,7 +747,7 @@ class oimComponentRadialProfile(oimComponent):
             self.params["A_V"] = oimParam(**_standardParameters["A_V"])
 
         self.params["dim"] = oimParam(**_standardParameters["dim"])
-        self._eval(**kwargs,checkParam=False)
+        self._eval(**kwargs, checkParam=False)
 
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
 
@@ -879,7 +886,7 @@ class oimComponentRadialProfile(oimComponent):
 
         extfactor = np.array([1.0])
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
@@ -923,7 +930,7 @@ class oimComponentRadialProfile(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"]()))
+            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         spf, psi = np.hypot(fxp, fyp), (
             np.arctan2(fyp, fxp) if self.asymmetric else None

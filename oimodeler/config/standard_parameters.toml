@@ -90,7 +90,7 @@ mini = 1
 
 [cosi]
 name = "cosi"
-value = 0
+value = 1
 description = "The cosine of the inclination"
 unit = "one"
 mini = 0

@@ -3,13 +3,14 @@
 :func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers,
 normalizers and interpolators.
 """
-import pickle
-import operator
-import sys
+
 import inspect
+import operator
+import pickle
+import sys
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterable, List, Union
 
 import astropy.units as u
 import numpy as np
@@ -360,15 +361,23 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
             self.keyframes.append(oimParam(**_standardParameters[dependence]))
             self.keyframes[-1].value = kf
 
-        for kv in keyvalues:
+        for index, kv in enumerate(keyvalues):
+            mini = kwargs.get("min", param.min)
+            maxi = kwargs.get("max", param.max)
+            if isinstance(mini, Iterable):
+                mini = mini[index]
+
+            if isinstance(maxi, Iterable):
+                maxi = maxi[index]
+
             pi = oimParam(
                 name=param.name,
                 value=kv,
-                mini=param.min,
-                maxi=param.max,
+                mini=mini,
+                maxi=maxi,
                 description=param.description,
                 unit=param.unit,
-                free=param.free,
+                free=kwargs.get("free", param.free),
                 error=param.error,
             )
             self.keyvalues.append(pi)
