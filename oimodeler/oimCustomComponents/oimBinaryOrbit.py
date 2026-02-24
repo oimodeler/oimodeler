@@ -176,7 +176,7 @@ class oimBinaryOrbit(oimComponentFourier):
     
     def _T0inMJD(self):
         if self.params["T0"].unit == u.yr:
-            T = Time(self.params["T0"].value,format="byear").mjd*u.day
+            T = Time(self.params["T0"].value,format="byear").mjd
         else: 
             T = self.params["T0"].value*self.params["T0"].unit.to(u.day)
         return T

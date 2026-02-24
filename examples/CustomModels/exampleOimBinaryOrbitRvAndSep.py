@@ -27,9 +27,7 @@ if not save_dir.exists():
 #%% Loading the separation and radial velocity data from Meilland et al. 2011
 
 fname_pos= path / "data" / "NonInterferometricData" /  "delsco_position.dat"
-
 data = ascii.read(fname_pos)
-
 mjd = np.array(data["mjd"])
 x = np.array(data["x"])
 y = np.array(data["y"])
@@ -42,19 +40,21 @@ fname_rv= path / "data" / "NonInterferometricData" / "delsco_rv.dat"
 data_rv=ascii.read(fname_rv)
 mjdRv = Time(data_rv["yr"],format="byear").mjd
 rv  =   np.array(data_rv["rv"])
+
 #%% 
+
 T0=Time(2000.6941,format="byear").mjd
 T = 10.811*u.yr.to(u.day)
 
-orb = oim.oimBinaryOrbit(e  = 0.94,   # Eccentricity
-                         a  = 98.74,  # semi-major axis (mas)
-                         T0 = T0,     # Time Periastron passage (MJD by default or decimal year)
-                         T  = T,      # Period (in days by default or any compatible astropy unit if specified)
-                         i = 30.2,    # inclination angle (deg)
-                         O = 174,     # Longitude of ascending node (deg)
-                         o =0.7,      # Argument of periastron
-                         Ka = 23.9,   # Radial Velocity semi-amplitude of the first component (km/s by default)
-                         V0 = -6.7    # Systemic velocity  (km/s by default)
+orb = oim.oimBinaryOrbit(e  = 0.94,            # Eccentricity
+                         a  = 98.74,           # semi-major axis (mas)
+                         T0 = 2000.6941*u.yr,  # Time Periastron passage (MJD by default or decimal year)
+                         T  = 10.811*u.yr,     # Period (days by default or any compatible astropy unit if specified)
+                         i  = 30.2,            # inclination angle (deg)
+                         O  = 174,             # Longitude of ascending node (deg)
+                         o  = 0.7,             # Argument of periastron
+                         Ka = 23.9,            # Radial Velocity semi-amplitude of the first component (km/s by default)
+                         V0 = -6.7             # Systemic velocity  (km/s by default)
                          )
 
 morb = oim.oimModel(orb)
@@ -62,8 +62,8 @@ morb = oim.oimModel(orb)
 #%% Define the parameter space
 
 orb.params["a"].set(min=80,max=100)
-orb.params["T"].set(min=8*365.25,max=12*365.25)
-orb.params["T0"].set(min=51000,max=52000)
+orb.params["T"].set(min=8,max=12)
+orb.params["T0"].set(min=2000,max=2001)
 orb.params["primary_f"].free=False
 orb.params["secondary_f"].free=False
 orb.params["O"].set(min=150,max=180)
@@ -84,15 +84,18 @@ def sepRvPrior(whatever):
     chi2r = chi2r_sep + 10 * chi2r_rv
     return chi2r
 
-#%% Setting a fitter without interferometric data but with the prior function
+#%% Setting a mcmc fitter without interferometric data but with the prior function
+
 fit=oim.oimFitterEmcee(oim.oimData(),morb,nwalkers=20)
 fit.simulator.cprior = sepRvPrior
 fit.prepare()
+
 #%% Fitting Rv and separation using the simulator prior
 fit.run(nsteps=20000,progress=True)
+
 #%% Plotting results of the fit
-fit.walkersPlot(chi2limfact=2,ncolors=8)
-fit.cornerPlot(discard=15000,chi2limfact=2,fontsize=6)
+fit.walkersPlot(chi2limfact=2,ncolors=8,savefig=save_dir / "ExampleBinary_delsco_walker.png")
+fit.cornerPlot(discard=15000,chi2limfact=2,savefig=save_dir / "ExampleBinary_delsco_corner.png")
 fit.printResults(discard=15000,chi2limfact=2)
 
 #%% Plotting the fitted orbit
@@ -118,8 +121,8 @@ ax.legend()
 
 ax.set_xlabel("$\\alpha$ (mas)")
 ax.set_ylabel("$\\delta$ (mas)")
+plt.savefig(save_dir / "ExampleBinary_delsco_fitted_orbit.png")
 #%% Plotting the fitted Radial Velocity
-
 
 fi2, ax2 = plt.subplots()
 ax2.grid(which="major", lw=1, alpha=0.2)
@@ -136,3 +139,4 @@ ax2.legend()
 ax2.set_xlim(2000, 2001.4)
 ax2.set_xlabel("Time (yr)")
 ax2.set_ylabel("Radial Velocity (km/s)")
+plt.savefig(save_dir / "ExampleBinary_delsco_fitted_rv.png")
