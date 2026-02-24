@@ -145,7 +145,7 @@ class oimFitterEmcee(oimFitter):
                 warnings.warn(
                     "Sampler file already exists."
                     " Can lead to errors if settings of previous"
-                    "run differ from current.",
+                    " run differ from current.",
                     UserWarning,
                 )
 
