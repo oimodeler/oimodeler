@@ -3,7 +3,9 @@
 
 # from multiprocessing import Pool
 
+import warnings
 from pathlib import Path
+
 import astropy.units as unit
 import corner
 import emcee
@@ -139,8 +141,13 @@ class oimFitterEmcee(oimFitter):
             )
         else:
             samplerFile = Path(samplerFile)
-            if samplerFile.exists() and kwargs.get("removePreviousRun", True):
-                samplerFile.unlink()
+            if samplerFile.exists():
+                warnings.warn(
+                    "Sampler file already exists."
+                    " Can lead to errors if settings of previous"
+                    "run differ from current.",
+                    UserWarning,
+                )
 
             backend = emcee.backends.HDFBackend(samplerFile)
             self.sampler = emcee.EnsembleSampler(
