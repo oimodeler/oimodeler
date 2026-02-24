@@ -4,14 +4,15 @@ Created on Thu Jan 26 12:03:58 2023
 
 @author: Ame
 """
-from pathlib import Path
-from pprint import pprint
 
-import matplotlib.colors as colors
+from pathlib import Path
+
 import matplotlib.cm as cm
+import matplotlib.colors as colors
 import numpy as np
-import oimodeler as oim
 from matplotlib import pyplot as plt
+
+import oimodeler as oim
 
 # NOTE: You can change FFT option, for instance reduce the standard
 # zero-padding factor from 8 to 2 or use FFTW backend instead of the
@@ -33,51 +34,58 @@ save_dir = path / "images"
 if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
-# %% creating the model
+# NOTE: Create the model
 c = oim.oimComponentFitsImage(file_name)
 m = oim.oimModel(c)
 
-#%% accessing the internal image and  wavelength table
+# NOTE: Access the internal image and  wavelength table
 print(c._image.shape)
 print(c._wl)
 
-# %% Plotting the model image
+# NOTE: Plot the model image
 wl0, dwl, nwl = 2.1661e-6, 60e-10, 5
-wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
-fig, ax, im  = m.showModel(256, 0.04, wl=wl, legend=True, normPow=0.4, colorbar=False,
-            figsize=(2, 2.5), savefig=save_dir / "FitsImageCube_BeDiskKinematicsModel_images.png")
+wl = np.linspace(wl0 - dwl / 2, wl0 + dwl / 2, num=nwl)
+fig, ax, im = m.showModel(
+    256,
+    0.04,
+    wl=wl,
+    legend=True,
+    normPow=0.4,
+    colorbar=False,
+    figsize=(2, 2.5),
+    savefig=save_dir / "FitsImageCube_BeDiskKinematicsModel_images.png",
+)
 
 
-# %% Computing and plotting visibilities for various baselines and walvelengths
+# NOTE: Compute and plot visibilities for various baselines and wavelengths
 nB = 1000
 nwl = 51
 
-wl = np.linspace(wl0-dwl/2, wl0+dwl/2, num=nwl)
-B = np.linspace(0, 100, num=nB//2)
+wl = np.linspace(wl0 - dwl / 2, wl0 + dwl / 2, num=nwl)
+B = np.linspace(0, 100, num=nB // 2)
 
-# The 1st half of B array are baseline in the East-West orientation
+# NOTE: The 1st half of B array are baseline in the East-West orientation
 # and the 2nd half are baseline in the North-South orientation
-Bx = np.append(B, B*0) 
-By = np.append(B*0, B)  
+Bx = np.append(B, B * 0)
+By = np.append(B * 0, B)
 
-#creating the spatial frequencies and wls arrays nB x nwl by matrix multiplication
-spfx = (Bx[np.newaxis,:]/wl[:,np.newaxis]).flatten()
-spfy = (By[np.newaxis,:]/wl[:,np.newaxis]).flatten()
-wls  = (wl[:,np.newaxis]*np.ones([1,nB])).flatten()
+# NOTE: Create the spatial frequencies and wls arrays nB x nwl by matrix multiplication
+spfx = (Bx[np.newaxis, :] / wl[:, np.newaxis]).flatten()
+spfy = (By[np.newaxis, :] / wl[:, np.newaxis]).flatten()
+wls = (wl[:, np.newaxis] * np.ones([1, nB])).flatten()
 
-#computing the complex coherent flux and visbility
+# NOTE: Compute the complex coherent flux and visbility
 vc = m.getComplexCoherentFlux(spfx, spfy, wls)
 v = np.abs(vc.reshape(nwl, nB))
-v = v/np.tile(v[:, 0][:, None], (1, nB))
+v = v / np.tile(v[:, 0][:, None], (1, nB))
 
-#plotting the results
+# NOTE: Plot the results
 fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 titles = ["East-West Baselines", "North-South Baselines"]
 
 for iB in range(nB):
-    cB = (iB % (nB//2))/(nB//2-1)
-    ax[2*iB//nB].plot(wl*1e9, v[:, iB],
-                      color=plt.cm.plasma(cB))
+    cB = (iB % (nB // 2)) / (nB // 2 - 1)
+    ax[2 * iB // nB].plot(wl * 1e9, v[:, iB], color=plt.cm.plasma(cB))
 
 for i in range(2):
     ax[i].set_title(titles[i])

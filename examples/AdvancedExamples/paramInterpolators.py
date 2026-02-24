@@ -23,7 +23,7 @@ if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
 
-# %% Function to simplify plotting of parameter an visibility
+# NOTE: Function to simplify plotting of parameters an visibility
 def plotParamAndVis(B, wl, t, model, param, ax=None, colorbar=True):
     nB = B.size
 

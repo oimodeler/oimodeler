@@ -6,9 +6,9 @@ from scipy import constants as const
 
 import oimodeler as oim
 
-# NOTE: load MATISSE data of AS209 (YSO) into an oimData object
+# NOTE: Load MATISSE data of AS209 (YSO) into an oimData object
 path = Path(__file__).parent.parent.parent
-files = list((path / "data" / "AS209_MATISSE").glob("*.fits"))
+files = sorted((path / "data" / "AS209_MATISSE").glob("*.fits"))
 data = oim.oimData(files)
 
 # NOTE: Apply filters
@@ -64,7 +64,7 @@ ax.legend(fontsize=16)
 ax.autolim()
 
 
-# NOTE: plot the unfiltered and filtered data (FLUXDATA)
+# NOTE: Plot the unfiltered and filtered data (FLUXDATA)
 # figFlux,axFlux =plt.subplots(figsize=(15,5),subplot_kw=dict(projection="oimAxes"))
 # data.useFilter = False
 # data.plot("EFF_WAVE","FLUXDATA",color="byFile",xunit="micron",errorbar=False,axe=axFlux, lw=3, alpha=0.1,label="unfiltered")
@@ -90,7 +90,7 @@ err_flx_dens_Jy = (err_flx / wl) * wl**2 / const.c * 1e26  # conversion in Jy
 oitarget = data.data[0]["OI_TARGET"].copy()
 SEDFluxData = oim.oimFluxData(oitarget, wl, dwl, flx_dens_Jy, err_flx_dens_Jy)
 
-# OPTIONAL NOTE: uncomment the following lines if you want to include the SED data in your 'data' object and plot it
+# NOTE: (OPTIONAL) Uncomment the following lines if you want to include the SED data in your "data" object and plot it
 # data.addData(SEDFluxData)
 # fig = plt.figure()
 # ax = plt.subplot(projection='oimAxes')
@@ -145,7 +145,7 @@ tg = oim.oimTempGrad(
 # If not specified, the Hankel Transform will be computed for all the spatial frequencies of the data (usually slower).
 tg.precision = 128
 
-# OPTIONAL NOTE: uncomment the following two lines if you want to set manually the model wavelengths to be fitted (to speed up fitting process).
+# NOTE: (OPTIONAL) Uncomment the following two lines if you want to set manually the model wavelengths to be fitted (to speed up fitting process).
 # tg._wl = np.array([3.0e-6,3.5e-6,4.0e-6,8.0e-6,10.e-6,13e-6])
 # s._wl = tg._wl
 
@@ -188,7 +188,7 @@ ax3.set_xlabel(r"Wavelength ($\mu$m)", fontsize=25)
 ax3.tick_params(axis="both", labelsize="25")
 ax3.legend(fontsize=18)
 
-# NOTE: uncomment the following lines if you want to plot the model observables and data (with SED)
+# NOTE: (OPTIONAL) Uncomment the following lines if you want to plot the model observables and data (with SED)
 # fig0, ax0 = sim.plot(["VISAMP",])
 # fig3= plt.figure()
 # ax3 = plt.subplot(projection='oimAxes')
@@ -230,27 +230,23 @@ ax[0].set_title(r"$\lambda = 3.5~\mu$m")
 ax[1].set_title(r"$\lambda = 10.5~\mu$m")
 plt.show()
 
-# %%
-
 # NOTE: Specifying the parameter space for the fit
-tg.params["rin"].free = False  # set(min=0.1, max=1)
-tg.params["rout"].free = False  # set(min=3, max=20)
-tg.params["temp0"].free = False  # set(min=-1, max=1)
+tg.params["rin"].free = False
+tg.params["rout"].free = False
+tg.params["temp0"].free = False
 tg.params["q"].set(min=-1, max=0)
 tg.params["p"].set(min=-1.5, max=-0.5)
-tg.params["sigma0"].free = False
 tg.params["dust_mass"].set(min=6e-9, max=6e-8)
 tg.params["elong"].set(min=1, max=5)
 tg.params["pa"].set(min=0, max=180)
 
-# # NOTE: Perfoming the model-fitting on VISAMP and fluxes
+# NOTE: Perfoming the model-fitting on VISAMP and fluxes
 fit = oim.oimFitterEmcee(
     data, model, nwalkers=32, dataTypes=["VISAMP", "FLUXDATA"]
 )
 fit.prepare(init="random")
 print(fit.initialParams)
 fit.run(nsteps=5000, progress=True)
-# %%
 
 # NOTE: Plot the walkers path and make the corner plot
 figWalkers, axeWalkers = fit.walkersPlot()
@@ -274,7 +270,7 @@ fig1, ax1 = fit.simulator.plot(
     kwargsSimulatedData=dict(ls="none", marker=".", lw=3, color="red"),
 )
 
-# Optional note: uncomment the following lines if you want to plot the data and best-fit model (with SED)
+# NOTE: (OPTIONAL) Uncomment the following lines if you want to plot the data and best-fit model (with SED)
 # fig3= plt.figure()
 # ax3 = plt.subplot(projection='oimAxes')
 # ax3.oiplot(data.data[0:3],"EFF_WAVE","FLUXDATA",
@@ -289,8 +285,6 @@ fig1, ax1 = fit.simulator.plot(
 # ax3.set_xlabel('Wavelength ($\mu$m)',fontsize=25)
 # ax3.tick_params(axis='both',labelsize='25')
 # ax3.legend(fontsize=18)
-
-# %%
 
 # NOTE: Setup model
 tg_bestfit = oim.oimTempGrad(
@@ -307,10 +301,9 @@ tg_bestfit = oim.oimTempGrad(
     kappa_abs=oim.oimInterp("wl", wl=op_wl * 1e-6, values=op),
 )
 
-# TODO: Setup the kappa abs here
 model_bestfit = oim.oimModel([s, tg_bestfit])
 
-# NOTE: Plot of the best-fit model images at two wavelengths
+# NOTE: Best-fit model images at two wavelengths
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
 model_bestfit.showModel(
     512,
