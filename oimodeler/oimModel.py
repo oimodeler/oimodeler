@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Creation of models"""
+
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import astropy.units as u
@@ -373,7 +375,7 @@ class oimModel:
         axe: Optional[Axes] = None,
         normPow: Optional[float] = 0.5,
         figsize: Optional[Tuple[float]] = (3.5, 2.5),
-        savefig: Optional[str] = None,
+        savefig: Union[str, Path, None] = None,
         colorbar: Optional[bool] = True,
         legend: Optional[bool] = False,
         swapAxes: Optional[bool] = True,
@@ -752,4 +754,3 @@ class oimModel:
             if compi != comp:
                 fluxes.append(compi.params["f"])
         comp.params["f"] = oimParamNorm(fluxes)
-

@@ -4,8 +4,7 @@ from pprint import pprint
 
 import oimodeler as oim
 
-
-# Path to a mock MATISSE-L-band binary observation (3 oifits) created with ASPRO
+# NOTE: Path to a mock MATISSE-L-band binary observation (3 oifits) created with ASPRO
 path = Path(__file__).parent.parent.parent
 data_dir = path / "data" / "ASPRO_MATISSE2"
 
@@ -16,12 +15,12 @@ if not save_dir.exists():
 
 files = list(data_dir.glob("*.fits"))
 
-# Building a oimodeler model with the same parameters
+# NOTE: Building a oimodeler model with the same parameters
 ud = oim.oimUD(d=3, f=0.5)
 pt = oim.oimPt(f=1)
 model = oim.oimModel([ud, pt])
 
-# Setting limits of the parameter space but also setting x,y of the UD as a
+# NOTE: Setting limits of the parameter space but also setting x,y of the UD as a
 # free parameters and f of the pt as fixed (to 1)
 ud.params["d"].set(min=0.01, max=20)
 ud.params["x"].set(min=-50, max=50, free=True)
@@ -30,19 +29,23 @@ ud.params["f"].set(min=0.0, max=10.0)
 pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
-# Create a new fitter with 500 live points and the list of oifits files and the model
+# NOTE: Create a new fitter with 500 live points and the list of oifits files and the model
 fit = oim.oimFitterDynesty(files, model, method="dynamic")
 
-# Prepare the fitter. Here we set the intial positions of all walkers to
+# NOTE: Prepare the fitter. Here we set the intial positions of all walkers to
 # the current parameters values of our model.
 fit.prepare()
 
-# Perfoming the model-fitting
+# NOTE: Perfoming the model-fitting
 fit.run(
-    dlogz_init=0.010, nlive_init=1000, nlive_batch=1000, maxbatch=100, progress=True
+    dlogz_init=0.010,
+    nlive_init=1000,
+    nlive_batch=1000,
+    maxbatch=100,
+    progress=True,
 )
 
-# Get results from the fit (updates the class internal logic)
+# NOTE: Get results from the fit (updates the class internal logic)
 median, err_l, err_u, err = fit.getResults(mode="median")
 
 # %%
@@ -54,8 +57,6 @@ figWalkers, axeWalkers = fit.walkersPlot(
 figCorner, axeCorner = fit.cornerPlot(
     savefig=save_dir / f"example{class_name}Corner.png"
 )
-
-# %%
 
 # %%
 fig0, ax0 = fit.simulator.plot(

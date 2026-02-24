@@ -4,13 +4,14 @@ Created on Mon Sep 26 09:08:46 2022
 
 @author: Ame
 """
+
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+
 import oimodeler as oim
 
-
-# Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
+# NOTE: Path to a fake MATISSE-L-band binary observation (3 oifits) created with ASPRO
 path = Path(__file__).parent.parent.parent
 data_dir = path / "data" / "FSCMa_MATISSE"
 
@@ -29,21 +30,28 @@ f1 = oim.oimWavelengthRangeFilter(targets="all", wlRange=[3.0e-6, 4e-6])
 filters = oim.oimDataFilter([f1])
 data.setFilter(filters)
 
-# data.setFilters() #removing the filter
+# NOTE: data.setFilters() removes any filter
 data.useFilter = False
 
 # %%
 fig = plt.figure()
-ax = plt.subplot(projection='oimAxes')
+ax = plt.subplot(projection="oimAxes")
 
 data.useFilter = False
-ax.oiplot(data, "SPAFREQ", "VIS2DATA", color="tab:blue",
-          lw=3, alpha=0.2, label="unfiltered")
+ax.oiplot(
+    data,
+    "SPAFREQ",
+    "VIS2DATA",
+    color="tab:blue",
+    lw=3,
+    alpha=0.2,
+    label="unfiltered",
+)
 
 data.useFilter = True
 ax.oiplot(data, "SPAFREQ", "VIS2DATA", color="tab:blue", label="filtered")
 
-ax.set_yscale('log')
+ax.set_yscale("log")
 ax.legend()
 ax.autolim()
 

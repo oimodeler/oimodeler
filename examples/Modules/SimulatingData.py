@@ -10,8 +10,7 @@ from pprint import pprint
 
 import oimodeler as oim
 
-
-# Path tothe binary star  Beta Ari observed with MIRCX (1 files)
+# NOTE: Path to the binary star  Beta Ari observed with MIRCX (1 files)
 path = Path(__file__).parent.parent.parent
 data_dir = path / "data" / "RealData" "/MIRCX" / "Beta Ari"
 
@@ -23,49 +22,53 @@ if not save_dir.exists():
 
 file = data_dir / "MIRCX_L2.2023Oct14._bet_Ari.MIRCX_IDL.nn.AVG10m.fits"
 
-# Building a oimodeler model with the same parameters
+# NOTE: Build an oimodeler model with the same parameters
 ud1 = oim.oimUD(d=1, f=0.8)
 ud2 = oim.oimUD(d=0.8, f=0.2, x=5, y=15)
 model = oim.oimModel([ud1, ud2])
 
-# Creating the simulator with the filename list and the model
+# NOTE: Create the simulator with the filename list and the model
 sim = oim.oimSimulator(data=file, model=model)
 
 
-#accessing the data inside our simulator
+# NOTE: Access the data inside our simulator
 sim.data.info()
 
 
-# Computing the complex corr flux from the model at the data spatial freq
+# NOTE: Compute the complex corr flux from the model at the data spatial freq
 # with option to compute chi2 and final simulated data in oifits format
 sim.compute(computeChi2=True, computeSimulatedData=True)
 
-# Accessing the simulated data
+# NOTE: Access the simulated data
 sim.simulatedData.info()
 
-#plotting the data model comparison
-fig0, ax0 = sim.plot(["VIS2DATA", "T3PHI"],
-                     savefig=save_dir / "ExampleOimSimulator_plot.png")
+# NOTE: Plot the data model comparison
+fig0, ax0 = sim.plot(
+    ["VIS2DATA", "T3PHI"], savefig=save_dir / "ExampleOimSimulator_plot.png"
+)
 
 
-# Printing data model chi2r
+# NOTE: Print the data vs. model chi2r
 pprint(f"Chi2r = {sim.chi2r}")
 
-#Using the dataTypes option of the oimSimulator compute method allows to 
-#compute chi2 only on certain data types such as V² and CP
-sim.compute(computeChi2=True, dataTypes=["VIS2DATA","T3PHI"])
+# NOTE: Use the dataTypes option of the oimSimulator compute method allows to
+# compute chi2 only on certain data types such as V² and CP
+sim.compute(computeChi2=True, dataTypes=["VIS2DATA", "T3PHI"])
 pprint(f"Chi2r = {sim.chi2r}")
 
-#%% Wavelength template plots (per baseline plot as funciton of wl)
-
-fig1 = sim.plotWlTemplate([["VIS2DATA"],["T3PHI"]],xunit="micron",figsize=(22,3))
-#fig.set_legends("$LENGTH$m $PA$$^o$","VIS2DATA")
-fig1.set_legends(0.5,0.8,"$BASELINE$",["VIS2DATA","T3PHI"],fontsize=10,ha="center")
+# NOTE: Wavelength template plots (per baseline plot as funciton of wl)
+fig1 = sim.plotWlTemplate(
+    [["VIS2DATA"], ["T3PHI"]], xunit="micron", figsize=(22, 3)
+)
+fig1.set_legends(
+    0.5, 0.8, "$BASELINE$", ["VIS2DATA", "T3PHI"], fontsize=10, ha="center"
+)
 fig1.tight_layout()
 fig1.savefig(save_dir / "ExampleOimSimulator_WlTemplatePlot.png")
 
-#%% residual plot
+# NOTE: Residual plot
 
-fig2, ax2 = sim.plotResiduals(["VIS2DATA", "T3PHI"],
-                     savefig=save_dir / "ExampleOimSimulator_residuals_plot.png")
-
+fig2, ax2 = sim.plotResiduals(
+    ["VIS2DATA", "T3PHI"],
+    savefig=save_dir / "ExampleOimSimulator_residuals_plot.png",
+)

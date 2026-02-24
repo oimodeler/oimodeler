@@ -7,22 +7,6 @@ import numpy as np
 
 import oimodeler as oim
 
-# NOTE: Change this path if you want to save the products at another location
-path = Path(__file__).parent.parent.parent
-save_dir = path / "images"
-if not save_dir.exists():
-    save_dir.mkdir(parents=True)
-
-
-# def _logProbability(self, theta: np.ndarray) -> float:
-#     """The log probability for dynesty so it keeps (fs + fc) <= 1"""
-#     theta[-2] *= 1-theta[-3]
-#     for iparam, parami in enumerate(self.freeParams.values()):
-#         parami.value = theta[iparam]
-
-#     self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
-#     return -0.5 * self.simulator.chi2r
-
 
 def _logProbability(self, theta: np.ndarray) -> float:
     """The log probability for emcee so it keeps (fs + fc) <= 1"""
@@ -49,6 +33,12 @@ def _logProbability(self, theta: np.ndarray) -> float:
     self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
     return -0.5 * self.simulator.chi2r
 
+
+# NOTE: Change this path if you want to save the products at another location
+path = Path(__file__).parent.parent.parent
+save_dir = path / "images"
+if not save_dir.exists():
+    save_dir.mkdir(parents=True)
 
 # NOTE: Load some PIONIER archive data and apply some filters to it
 # to keep only VIS2DATA and T3PHI
