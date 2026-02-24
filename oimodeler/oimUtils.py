@@ -800,12 +800,8 @@ def getBaselineLengthAndPA(
                 flag = datai.data["FLAG"]
                 if (len(flag.shape) == 2) & (u.size == flag.shape[0]):
                     flag = np.all(flag, axis=1)
-                    print(flag)
-                    print(u)
                     u = u[np.logical_not(flag)]
-                    print(u)
                     v = v[np.logical_not(flag)]
-                    print("****")
 
             ucoord.append(u)
             vcoord.append(v)
