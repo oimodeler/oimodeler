@@ -211,7 +211,7 @@ class oimTempGrad(oimComponentRadialProfile):
             lambda x: self.params[x](wl, t), ["rin", "rout", "r0"]
         )
         rin_cm, rout_cm, r0_cm = map(
-            lambda x: x * self.params["rin"].unit.to(u.cm), [rin, rout, r0]
+            lambda x: x * self.params[x].unit.to(u.cm), [rin, rout, r0]
         )
 
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
