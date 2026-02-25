@@ -28,19 +28,6 @@ Oimodeler is a modular modelling tool for optical interferometry
 * **oimPlot** : Plotting tools
 * **oimUtils** : Various utility for optical-interferometry
 
-### :warning: Under Development :warning:
-The following modules have only been partially implemented
-* oimModel:  Basic functionnalities for building model from all kind of components 
-* oimComponent: Many basics Fourier-based components, possiblity to build radial profile and images based components, import of image at fits format and a few advanced components (kinematic disk, fast-rotator)
-* oimParam: Possibility to link parameters, normalize them and various interpolators in wavelength and time
-* oimData: Interferometric data and basic wrapper for photometric/spectroscopic data
-* oimDataFilter: Wavelength range cut and shift, data smoothing and binning, datatype selection, flagging based on criteria
-* oimSimulator: Simulated data and chi2 computation with filtering
-* oimFitter:  Basic MCMC fitter based on emcee module.
-* oimPlot: Various plots for oifits data (see examples below)
-* oimUtils: Helpers for oifits format: retrieve baselines info, create new tables, manipulated data...
-)
-
 ## Examples
 
 For more examples see: https://oimodeler.readthedocs.io/en/latest/examples.html
