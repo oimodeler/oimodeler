@@ -12,14 +12,14 @@ files = sorted((path / "data" / "AS209_MATISSE").glob("*.fits"))
 data = oim.oimData(files)
 
 # NOTE: Apply filters
-f1 = oim.oimWavelengthRangeFilter(targets=[0, 1], wlRange=[3.2e-6, 3.8e-6])
+f1 = oim.oimWavelengthRangeFilter(targets=[0, 2], wlRange=[3.2e-6, 3.8e-6])
 filt_bin_L = oim.oimWavelengthBinningFilter(
-    targets=[0, 1], bin=5, normalizeError=False
+    targets=[0, 2], bin=5, normalizeError=False
 )
 filt_bin_N = oim.oimWavelengthBinningFilter(
-    targets=2, bin=7, normalizeError=False
+    targets=1, bin=7, normalizeError=False
 )
-data.setFilter(oim.oimDataFilter([f1, filt_bin_L, filt_bin_N]))
+data.setFilter(oim.oimDataFilter([f1,filt_bin_L,filt_bin_N]))
 wave_data = np.unique(data.vect_wl)
 
 # NOTE: plot the unfiltered and filtered data (VISAMP)
@@ -124,7 +124,11 @@ s = oim.oimPt(
 opac_file = (
     path / "data" / "FSCMa_MATISSE" / "dustkappa_olivine_graphite_1_20.inp"
 )
-op_wl, op = np.loadtxt(opac_file, usecols=[0, 2], unpack=True)
+op_wl, op = np.loadtxt(opac_file, usecols=[0, 1], unpack=True)
+plt.figure()
+plt.plot(op_wl,op)
+plt.xlim(3,13)
+plt.show()
 
 # NOTE: Define a first instance of the temperature gradient model for the circumstellar emission
 tg = oim.oimTempGrad(
@@ -230,6 +234,7 @@ ax[0].set_title(r"$\lambda = 3.5~\mu$m")
 ax[1].set_title(r"$\lambda = 10.5~\mu$m")
 plt.show()
 
+#%%
 # NOTE: Specifying the parameter space for the fit
 tg.params["rin"].free = False
 tg.params["rout"].free = False
@@ -270,6 +275,8 @@ fig1, ax1 = fit.simulator.plot(
     kwargsSimulatedData=dict(ls="none", marker=".", lw=3, color="red"),
 )
 
+
+#%%
 # NOTE: (OPTIONAL) Uncomment the following lines if you want to plot the data and best-fit model (with SED)
 # fig3= plt.figure()
 # ax3 = plt.subplot(projection='oimAxes')
@@ -296,8 +303,8 @@ tg_bestfit = oim.oimTempGrad(
     p=best[4],
     q=best[3],
     dust_mass=best[2],
-    pa=best[0],
-    elong=best[1],
+    pa=best[1],
+    elong=best[0],
     kappa_abs=oim.oimInterp("wl", wl=op_wl * 1e-6, values=op),
 )
 
