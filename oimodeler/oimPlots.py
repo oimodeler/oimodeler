@@ -629,6 +629,7 @@ def oimPlot(
     errorbar: Optional[bool] = False,
     showFlagged: Optional[bool] = False,
     colorbar: Optional[bool] = True,
+    legend:Optional[bool] = False,
     kwargs_error: Optional[Dict] = {},
     **kwargs,
 ):
@@ -670,6 +671,8 @@ def oimPlot(
         If toggled shows error bars. The default is False.
     showFlagged : bool, optional
         If toggled shows flagged data. The default is False.
+    legend : bool, optional
+            show the plot legend False.
     kwargs_error : dict, optional
         Additional keyword arguments for the error plot. The default is {}.
     **kwargs : dict
@@ -1092,6 +1095,9 @@ def oimPlot(
 
     if cname and showColorbar:
         plt.colorbar(res, ax=axe, label=clabel)
+        
+    if legend==True:
+        axe.legend()
     return res
 
 

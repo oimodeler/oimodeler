@@ -3,7 +3,22 @@
 Created on Fri Feb 20 14:42:21 2026
 
 @author: ame
+
+This is a basic example showing the main features of the oimBinary components:
+    
+- Creation of the component
+- Getting binary separation (x,y) using the getSeparation method 
+- Plotting the projected orbit
+- Changing components type from point source to UD
+- Computing and plotting time-dependent visibilities ( with getComplexCoherentFlux)
+- Case of a chromatic binary with different temperature
+- Simulating Radial velocity
+
+More advanced features such as model-Fitting of visibilities, radial-velocities
+and separations are presented in the exampleOimBinaryRvAndSep example
+
 """
+
 import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,28 +46,6 @@ orb = oim.oimBinaryOrbit(e=0.4, # Eccentricity
                          O=40,   # Longitude of ascending node (deg)
                          o=-20    # Argument of periastron
                          )
-
-#%% getting separation at various time to plot the orbit
-nt2=7
-t = np.linspace(T0,T0+T,100)
-t2 = np.linspace(T0,T0+T,nt2)
-x,y = orb.getSeparation(t,mas=True)
-x2,y2 = orb.getSeparation(t2,mas=True)        
-#%% plot the full orbit
-fig,ax = plt.subplots(figsize=(7,7))
-ax.grid(which="major",lw=1,alpha=0.5,zorder=-10)
-ax.grid(which="minor",lw=0.5,alpha=0.5,zorder=-10)
-
-#%% Set the oimBinaryOrbit component
-orb = oim.oimBinaryOrbit(
-    e=0.4,  # Eccentricity
-    a=10,  # semi-major axis (mas)
-    T0=0,  # Time Periastron passage (MJD)
-    T=1,  # Period (in days by default or an astropy unit if specified)
-    i=45,  # inclination angle (deg)
-    O=40,  # Longitude of ascending node (deg)
-    o=-20,  # Argument of periastron
-)
 
 #%% Get the separation at various time to plot the orbit
 nt2 = 7
@@ -84,15 +77,17 @@ ax.set_xlabel("x (mas)")
 ax.set_ylabel("y (mas)")
 ax.set_xlim(10, -15)
 plt.savefig(save_dir / "ExampleBinary_orbit_plot.png")
+#%% Changing the binary flux ratio and primary type from point source to UD
+orb.primary = oim.oimUD(d=3)
+orb.secondary.params["f"].value = 0.3
 
-#%% NOTE: Baselines at different times
+#%% Plotting visibility Baselines at different times
 N = 200
 wl = 2.1e-6
 B = np.linspace(0.0, 100, num=N)
 spf = B / wl
 
-orb.primary = oim.oimUD(d=3)
-orb.secondary.params["f"].value = 0.3
+
 
 morb = oim.oimModel(orb)
 fig, ax = plt.subplots(
@@ -198,24 +193,21 @@ plt.tight_layout()
 fig.colorbar(sc, ax=ax, label="Visiblity")
 plt.savefig(save_dir / "ExampleBinary_temporal_visi_map.png")
 
-#%% Chromatic components with different temperatures
+#%% Visibilities with chromatic components with different temperatures
 dist = 100
 
-#%% Use the "starWl"" interpolator to set a blackbody flux to each component.
-orb.primary = oim.oimUD(
-    d=1, f=oim.oimInterp("starWl", temp=3000, dist=dist, radius=0.5)
-)
+#We use the "starWl"" interpolator to set a blackbody flux to each component.
+orb.primary = oim.oimUD(d=1, 
+        f=oim.oimInterp("starWl", temp=3000, dist=dist, radius=0.5))
 orb.secondary = oim.oimPt(
-    f=oim.oimInterp("starWl", temp=30000, dist=dist, radius=0.1)
-)
+    f=oim.oimInterp("starWl", temp=30000, dist=dist, radius=0.1))
 morb = oim.oimModel(orb)
 
 nwl = 400
 nspf = 2000
 
-# first zero of the primary
+# first zero of the primary used to define the spatial-frequency range
 spf_res = 1.22 / (orb.primary.params["d"].value * u.mas.to(u.rad)) 
-
 
 spf = np.linspace(0, spf_res * 1.5, nspf)
 wl = np.linspace(1e-6, 4e-6, num=nwl)
