@@ -290,7 +290,7 @@ def uvPlot(
     grid: Union[bool, None] = True,
     gridcolor: Union[str, None] = "k",
     fontsize: Union[int, None] = None,
-    xytitle: Union[List[bool], None] = [True, True, None],
+    xytitle: List[bool] = [True, True],
     showLegend: Union[bool, None] = True,
     showColorbar: Union[bool, None] = True,
     showFlagged: Union[bool, None] = False,

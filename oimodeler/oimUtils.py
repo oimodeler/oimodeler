@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
+
 import csv
 
 # from functools import partial
@@ -1060,7 +1061,7 @@ def hdulistDeepCopy(hdulist: fits.HDUList) -> fits.HDUList:
 def cutWavelengthRange(
     oifits: fits.HDUList,
     wlRange: Union[List[float], None] = None,
-    addCut: Union[List[float]] = [, None],
+    addCut: Union[List[float], None] = [],
 ) -> fits.HDUList:
     """Cut the wavelength range of an oifits file.
 
@@ -1605,7 +1606,7 @@ def _interpolateBinHDU(
     binMasks: ArrayLike,
     binEdgeGrid: ArrayLike,
     grid: ArrayLike,
-    exception: Union[List[str]] = [, None],
+    exception: Union[List[str], None] = [],
     **kwargs,
 ) -> fits.BinTableHDU:
     """Bin an HDU via interpolation.
@@ -1882,7 +1883,7 @@ def _rebin(
 def _rebinHDU(
     hdu: fits.BinTableHDU,
     binsize: int,
-    exception: Union[List[str]] = [, None],
+    exception: List[str] = [],
 ) -> fits.BinTableHDU:
     """Rebin an HDU.
 
@@ -2214,11 +2215,11 @@ def oifitsRemoveTelescopes(
 
 def computeDifferentialError(
     oifits: fits.HDUList,
-    ranges: Union[List[int]] = [[0, 5], None],
+    ranges: Union[List[int]] = [[0, 5]],
     excludeRange: Union[bool, None] = False,
     rangeType: Union[str, None] = "index",
     dataType: Union[str, None] = "VISPHI",
-    extver: Union[List[int]] = [None, None],
+    extver: Union[List[int]] = [None],
 ) -> None:
     """Compute the differential error.
 
@@ -2398,7 +2399,7 @@ def _listFeatures(
     if details:
         # TODO: Change this to "with" generator
         if save2csv:
-            f = open(save2csv, "w",newline='')
+            f = open(save2csv, "w", newline="")
             w = csv.writer(f, delimiter="|")
             w.writerows(table)
             f.close()

@@ -374,7 +374,7 @@ class oimModel:
         padFact: Union[int, None] = 1,
         axe: Union[Axes, None] = None,
         normPow: Union[float, None] = 0.5,
-        figsize: Union[Tuple[float], None] = (3.5, 2.5),
+        figsize: Union[Tuple[float, float], None] = (3.5, 2.5),
         savefig: Union[str, Path, None] = None,
         colorbar: Union[bool, None] = True,
         legend: Union[bool, None] = False,
