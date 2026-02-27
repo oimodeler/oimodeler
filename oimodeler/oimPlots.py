@@ -2,8 +2,9 @@
 """
 various plotting function and classes
 """
+
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import astropy.units as u
 import matplotlib.gridspec as gridspec
@@ -155,7 +156,7 @@ def _errorplot(
     x: np.ndarray,
     y: np.ndarray,
     dy: np.ndarray,
-    smooth: Optional[int] = 1,
+    smooth: Union[int, None] = 1,
     **kwargs,
 ):
     """Creates a plot with error bars.
@@ -193,7 +194,7 @@ def _colorPlot(
     y: np.ndarray,
     z: np.ndarray,
     flag: np.ndarray = None,
-    setlim: Optional[bool] = False,
+    setlim: Union[bool, None] = False,
     **kwargs,
 ) -> Collection:
     """Creates a plot of the x and y data with the z data as color.
@@ -279,29 +280,27 @@ def _colorPlot(
     return res
 
 
-
 def uvPlot(
     oifitsList: fits.HDUList,
-    arrname: Optional[str] = "OI_VIS2",
-    unit: Optional[u.Quantity] = u.m,
-    stringunitformat: Optional[str] = "latex_inline",
-    color: Optional[str] = None,
-    maxi: Optional[float] = None,
-    grid: Optional[bool] = True,
-    gridcolor: Optional[str] = "k",
-    fontsize: Optional[int] = None,
-    xytitle: Optional[List[bool]] = [True, True],
-    showLegend: Optional[bool] = True,
-    showColorbar: Optional[bool] = True,
-    showFlagged: Optional[bool] = False,
-    colorTab: Optional = None,
-    axe: Optional = None,
-    title: Optional[str] = None,
-    cunit: Optional[u.Quantity] = u.m,
-    legendkwargs: Optional[Dict] = {},
+    arrname: Union[str, None] = "OI_VIS2",
+    unit: Union[u.Quantity, None] = u.m,
+    stringunitformat: Union[str, None] = "latex_inline",
+    color: Union[str, None] = None,
+    maxi: Union[float, None] = None,
+    grid: Union[bool, None] = True,
+    gridcolor: Union[str, None] = "k",
+    fontsize: Union[int, None] = None,
+    xytitle: Union[List[bool], None] = [True, True, None],
+    showLegend: Union[bool, None] = True,
+    showColorbar: Union[bool, None] = True,
+    showFlagged: Union[bool, None] = False,
+    colorTab=None,
+    axe=None,
+    title: Union[str, None] = None,
+    cunit: Union[u.Quantity, None] = u.m,
+    legendkwargs: Union[Dict, None] = {},
     **kwargs,
 ) -> Axes:
-
     """Plot the uv coverage of the data.
 
     Parameters
@@ -383,14 +382,17 @@ def uvPlot(
 
     for datai in oifitsList:
 
-        _,_, ui, vi = getBaselineLengthAndPA(
-            datai, arr=arrname, squeeze=False, returnUV=True,
-            showFlagged=showFlagged
+        _, _, ui, vi = getBaselineLengthAndPA(
+            datai,
+            arr=arrname,
+            squeeze=False,
+            returnUV=True,
+            showFlagged=showFlagged,
         )
         idx_arr = [
-            jdata 
-            for jdata,dataij in enumerate(datai) 
-            if dataij.name==arrname
+            jdata
+            for jdata, dataij in enumerate(datai)
+            if dataij.name == arrname
         ]
 
         for iext in range(len(ui)):
@@ -514,7 +516,7 @@ def getColorIndices(
     color: str,
     yarr: np.ndarray,
     yname: str,
-    flatten: Optional[bool] = False,
+    flatten: Union[bool, None] = False,
 ) -> Tuple[np.ndarray, List[str]]:
     """Get the color indices of the data depending on the colorisation.
 
@@ -613,24 +615,24 @@ def oimPlot(
     oifitsList: fits.HDUList,
     xname: str,
     yname: str,
-    axe: Optional[Axes] = None,
-    xunit: Optional[u.Quantity] = None,
-    yunit: Optional[u.Quantity] = None,
-    cname: Optional[str] = None,
-    cunit: Optional[str] = None,
-    xlim: Optional[float] = None,
-    ylim: Optional[float] = None,
-    xscale: Optional[str] = None,
-    yscale: Optional[str] = None,
-    shortLabel: Optional[bool] = True,
-    color: Optional[str] = None,
-    colorTab: Optional[str] = None,
-    showColorbar: Optional[bool] = True,
-    errorbar: Optional[bool] = False,
-    showFlagged: Optional[bool] = False,
-    colorbar: Optional[bool] = True,
-    legend:Optional[bool] = False,
-    kwargs_error: Optional[Dict] = {},
+    axe: Union[Axes, None] = None,
+    xunit: Union[u.Quantity, None] = None,
+    yunit: Union[u.Quantity, None] = None,
+    cname: Union[str, None] = None,
+    cunit: Union[str, None] = None,
+    xlim: Union[float, None] = None,
+    ylim: Union[float, None] = None,
+    xscale: Union[str, None] = None,
+    yscale: Union[str, None] = None,
+    shortLabel: Union[bool, None] = True,
+    color: Union[str, None] = None,
+    colorTab: Union[str, None] = None,
+    showColorbar: Union[bool, None] = True,
+    errorbar: Union[bool, None] = False,
+    showFlagged: Union[bool, None] = False,
+    colorbar: Union[bool, None] = True,
+    legend: Union[bool, None] = False,
+    kwargs_error: Union[Dict, None] = {},
     **kwargs,
 ):
     """Plot the data from the oifits files.
@@ -1095,8 +1097,8 @@ def oimPlot(
 
     if cname and showColorbar:
         plt.colorbar(res, ax=axe, label=clabel)
-        
-    if legend==True:
+
+    if legend == True:
         axe.legend()
     return res
 
@@ -1136,7 +1138,7 @@ class oimWlTemplatePlots(Figure):
     def autoShape(
         self,
         oifitsList: fits.HDUList,
-        shape: Optional[List[List[str]]] = [
+        shape: Union[List[List[str]], None] = [
             ["VIS2DATA", None],
             ["VISAMP", None],
             ["VISPHI", None],
@@ -1276,9 +1278,9 @@ class oimWlTemplatePlots(Figure):
     def plot(
         self,
         oifitsList: fits.HDUList,
-        add: Optional[bool] = True,
-        plotFunction: Optional[Axes] = plt.Axes.plot,
-        plotFunctionkwarg: Optional[Dict] = {},
+        add: Union[bool, None] = True,
+        plotFunction: Union[Axes, None] = plt.Axes.plot,
+        plotFunctionkwarg: Union[Dict, None] = {},
     ) -> None:
         """Plot the data from the oifits files."""
         if isinstance(oifitsList, oimData):
@@ -1442,10 +1444,10 @@ def oimSimplePlotWavelength(
     dataType: str,
     iB: int,
     extver=None,
-    axe: Optional[Axes] = None,
-    plotFunction: Optional[Axes] = plt.Axes.plot,
-    xunit: Optional[u.Quantity] = u.m,
-    plotFunctionkwarg: Optional[Dict] = {},
+    axe: Union[Axes, None] = None,
+    plotFunction: Union[Axes, None] = plt.Axes.plot,
+    xunit: Union[u.Quantity, None] = u.m,
+    plotFunctionkwarg: Union[Dict, None] = {},
 ) -> None:
     """Set the x-axis to the wavelength of the data.
 

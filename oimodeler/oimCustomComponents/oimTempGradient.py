@@ -1,8 +1,5 @@
-from pathlib import Path
-
 import astropy.units as u
 import numpy as np
-from numpy.typing import NDArray
 
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import constants as const

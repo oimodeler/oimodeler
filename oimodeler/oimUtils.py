@@ -4,7 +4,7 @@ import csv
 
 # from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import astropy.units as u
 import numpy as np
@@ -13,7 +13,7 @@ from astropy.coordinates import Angle
 from astropy.io import fits
 from astropy.modeling import models
 from astroquery.simbad import Simbad
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import ArrayLike
 from scipy.stats import circmean, circstd
 
 import oimodeler as oim
@@ -413,7 +413,7 @@ def blackbody(
 
 # TODO: Remove astropy from here
 def compute_intensity(
-    wavelengths: u.um, temperature: u.K, pixel_size: Optional[float] = None
+    wavelengths: u.um, temperature: u.K, pixel_size: Union[float, None] = None
 ) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
@@ -600,11 +600,11 @@ def linear_to_angular(
 
 def getBaselineName(
     oifits: fits.HDUList,
-    hduname: Optional[str] = "OI_VIS2",
-    length: Optional[bool] = False,
-    angle: Optional[bool] = False,
-    extver: Optional[int] = None,
-    squeeze: Optional[bool] = True,
+    hduname: Union[str, None] = "OI_VIS2",
+    length: Union[bool, None] = False,
+    angle: Union[bool, None] = False,
+    extver: Union[int, None] = None,
+    squeeze: Union[bool, None] = True,
 ) -> List[str]:
     """Gets the baseline names (i.e., telescopes names
     separated by minus sign) in an extension of a oifits file.
@@ -688,9 +688,9 @@ def getBaselineName(
 # TODO : Add support for multiple extensions
 def getConfigName(
     oifits: fits.HDUList,
-    hduname: Optional[str] = "OI_VIS2",
-    extver: Optional[int] = None,
-    squeeze: Optional[bool] = True,
+    hduname: Union[str, None] = "OI_VIS2",
+    extver: Union[int, None] = None,
+    squeeze: Union[bool, None] = True,
 ) -> List[str]:
     """Gets the configuration names in an extension of a oifits file.
 
@@ -747,12 +747,12 @@ def getConfigName(
 
 def getBaselineLengthAndPA(
     oifits: fits.HDUList,
-    arr: Optional[str] = "OI_VIS2",
-    extver: Optional[int] = None,
-    squeeze: Optional[bool] = True,
-    returnUV: Optional[bool] = False,
-    T3Max: Optional[bool] = False,
-    showFlagged: Optional[bool] = True,
+    arr: Union[str, None] = "OI_VIS2",
+    extver: Union[int, None] = None,
+    squeeze: Union[bool, None] = True,
+    returnUV: Union[bool, None] = False,
+    T3Max: Union[bool, None] = False,
+    showFlagged: Union[bool, None] = True,
 ) -> Tuple[np.ndarray]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
@@ -842,10 +842,10 @@ def getBaselineLengthAndPA(
 
 def get2DSpaFreq(
     oifits: fits.HDUList,
-    arr: Optional[str] = "OI_VIS2",
-    unit: Optional[str] = None,
-    extver: Optional[int] = None,
-    squeeze: Optional[bool] = True,
+    arr: Union[str, None] = "OI_VIS2",
+    unit: Union[str, None] = None,
+    extver: Union[int, None] = None,
+    squeeze: Union[bool, None] = True,
 ) -> Tuple[np.ndarray]:
     """Get the spatial two dimensional frequencies.
 
@@ -924,10 +924,10 @@ def get2DSpaFreq(
 
 def getSpaFreq(
     oifits: fits.HDUList,
-    arr: Optional[str] = "OI_VIS2",
-    unit: Optional[str] = None,
-    extver: Optional[int] = None,
-    squeeze: Optional[bool] = True,
+    arr: Union[str, None] = "OI_VIS2",
+    unit: Union[str, None] = None,
+    extver: Union[int, None] = None,
+    squeeze: Union[bool, None] = True,
 ) -> Tuple[np.ndarray]:
     """Get the spatial dimensional frequencies.
 
@@ -999,9 +999,9 @@ def getSpaFreq(
 
 def getWlFromOifits(
     oifits: fits.HDUList,
-    arr: Optional[str] = "OI_VIS2",
-    extver: Optional[int] = None,
-    returnBand: Optional[bool] = False,
+    arr: Union[str, None] = "OI_VIS2",
+    extver: Union[int, None] = None,
+    returnBand: Union[bool, None] = False,
 ) -> Tuple[np.ndarray]:
     """Get the wavelength
 
@@ -1059,8 +1059,8 @@ def hdulistDeepCopy(hdulist: fits.HDUList) -> fits.HDUList:
 
 def cutWavelengthRange(
     oifits: fits.HDUList,
-    wlRange: Optional[List[float]] = None,
-    addCut: Optional[List[float]] = [],
+    wlRange: Union[List[float], None] = None,
+    addCut: Union[List[float]] = [, None],
 ) -> fits.HDUList:
     """Cut the wavelength range of an oifits file.
 
@@ -1156,7 +1156,7 @@ def cutWavelengthRange(
 
 
 def getWlFromFitsImageCube(
-    header: fits.header.Header, outputUnit: Optional[str] = None
+    header: fits.header.Header, outputUnit: Union[str, None] = None
 ) -> float:
     """Returns the wavelength law from a chromatic cube image in the fits format.
 
@@ -1397,7 +1397,7 @@ def createOiTargetFromSimbad(names: Union[str, List[str]]) -> fits.BinTableHDU:
 # TODO: This current method does not allow to shift baseline of the same oifits
 # individually.
 def shiftWavelength(
-    oifits: fits.HDUList, shift: float, verbose: Optional[bool] = False
+    oifits: fits.HDUList, shift: float, verbose: Union[bool, None] = False
 ) -> None:
     """Shift the wavelength of an oifits file.
 
@@ -1431,8 +1431,8 @@ def shiftWavelength(
 def spectralSmoothing(
     oifits: fits.HDUList,
     kernel_size: float,
-    cols2Smooth: Optional[Union[str, List[str]]] = "all",
-    normalizeError: Optional[bool] = True,
+    cols2Smooth: Union[Union[str, List[str]], None] = "all",
+    normalizeError: Union[bool, None] = True,
 ) -> None:
     """Smooth the spectral data of an oifits file.
 
@@ -1605,7 +1605,7 @@ def _interpolateBinHDU(
     binMasks: ArrayLike,
     binEdgeGrid: ArrayLike,
     grid: ArrayLike,
-    exception: Optional[List[str]] = [],
+    exception: Union[List[str]] = [, None],
     **kwargs,
 ) -> fits.BinTableHDU:
     """Bin an HDU via interpolation.
@@ -1798,8 +1798,8 @@ def intpBinWavelength(
 
 def rebin_image(
     image: np.ndarray,
-    binning_factor: Optional[int] = None,
-    rdim: Optional[bool] = False,
+    binning_factor: Union[int, None] = None,
+    rdim: Union[bool, None] = False,
 ) -> np.ndarray:
     """Bins a 2D-image down according.
 
@@ -1882,7 +1882,7 @@ def _rebin(
 def _rebinHDU(
     hdu: fits.BinTableHDU,
     binsize: int,
-    exception: Optional[List[str]] = [],
+    exception: Union[List[str]] = [, None],
 ) -> fits.BinTableHDU:
     """Rebin an HDU.
 
@@ -1942,7 +1942,7 @@ def _rebinHDU(
 # TODO: For phases binning should be done in complex plane
 def binWavelength(
     oifits: fits.HDUList,
-    binsize: Optional[int] = None,
+    binsize: Union[int, None] = None,
     normalizeError: bool = True,
 ) -> None:
     """Bin the wavelength of an oifits file.
@@ -2214,11 +2214,11 @@ def oifitsRemoveTelescopes(
 
 def computeDifferentialError(
     oifits: fits.HDUList,
-    ranges: Optional[List[int]] = [[0, 5]],
-    excludeRange: Optional[bool] = False,
-    rangeType: Optional[str] = "index",
-    dataType: Optional[str] = "VISPHI",
-    extver: Optional[List[int]] = [None],
+    ranges: Union[List[int]] = [[0, 5], None],
+    excludeRange: Union[bool, None] = False,
+    rangeType: Union[str, None] = "index",
+    dataType: Union[str, None] = "VISPHI",
+    extver: Union[List[int]] = [None, None],
 ) -> None:
     """Compute the differential error.
 
@@ -2301,7 +2301,7 @@ def setMinimumError(
     oifits: fits.HDUList,
     dataTypes: Union[str, List[str]],
     values: Union[float, List[float]],
-    extver: Optional[Union[int, List[int]]] = None,
+    extver: Union[Union[int, List[int]], None] = None,
 ) -> None:
     """Set the minimum error of a given data type to a given value.
 
@@ -2526,7 +2526,7 @@ def listParamInterpolators(details: bool = False, save2csv: bool = False):
     return res
 
 
-def windowed_linspace(start: float, end: float, window: float) -> NDArray[Any]:
+def windowed_linspace(start: float, end: float, window: float) -> np.ndarray:
     """Creates bins centred around points with half-window spacing on each side.
 
     Parameters

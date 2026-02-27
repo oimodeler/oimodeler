@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Data for optical interferometry"""
+
 from enum import IntFlag
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,7 +15,7 @@ from .oimUtils import _oimDataTypeArr, hdulistDeepCopy
 
 
 def oimDataGetWl(
-    data: fits.HDUList, array: fits.BinTableHDU, dwl: Optional[bool] = True
+    data: fits.HDUList, array: fits.BinTableHDU, dwl: Union[bool, None] = True
 ) -> np.ndarray:
     """Gets the wavelengths from the data.
 
@@ -277,8 +278,8 @@ class oimData:
 
     def __init__(
         self,
-        dataOrFilename: Optional[Any] = None,
-        filt: Optional[oimDataFilter] = None,
+        dataOrFilename: Union[Any, None] = None,
+        filt: Union[oimDataFilter, None] = None,
     ) -> None:
         """Initialize the class with the data and the filter to use."""
         self._data = []
@@ -331,7 +332,9 @@ class oimData:
                 self.applyFilter()
             return self._filteredData
 
-    def addData(self, dataOrFilename, prepare: Optional[bool] = True) -> None:
+    def addData(
+        self, dataOrFilename, prepare: Union[bool, None] = True
+    ) -> None:
         """Add data to the class.
 
         Parameters
@@ -366,8 +369,8 @@ class oimData:
 
     def setFilter(
         self,
-        filt: Optional[oimDataFilter] = None,
-        useFilter: Optional[bool] = True,
+        filt: Union[oimDataFilter, None] = None,
+        useFilter: Union[bool, None] = True,
     ) -> None:
         """Set the filter to use.
 
@@ -599,9 +602,9 @@ class oimData:
 
     def writeto(
         self,
-        filename: Optional[Union[str, Path]] = None,
-        overwrite: Optional[bool] = False,
-        directory: Optional[Union[str, Path]] = None,
+        filename: Union[Union[str, Path], None] = None,
+        overwrite: Union[bool, None] = False,
+        directory: Union[Union[str, Path], None] = None,
     ) -> None:
         """Write the data to a file.
 
@@ -636,7 +639,7 @@ class oimData:
         self,
         xname: str,
         yname: str,
-        axe: Optional[Axes] = None,
+        axe: Union[Axes, None] = None,
         removeFilter=False,
         savefig=None,
         **kwargs,
@@ -650,7 +653,7 @@ class oimData:
             Name of the x-axis to be plotted: can be EFF_WAVE, SPAFREQ, LENGTH, PA, MJD ...
         yname : str
             Name of the y-axis to be plotted: for instance VIS2DATA, T3PHI, ...
-        axe : Optional[Axes], optional
+        axe : Union[Axes, None], optional
             the maplotlib axe that should be used for the plot. The default is None.
         removeFilter : TYPE, optional
             Plot unfiltered data if True. The default is False.
@@ -715,7 +718,7 @@ class oimData:
 
     def uvplot(
         self,
-        axe: Optional[Axes] = None,
+        axe: Union[Axes, None] = None,
         removeFilter=False,
         savefig=None,
         **kwargs,
@@ -725,7 +728,7 @@ class oimData:
 
         Parameters
         ----------
-        axe : Optional[Axes], optional
+        axe : Union[Axes, None], optional
             The matplotlib axe to be used for the plot. The default is None.
         removeFilter : TYPE, optional
             Plot unfiltered data if True. The default is False.
@@ -768,7 +771,7 @@ class oimData:
 
 def loadOifitsData(
     input: Union[str, Path, List[str], List[Path], fits.HDUList, oimData],
-    mode: Optional[str] = "listOfHdlulist",
+    mode: Union[str, None] = "listOfHdlulist",
 ) -> oimData:
     """Return the oifits data from either filenames, already opened oifts or a
     oimData boject as either a list of hdlulist (default) or as a oimData

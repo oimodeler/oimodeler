@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Data/model simulation"""
+
 import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,18 +17,17 @@ from .oimPlots import (
 )
 from .oimUtils import hdulistDeepCopy
 
+oimDataArrDict = dict()
 
-
-oimDataArrDict=dict()
-
-oimDataArrDict["OI_VIS2"]=dict(data=["VIS2DATA"],err=["VIS2ERR"])
-oimDataArrDict["OI_VIS"]=dict(data=["VISAMP","VISPHI"],err=["VISAMPERR","VISPHIERR"])
-oimDataArrDict["OI_T3"]=dict(data=["T3AMP","T3PHI"],err=["T3AMPERR","T3PHIERR"])
-oimDataArrDict["OI_VIS2"]=dict(data=["VIS2DATA"],err=["VIS2ERR"])
-oimDataArrDict["OI_FLUX"]=dict(data=["FLUXDATA"],err=["FLUXERR"])
-
-
-
+oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
+oimDataArrDict["OI_VIS"] = dict(
+    data=["VISAMP", "VISPHI"], err=["VISAMPERR", "VISPHIERR"]
+)
+oimDataArrDict["OI_T3"] = dict(
+    data=["T3AMP", "T3PHI"], err=["T3AMPERR", "T3PHIERR"]
+)
+oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
+oimDataArrDict["OI_FLUX"] = dict(data=["FLUXDATA"], err=["FLUXERR"])
 
 
 def corrFlux2Vis2(vcompl):
@@ -137,20 +137,20 @@ class oimSimulator:
         self.bootstrapData = oimData()
         for datai in self.simulatedData.data:
             dataic = hdulistDeepCopy(datai)
-            
+
             for dataij in dataic:
                 if dataij.name in oimDataArrDict:
-                    for dataName,errName in \
-                            zip(oimDataArrDict[dataij.name]["data"], 
-                                oimDataArrDict[dataij.name]["err"]):
-                            
-                            shape = dataij.data[dataName].shape
-                            err = dataij.data[errName]
-                            
-                            
-                            dataij.data[dataName]+=np.random.randn(*shape)*err
-                
-            self.bootstrapData.addData(dataic)   
+                    for dataName, errName in zip(
+                        oimDataArrDict[dataij.name]["data"],
+                        oimDataArrDict[dataij.name]["err"],
+                    ):
+
+                        shape = dataij.data[dataName].shape
+                        err = dataij.data[errName]
+
+                        dataij.data[dataName] += np.random.randn(*shape) * err
+
+            self.bootstrapData.addData(dataic)
 
     def compute(
         self,
@@ -191,7 +191,7 @@ class oimSimulator:
 
         data = self.data
 
-        if (computeChi2 == True) | (computeSimulatedData == True) :
+        if (computeChi2 == True) | (computeSimulatedData == True):
             idx = 0
             nfiles = len(data.struct_u)
             for ifile in range(nfiles):
@@ -289,7 +289,7 @@ class oimSimulator:
                                             )
                                         )
                                     )
-                                    resi  = (
+                                    resi = (
                                         dphi
                                         * np.logical_not(flag[ival])
                                         / dataErr[ival]
@@ -297,7 +297,7 @@ class oimSimulator:
                                     chi2i = resi**2
 
                                 else:
-                                    resi  = (
+                                    resi = (
                                         (dataVal[ival] - val[ival])
                                         * np.logical_not(flag[ival])
                                         / dataErr[ival]
@@ -319,8 +319,8 @@ class oimSimulator:
             self.chi2List = chi2List
             self.nelChi2 = nelChi2
             self.residuals = residuals
-        elif computeChi2 and nelChi2==0:
-            chi2_prior=self.cprior(self.model.getParameters())
+        elif computeChi2 and nelChi2 == 0:
+            chi2_prior = self.cprior(self.model.getParameters())
 
             self.chi2 = chi2_prior
             self.chi2r = chi2_prior
@@ -472,7 +472,7 @@ class oimSimulator:
                 axi.legend()
 
             # NOTE: Automatic ylim => 0-1 for visibilties, -180,180 for phases
-            if arr[iax] in ["VIS2DATA", "VISAMP"] and visLog == True:
+            if arr[iax] in ["VIS2DATA", "VISAMP"] and visLog:
                 axi.set_yscale("log")
 
             axi.autolim()
