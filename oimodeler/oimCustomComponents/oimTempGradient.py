@@ -219,7 +219,7 @@ class oimTempGrad(oimComponentRadialProfile):
             dust_mass = self.params["dust_mass"](wl, t) * self.params[
                 "dust_mass"
             ].unit.to(u.g)
-            if p == -2:
+            if np.isclose(p, -2, rtol=1e-2):
                 sigma0 = dust_mass / (
                     2.0 * np.pi * np.log(rout_cm / rin_cm) * r0_cm**2
                 )
