@@ -207,15 +207,11 @@ class oimTempGrad(oimComponentRadialProfile):
         rin, rout, r0 = map(
             lambda x: self.params[x](wl, t), ["rin", "rout", "r0"]
         )
-        rin_cm, rout_cm, r0_cm = map(
-            lambda x: x * self.params["rin"].unit.to(u.cm), [rin, rout, r0]
-        )
-
         q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
-        r0 = linear_to_angular(r0, dist) * 1e3
-        temp = self.params["temp0"](wl, t) * (r / r0) ** q
-
         if self.compute_sigma0:
+            rin_cm, rout_cm, r0_cm = map(
+                lambda x: x * self.params["rin"].unit.to(u.cm), [rin, rout, r0]
+            )
             dust_mass = self.params["dust_mass"](wl, t) * self.params[
                 "dust_mass"
             ].unit.to(u.g)
@@ -229,7 +225,9 @@ class oimTempGrad(oimComponentRadialProfile):
         else:
             sigma0 = self.params["sigma0"](wl, t)
 
-        sigma = sigma0 * (r / r0) ** p
+        r0_mas = linear_to_angular(r0, dist) * 1e3
+        temp = self.params["temp0"](wl, t) * (r / r0_mas) ** q
+        sigma = sigma0 * (r / r0_mas) ** p
         emissivity = 1 - np.exp(-sigma * kappa_abs * elong)
         spectral_density = (
             blackbody(temp, const.c / wl) * emissivity * (1 / elong)
