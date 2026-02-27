@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Data/model simulation"""
 
-from typing import Dict, List
+from typing import Dict, List, Union
 import astropy.units as u
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -400,6 +402,8 @@ class oimSimulator:
         cmap: str = "plasma",
         kwargsData: Dict = {},
         kwargsSimulatedData: Dict = {},
+        fig: Union[Figure, None] = None,
+        axe: Union[Axes, None] = None,
     ):
         # NOTE: Plotting  data and simulated data
         kwargsData0 = dict(
@@ -427,21 +431,22 @@ class oimSimulator:
 
         # NOTE: Set the projection to oimAxes for all subplots to use oimodeler
         # custom plots
-        fig, ax = plt.subplots(
-            len(arr),
-            1,
-            sharex=True,
-            figsize=(8, 6),
-            subplot_kw=dict(projection="oimAxes"),
-        )
+        if fig is None or axe is None:
+            fig, axe = plt.subplots(
+                len(arr),
+                1,
+                sharex=True,
+                figsize=(8, 6),
+                subplot_kw=dict(projection="oimAxes"),
+            )
 
         if len(arr) == 1:
-            ax = np.array([ax])
+            axe = np.array([axe])
 
         plt.subplots_adjust(left=0.09, top=0.98, right=0.98, hspace=0.14)
 
         # NOTE: Plotting loop: Plotting data and simulated data for each data type in arr
-        for iax, axi in enumerate(ax):
+        for iax, axi in enumerate(axe):
             # NOTE: Plotting the data with wavelength colorscale + errorbars vs
             # spatial frequencies
             scale = axi.oiplot(
@@ -463,9 +468,9 @@ class oimSimulator:
                 **kwargsSimulatedData,
             )
 
-            if axi != ax[-1]:
+            if axi != axe[-1]:
                 axi.get_xaxis().set_visible(False)
-            if axi == ax[0]:
+            if axi == axe[0]:
                 axi.legend()
 
             # NOTE: Automatic ylim => 0-1 for visibilties, -180,180 for phases
@@ -477,7 +482,7 @@ class oimSimulator:
 
         xmin = 1e99
         xmax = -1e99
-        for axi in ax:
+        for axi in axe:
             for li in axi.get_lines():
                 x = li.get_xdata()
                 xmini = np.min(x)
@@ -487,7 +492,7 @@ class oimSimulator:
                 if xmaxi > xmax:
                     xmax = xmaxi
 
-        ax[0].set_xlim(xmin, xmax)
+        axe[0].set_xlim(xmin, xmax)
 
         # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
         if "cname" in kwargsData:
@@ -495,13 +500,13 @@ class oimSimulator:
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargsData['cunit']:latex_inline}"
             fig.colorbar(
-                scale, ax=ax.ravel().tolist(), label=f"{xlabel} ({cunittext})"
+                scale, ax=axe.ravel().tolist(), label=f"{xlabel} ({cunittext})"
             )
 
         if savefig != None:
             plt.savefig(savefig)
 
-        return fig, ax
+        return fig, axe
 
     def plotResiduals(
         self,
