@@ -536,7 +536,7 @@ class oimModel:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
 
         if savefig is not None:
-            plt.savefig(savefig, dpi=300)
+            plt.savefig(savefig, dpi=kwargs.get("dpi", 300))
 
         if rebin:
             im = rebin_image(im)
@@ -741,7 +741,8 @@ class oimModel:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
 
         if savefig is not None:
-            plt.savefig(savefig)
+            plt.savefig(savefig, dpi=kwargs.get("dpi", 300))
+
         return fig, axe, im
 
     def normalizeFlux(self, comp=None):
