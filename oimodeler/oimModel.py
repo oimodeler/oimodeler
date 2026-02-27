@@ -435,6 +435,7 @@ class oimModel:
         im  : numpy.array
             The image(s).
         """
+        dpi = kwargs.pop("dpi", 300)
         im = self.getImage(
             dim,
             pixSize,
@@ -536,7 +537,8 @@ class oimModel:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
 
         if savefig is not None:
-            plt.savefig(savefig, dpi=kwargs.get("dpi", 300))
+            savefig = Path(savefig)
+            plt.savefig(savefig, format=savefig.suffix[1:], dpi=dpi)
 
         if rebin:
             im = rebin_image(im)
@@ -552,7 +554,7 @@ class oimModel:
         axe: Union[Axes, None] = None,
         normPow: float = 0.5,
         figsize: Tuple[float, float] = (3.5, 2.5),
-        savefig: Union[str, None] = None,
+        savefig: Union[str, Path, None] = None,
         colorbar: bool = True,
         legend: bool = False,
         swapAxes: bool = True,
@@ -609,6 +611,7 @@ class oimModel:
         im  : numpy.ndarray
             The image(s).
         """
+        dpi = kwargs.pop("dpi", 300)
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
 
         if swapAxes:
@@ -741,7 +744,8 @@ class oimModel:
             fig.colorbar(cb, ax=axe, label="Normalized Intensity")
 
         if savefig is not None:
-            plt.savefig(savefig, dpi=kwargs.get("dpi", 300))
+            savefig = Path(savefig)
+            plt.savefig(savefig, format=savefig.suffix[1:], dpi=dpi)
 
         return fig, axe, im
 
