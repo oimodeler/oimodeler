@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Photometric and spectrascopic data wrappers"""
 
+from typing import List
 import numpy as np
 from astropy.io import fits
 
@@ -22,13 +23,13 @@ class oimFluxData(fits.HDUList):
         dwl,
         flx,
         flxerr,
-        insname="DUMMY",
-        array="DUMMY",
-        dateobs="1980-04-23T20:15:00",
+        insname: str = "DUMMY",
+        array: str = "DUMMY",
+        dateobs: str = "1980-04-23T20:15:00",
         mjd=None,
         int_time=None,
-        sta_index=[0],
-        unit="Jy",
+        sta_index: List[int] = [0],
+        unit: str = "Jy",
         flag=None,
     ):
         super().__init__()
@@ -102,12 +103,12 @@ class oimFluxData(fits.HDUList):
         self,
         flx,
         flxerr,
-        arrname="DUMMY",
-        insname="DUMMY",
+        arrname: str = "DUMMY",
+        insname: str = "DUMMY",
         mjd=None,
         int_time=None,
-        sta_index=[1],
-        unit="Jy",
+        sta_index: List[int] = [1],
+        unit: str = "Jy",
         flag=None,
         dateobs=None,
     ):

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Data/model simulation"""
 
+from typing import Dict, List
 import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,42 +31,42 @@ oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
 oimDataArrDict["OI_FLUX"] = dict(data=["FLUXDATA"], err=["FLUXERR"])
 
 
-def corrFlux2Vis2(vcompl):
+def corrFlux2Vis2(vcompl: np.ndarray) -> np.ndarray:
     nB = vcompl.shape[0]
     norm = np.outer(np.ones(nB - 1), vcompl[0, :])
     return np.abs(vcompl[1:, :] / norm) ** 2
 
 
-def corrFlux2VisAmpAbs(vcompl):
+def corrFlux2VisAmpAbs(vcompl: np.ndarray) -> np.ndarray:
     nB = vcompl.shape[0]
     norm = np.outer(np.ones(nB - 1), vcompl[0, :])
     return np.abs(vcompl[1:, :] / norm)
 
 
 # FIXME : Not real formula for differential visibilities
-def corrFlux2VisAmpDif(vcompl):
+def corrFlux2VisAmpDif(vcompl: np.ndarray) -> np.ndarray:
     nlam = vcompl.shape[1]
     norm = np.outer(np.mean(vcompl[1:, :], axis=1), np.ones(nlam))
     return np.abs(vcompl[1:, :] / norm)
 
 
-def corrFlux2VisAmpCor(vcompl):
+def corrFlux2VisAmpCor(vcompl: np.ndarray) -> np.ndarray:
     return np.abs(vcompl[1:, :])
 
 
-def corrFlux2VisPhiAbs(vcompl):
+def corrFlux2VisPhiAbs(vcompl: np.ndarray) -> np.ndarray:
     return np.angle(vcompl[1:, :], deg=True)
 
 
 # FIXME : Not real formula for differential phases
-def corrFlux2VisPhiDif(vcompl):
+def corrFlux2VisPhiDif(vcompl: np.ndarray) -> np.ndarray:
     nlam = vcompl.shape[1]
     norm = np.outer(np.mean(vcompl[1:, :], axis=1), np.ones(nlam))
     return np.angle(vcompl[1:, :] * np.conjugate(norm), deg=True)
 
 
 # TODO: Special function doing T3Amp and T3Phi simultaneously
-def corrFlux2T3Amp(vcompl):
+def corrFlux2T3Amp(vcompl: np.ndarray) -> np.ndarray:
     nB = vcompl.shape[0]
     nCP = (nB - 1) // 3
     norm = np.outer(np.ones(nCP), vcompl[0, :])
@@ -78,7 +79,7 @@ def corrFlux2T3Amp(vcompl):
     return np.abs(BS)
 
 
-def corrFlux2T3Phi(vcompl):
+def corrFlux2T3Phi(vcompl: np.ndarray) -> np.ndarray:
     nB = vcompl.shape[0]
     nCP = (nB - 1) // 3
     norm = np.outer(np.ones(nCP), vcompl[0, :])
@@ -91,7 +92,7 @@ def corrFlux2T3Phi(vcompl):
     return np.angle(BS, deg=True)
 
 
-def corrFlux2Flux(vcompl):
+def corrFlux2Flux(vcompl: np.ndarray) -> np.ndarray:
     return np.abs(vcompl)
 
 
@@ -106,16 +107,16 @@ class oimSimulator:
         self.model = None
         self.cprior = cprior
 
-        if data != None:
+        if data is not None:
             if isinstance(data, oimData):
                 self.data = data
             else:
                 self.addData(data)
 
-        if model != None:
+        if model is not None:
             self.setModel(model)
 
-        if model != None and not (data is None):
+        if model is not None and data is not None:
             self.compute(
                 computeChi2=True, computeSimulatedData=True, cprior=self.cprior
             )
@@ -154,9 +155,9 @@ class oimSimulator:
 
     def compute(
         self,
-        computeChi2=False,
-        computeSimulatedData=False,
-        checkSimulatedData=True,
+        computeChi2: bool = False,
+        computeSimulatedData: bool = False,
+        checkSimulatedData: bool = True,
         dataTypes=None,
         cprior=None,
     ):
@@ -357,13 +358,13 @@ class oimSimulator:
     def plotWlTemplate(
         self,
         shape,
-        simulated=True,
+        simulated: bool = True,
         savefig=None,
-        xunit="m",
+        xunit: str = "m",
         plotFuntionData=_errorplot,
         plotFunctionSimulatedData=plt.Axes.plot,
-        kwargsData={},
-        kwargsSimulatedData={},
+        kwargsData: Dict = {},
+        kwargsSimulatedData: Dict = {},
         **kwargs,
     ):
         kwargsData0 = dict(color="tab:red", alpha=0.5)
@@ -384,25 +385,21 @@ class oimSimulator:
             plotFunction=plotFunctionSimulatedData,
             plotFunctionkwarg=kwargsSimulatedData,
         )
-
-        # fig.set_legends("$LENGTH$m $PA$$^o$","VIS2DATA",fontsize=8)
-        # fig.set_legends(0.1,0.8,"$BASELINE$",["VIS2DATA","VISPHI","T3PHI"],fontweight =1000)
-
         return fig
 
     def plot(
         self,
         arr,
-        simulated=True,
+        simulated: bool = True,
         savefig=None,
-        visLog=False,
-        xaxis="SPAFREQ",
-        xunit="cycle/rad",
-        cname="EFF_WAVE",
-        cunit="micron",
-        cmap="plasma",
-        kwargsData={},
-        kwargsSimulatedData={},
+        visLog: bool = False,
+        xaxis: str = "SPAFREQ",
+        xunit: str = "cycle/rad",
+        cname: str = "EFF_WAVE",
+        cunit: str = "micron",
+        cmap: str = "plasma",
+        kwargsData: Dict = {},
+        kwargsSimulatedData: Dict = {},
     ):
         # NOTE: Plotting  data and simulated data
         kwargsData0 = dict(
@@ -509,15 +506,15 @@ class oimSimulator:
     def plotResiduals(
         self,
         arr,
-        xaxis="SPAFREQ",
-        xunit="cycle/rad",
+        xaxis: str = "SPAFREQ",
+        xunit: str = "cycle/rad",
         savefig=None,
-        visLog=False,
-        cname="EFF_WAVE",
-        cunit="micron",
-        cmap="plasma",
-        marker=".",
-        levels=[1, 2, 3],
+        visLog: bool = False,
+        cname: str = "EFF_WAVE",
+        cunit: str = "micron",
+        cmap: str = "plasma",
+        marker: str = ".",
+        levels: List[int] = [1, 2, 3],
         **kwargs,
     ):
 
@@ -531,7 +528,7 @@ class oimSimulator:
             kwargs.pop("cname")
             kwargs.pop("cunit")
 
-        if not ("ls" in kwargs) and not ("linestyle" in kwargs):
+        if "ls" not in kwargs and "linestyle" not in kwargs:
             kwargs["ls"] = ""
 
         residuals_data = oimData()
@@ -626,18 +623,18 @@ class oimSimulator:
     def plotWithResiduals(
         self,
         arr,
-        simulated=True,
+        simulated: bool = True,
         savefig=None,
-        visLog=False,
-        xaxis="SPAFREQ",
-        xunit="cycle/rad",
-        cname="EFF_WAVE",
-        cunit="micron",
-        cmap="plasma",
-        kwargsData={},
-        kwargsSimulatedData={},
-        kwargsResiduals={},
-        levels=[1, 2, 3],
+        visLog: bool = False,
+        xaxis: str = "SPAFREQ",
+        xunit: str = "cycle/rad",
+        cname: str = "EFF_WAVE",
+        cunit: str = "micron",
+        cmap: str = "plasma",
+        kwargsData: Dict = {},
+        kwargsSimulatedData: Dict = {},
+        kwargsResiduals: Dict = {},
+        levels: List[int] = [1, 2, 3],
     ):
 
         # NOTE: Plotting  data and simulated data

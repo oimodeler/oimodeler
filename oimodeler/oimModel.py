@@ -101,9 +101,7 @@ class oimModel:
             res += component.getComplexCoherentFlux(ucoord, vcoord, wl, t)
         return res
 
-    def getParameters(
-        self, free: Union[bool, None] = False
-    ) -> Dict[str, oimParam]:
+    def getParameters(self, free: bool = False) -> Dict[str, oimParam]:
         """Get the Model paramters (or free parameters)
 
         Parameters
@@ -164,11 +162,11 @@ class oimModel:
         pixSize: float,
         wl: Union[Union[float, ArrayLike], None] = None,
         t: Union[Union[float, ArrayLike], None] = None,
-        toFits: Union[bool, None] = False,
-        fromFT: Union[bool, None] = False,
-        padFact: Union[int, None] = 1,
-        squeeze: Union[bool, None] = True,
-        normalize: Union[bool, None] = False,
+        toFits: bool = False,
+        fromFT: bool = False,
+        padFact: int = 1,
+        squeeze: bool = True,
+        normalize: bool = False,
     ) -> Union[np.ndarray, PrimaryHDU]:
         """Compute and return an image or and image cube (if wavelength and time
         are given).
@@ -322,8 +320,8 @@ class oimModel:
         pixSize: float,
         wl: Union[Union[int, ArrayLike], None] = None,
         t: Union[Union[int, ArrayLike], None] = None,
-        fromFT: Union[bool, None] = False,
-        normalize: Union[bool, None] = False,
+        fromFT: bool = False,
+        normalize: bool = False,
     ) -> Union[np.ndarray, PrimaryHDU]:
         """Save the model image
 
@@ -370,18 +368,18 @@ class oimModel:
         pixSize: float,
         wl: Union[Union[int, ArrayLike], None] = None,
         t: Union[Union[int, ArrayLike], None] = None,
-        fromFT: Union[bool, None] = False,
-        padFact: Union[int, None] = 1,
+        fromFT: bool = False,
+        padFact: int = 1,
         axe: Union[Axes, None] = None,
-        normPow: Union[float, None] = 0.5,
-        figsize: Union[Tuple[float, float], None] = (3.5, 2.5),
+        normPow: float = 0.5,
+        figsize: Tuple[float, float] = (3.5, 2.5),
         savefig: Union[str, Path, None] = None,
-        colorbar: Union[bool, None] = True,
-        legend: Union[bool, None] = False,
-        swapAxes: Union[bool, None] = True,
+        colorbar: bool = True,
+        legend: bool = False,
+        swapAxes: bool = True,
         kwargs_legend: Dict = {},
-        normalize: Union[bool, None] = False,
-        rebin: Union[bool, None] = False,
+        normalize: bool = False,
+        rebin: bool = False,
         **kwargs: Dict,
     ) -> Tuple[Figure, Axes, np.ndarray]:
         """Show the mode Image or image-Cube
@@ -552,15 +550,15 @@ class oimModel:
         wl: Union[Union[int, ArrayLike], None] = None,
         t: Union[Union[int, ArrayLike], None] = None,
         axe: Union[Axes, None] = None,
-        normPow: Union[float, None] = 0.5,
-        figsize: Union[Tuple[float, float], None] = (3.5, 2.5),
+        normPow: float = 0.5,
+        figsize: Tuple[float, float] = (3.5, 2.5),
         savefig: Union[str, None] = None,
-        colorbar: Union[bool, None] = True,
-        legend: Union[bool, None] = False,
-        swapAxes: Union[bool, None] = True,
-        display_mode: Union[str, None] = "vis",
-        kwargs_legend: Union[Dict, None] = {},
-        normalize: Union[bool, None] = False,
+        colorbar: bool = True,
+        legend: bool = False,
+        swapAxes: bool = True,
+        display_mode: str = "vis",
+        kwargs_legend: Dict = {},
+        normalize: bool = False,
         **kwargs: Dict,
     ):
         """Show the amplitude and phase of the Fourier space

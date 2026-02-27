@@ -345,12 +345,12 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
     def _init(
         self,
         param,
-        dependence="wl",
+        dependence: str = "wl",
         keyframes=[],
         keyvalues=[],
-        kind="linear",
-        fixedRef=True,
-        extrapolate=False,
+        kind: str = "linear",
+        fixedRef: bool = True,
+        extrapolate: bool = False,
         **kwargs,
     ):
         self.dependence = dependence
@@ -442,7 +442,15 @@ class oimParamCosineTime(oimParamInterpolator):
     interpdescription = "Assymetrical cosine time interpolator"
     interparams = ["T0", "P", "values", "x0"]
 
-    def _init(self, param, T0=0, P=1, values=[0, 1], x0=None, **kwargs):
+    def _init(
+        self,
+        param,
+        T0: Union[int, float] = 0,
+        P: Union[int, float] = 1,
+        values: List[int] = [0, 1],
+        x0=None,
+        **kwargs,
+    ):
         self.asymmetric = False
         self.T0 = oimParam(
             name="T0", value=T0, description="Start", unit=u.day
@@ -497,7 +505,14 @@ class oimParamGaussian(oimParamInterpolator):
     interparams = ["dependence", "val0", "value", "x0", "fwhm"]
 
     def _init(
-        self, param, dependence="wl", val0=0, value=0, x0=0, fwhm=0, **kwargs
+        self,
+        param,
+        dependence: str = "wl",
+        val0=0,
+        value=0,
+        x0=0,
+        fwhm=0,
+        **kwargs,
     ):
         self.dependence = dependence
         self.x0 = oimParam(**_standardParameters[dependence])
@@ -574,7 +589,7 @@ class oimParamMultipleGaussian(oimParamInterpolator):
     def _init(
         self,
         param,
-        dependence="wl",
+        dependence: str = "wl",
         val0=0,
         values=[],
         x0=[],
@@ -675,7 +690,13 @@ class oimParamPolynomial(oimParamInterpolator):
     interparams = ["dependence", "order", "coeffs", "x0"]
 
     def _init(
-        self, param, dependence="wl", order=2, coeffs=None, x0=None, **kwargs
+        self,
+        param,
+        dependence: str = "wl",
+        order: int = 2,
+        coeffs=None,
+        x0=None,
+        **kwargs,
     ):
         self.dependence = dependence
 
@@ -702,7 +723,7 @@ class oimParamPolynomial(oimParamInterpolator):
             self.coeffs.append(pi)
 
         self.params.extend(self.coeffs)
-        if not (x0 is None):
+        if x0 is not None:
             self.params.append(x0)
 
     def _interpFunction(self, wl, t):
@@ -723,7 +744,7 @@ class oimParamPolynomialWl(oimParamPolynomial):
     interpdescription = "Polynomial interpolation in wl"
     interparams = ["order", "coeffs", "x0"]
 
-    def _init(self, param, order=2, coeffs=None, x0=None, **kwargs):
+    def _init(self, param, order: int = 2, coeffs=None, x0=None, **kwargs):
         super()._init(
             param, dependence="wl", order=order, coeffs=coeffs, x0=x0
         )
@@ -733,7 +754,7 @@ class oimParamPolynomialTime(oimParamPolynomial):
     interpdescription = "Polynomial interpolation in mjd"
     interparams = ["order", "coeffs", "x0"]
 
-    def _init(self, param, order=2, coeffs=None, x0=None):
+    def _init(self, param, order: int = 2, coeffs=None, x0=None):
         super()._init(
             param, dependence="mjd", order=order, coeffs=coeffs, x0=x0
         )
@@ -744,7 +765,7 @@ class oimParamPowerLaw(oimParamInterpolator):
     """Power-law interpolation, i.e. A*(x/x0)**p."""
     interparams = ["dependence", "x0", "A", "p"]
 
-    def _init(self, param, dependence="wl", x0=0, A=0, p=1, **kwargs):
+    def _init(self, param, dependence: str = "wl", x0=0, A=0, p=1, **kwargs):
         self.dependence = dependence
 
         self.x0 = oimParam(**_standardParameters[dependence])
@@ -803,7 +824,13 @@ class oimParamLinearRangeWl(oimParamInterpolator):
     interparams = ["wlmin", "wlmax", "values"]
 
     def _init(
-        self, param, wlmin=2e-6, wlmax=3e-6, values=[], kind="linear", **kwargs
+        self,
+        param,
+        wlmin=2e-6,
+        wlmax=3e-6,
+        values=[],
+        kind: str = "linear",
+        **kwargs,
     ):
         self.kind = kind
 
@@ -866,7 +893,7 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
         dwl=1e-9,
         f_contrib=1.0,
         values=[],
-        kind="linear",
+        kind: str = "linear",
         **kwargs,
     ):
         self.kind = kind

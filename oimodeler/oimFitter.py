@@ -3,6 +3,7 @@
 
 # from multiprocessing import Pool
 
+from typing import Dict, Union
 import warnings
 from pathlib import Path
 
@@ -79,7 +80,7 @@ class oimFitter:
     def getResults(self, **kwargs):
         return 0
 
-    def printResults(self, format=".5f", **kwargs):
+    def printResults(self, format: str = ".5f", **kwargs):
         res = self.getResults(**kwargs)
         chi2r = self.simulator.chi2r
         pm = "\xb1"
@@ -222,7 +223,13 @@ class oimFitterEmcee(oimFitter):
         )
         return -0.5 * self.simulator.chi2 / self.params["chi2fact"].value
 
-    def getResults(self, mode="best", discard=0, chi2limfact=20, **kwargs):
+    def getResults(
+        self,
+        mode: str = "best",
+        discard: int = 0,
+        chi2limfact: Union[int, float] = 20,
+        **kwargs,
+    ):
         chi2 = -2 * self.sampler.get_log_prob(discard=discard, flat=True)
         chain = self.sampler.get_chain(discard=discard, flat=True)
 
@@ -268,7 +275,13 @@ class oimFitterEmcee(oimFitter):
 
     # TODO: Change the chi2limfact implementation so it doesn't break if
     # over-fitting takes place
-    def cornerPlot(self, discard=0, chi2limfact=20, savefig=None, **kwargs):
+    def cornerPlot(
+        self,
+        discard: int = 0,
+        chi2limfact: Union[int, float] = 20,
+        savefig=None,
+        **kwargs,
+    ):
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
 
@@ -310,7 +323,12 @@ class oimFitterEmcee(oimFitter):
         return fig, fig.axes
 
     def walkersPlot(
-        self, savefig=None, chi2limfact=20, labelsize=10, ncolors=128, **kwargs
+        self,
+        savefig=None,
+        chi2limfact: Union[int, float] = 20,
+        labelsize: int = 10,
+        ncolors: int = 128,
+        **kwargs,
     ):
         fig, ax = plt.subplots(self.nfree, figsize=(10, 7), sharex=True)
         if self.nfree == 1:
@@ -476,7 +494,7 @@ class oimFitterDynesty(oimFitter):
         )
         return -0.5 * self.simulator.chi2r
 
-    def getResults(self, mode="median", **kwargs):
+    def getResults(self, mode: str = "median", **kwargs):
         if mode == "median":
             samples = self.sampler.results.samples
             quantiles = np.percentile(samples, [10, 50, 84], axis=0)
@@ -602,11 +620,12 @@ class oimFitterMinimize(oimFitter):
             self.initialParams = kwargs["initialParams"]
         return kwargs
 
-    def _getChi2r(self, theta):
+    def _getChi2r(self, theta: np.ndarray) -> float:
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = theta[iparam]
             if theta[iparam] < parami.min or theta[iparam] > parami.max:
                 return np.inf
+
         self.simulator.compute(
             computeChi2=True, dataTypes=self.dataTypes, cprior=self.cprior
         )
@@ -643,7 +662,7 @@ class oimFitterMinimize(oimFitter):
 
         return values, errors
 
-    def printResults(self, format=".5f", **kwargs):
+    def printResults(self, format: str = ".5f", **kwargs):
         res = self.getResults(**kwargs)
         chi2r = self.simulator.chi2r
         pm = "\xb1"
@@ -745,7 +764,7 @@ class oimFitterRegularGrid(oimFitter):
 
         return best
 
-    def printResults(self, format=".5f", **kwargs):
+    def printResults(self, format: str = ".5f", **kwargs):
         res = self.getResults(**kwargs)
         chi2r = self.simulator.chi2r
         for iparam, parami in enumerate(self.gridParams):
@@ -757,14 +776,14 @@ class oimFitterRegularGrid(oimFitter):
     def plotMap(
         self,
         params=None,
-        fixedValues="best",
-        plotContour=False,
-        plotMinLines=False,
-        plotMin=True,
-        minLines_kwargs={},
-        contour_kwargs={},
-        clabel_kwargs={},
-        min_kwargs={},
+        fixedValues: str = "best",
+        plotContour: bool = False,
+        plotMinLines: bool = False,
+        plotMin: bool = True,
+        minLines_kwargs: Dict = {},
+        contour_kwargs: Dict = {},
+        clabel_kwargs: Dict = {},
+        min_kwargs: Dict = {},
         axe=None,
         **kwargs,
     ):
@@ -781,9 +800,9 @@ class oimFitterRegularGrid(oimFitter):
         clabel_kwargs0 = dict(inline=True, fmt="%.1f", fontsize=10)
         clabel_kwargs = clabel_kwargs0 | clabel_kwargs
 
-        if not ("origin" in kwargs):
+        if "origin" not in kwargs:
             kwargs["origin"] = "lower"
-        if not ("aspect" in kwargs):
+        if "aspect" not in kwargs:
             kwargs["aspect"] = "auto"
 
         ndims = len(self.gridSize)
@@ -929,7 +948,7 @@ class oimFitterRegularGrid(oimFitter):
 
 
 def oimComputeChi2PlusOneUncertainties(
-    fit, factErr=500, npts=100, plot=False, dataTypes=None
+    fit, factErr=500, npts=100, plot: bool = False, dataTypes=None
 ):
     grids = []
     errs = []

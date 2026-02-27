@@ -282,23 +282,23 @@ def _colorPlot(
 
 def uvPlot(
     oifitsList: fits.HDUList,
-    arrname: Union[str, None] = "OI_VIS2",
-    unit: Union[u.Quantity, None] = u.m,
-    stringunitformat: Union[str, None] = "latex_inline",
+    arrname: str = "OI_VIS2",
+    unit: u.Quantity = u.m,
+    stringunitformat: str = "latex_inline",
     color: Union[str, None] = None,
     maxi: Union[float, None] = None,
-    grid: Union[bool, None] = True,
-    gridcolor: Union[str, None] = "k",
+    grid: bool = True,
+    gridcolor: str = "k",
     fontsize: Union[int, None] = None,
     xytitle: List[bool] = [True, True],
-    showLegend: Union[bool, None] = True,
-    showColorbar: Union[bool, None] = True,
-    showFlagged: Union[bool, None] = False,
+    showLegend: bool = True,
+    showColorbar: bool = True,
+    showFlagged: bool = False,
     colorTab=None,
     axe=None,
     title: Union[str, None] = None,
-    cunit: Union[u.Quantity, None] = u.m,
-    legendkwargs: Union[Dict, None] = {},
+    cunit: u.Quantity = u.m,
+    legendkwargs: Dict = {},
     **kwargs,
 ) -> Axes:
     """Plot the uv coverage of the data.
@@ -516,7 +516,7 @@ def getColorIndices(
     color: str,
     yarr: np.ndarray,
     yname: str,
-    flatten: Union[bool, None] = False,
+    flatten: bool = False,
 ) -> Tuple[np.ndarray, List[str]]:
     """Get the color indices of the data depending on the colorisation.
 
@@ -624,15 +624,15 @@ def oimPlot(
     ylim: Union[float, None] = None,
     xscale: Union[str, None] = None,
     yscale: Union[str, None] = None,
-    shortLabel: Union[bool, None] = True,
+    shortLabel: bool = True,
     color: Union[str, None] = None,
     colorTab: Union[str, None] = None,
-    showColorbar: Union[bool, None] = True,
-    errorbar: Union[bool, None] = False,
-    showFlagged: Union[bool, None] = False,
-    colorbar: Union[bool, None] = True,
-    legend: Union[bool, None] = False,
-    kwargs_error: Union[Dict, None] = {},
+    showColorbar: bool = True,
+    errorbar: bool = False,
+    showFlagged: bool = False,
+    colorbar: bool = True,
+    legend: bool = False,
+    kwargs_error: Dict = {},
     **kwargs,
 ):
     """Plot the data from the oifits files.
@@ -1278,9 +1278,9 @@ class oimWlTemplatePlots(Figure):
     def plot(
         self,
         oifitsList: fits.HDUList,
-        add: Union[bool, None] = True,
-        plotFunction: Union[Axes, None] = plt.Axes.plot,
-        plotFunctionkwarg: Union[Dict, None] = {},
+        add: bool = True,
+        plotFunction: Axes = plt.Axes.plot,
+        plotFunctionkwarg: Dict = {},
     ) -> None:
         """Plot the data from the oifits files."""
         if isinstance(oifitsList, oimData):
@@ -1445,9 +1445,9 @@ def oimSimplePlotWavelength(
     iB: int,
     extver=None,
     axe: Union[Axes, None] = None,
-    plotFunction: Union[Axes, None] = plt.Axes.plot,
-    xunit: Union[u.Quantity, None] = u.m,
-    plotFunctionkwarg: Union[Dict, None] = {},
+    plotFunction: Axes = plt.Axes.plot,
+    xunit: u.Quantity = u.m,
+    plotFunctionkwarg: Dict = {},
 ) -> None:
     """Set the x-axis to the wavelength of the data.
 
@@ -1634,18 +1634,18 @@ sta_pos = np.array(
 
 def vltiplot(
     axe=None,
-    configs=np.array([]),
-    marker="o",
-    markersize=10,
-    telcolor="k",
-    labels=True,
-    fontsize=2,
+    configs: np.ndarray = np.array([]),
+    marker: str = "o",
+    markersize: int = 10,
+    telcolor: str = "k",
+    labels: bool = True,
+    fontsize: int = 2,
 ):
 
     UTs = sta_pos[-4:, :]
     ATs = sta_pos[:-4, :]
 
-    if axe == None:
+    if axe is None:
         fig, axe = plt.subplots()
     else:
         fig = axe.get_figure()

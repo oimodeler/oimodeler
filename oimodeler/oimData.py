@@ -15,7 +15,7 @@ from .oimUtils import _oimDataTypeArr, hdulistDeepCopy
 
 
 def oimDataGetWl(
-    data: fits.HDUList, array: fits.BinTableHDU, dwl: Union[bool, None] = True
+    data: fits.HDUList, array: fits.BinTableHDU, dwl: bool = True
 ) -> np.ndarray:
     """Gets the wavelengths from the data.
 
@@ -332,9 +332,7 @@ class oimData:
                 self.applyFilter()
             return self._filteredData
 
-    def addData(
-        self, dataOrFilename, prepare: Union[bool, None] = True
-    ) -> None:
+    def addData(self, dataOrFilename, prepare: bool = True) -> None:
         """Add data to the class.
 
         Parameters
@@ -350,7 +348,7 @@ class oimData:
         self.prepared = False
         self._filteredDataReady = False
 
-        if prepare == True:
+        if prepare:
             self.prepareData()
 
     # TODO: Make it possible to selectively remove data
@@ -506,7 +504,7 @@ class oimData:
                         if arrj.name in _oimDataTypeArr:
                             if arrname == arrj.header["arrname"]:
                                 useful = True
-                    if useful == False:
+                    if not useful:
                         toRemove.append(arri)
                 if arri.name == "OI_WAVELENGTH":
                     useful = False
@@ -515,7 +513,7 @@ class oimData:
                         if arrj.name in _oimDataTypeArr:
                             if arrname == arrj.header["insname"]:
                                 useful = True
-                    if useful == False:
+                    if not useful:
                         toRemove.append(arri)
             for arri in toRemove:
                 datai.pop(arri)
@@ -603,7 +601,7 @@ class oimData:
     def writeto(
         self,
         filename: Union[Union[str, Path], None] = None,
-        overwrite: Union[bool, None] = False,
+        overwrite: bool = False,
         directory: Union[Union[str, Path], None] = None,
     ) -> None:
         """Write the data to a file.
@@ -640,7 +638,7 @@ class oimData:
         xname: str,
         yname: str,
         axe: Union[Axes, None] = None,
-        removeFilter=False,
+        removeFilter: bool = False,
         savefig=None,
         **kwargs,
     ):
@@ -719,7 +717,7 @@ class oimData:
     def uvplot(
         self,
         axe: Union[Axes, None] = None,
-        removeFilter=False,
+        removeFilter: bool = False,
         savefig=None,
         **kwargs,
     ):
@@ -771,7 +769,7 @@ class oimData:
 
 def loadOifitsData(
     input: Union[str, Path, List[str], List[Path], fits.HDUList, oimData],
-    mode: Union[str, None] = "listOfHdlulist",
+    mode: str = "listOfHdlulist",
 ) -> oimData:
     """Return the oifits data from either filenames, already opened oifts or a
     oimData boject as either a list of hdlulist (default) or as a oimData
@@ -822,4 +820,5 @@ def loadOifitsData(
 
         if mode == "oimData":
             data = oimData(data)
+
     return data

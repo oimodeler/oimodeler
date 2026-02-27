@@ -475,7 +475,9 @@ def compute_photometric_slope(
     )
 
 
-def pad_image(image: np.ndarray, padfact=None) -> np.ndarray:
+def pad_image(
+    image: np.ndarray, padfact: Union[int, float, None] = None
+) -> np.ndarray:
     """Pads an image with additional zeros for Fourier transform.
 
     Parameters
@@ -489,7 +491,7 @@ def pad_image(image: np.ndarray, padfact=None) -> np.ndarray:
         The padded image.
     """
 
-    if padfact == None:
+    if padfact is None:
         padfact = oimOptions.ft.padding
 
     im0 = np.sum(image, axis=(0, 1))
@@ -601,11 +603,11 @@ def linear_to_angular(
 
 def getBaselineName(
     oifits: fits.HDUList,
-    hduname: Union[str, None] = "OI_VIS2",
-    length: Union[bool, None] = False,
-    angle: Union[bool, None] = False,
+    hduname: str = "OI_VIS2",
+    length: bool = False,
+    angle: bool = False,
     extver: Union[int, None] = None,
-    squeeze: Union[bool, None] = True,
+    squeeze: bool = True,
 ) -> List[str]:
     """Gets the baseline names (i.e., telescopes names
     separated by minus sign) in an extension of a oifits file.
@@ -689,9 +691,9 @@ def getBaselineName(
 # TODO : Add support for multiple extensions
 def getConfigName(
     oifits: fits.HDUList,
-    hduname: Union[str, None] = "OI_VIS2",
+    hduname: str = "OI_VIS2",
     extver: Union[int, None] = None,
-    squeeze: Union[bool, None] = True,
+    squeeze: bool = True,
 ) -> List[str]:
     """Gets the configuration names in an extension of a oifits file.
 
@@ -748,12 +750,12 @@ def getConfigName(
 
 def getBaselineLengthAndPA(
     oifits: fits.HDUList,
-    arr: Union[str, None] = "OI_VIS2",
+    arr: str = "OI_VIS2",
     extver: Union[int, None] = None,
-    squeeze: Union[bool, None] = True,
-    returnUV: Union[bool, None] = False,
-    T3Max: Union[bool, None] = False,
-    showFlagged: Union[bool, None] = True,
+    squeeze: bool = True,
+    returnUV: bool = False,
+    T3Max: bool = False,
+    showFlagged: bool = True,
 ) -> Tuple[np.ndarray]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
@@ -843,10 +845,10 @@ def getBaselineLengthAndPA(
 
 def get2DSpaFreq(
     oifits: fits.HDUList,
-    arr: Union[str, None] = "OI_VIS2",
+    arr: str = "OI_VIS2",
     unit: Union[str, None] = None,
     extver: Union[int, None] = None,
-    squeeze: Union[bool, None] = True,
+    squeeze: bool = True,
 ) -> Tuple[np.ndarray]:
     """Get the spatial two dimensional frequencies.
 
@@ -925,10 +927,10 @@ def get2DSpaFreq(
 
 def getSpaFreq(
     oifits: fits.HDUList,
-    arr: Union[str, None] = "OI_VIS2",
+    arr: str = "OI_VIS2",
     unit: Union[str, None] = None,
     extver: Union[int, None] = None,
-    squeeze: Union[bool, None] = True,
+    squeeze: bool = True,
 ) -> Tuple[np.ndarray]:
     """Get the spatial dimensional frequencies.
 
@@ -1000,9 +1002,9 @@ def getSpaFreq(
 
 def getWlFromOifits(
     oifits: fits.HDUList,
-    arr: Union[str, None] = "OI_VIS2",
+    arr: str = "OI_VIS2",
     extver: Union[int, None] = None,
-    returnBand: Union[bool, None] = False,
+    returnBand: bool = False,
 ) -> Tuple[np.ndarray]:
     """Get the wavelength
 
@@ -1061,7 +1063,7 @@ def hdulistDeepCopy(hdulist: fits.HDUList) -> fits.HDUList:
 def cutWavelengthRange(
     oifits: fits.HDUList,
     wlRange: Union[List[float], None] = None,
-    addCut: Union[List[float], None] = [],
+    addCut: List[float] = [],
 ) -> fits.HDUList:
     """Cut the wavelength range of an oifits file.
 
@@ -1398,7 +1400,7 @@ def createOiTargetFromSimbad(names: Union[str, List[str]]) -> fits.BinTableHDU:
 # TODO: This current method does not allow to shift baseline of the same oifits
 # individually.
 def shiftWavelength(
-    oifits: fits.HDUList, shift: float, verbose: Union[bool, None] = False
+    oifits: fits.HDUList, shift: float, verbose: bool = False
 ) -> None:
     """Shift the wavelength of an oifits file.
 
@@ -1432,8 +1434,8 @@ def shiftWavelength(
 def spectralSmoothing(
     oifits: fits.HDUList,
     kernel_size: float,
-    cols2Smooth: Union[Union[str, List[str]], None] = "all",
-    normalizeError: Union[bool, None] = True,
+    cols2Smooth: Union[str, List[str]] = "all",
+    normalizeError: bool = True,
 ) -> None:
     """Smooth the spectral data of an oifits file.
 
@@ -1606,7 +1608,7 @@ def _interpolateBinHDU(
     binMasks: ArrayLike,
     binEdgeGrid: ArrayLike,
     grid: ArrayLike,
-    exception: Union[List[str], None] = [],
+    exception: List[str] = [],
     **kwargs,
 ) -> fits.BinTableHDU:
     """Bin an HDU via interpolation.
@@ -1800,7 +1802,7 @@ def intpBinWavelength(
 def rebin_image(
     image: np.ndarray,
     binning_factor: Union[int, None] = None,
-    rdim: Union[bool, None] = False,
+    rdim: bool = False,
 ) -> np.ndarray:
     """Bins a 2D-image down according.
 
@@ -1972,7 +1974,9 @@ def binWavelength(
                     data[i].data[errnamei] /= np.sqrt(binsize)
 
 
-def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
+def oifitsFlagWithExpression(
+    data, arr, extver0, expr, keepOldFlag: bool = False
+):
     """Flag the data with an expression.
 
     Parameters
@@ -2070,7 +2074,7 @@ def oifitsFlagWithExpression(data, arr, extver0, expr, keepOldFlag=False):
 
 
 def oifitsKeepBaselines(
-    data, arr, baselines_to_keep, extver=None, keepOldFlag=True
+    data, arr, baselines_to_keep, extver=None, keepOldFlag: bool = True
 ):
 
     if arr == "all" or arr == ["all"] or arr is []:
@@ -2111,7 +2115,7 @@ def oifitsKeepBaselines(
 
 
 def oifitsRemoveBaselines(
-    data, arr, baselines_to_remove, extver=None, keepOldFlag=True
+    data, arr, baselines_to_remove, extver=None, keepOldFlag: bool = True
 ):
 
     if arr == "all" or arr == ["all"] or arr is []:
@@ -2152,7 +2156,7 @@ def oifitsRemoveBaselines(
 
 
 def oifitsKeepTelescopes(
-    data, arr, telescopes_to_keep, extver=None, keepOldFlag=True
+    data, arr, telescopes_to_keep, extver=None, keepOldFlag: bool = True
 ):
 
     if arr == "all" or arr == ["all"] or arr is []:
@@ -2183,7 +2187,7 @@ def oifitsKeepTelescopes(
 
 
 def oifitsRemoveTelescopes(
-    data, arr, telescopes_to_remove, extver=None, keepOldFlag=True
+    data, arr, telescopes_to_remove, extver=None, keepOldFlag: bool = True
 ):
 
     if arr == "all" or arr == ["all"] or arr is []:
@@ -2215,11 +2219,11 @@ def oifitsRemoveTelescopes(
 
 def computeDifferentialError(
     oifits: fits.HDUList,
-    ranges: Union[List[int]] = [[0, 5]],
-    excludeRange: Union[bool, None] = False,
-    rangeType: Union[str, None] = "index",
-    dataType: Union[str, None] = "VISPHI",
-    extver: Union[List[int]] = [None],
+    ranges: List[int] = [[0, 5]],
+    excludeRange: bool = False,
+    rangeType: str = "index",
+    dataType: str = "VISPHI",
+    extver: List[Union[int, None]] = [None],
 ) -> None:
     """Compute the differential error.
 
