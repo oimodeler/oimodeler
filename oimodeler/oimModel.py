@@ -19,6 +19,7 @@ from .oimParam import (
     oimParam,
     oimParamInterpolator,
     oimParamLinker,
+    oimParamLinkerFunction,
     oimParamNorm,
 )
 from .oimUtils import rebin_image
@@ -43,12 +44,17 @@ class oimModel:
        The components of the model.
     """
 
-    def __init__(self, *components: List[oimComponent]) -> None:
+    def __init__(self, *components: List[oimComponent], extParams=[]) -> None:
         """Constructor of the class"""
         if len(components) == 1 and type(components[0]) == list:
             self.components = components[0]
         else:
             self.components = components
+        
+        if type(extParams)!=type([]):
+            self.extParams = [extParams]
+        else:
+            self.extParams = extParams
 
     def __str__(self):
         """Return a string representation of the model"""
@@ -135,6 +141,15 @@ class oimModel:
                                     ] = parami
                     elif isinstance(param, oimParamLinker):
                         pass
+                    elif isinstance(param, oimParamLinkerFunction):
+                        for iparam, parami in enumerate(param.params):
+                            if parami.free or not free:
+                                params[
+                                    "c{0}_{1}_{2}".format(
+                                        iparam + 1,
+                                        component.shortname.replace(" ", "_"),
+                                        parami.name,
+                                    )] = parami
                     else:
                         if param.free or not free:
                             params[
@@ -144,6 +159,11 @@ class oimModel:
                                     name,
                                 )
                             ] = param
+                            
+        for extParami in self.extParams:
+            if extParami.free or not free:
+                params[extParami.name] = extParami
+                
         return params
 
     def getFreeParameters(self) -> Dict[str, oimParam]:
