@@ -212,6 +212,25 @@ class oimParamLinker:
         return reduce(self.op, values)
 
 
+class oimParamLinkerFunction:
+    """Class to directly link some oimParam using a user function"""
+    
+    def __init__(self,params,func) :
+        if type(params)!=type([]):
+            self.params = [params]
+        else:
+            self.params = params
+        self.func = func
+        
+    def __call__(self, wl=None, t=None):
+        
+        params=[]
+        for p in self.params:
+            params.append(p(wl,t))
+        return self.func(*params)
+       
+
+
 class oimParamNorm:
     """
     Class to normalize a list of oimParam
