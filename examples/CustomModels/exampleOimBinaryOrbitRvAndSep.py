@@ -5,7 +5,7 @@ Created on Mon Feb 23 09:06:35 2026
 @author: ame
 
 Here we present advanced features of the new oimBinaryOrbit component.The more
-basic features are detailed in the oimBinaryOrbit.py example in the same folder.
+basic features are detailed in exampleOimBinaryOrbit.py.
 
 For this example, we are using some data from Meilland et al. (2011) paper:
     
@@ -17,7 +17,8 @@ Our dataset consist in :
 - delsco_rv.dat : RV around the 2001 periastron from Miroshnichenko (2001)
 
 - delsco_position.dat : separation measurtement (in mas) from litterature
-      source => 0 : 4th Catalog of Interferometric Measurements of Binary Star (Hartkopf 2001)
+      source => 0 : 4th Catalog of Interferometric Measurements of Binary Star
+                    (Hartkopf 2001)
              => 1 : from Tycner et al. (2011) derived  from NPOI data 
              => 2 : Meilland et al. (2011) derived from AMBER data
 - 2 AMBER oifits files from Meilland et al. 2011 
@@ -101,30 +102,37 @@ orb.params["V0"].set(min=-10,max=0,free=True)
 #%% defining the external constraint prior which consist of the weighted sum
 # of the chi2r on the RV and the separation
 
-def sepRvPrior(whatever):
+def sepRvPrior():
     x_mod, y_mod = orb.getSeparation(mjd, mas=True)
-    dist2 = ((x_mod - x) / err_x) ** 2 + ((y_mod - y) / err_y) ** 2
-    chi2r_sep = np.sum(dist2 / len(mjd))
+    chi2_sep = np.sum(((x_mod - x) / err_x) ** 2 + ((y_mod - y) / err_y) ** 2)
+
     rv_model = orb.getPrimaryRadialVelocity(mjdRv)
-    chi2r_rv = np.sum((rv - rv_model) ** 2) / len(mjdRv)
-    chi2r = chi2r_sep + 10 * chi2r_rv # here we put a factor 10 on the RV to put more weight on it 
+    chi2_rv = np.sum(((rv - rv_model)/0.3) ** 2) # we assume 0.1km/s errors on RV
+    
+    chi2r =   (chi2_sep + chi2_rv) / (  mjd.size + mjdRv.size)
     return chi2r
 
 #%% Setting a mcmc fitter without interferometric data but with the prior function
 
-data_empty = oim.oimData() # No interferometric data
-
+# No interferometric data
+data_empty = oim.oimData() 
 fit=oim.oimFitterEmcee(data_empty, morb, nwalkers=20)
-fit.simulator.cprior = sepRvPrior # the prior is set on the simulator
+
+# the prior is set on the simulator
+fit.simulator.cprior = sepRvPrior
+
+# The prior weight should be equal to the number of points for proper statistical purpose
+fit.simulator.priorWeight = mjd.size + mjdRv.size 
+
 fit.prepare()
 
 #%% Fitting Rv and separation using the simulator prior
-fit.run(nsteps=20000,progress=True)
+fit.run(nsteps=3000,progress=True)
 
 #%% Plotting results of the fit
-fit.walkersPlot(chi2limfact=2,ncolors=8,savefig=save_dir / "ExampleBinary_delsco_walker.png")
-fit.cornerPlot(discard=15000,chi2limfact=2,savefig=save_dir / "ExampleBinary_delsco_corner.png")
-fit.printResults(discard=15000,chi2limfact=2)
+fit.walkersPlot(chi2limfact=5,savefig=save_dir / "ExampleBinary_delsco_walker.png")
+fit.cornerPlot(discard=2000,chi2limfact=5,savefig=save_dir / "ExampleBinary_delsco_corner.png")
+fit.printResults(discard=2000,chi2limfact=5)
 
 #%% Plotting the best-fit orbit with the separation measurements
 
@@ -234,21 +242,7 @@ figGrid,axGrid = grid.plotMap()
 fig,ax = plt.subplots()
 ax.grid(which="major", lw=1, alpha=0.2)
 ax.grid(which="minor", lw=0.5, alpha=0.2)
-T0=Time(2000.6941,format="byear").mjd
-T = 10.811*u.yr.to(u.day)
 
-orb = oim.oimBinaryOrbit(e  = 0.94,            # Eccentricity
-                         a  = 98.74,           # semi-major axis (mas)
-                         T0 = 2000.6941*u.yr,  # Time Periastron passage (MJD by default or decimal year)
-                         T  = 10.811*u.yr,     # Period (days by default or any compatible astropy unit if specified)
-                         i  = 30.2,            # inclination angle (deg)
-                         O  = 174,             # Longitude of ascending node (deg)
-                         o  = 0.7,             # Argument of periastron
-                         Ka = 23.9,            # Radial Velocity semi-amplitude of the first component (km/s by default)
-                         V0 = -6.7             # Systemic velocity  (km/s by default)
-                         )
-
-morb = oim.oimModel(orb)
 
 MJD = data.data[0]["OI_VIS2"].data["MJD"][0]
 dateText=Time(MJD,format="mjd").iso.split()[0]
@@ -291,13 +285,25 @@ ax.set_xlim(X.min(),X.max())
 ax.set_ylim(Y.min(),Y.max())
 
 #%%
+orb.normalizeFlux = True
 orb.primary=oim.oimUD(d=2.3,f=0.94)
 orb.primary.params["d"].set(min=0,max=5)
-orb.secondary.params["f"]=oim.oimParamNorm(orb.primary.params["f"])
 orb.primary.params["d"].set(min=0,max=5)
 orb.primary.params["f"].set(min=0.9,max=1)
 morb.getFreeParameters()
 #%%
-fit3=oim.oimFitterEmcee(data, morb, nwalkers=50)
+fit3=oim.oimFitterEmcee(data, morb, nwalkers=30)
 fit3.simulator.cprior = sepRvPrior 
+fit3.prepare()
+#%%
+fit3.run(nsteps=10000,progress=True)
+
+#%% Print and plot the results
+figWalker, axWalker = fit3.walkersPlot(chi2limfact=5)
+figwCorner, axCorner = fit3.cornerPlot(chi2limfact=5,discard=8000)
+
+fit3.printResults(chi2limfact=5,discard=8000)
+figwFit, axFit = fit3.simulator.plotWithResiduals(["VIS2DATA","T3PHI"],xunit="cycle/arcsec")
+axFit[2].set_ylim(-20,20)
+
 

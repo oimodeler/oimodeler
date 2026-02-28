@@ -10,7 +10,7 @@ import numpy as np
 from scipy import special
 from ..oimComponent import oimComponentFourier
 from ..oimBasicFourierComponents import oimPt
-from ..oimParam import oimParam,_standardParameters
+from ..oimParam import oimParam,_standardParameters,oimParamNorm
 import astropy.units as u
 import astropy.constants as cst
 from astropy.time import Time
@@ -118,9 +118,47 @@ class oimBinaryOrbit(oimComponentFourier):
         self._params["V0"]=oimParam(name="V0",value=0,description="V0",unit=u.km/u.s,free=False,mini=-180,maxi=180)        
         
         self._params["f"].free = False
-        self.primary = oimPt()
-        self.secondary = oimPt()
+        self._primary = oimPt()
+        self._secondary = oimPt()
+        self._normalizeFlux = False
         self._eval(**kwargs)
+        
+    
+    @property
+    def primary(self):
+        return self._primary
+
+    @primary.setter
+    def primary(self,obj):
+        self._primary = obj
+        if  self._normalizeFlux:
+            self.secondary.params["f"]=oimParamNorm(self.primary.params["f"])
+        
+    @property
+    def secondary(self):
+        return self._secondary
+
+    @secondary.setter
+    def secondary(self,obj):
+        self._secondary = obj
+        if  self._normalizeFlux:
+            self.secondary.params["f"]=oimParamNorm(self.primary.params["f"])
+        
+    
+    @property
+    def normalizeFlux(self):
+        return self._normalizeFlux
+    
+    @normalizeFlux.setter
+    def normalizeFlux(self,value):
+        self._normalizeFlux = value
+
+        if value == False and isinstance(self.secondary.params["f"],oimParamNorm):
+            self.secondary.params["f"]=self._params["f"] = oimParam(**_standardParameters["f"])
+        elif value == True and not(isinstance(self.secondary.params["f"],oimParamNorm)):
+            self.secondary.params["f"]=oimParamNorm(self.primary.params["f"])
+            
+        
         
     def getSeparation(self,t,mas=False):
         e = self.params["e"].value

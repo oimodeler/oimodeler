@@ -254,13 +254,14 @@ orb.params["Kb"].value = 50
 orb.params["V0"].value = -5
 
 t = np.linspace(T0,T0+2*T,nt*2)
-rv=orb.getPrimaryRadialVelocity(t)
+rv=orb.getPrimaryRadialVelocity(t) # only RV of primary for SB1
 
 rv_a, rv_b = orb.getRadialVelocities(t)
-plt.figure()
-plt.plot(t, rv_a, label="RV_a")
-plt.plot(t, rv_b, label="RV_b")
-plt.xlabel("Time")
-plt.ylabel("radial velocity (km/s)")
-plt.legend()
+
+fig, ax = plt.subplots()
+ax.plot(t, rv_a, label="RV$_a$")
+ax.plot(t, rv_b, label="RV$_b$")
+ax.set_xlabel("Time")
+ax.set_ylabel("radial velocity (km/s)")
+ax.legend()
 plt.savefig(save_dir / "ExampleBinary_rv.png")
