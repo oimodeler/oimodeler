@@ -161,3 +161,4 @@ uv.lock
 
 # Dotenv
 .envrc
+examples/BasicExamples/anaconda_projects/db/project_filebrowser.db
