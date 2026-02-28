@@ -40,11 +40,11 @@ The tutorials are provided as notebooks, containing Python code, explanations, a
    :widths: 1 1 
 
    * - .. figure:: _static/notebooks/notebook_Ex1_thumbnail.png
-            :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex1_canopus.ipynb
+            :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex1_canopus.ipynb
             :alt: PIONIER observation of Canopus
 
             `PIONIER observation of Canopus 
-            <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex1_canopus.ipynb>`_ 
+            <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex1_canopus.ipynb>`_ 
 
             In this first example, we demonstrate how to use oimodeler to create a simple model and perform model fitting.  
             We introduce the concepts of reduced chi-square ( :math:`\chi^2_r` ) minimization and of local and global minima.
@@ -52,10 +52,10 @@ The tutorials are provided as notebooks, containing Python code, explanations, a
             We use VLTI/PIONIER data obtained on the giant star Canopus.
 
      - .. figure:: _static/notebooks/notebook_Ex2_thumbnail.png
-              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex2_94_Aqr.ipynb
+              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex2_94_Aqr.ipynb
               :alt: The Binary star 94 Aqr MATISSE observation     
 
-              `The binary star 94 Aqr MATISSE observation <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex2_94_Aqr.ipynb>`_
+              `The binary star 94 Aqr MATISSE observation <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex2_94_Aqr.ipynb>`_
 
               In this exercise, we use VLTI/MATISSE data obtained on the binary star 94 Aqr.  
               We demonstrate issues around binary star fitting including local minima and degeneracy.
@@ -63,10 +63,10 @@ The tutorials are provided as notebooks, containing Python code, explanations, a
               We use MCMC and grid fitters.
 
    * - .. figure:: _static/notebooks/notebook_Ex3_thumbnail.png
-              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex3_HD179278.ipynb
+              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex3_HD179278.ipynb
               :alt: Chromatic model for the YSO HD 179218
 
-              `Chromatic model for the YSO HD 179218 <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex3_HD179278.ipynb>`_
+              `Chromatic model for the YSO HD 179218 <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex3_HD179278.ipynb>`_
 
               With the advent of routine spectro-interferometry, simple achromatic models are often insufficient to reproduce observations.  
               **oimodeler** provides tools to build chromatic models, including parameter interpolators.
@@ -74,10 +74,10 @@ The tutorials are provided as notebooks, containing Python code, explanations, a
               This example uses L-band MATISSE data on the Herbig star HD 179218 to illustrate the concept.
 
      - .. figure:: _static/notebooks/notebook_Ex4_thumbnail.png
-              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex4_MWC297.ipynb
+              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex4_MWC297.ipynb
               :alt: MWC297: continuum vs line emission      
 
-              `MWC297: continuum vs line emission <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex4_MWC297.ipynb>`_
+              `MWC297: continuum vs line emission <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex4_MWC297.ipynb>`_
 
               This notebook illustrates the use of a chromatic interpolator with high-resolution MATISSE data of the massive YSO MWC 297.  
               Focus is on the gaseous Br:math:`_\gamma` emission at 4.05 :math:`\mu`m and its adjacent dust-produced continuum.
@@ -85,10 +85,10 @@ The tutorials are provided as notebooks, containing Python code, explanations, a
               The goal is to determine the sizes of these two components, informing about the physical processes producing the gas emission.
 
    * - .. figure:: _static/notebooks/notebook_Ex5_thumbnail.png
-              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex5_HD58647.ipynb
+              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex5_HD58647.ipynb
               :alt: Kinematics of the gaseous disk around HD58647
 
-              `Kinematics of the gaseous disk around HD58647 <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex5_HD58647.ipynb>`_
+              `Kinematics of the gaseous disk around HD58647 <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex5_HD58647.ipynb>`_
 
               Spectro-interferometry in atomic lines can constrain dynamics via the Doppler effect.  
               Here, we focus on rotating disks around stars, found around YSOs, some evolved stars, and classical Be stars.
@@ -96,10 +96,10 @@ The tutorials are provided as notebooks, containing Python code, explanations, a
               This section introduces the **oimKinematicDisk** component implemented in **oimodeler**.
 
      - .. figure:: _static/notebooks/notebook_Ex6_thumbnail.png
-              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex6_FSCMa.ipynb
+              :target: https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex6_FSCMa.ipynb
               :alt: Radiative Transfer model of FS CMa
               
-              `Radiative Transfer model of FS CMa <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/oimodeler_Ex6_FSCMa.ipynb>`_
+              `Radiative Transfer model of FS CMa <https://github.com/oimodeler/oimodeler/tree/main/examples/notebooks/VLTISchool2024/oimodeler_Ex6_FSCMa.ipynb>`_
 
               **oimodeler** includes a class, **oimComponentFitsImage**, to import precomputed images or hyperspectral image cubes  
               (e.g., outputs from radiative-transfer models in FITS format). The loaded images can be shifted, rotated, and scaled.
