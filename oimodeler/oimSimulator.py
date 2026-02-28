@@ -33,7 +33,16 @@ oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
 oimDataArrDict["OI_FLUX"] = dict(data=["FLUXDATA"], err=["FLUXERR"])
 
 
-def corrFlux2Vis2(vcompl: np.ndarray) -> np.ndarray:
+
+oimDataArrDict=dict()
+
+oimDataArrDict["OI_VIS2"]=dict(data=["VIS2DATA"],err=["VIS2ERR"])
+oimDataArrDict["OI_VIS"]=dict(data=["VISAMP","VISPHI"],err=["VISAMPERR","VISPHIERR"])
+oimDataArrDict["OI_T3"]=dict(data=["T3AMP","T3PHI"],err=["T3AMPERR","T3PHIERR"])
+oimDataArrDict["OI_VIS2"]=dict(data=["VIS2DATA"],err=["VIS2ERR"])
+oimDataArrDict["OI_FLUX"]=dict(data=["FLUXDATA"],err=["FLUXERR"])
+
+def corrFlux2Vis2(vcompl):
     nB = vcompl.shape[0]
     norm = np.outer(np.ones(nB - 1), vcompl[0, :])
     return np.abs(vcompl[1:, :] / norm) ** 2
@@ -102,12 +111,14 @@ class oimSimulator:
     """Contains"""
 
     def __init__(
-        self, data=None, model=None, fitter=None, cprior=None, **kwargs
-    ):
+        self, data=None, model=None, fitter=None, cprior=None ,priorWeight=1,
+        **kwargs):
+        
         self.data = oimData()
         self.simulatedData = None
         self.model = None
         self.cprior = cprior
+        self.priorWeight = priorWeight
 
         if data is not None:
             if isinstance(data, oimData):
@@ -315,39 +326,37 @@ class oimSimulator:
 
                                 chi2List.append(chi2i)
                                 residuals.append(resi)
-
-        if computeChi2 and self.cprior is None:
-            self.chi2 = chi2
-            self.chi2r = chi2 / (nelChi2 - len(self.model.getFreeParameters()))
+        if computeChi2:
             self.chi2List = chi2List
-            self.nelChi2 = nelChi2
+            self.chi2_0 = chi2
+            self.nelChi2_0 = nelChi2
             self.residuals = residuals
-        elif computeChi2 and nelChi2 == 0:
-            chi2_prior = self.cprior(self.model.getParameters())
-
-            self.chi2 = chi2_prior
-            self.chi2r = chi2_prior
-            self.chi2List = None
-            self.nelChi2 = 1
-            self.residuals = residuals
-        elif computeChi2:
-            chi2_prior = (
-                chi2 + self.cprior(self.model.getParameters()) * nelChi2
-            )
-            self.chi2 = chi2_prior
-            self.chi2r = chi2_prior / (
-                nelChi2 - len(self.model.getFreeParameters())
-            )
-
-            self.chi2_np = chi2
-            self.chi2r_np = chi2 / (
-                nelChi2 - len(self.model.getFreeParameters())
-            )
-
-            self.chi2List = chi2List
-            self.nelChi2 = nelChi2
-            self.residuals = residuals
-
+            self.degFree =  (nelChi2 - len(self.model.getFreeParameters()))
+            
+            if  nelChi2!=0:
+                self.chi2r_0 = self.chi2_0 / self.degFree
+            else:
+                self.chi2r_0 = 0
+            
+            if self.cprior:
+                self.chi2Prior=self.cprior()
+                
+                if nelChi2!=0:
+                    self.chi2  =  self.chi2_0 + self.priorWeight * \
+                                  self.chi2Prior * self.nelChi2_0
+                    self.degFree =  self.nelChi2_0*(1 + self.priorWeight) - \
+                                         len(self.model.getFreeParameters())
+                else:
+                    self.chi2  = self.chi2Prior * self.priorWeight
+                    self.degFree = self.priorWeight - \
+                                   len(self.model.getFreeParameters())
+            else:
+                self.chi2Prior = 0
+                self.chi2  = self.chi2_0
+                
+            self.chi2r =  self.chi2 / self.degFree 
+            self.nelChi2 = self.degFree 
+            
     def computeAll(self, checkSimulatedData=True, dataTypes=None, cprior=None):
         self.compute(
             computeChi2=True,
