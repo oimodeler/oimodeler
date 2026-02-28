@@ -22,7 +22,7 @@ print(sys.path)
 project = 'oimodeler'
 copyright = '2024, Anthony Meilland'
 author = 'Anthony Meilland'
-release = 'v1.0'
+release = 'v0.9x'
 
 
 extensions = [
