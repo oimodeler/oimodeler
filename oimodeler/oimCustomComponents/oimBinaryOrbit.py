@@ -177,10 +177,8 @@ class oimBinaryOrbit(oimComponentFourier):
     def _visFunction(self, ucoord, vcoord, rho, wl, t):
         x,y = self.getSeparation(t) #in rad
         transFact = np.exp(-2 * 1j * np.pi * (ucoord * x + vcoord * y))
-        p = self.primary.params["f"](wl,t)*\
-            self.primary._visFunction(ucoord, vcoord, rho, wl, t) 
-        s = self.secondary.params["f"](wl,t)*\
-            self.secondary._visFunction(ucoord, vcoord, rho, wl, t)*transFact
+        p = self.primary.getComplexCoherentFlux(ucoord, vcoord, wl, t) 
+        s = self.secondary.getComplexCoherentFlux(ucoord, vcoord, wl, t)*transFact
         return p+s
     
     def getPrimaryRadialVelocity(self,t):
