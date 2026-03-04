@@ -214,21 +214,21 @@ class oimParamLinker:
 
 class oimParamLinkerFunction:
     """Class to directly link some oimParam using a user function"""
-    
+
     def __init__(self,params,func) :
         if type(params)!=type([]):
             self.params = [params]
         else:
             self.params = params
         self.func = func
-        
+
     def __call__(self, wl=None, t=None):
-        
+
         params=[]
         for p in self.params:
             params.append(p(wl,t))
         return self.func(*params)
-       
+
 
 
 class oimParamNorm:
@@ -1183,11 +1183,11 @@ class oimParamLinearStarWl(oimParamInterpolator):
 
 class oimParamUserFunc(oimParamInterpolator):
     interpdescription = "Interpolate from user-supplied function"
-    interparams = []
 
     def _init(self, param, userfunc, dependence="wl", **kwargs):
         self.dependence = dependence
         self.userfunc = userfunc
+        self.interparams = []
 
         if (dependence == "wl") or (dependence == "mjd"):
             args = inspect.getfullargspec(userfunc).args[1:]
