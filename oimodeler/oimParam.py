@@ -81,19 +81,20 @@ class oimParam:
         error: Union[int, float] = 0,
     ):
         """Initialize a new instance of the oimParam class."""
+        # TODO: Extend this for error, mini, and maxi?
+        if isinstance(value, u.Quantity):
+            value, unit = value.value, value.unit
+
         self.name = name
         self.value = value
-        self.error = error
         self.min = mini
         self.max = maxi
-        self.free = free
         self.description = description
         self.unit = unit
+        self.free = free
+        self.error = error
 
-        if isinstance(value, u.Quantity):
-            self.value, self.unit = value.value, value.unit
-
-    def __call__(self, wl=None, t=None):
+    def __call__(self, wl=None, t=None) -> Union[int, float, np.ndarray]:
         """
         The call function will be useful for wavelength or time dependent
         parameters. In a simple oimParam it only return the parameter value
