@@ -3,6 +3,37 @@
 News and Changelog
 ==================
 
+2026-03-05
+----------
+
+v0.9.2: 
+^^^^^^^
+
+New Features:
+:::::::::::::
+
+- :func:`oimBinaryOrbit <oimodeler.oimCustomComponents.oimBinaryOrbit>`: a binary orbit component with customizable primary and secondary stars including radial velocity & separation computation to link with external prior in simulator.
+
+- :func:`oimDisco <oimodeler.oimCustomComponents.oimDisco.oimDisco>`: an implementation of the `DISCO <https://amhra.oca.eu/AMHRA/disco-gas/input.htm>`_ gaseous disk semi-physical model.
+
+- :func:`oimTempGrad <oimodeler.oimCustomComponents.oimTempGrad.oimTempGrad>`: implementation of temperature gradient disc model.
+
+- :func:`oimAsymTempGrad <oimodeler.oimCustomComponents.oimTempGrad.oimAsymTempGrad>`: implementation of asymmetric-temperature gradient disc model.
+
+- :func:`oimComputeChi2PlusOneUncertainties <oimodeler.oimFitter.oimComputeChi2PlusOneUncertainties>`: error estimations based on the :math:`min(\chi^2_r) + 1` method
+
+- Implementation of external constraints (with user prior function) on the simulator :func:`oimSimulator.cprior <oimodeler.oimSimulator>`
+
+- :func:`oimParamLinkerFunction <oimodeler.oimParam.oimParamLinkerFunction>`: possiblity to link multiple parameters together using a user function
+
+Upgrade features:
+::::::::::::::::
+
+- :func:`oimParam <oimodeler.oimParam.oimParam>`: access to parameter quantity (i.e., as astropy definition value x unit) through quantity member
+
+- :func:`oimParam <oimodeler.oimParam.oimParam>`: possibility to set directly unit at creation by passing a astropy quantity
+
+
 2025-10-01
 ----------
 
