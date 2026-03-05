@@ -16,7 +16,7 @@ from astropy import units as units
 from astropy import constants as cst
 from ..oimComponent import oimComponentImage
 from ..oimParam import oimParam, _standardParameters
-
+from ..oimUtils import oimAckWarning
 angToSize=lambda x: (units.AU,units.mas,lambda y:1000*y/x.to(units.parsec).value,lambda y:y/1000*x.to(units.parsec).value)
 
 
@@ -27,6 +27,11 @@ class oimKinematicDisk(oimComponentImage):
     
     def __init__(self, **kwargs):
         super(). __init__(**kwargs)
+        
+        text="The kinematic disk component is based on Meilland et al. 2012" 
+        oimAckWarning(oimKinematicDisk,text)
+
+        
         # The many parameters of the rotating disk model
         self.params["dim"]=oimParam(**_standardParameters["dim"])
         self.params["fov"]=oimParam(name="fov",value=30,description="Field of view in stellar diameters",unit=units.one,free=False)
