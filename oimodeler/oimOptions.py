@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import astropy.constants as const
 
 # NOTE: Fourier transform settings
+# TODO: Remove this definition (overlapping namespace with astropy; bad form)
 constants = SimpleNamespace(
     h=const.h.value,
     c=const.c.value,
