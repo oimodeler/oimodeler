@@ -20,6 +20,14 @@ Citation
 
 If you make use of ``oimodeler`` in your work, please cite our SPIE paper (`HAL <https://cnrs.hal.science/hal-04797236>`_, `ADS <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/abstract>`_, `BibTeX <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/exportcitation>`_).
 
+The following list presents **oimodeler** features that are based on work by other researchers. If you use any of these features, please include the appropriate references and/or acknowledgments.
+
+.. csv-table:: Reference for **oimodeler** special features
+   :file: table_citation.csv
+   :header-rows: 1  
+   :delim: |
+   :widths: auto
+
 
 Contact
 =======

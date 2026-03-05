@@ -106,3 +106,15 @@ The tutorials are provided as notebooks, containing Python code, explanations, a
 
               This example loads an image cube created with the radiative transfer code RADMC3D and compares it to MATISSE observations  
               of the B[e] star FS CMa.
+
+
+Special components
+==================
+
+These examples are dedicated to the use of some of the most advanced and complex components implemented in oimodeler. 
+
+tutorials are provided as notebooks with detailed explanations.
+
+- `Modelling binary orbits with oimBinaryOrbit component <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbit.ipynb>`_
+
+- `Modelling Gaseous Disk using the oimDisco component <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_
