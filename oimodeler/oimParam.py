@@ -46,7 +46,8 @@ _operators = {
 
 
 class oimParam:
-    """Class of model parameters.
+    """
+    Class of model parameters.
 
     Parameters
     ----------
@@ -71,7 +72,7 @@ class oimParam:
     def __init__(
         self,
         name: Union[str, None] = None,
-        value: Union[int, float, None] = None,
+        value: Union[int, float, u.Quantity, None] = None,
         mini: Union[int, float] = -np.inf,
         maxi: Union[int, float] = np.inf,
         description: str = "",
@@ -89,26 +90,12 @@ class oimParam:
         self.description = description
         self.unit = unit
 
-        if type(value) == u.Quantity:
-            self.value = value.value
-            self.unit = value.unit
-    
-    @property
-    def quantity(self, wl=None, t=None):
-
-        return self(wl,t)*self.unit
-   
-            
-
-    def set(self, **kwargs):
-        for key, value in kwargs.items():
-            try:
-                self.__dict__[key] = value
-            except NameError:
-                print("Note valid parameter : {}".format(value))
+        if isinstance(value, u.Quantity):
+            self.value, self.unit = value.value, value.unit
 
     def __call__(self, wl=None, t=None):
-        """The call function will be useful for wavelength or time dependent
+        """
+        The call function will be useful for wavelength or time dependent
         parameters. In a simple oimParam it only return the parameter value
         """
         return self.value
@@ -143,6 +130,19 @@ class oimParam:
             )
         except:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
+
+    def qty(self, wl=None, t=None):
+        return self.quantity(wl, t)
+
+    def quantity(self, wl=None, t=None):
+        return self.__call__(wl, t) * self.unit
+
+    def set(self, **kwargs):
+        for key, value in kwargs.items():
+            try:
+                self.__dict__[key] = value
+            except NameError:
+                print("Note valid parameter : {}".format(value))
 
     def serialize(self):
         return self.__dict__
@@ -222,8 +222,8 @@ class oimParamLinker:
 class oimParamLinkerFunction:
     """Class to directly link some oimParam using a user function"""
 
-    def __init__(self,params,func) :
-        if type(params)!=type([]):
+    def __init__(self, params, func):
+        if type(params) != type([]):
             self.params = [params]
         else:
             self.params = params
@@ -231,11 +231,10 @@ class oimParamLinkerFunction:
 
     def __call__(self, wl=None, t=None):
 
-        params=[]
+        params = []
         for p in self.params:
-            params.append(p(wl,t))
+            params.append(p(wl, t))
         return self.func(*params)
-
 
 
 class oimParamNorm:
