@@ -92,6 +92,13 @@ class oimParam:
         if type(value) == u.Quantity:
             self.value = value.value
             self.unit = value.unit
+    
+    @property
+    def quantity(self, wl=None, t=None):
+
+        return self(wl,t)*self.unit
+   
+            
 
     def set(self, **kwargs):
         for key, value in kwargs.items():
