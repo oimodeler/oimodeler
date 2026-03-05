@@ -27,3 +27,4 @@ from .oimStarHaloDisc import oimStarHaloGaussLorentz, oimStarHaloIRing
 from .oimTempGradient import oimTempGrad
 from .oimKinematicDisk import oimKinematicDisk
 from .oimBinaryOrbit import oimBinaryOrbit
+from .oimDisco import oimDisco
