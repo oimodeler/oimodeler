@@ -71,7 +71,8 @@ class oimComponent:
     params:
         The dictionary of the component parameters
     """
-    _firstInit= True
+
+    _firstInit = True
     name = "Generic component"
     shortname = "Gen comp"
     description = "This is the class from which all components derived"
@@ -699,7 +700,7 @@ class oimComponentImage(oimComponent):
             else:
                 return t_arr, wl_arr, x_arr, y_arr
 
-    def getPixelSize(self,mas=False):
+    def getPixelSize(self, mas=False):
         raise ValueError(
             "setPixelSize Method not implemented" " while self._pixSize = None"
         )
@@ -828,6 +829,7 @@ class oimComponentRadialProfile(oimComponent):
             sfreq0 = np.unique(sfreq)
         else:
             sfreq0 = np.linspace(0, np.max(sfreq), num=precision)
+
         r1D = r[np.newaxis, np.newaxis, :]
         r2D = r[np.newaxis, np.newaxis, :, np.newaxis]
         Ir2D = Ir[:, :, :, np.newaxis]
@@ -936,9 +938,9 @@ class oimComponentRadialProfile(oimComponent):
         if self.extincted:
             extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
-        spf, psi = np.hypot(fxp, fyp), (
-            np.arctan2(fyp, fxp) if self.asymmetric else None
-        )
+        spf = np.hypot(fxp, fyp)
+        psi = np.arctan2(fyp, fxp) if self.asymmetric else None
+
         wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
         t0 = np.sort(np.unique(t)) if self._t is None else self._t
 
@@ -956,7 +958,9 @@ class oimComponentRadialProfile(oimComponent):
         nwl0 = np.size(wl0)
         ftot = ftot.reshape(nwl0)
         ftot_Jy_interp = np.interp(wl, wl0, ftot * 1e23)
-        if self.shortname == "TempGrad":
+
+        # HACK: Corrects this for the TempGrad model
+        if "TempGrad" in self.shortname:
             return (
                 vc
                 * self._ftTranslateFactor(fxp, fyp, wl, t)
@@ -1052,7 +1056,7 @@ class oimComponentFitsImage(oimComponentImage):
         self._pixSize = self._pixSize0 * self.params["scale"].value
         return self._image
 
-    def getPixelSize(self,mas=False):
+    def getPixelSize(self, mas=False):
         self._pixSize = self._pixSize0 * self.params["scale"].value
-        fact=u.rad.to(u.mas)*float(mas)+float(not(mas))
-        return self._pixSize*fact
+        fact = u.rad.to(u.mas) * float(mas) + float(not (mas))
+        return self._pixSize * fact
