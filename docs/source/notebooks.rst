@@ -115,6 +115,12 @@ These examples are dedicated to the use of some of the most advanced and complex
 
 tutorials are provided as notebooks with detailed explanations.
 
-- `Modelling binary orbits with oimBinaryOrbit component <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbit.ipynb>`_
+**oimBinaryOrbit**
 
-- `Modelling Gaseous Disk using the oimDisco component <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_
+- `Basics of binary orbits <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbit.ipynb>`_
+
+- `Simultaneous model-fitting of RV, separation and interferometric data <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbitFit.ipynb>`_
+
+**oimDisco**
+
+- `Modelling Gaseous Disk <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_
