@@ -169,15 +169,19 @@ class oimComponent:
                         )
                 else:
                     self.params[key].value = value
-                    if type(value) == u.Quantity:
+                    if isinstance(value, u.Quantity):
                         self.params[key].value = value.value
                         self.params[key].unit = value.unit
 
             elif checkParam:
-                if key not in ["pa", "elong", "cosi", "flat"]:
+                if key not in ["pa", "elong", "cosi", "elliptic", "flat"]:
                     warnings.warn(
                         f"{key} not a parameter of {self.name}: ignored"
                     )
+
+        for param in self.params.keys():
+            if not hasattr(self, param):
+                setattr(self, param, self.params[param])
 
     def getComplexCoherentFlux(self, u, v, wl=None, t=None) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
@@ -801,7 +805,7 @@ class oimComponentRadialProfile(oimComponent):
             res = self._radialProfileFunction(r_arr, wl_arr, t_arr)
         return res
 
-    # FIXME: Not working!
+    # TODO: Re-implement this version of the hankel transform
     # @staticmethod
     # def fht(Ir, r, wlin, tin, sfreq, wl, t):
     #     nfreq, nwl = len(sfreq), len(wlin)
@@ -915,6 +919,7 @@ class oimComponentRadialProfile(oimComponent):
 
         return im
 
+    # TODO: Make this work generally with any radial function and a Hankel transform
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
 
         wl = ucoord * 0 if wl is None else wl
@@ -939,6 +944,8 @@ class oimComponentRadialProfile(oimComponent):
             extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         spf = np.hypot(fxp, fyp)
+
+        # TODO: Implement this for asymmetric models
         psi = np.arctan2(fyp, fxp) if self.asymmetric else None
 
         wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
