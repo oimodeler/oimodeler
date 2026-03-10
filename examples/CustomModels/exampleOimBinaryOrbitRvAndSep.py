@@ -223,10 +223,10 @@ fit2 = oim.oimFitterEmcee(data,model,nwalkers=20,dataTypes=["VIS2DATA","T3PHI"])
 fit2.prepare()
 fit2.run(nsteps=10000,progress=True)
 #%% Print and plot the results
-figWalker, axWalker = fit2.walkersPlot(chi2limfact=5)
-figwCorner, axCorner = fit2.cornerPlot(chi2limfact=1.2,discard=8000)
+figWalker, axWalker = fit2.walkersPlot()
+figwCorner, axCorner = fit2.cornerPlot(,discard=8000)
 
-fit2.printResults(chi2limfact=1.2,discard=8000)
+fit2.printResults(discard=8000)
 figwFit, axFit = fit2.simulator.plotWithResiduals(["VIS2DATA","T3PHI"],xunit="cycle/arcsec")
 axFit[2].set_ylim(-20,20)
 x_fit, y_fit = pt.params["x"].value,pt.params["y"].value
