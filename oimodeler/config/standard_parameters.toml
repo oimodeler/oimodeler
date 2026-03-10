@@ -1,82 +1,61 @@
-[x]
-name = "x"
-value = 0
-description = "x position"
-unit = "mas"
-free = false
-
-[y]
-name = "y"
-value = 0
-description = "y position"
-unit = "mas"
-free = false
-
-[f]
-name = "f"
+[amp]
+name = "amplitude"
 value = 1
-description = "flux"
-unit = "one"
+description = "Amplitude"
 mini = 0
 maxi = 1
-free = true
 
-[fwhm]
-name = "fwhm"
-value = 0
-description = "FWHM"
-unit = "mas"
+[A_V]
+name = "A_V"
+description = "Extinction in V band"
+unit = "mag"
+free = false
 mini = 0
+maxi = 50
 
-[hlr]
-name = "hlr"
-value = 0
-description = "Half-light/-flux radius"
-unit = "mas"
+[cosi]
+name = "cosi"
+description = "The cosine of the inclination"
 mini = 0
+maxi = 1
 
 [d]
 name = "d"
-value = 0
 description = "Diameter"
 unit = "mas"
 mini = 0
 
-[r]
-name = "r"
+[default]
+name = ""
 value = 0
-description = "Radius"
-unit = "mas"
-
-[w]
-name = "w"
-value = 0
-description = "Width"
-unit = "mas"
-mini = 0
-
-[rin]
-name = "rin"
-value = 0
-description = "Inner radius"
-unit = "au"
-
-[rout]
-name = "rout"
-value = 0
-description = "Outer radius"
-unit = "au"
+mini = "-inf"
+maxi = "inf"
+description = ""
+unit = "one"
+free = true
+error = 0
 
 [din]
 name = "din"
-value = 0
 description = "Inner Diameter"
 unit = "mas"
 mini = 0
 
+[dim]
+name = "dim"
+value = 128
+description = "Dimension in pixels"
+free = false
+mini = 1
+
+[dist]
+name = "dist"
+description = "Distance"
+unit = "pc"
+free = false
+
 [dout]
 name = "dout"
-value = 0
 description = "Outer Diameter"
 unit = "mas"
 mini = 0
@@ -85,115 +64,120 @@ mini = 0
 name = "elong"
 value = 1
 description = "Elongation Ratio"
-unit = "one"
 mini = 1
 
-[cosi]
-name = "cosi"
+[f]
+name = "f"
 value = 1
-description = "The cosine of the inclination"
-unit = "one"
+description = "flux"
 mini = 0
 maxi = 1
+free = true
+
+[fwhm]
+name = "fwhm"
+description = "FWHM"
+unit = "mas"
+mini = 0
+
+[fov]
+name = "fov"
+description = "The interferometric field of view"
+unit = "mas"
+free = false
+
+[hlr]
+name = "hlr"
+description = "Half-light/-flux radius"
+unit = "mas"
+mini = 0
+
+[index]
+name = "index"
+value = 1
+description = "Index"
+
+[mjd]
+name = "mjd"
+description = "MJD"
+unit = "day"
+
+[p]
+name = "pow"
+description = "Power exponent"
+mini = -1
+maxi = 0
 
 [pa]
 name = "pa"
-value = 0
 description = "Major-axis Position angle"
-unit = "deg"
-mini = -180
-maxi = 180
-
-[skw]
-name = "skw"
-value = 0
-description = "Skewedness"
-unit = "one"
-mini = 0
-maxi = 1
-
-[skwPa]
-name = "skwPa"
-value = 0
-description = "Skewedness Position angle"
 unit = "deg"
 mini = -180
 maxi = 180
 
 [pixSize]
 name = "pixSize"
-value = 0
 description = "Pixel Size"
 unit = "mas"
 free = false
 mini = 0
 
-[dim]
-name = "dim"
-value = 128
-description = "Dimension in pixels"
-unit = "one"
-free = false
-mini = 1
+[r]
+name = "r"
+description = "Radius"
+unit = "mas"
 
-[wl]
-name = "wl"
-value = 0
-description = "Wavelength"
-unit = "m"
+[rin]
+name = "rin"
+description = "Inner radius"
+unit = "au"
 mini = 0
 
-[mjd]
-name = "mjd"
-value = 0
-description = "MJD"
-unit = "day"
+[rout]
+name = "rout"
+description = "Outer radius"
+unit = "au"
+mini = 0
+
+[skw]
+name = "skw"
+description = "Skewedness"
+mini = 0
+maxi = 1
 
 [scale]
 name = "scale"
 value = 1
 description = "Scaling Factor"
-unit = "one"
 
-[index]
-name = "index"
-value = 1
-description = "Index"
-unit = "one"
+[skwPa]
+name = "skwPa"
+description = "Skewedness Position angle"
+unit = "deg"
+mini = -180
+maxi = 180
 
-[fov]
-name = "fov"
-value = 0
-description = "The interferometric field of view"
+[w]
+name = "w"
+description = "Width"
 unit = "mas"
-free = false
-
-[dist]
-name = "dist"
-value = 0
-description = "Distance"
-unit = "pc"
-free = false
-
-[amp]
-name = "amplitude"
-value = 1
-description = "Amplitude"
-unit = "one"
 mini = 0
 maxi = 1
 
-[p]
-name = "pow"
-value = 1
-description = "Power exponent"
-unit = "one"
-
-[A_V]
-name = "A_V"
-value = 0
-description = "Extinction in V band"
-unit = "mag"
-free = false
+[wl]
+name = "wl"
+description = "Wavelength"
+unit = "m"
 mini = 0
-maxi = 50
+
+[x]
+name = "x"
+description = "x position"
+unit = "mas"
+free = false
+
+[y]
+name = "y"
+description = "y position"
+unit = "mas"
+free = false

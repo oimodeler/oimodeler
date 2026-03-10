@@ -59,8 +59,8 @@ class oimTempGrad(oimComponentRadialProfile):
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
-        self.params["rin"] = oimParam(**_standardParameters["rin"])
-        self.params["rout"] = oimParam(**_standardParameters["rout"])
+        self.params["rin"] = oimParam(base="rin")
+        self.params["rout"] = oimParam(base="rout")
         self.params["r0"] = oimParam(
             name="r0",
             value=1,
@@ -96,19 +96,13 @@ class oimTempGrad(oimComponentRadialProfile):
 
         self.params["q"] = oimParam(
             name="q",
-            value=-0.5,
-            unit=u.one,
             description="Power-law exponent for the temperature",
-            mini=-1,
-            maxi=0,
+            base="p",
         )
         self.params["p"] = oimParam(
             name="p",
-            value=-0.5,
-            unit=u.one,
             description="Power-law exponent for the dust surface density",
-            mini=-1,
-            maxi=0,
+            base="p",
         )
         self.params["kappa_abs"] = oimParam(
             name="kappa_abs",
@@ -122,7 +116,6 @@ class oimTempGrad(oimComponentRadialProfile):
         if "kappa_cont" in kwargs:
             self.params["kappa_cont"] = oimParam(
                 name="kappa_cont",
-                value=0,
                 unit=u.cm**2 / u.g,
                 description="Absorption continuum opacity",
                 free=False,
@@ -136,7 +129,7 @@ class oimTempGrad(oimComponentRadialProfile):
                 maxi=1,
             )
 
-        self.params["dist"] = oimParam(**_standardParameters["dist"])
+        self.params["dist"] = oimParam(base="dist")
         self.params["f"].free = False
         self._wl, self._t = None, [0]
         self._eval(**kwargs)
@@ -144,8 +137,8 @@ class oimTempGrad(oimComponentRadialProfile):
     @property
     def _r(self):
         """Gets the radial profile (mas)."""
-        rin, rout = self.params["rin"].value, self.params["rout"].value
-        dim, dist = self.params["dim"].value, self.params["dist"].value
+        rin, rout = self.rin.value, self.params.rout.value
+        dim, dist = self.dim.value, self.params.dist.value
         rin = linear_to_angular(rin, dist) * 1e3
         rout = linear_to_angular(rout, dist) * 1e3
         if oimOptions.model.grid.type == "linear":
@@ -180,19 +173,19 @@ class oimTempGrad(oimComponentRadialProfile):
         radial_profile : numpy.ndarray
         """
         # HACK: Sets the multi wavelength coordinates properly.
-        # Does not account for time, improves computation time.
+        # WARNING: Does not account for time, improves computation time.
         wl = np.unique(wl)
-        dist = self.params["dist"].value
-        kappa_abs = self.params["kappa_abs"](wl, t)
+        dist = self.dist.value
+        kappa_abs = self.kappa_abs(wl, t)
         if "kappa_cont" in self.params:
-            ratio = self.params["kappa_ratio"].value
-            kappa_cont = self.params["kappa_cont"](wl, t)
+            ratio = self.kappa_ratio.value
+            kappa_cont = self.kappa_cont(wl, t)
             kappa_abs = (1 - ratio) * kappa_abs + ratio * kappa_cont
 
         if self.flat:
-            elong = 1 / self.params["cosi"].value
+            elong = 1 / self.cosi.value
         else:
-            elong = self.params["elong"].value
+            elong = self.elong.value
 
         # HACK: Adding the correct dimensions to the radial grid, wavelength array and opacity table
         if len(r.shape) == 3:
@@ -204,17 +197,13 @@ class oimTempGrad(oimComponentRadialProfile):
             wl, kappa_abs = map(lambda x: x[:, np.newaxis], [wl, kappa_abs])
             r = r[np.newaxis, :]
 
-        rin, rout, r0 = map(
-            lambda x: self.params[x](wl, t), ["rin", "rout", "r0"]
-        )
-        q, p = map(lambda x: self.params[x](wl, t), ["q", "p"])
+        rin, rout, r0 = self.rin(wl, t), self.rout(wl, t), self.r0(wl, t)
+        q, p = self.q(wl, t), self.p(wl, t)
         if self.compute_sigma0:
-            rin_cm, rout_cm, r0_cm = map(
-                lambda x: x * self.params["rin"].unit.to(u.cm), [rin, rout, r0]
-            )
-            dust_mass = self.params["dust_mass"](wl, t) * self.params[
-                "dust_mass"
-            ].unit.to(u.g)
+            rin_cm = self.rin.qty(wl, t).to(u.cm).value
+            rout_cm = self.rout.qty(wl, t).to(u.cm).value
+            r0_cm = self.r0.qty(wl, t).to(u.cm).value
+            dust_mass = self.dust_mass.qty(wl, t).to(u.g).value
             if np.isclose(p, -2, rtol=1e-2):
                 sigma0 = dust_mass / (
                     2.0 * np.pi * np.log(rout_cm / rin_cm) * r0_cm**2
@@ -223,10 +212,10 @@ class oimTempGrad(oimComponentRadialProfile):
                 f = (rout_cm ** (2 + p) - rin_cm ** (2 + p)) / (2 + p)
                 sigma0 = dust_mass / (2.0 * np.pi * f * r0_cm ** (-p))
         else:
-            sigma0 = self.params["sigma0"](wl, t)
+            sigma0 = self.sigma0(wl, t)
 
         r0_mas = linear_to_angular(r0, dist) * 1e3
-        temp = self.params["temp0"](wl, t) * (r / r0_mas) ** q
+        temp = self.temp0(wl, t) * (r / r0_mas) ** q
         sigma = sigma0 * (r / r0_mas) ** p
         emissivity = 1 - np.exp(-sigma * kappa_abs * elong)
         spectral_density = (

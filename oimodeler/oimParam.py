@@ -67,32 +67,41 @@ class oimParam:
         Determines if the parameter is to be fitted. The default is None
     error : int or float, optional
         The error of the parameter. The default is 0.
+    default : str, optional
+        Default parameter from which all of the settings are adopted. Will be
+        overwritten by user input. Default is None.
     """
 
     def __init__(
         self,
         name: Union[str, None] = None,
         value: Union[int, float, u.Quantity, None] = None,
-        mini: Union[int, float] = -np.inf,
-        maxi: Union[int, float] = np.inf,
-        description: str = "",
-        unit: u.Quantity = u.one,
-        free: bool = True,
-        error: Union[int, float] = 0,
+        mini: Union[int, float, None] = None,
+        maxi: Union[int, float, None] = None,
+        description: Union[str, None] = None,
+        unit: Union[u.Quantity, None] = None,
+        free: Union[bool, None] = None,
+        error: Union[int, float, None] = None,
+        base: str = "",
     ):
         """Initialize a new instance of the oimParam class."""
-        # TODO: Extend this for error, mini, and maxi?
-        if isinstance(value, u.Quantity):
-            value, unit = value.value, value.unit
+        defaults, skip_unit = _standardParameters.get(base, {}), False
+        for k, v in _standardParameters["default"].items():
+            if k == "unit" and skip_unit:
+                continue
 
-        self.name = name
-        self.value = value
-        self.min = mini
-        self.max = maxi
-        self.description = description
-        self.unit = unit
-        self.free = free
-        self.error = error
+            if locals()[k] is not None:
+                v = locals()[k]
+                # TODO: Extend this for error, mini, and maxi?
+                if k == "value" and isinstance(v, u.Quantity):
+                    setattr(self, "unit", v.unit)
+                    v, skip_unit = v.value, True
+
+            elif k in defaults:
+                v = defaults[k]
+
+            k = k[:-1] if k in ["mini", "maxi"] else k
+            setattr(self, k, v)
 
     def __call__(self, wl=None, t=None) -> Union[int, float, np.ndarray]:
         """
@@ -113,7 +122,7 @@ class oimParam:
                 self.max,
                 "free" if self.free else "fixed",
             )
-        except:
+        except AttributeError:
             return "oimParam is {}".format(type(self))
 
     def __repr__(self):
@@ -129,7 +138,7 @@ class oimParam:
                 self.max,
                 self.free,
             )
-        except:
+        except AttributeError:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
 
     def qty(self, wl=None, t=None):
