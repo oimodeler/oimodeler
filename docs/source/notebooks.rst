@@ -26,8 +26,8 @@ Below is the list of basic examples, with direct links to their source code:
 
 *We recommend starting with the basic examples before moving on to the notebooks using real data.*
 
-Modelling real VLTI data
-========================
+VLTI school 2024 tutorials
+==========================
 
 These tutorials were initially developed for the `12th VLTI School of Interferometry <https://vltischool2024.sciencesconf.org/>`_.  
 Using real datasets from VLTI instruments (PIONIER, MATISSE, and GRAVITY), they demonstrate how to use **oimodeler** to perform model fitting,  
@@ -108,19 +108,52 @@ The tutorials are provided as notebooks, containing Python code, explanations, a
               of the B[e] star FS CMa.
 
 
-Special components
-==================
+Advanced components
+===================
 
-These examples are dedicated to the use of some of the most advanced and complex components implemented in oimodeler. 
+These examples are dedicated to the use of some of the most advanced and complex components implemented in oimodeler. These tutorials are provided as notebooks with detailed explanations.
 
-tutorials are provided as notebooks with detailed explanations.
+Modelling binary orbits with **oimBinaryOrbit**
+"""""""""""""""""""""""""""""""""""""""""""""""
 
-**oimBinaryOrbit**
+.. list-table:: 
+   :class: borderless
+   :widths: 1 1 
 
-- `Basics of binary orbits <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbit.ipynb>`_
+   * - .. figure:: _static/notebooks/exampleOimBinaryOrbit_thumbnail.png
+            :target: https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbit.ipynb
+            :alt: Basic use of oimBinaryOrbit
 
-- `Simultaneous model-fitting of RV, separation and interferometric data <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbitFit.ipynb>`_
+            `Basic use of oimBinaryOrbit 
+            <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbit.ipynb>`_ 
 
-**oimDisco**
 
-- `Modelling Gaseous Disk <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_
+
+     - .. figure:: _static/notebooks/exampleOimBinaryOrbitFit_thumbnail.png
+              :target: https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb
+              :alt: Multi-techniques model-fitting with oimBinaryOrbit    
+
+              `Multi-techniques model-fitting with oimBinaryOrbit       <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_
+
+
+Semi-physical modelling of gaeous disk emission using **oimDisco** 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. list-table:: 
+   :class: borderless
+   :widths: 1 1 
+
+   * - .. figure:: _static/notebooks/exampleOimDisco_thumbnail.png
+            :target: https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb
+            :alt: Basic use of oimDisco
+
+            `Basic use of oimDisco 
+            <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_ 
+
+     - .. figure:: _static/notebooks/blank_thumbnail.png  
+
+              `Multi-techniques model-fitting with oimBinaryOrbit       <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_
+
+
+Semi-physical modelling of dusty disk emission using **oimTempGrad** 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
