@@ -106,6 +106,10 @@ Bugs fixed
 - corrected many bugs in the :func:`oimPlot <oimodeler.oimPlots.oimPlot>` function : possibility to plot data (or set coloscale) as function of PA, baseline LENGTH ...
 
 
+Mailing list
+============
 
+To obtain monthly info  on the evolution of **oimodeler** register to the oimodeler mailing list.
+PLease send an email to `sympa@sympa-n.oca.eu <mailto://sympa@sympa-n.oca.eu?subject=subscribe%20oimodeler%20LASTNAME%20FIRSTNAME>`_ specifying "subscribe oimodeler *LASTNAME* *SURNAME*" in the object field. The body of the message should remain blank.
 
 
