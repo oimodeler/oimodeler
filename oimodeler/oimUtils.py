@@ -344,6 +344,12 @@ def load_toml(toml_file: Path) -> Dict[str, Any]:
             else:
                 value["unit"] = u.Unit(value["unit"])
 
+        if "mini" in value:
+            value["mini"] = np.float32(value["mini"])
+
+        if "maxi" in value:
+            value["maxi"] = np.float32(value["maxi"])
+
     return dictionary
 
 
@@ -2550,69 +2556,74 @@ def windowed_linspace(start: float, end: float, window: float) -> np.ndarray:
     return np.linspace(start, end, int((end - start) // (window)) + 1)
 
 
-#%%
+# %%
 class _terminalColor:
-    
-    BACKGROUND_BLACK = '\033[40m'
-    BACKGROUND_RED = '\033[41m'
-    BACKGROUND_GREEN = '\033[42m'
-    BACKGROUND_YELLOW = '\033[43m' # orange on some systems
-    BACKGROUND_BLUE = '\033[44m'
-    BACKGROUND_MAGENTA = '\033[45m'
-    BACKGROUND_CYAN = '\033[46m'
-    BACKGROUND_LIGHT_GRAY = '\third-party033[47m'
-    BACKGROUND_DARK_GRAY = '\033[100m'
-    BACKGROUND_BRIGHT_RED = '\033[101m'
-    BACKGROUND_BRIGHT_GREEN = '\033[102m'
-    BACKGROUND_BRIGHT_YELLOW = '\033[103m'
-    BACKGROUND_BRIGHT_BLUE = '\033[104m'
-    BACKGROUND_BRIGHT_MAGENTA = '\033[105m'
-    BACKGROUND_BRIGHT_CYAN = '\033[106m'
-    BACKGROUND_WHITE = '\033[107m'
-    
-    BLACK = '\033[30m'
-    RED = '\033[31m'
-    GREEN = '\033[32m'
-    YELLOW = '\033[33m' # orange on some systems
-    BLUE = '\033[34m'
-    MAGENTA = '\033[35m'
-    CYAN = '\033[36m'
-    LIGHT_GRAY = '\033[37m'
-    DARK_GRAY = '\033[90m'
-    BRIGHT_RED = '\033[91m'
-    BRIGHT_GREEN = '\033[92m'
-    BRIGHT_YELLOW = '\033[93m'
-    BRIGHT_BLUE = '\033[94m'
-    BRIGHT_MAGENTA = '\033[95m'
-    BRIGHT_CYAN = '\033[96m'
-    WHITE = '\033[97m'
-    
-    
-    
+
+    BACKGROUND_BLACK = "\033[40m"
+    BACKGROUND_RED = "\033[41m"
+    BACKGROUND_GREEN = "\033[42m"
+    BACKGROUND_YELLOW = "\033[43m"  # orange on some systems
+    BACKGROUND_BLUE = "\033[44m"
+    BACKGROUND_MAGENTA = "\033[45m"
+    BACKGROUND_CYAN = "\033[46m"
+    BACKGROUND_LIGHT_GRAY = "\third-party033[47m"
+    BACKGROUND_DARK_GRAY = "\033[100m"
+    BACKGROUND_BRIGHT_RED = "\033[101m"
+    BACKGROUND_BRIGHT_GREEN = "\033[102m"
+    BACKGROUND_BRIGHT_YELLOW = "\033[103m"
+    BACKGROUND_BRIGHT_BLUE = "\033[104m"
+    BACKGROUND_BRIGHT_MAGENTA = "\033[105m"
+    BACKGROUND_BRIGHT_CYAN = "\033[106m"
+    BACKGROUND_WHITE = "\033[107m"
+
+    BLACK = "\033[30m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"  # orange on some systems
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    LIGHT_GRAY = "\033[37m"
+    DARK_GRAY = "\033[90m"
+    BRIGHT_RED = "\033[91m"
+    BRIGHT_GREEN = "\033[92m"
+    BRIGHT_YELLOW = "\033[93m"
+    BRIGHT_BLUE = "\033[94m"
+    BRIGHT_MAGENTA = "\033[95m"
+    BRIGHT_CYAN = "\033[96m"
+    WHITE = "\033[97m"
+
     def __init__(self):
         pass
-    
-    def getCode(self,text):
-        return getattr(self,text.upper())
+
+    def getCode(self, text):
+        return getattr(self, text.upper())
 
 
-def colorPrint(text,color):
+def colorPrint(text, color):
     tcol = oim.oimUtils._terminalColor()
-    col_text= tcol.getCode(color)
-    reset = '\033[0m'
+    col_text = tcol.getCode(color)
+    reset = "\033[0m"
 
-    print(col_text +text+reset )
+    print(col_text + text + reset)
 
-#%%
-def oimWarning(myclass,warningName,text,color="red"):
+
+# %%
+def oimWarning(myclass, warningName, text, color="red"):
     if myclass._firstInit and oimOptions.general.warning:
-        BOLD = '\033[1m'
-        colorPrint(BOLD+f"oimodeler {warningName} Warning ({myclass.__name__})",color)
-        colorPrint(text,color)
-        myclass._firstInit=False
+        BOLD = "\033[1m"
+        colorPrint(
+            BOLD + f"oimodeler {warningName} Warning ({myclass.__name__})",
+            color,
+        )
+        colorPrint(text, color)
+        myclass._firstInit = False
 
-#%%
-def oimAckWarning(myclass,text):
-    text+= "\nCheck the oimodeler page for proper refrence and acknowledgment : \n" \
-           "https://oimodeler.readthedocs.io/en/latest/ackn.html#acknowledgment"
-    oimWarning(myclass,"acknowledgement",text)
+
+# %%
+def oimAckWarning(myclass, text):
+    text += (
+        "\nCheck the oimodeler page for proper refrence and acknowledgment : \n"
+        "https://oimodeler.readthedocs.io/en/latest/ackn.html#acknowledgment"
+    )
+    oimWarning(myclass, "acknowledgement", text)
