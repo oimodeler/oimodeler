@@ -4,13 +4,14 @@
 normalizers and interpolators.
 """
 
+import copy
 import inspect
 import operator
 import pickle
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Union
 
 import astropy.units as u
 import numpy as np
@@ -157,7 +158,7 @@ class oimParam:
     # TODO: Make this work for oimParamLinker
     def serialize(self) -> Dict[str, Any]:
         """Serializes the oimParam/oimInterp and returns a dictionary."""
-        ser = self.__dict__
+        ser = copy.deepcopy(self.__dict__)
         if issubclass(type(self), oimParamInterpolator):
             for key, value in ser.items():
                 # TODO: Assumes iterable only contain parameters, verify if correct
@@ -173,6 +174,7 @@ class oimParam:
     @staticmethod
     def deserialize(ser: Dict[str, Any]) -> "oimParam":
         """Deserializes a dictionary and returns an oimParam."""
+        ser = copy.deepcopy(ser)
         if "interpName" in ser:
             param = getattr(sys.modules[__name__], ser.pop("interpName"))()
         else:
