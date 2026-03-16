@@ -62,10 +62,12 @@ Github = "https://gitlab.oca.eu/oimodeler/oimodeler"
 
 [tool.setuptools]
 license-files = ["LICENSE"]
-include-package-data = true
+
+[tool.setuptools.package-data]
+oimodeler = ["config/*.toml", "extlaws/*.dat"]
 
 [tool.setuptools.packages.find]
-exclude = ["docs*", "images*", "examples*", "requirements*"]
+exclude = ["docs*", "images*", "examples*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "oimodeler.__version__" }

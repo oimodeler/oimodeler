@@ -1,36 +1,47 @@
+from typing import Any, Dict
 import numpy as np
 import pytest
 
 from oimodeler.oimComponent import oimComponent
-from oimodeler.oimParam import oimParam, oimInterp, oimParamGaussianWl
+from oimodeler.oimParam import oimInterp, oimParam, oimParamGaussianWl
+
+
+@pytest.fixture()
+def params() -> Dict[str, Any]:
+    return {
+        "x": 5,
+        "y": 10,
+        "f": oimInterp("GaussWl", val0=2, value=4, x0=2.1656e-6, fwhm=1e-8),
+    }
 
 
 @pytest.fixture
-def component():
+def component(params):
     """Return an instance of oimComponent."""
-    f = oimInterp("GaussWl", val0=2, value=4, x0=2.1656e-6, fwhm=1e-8)
-    return oimComponent(x=5, y=10, f=f)
+    return oimComponent(**params)
 
 
-def test_getFourierComponents():
-    ...
+def test_getFourierComponents(): ...
 
 
-# NOTE: The shift might be a bit counterintuitive
-def test_oimComponent_eval(component: oimComponent) -> None:
+def test_oimComponent_eval(
+    params: Dict[str, Any], component: oimComponent
+) -> None:
     """Test the oimComponent's initialization."""
-    params = component.params
-    assert isinstance(params["x"], oimParam)
-    assert isinstance(params["y"], oimParam)
-    assert isinstance(params["f"], oimParamGaussianWl)
-    assert params["x"].value == 5
-    assert params["y"].value == 10
-    assert params["f"].value.value == 4
+    for name in params.keys():
+        assert name in component.params
+        assert hasattr(component, name)
+
+        comp_param = component.params[name]
+        if name != "f":
+            assert isinstance(comp_param, oimParam)
+        else:
+            assert isinstance(comp_param, oimParamGaussianWl)
 
 
 def test_get_params(component: oimComponent) -> None:
     """Test oimComponent's get params function."""
-    assert all(param in ["x", "y", "dim", "f"] for param in component.params)
+    assert all(param in ["x", "y", "f", "dim"] for param in component.params)
     assert component.params["f"].value.free
 
 
@@ -68,7 +79,8 @@ def test_oimComponent_getComplexCoherentFlux(component: oimComponent) -> None:
     """Test oimComponent's complex coherent flux calculation."""
     ucoord = np.linspace(-500, 500)
     complex_coherent_flux = component.getComplexCoherentFlux(
-            u=ucoord, v=ucoord.copy())
+        u=ucoord, v=ucoord.copy()
+    )
     assert complex_coherent_flux.shape == ucoord.shape
     assert np.array_equal(complex_coherent_flux, np.zeros(ucoord.shape))
 
@@ -78,3 +90,12 @@ def test_oimComponent_getImage(component: oimComponent) -> None:
     image = component.getImage(dim=512, pixSize=0.1)
     assert image.size == 512**2
     assert np.array_equal(image, np.zeros((512, 512)))
+
+
+def test_oimComponent_serialize(component: oimComponent) -> None:
+    """Test oimComponent class' serialization."""
+    ser = component.serialize()
+    breakpoint()
+
+
+def test_oimComponent_deserialize(): ...

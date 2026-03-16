@@ -16,4 +16,3 @@ def extlaw_FitzIndeb(
     """Extinction law."""
     kappa = interpolate.splev(wavelength, FITZINDEBSPLINE, der=0)
     return A_V * (kappa / 211.4)
-
