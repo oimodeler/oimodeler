@@ -188,7 +188,7 @@ class oimParam:
 
             # TODO: Assumes iterable only contain parameters, verify if correct
             if isinstance(value, (list, tuple, np.ndarray)):
-                value = [oimParam().deserialize(v) for v in value]
+                value = [oimParam.deserialize(v) for v in value]
 
             param.__dict__[key] = value
 

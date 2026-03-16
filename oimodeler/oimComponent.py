@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Components defined in Fourier or image planes"""
 
+import copy
 import pickle
 import warnings
 from pathlib import Path
@@ -251,20 +252,36 @@ class oimComponent:
     def serialize(self) -> Dict[str, Dict[str, Any]]:
         """Serializes the oimComponent and returns a dictionary."""
         ser = dict(params={}, other={})
-        for pname, p in self.params.items():
-            ser["params"][pname] = p.serialize()
+        for name, param in copy.deepcopy(self.params).items():
+            ser["params"][name] = param.serialize()
+
+        for key, value in {**self.__class__.__dict__, **vars(self)}.items():
+            key = key.replace("_oimComponent_", "")
+
+            # TODO: The callable check might be too strict
+            if (
+                (key.startswith("_") and key.endswith("_"))
+                or key == "params"
+                or callable(value)
+            ):
+                continue
+
+            ser["other"][key] = value
 
         return ser
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Dict[str, Any]]) -> "oimComponent":
         """Deserializes a dictionary and returns a oimComponent."""
-        c = cls()
-        for key, val in ser["params"].items():
-            c.params[key] = oimParam.deserialize(val)
-            setattr(c, key, c.params[key])
+        component = cls()
+        for key, value in ser["params"].items():
+            component.params[key] = oimParam.deserialize(value)
+            setattr(component, key, component.params[key])
 
-        return c
+        for key, value in ser["other"].items():
+            setattr(component, key, value)
+
+        return component
 
     @staticmethod
     def unpickle(f, openfile=True):
