@@ -167,6 +167,21 @@ class oimParam:
                 elif isinstance(value, oimParam):
                     ser[key] = value.serialize()
 
+            for key, value in self.__class__.__dict__.items():
+                if (
+                    (key.startswith("_") and key.endswith("_"))
+                    or isinstance(value, (property, classmethod, staticmethod))
+                    or callable(value)
+                ):
+                    continue
+
+                try:
+                    value = value.tolist()
+                except AttributeError:
+                    pass
+
+                ser[key] = value
+
             ser["interpName"] = type(self).__name__
 
         return ser
