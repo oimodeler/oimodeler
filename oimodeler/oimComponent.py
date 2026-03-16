@@ -4,7 +4,7 @@
 import pickle
 import warnings
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Dict, Union
 
 import astropy.units as u
 import numpy as np
@@ -249,7 +249,8 @@ class oimComponent:
 
         return 0 * xx
 
-    def serialize(self):
+    def serialize(self) -> Dict[str, Dict[str, Any]]:
+        """Serializes the oimComponent and returns a dictionary."""
         ser = dict(params={}, other={})
         for pname, p in self.params.items():
             ser["params"][pname] = p.serialize()
@@ -257,12 +258,15 @@ class oimComponent:
         return ser
 
     @classmethod
-    def deserialize(cls, ser):
+    def deserialize(cls, ser: Dict[str, Dict[str, Any]]) -> "oimComponent":
+        """Deserializes a dictionary and returns a oimComponent."""
         c = cls()
         for key, val in ser["params"].items():
             c.params[key] = oimParam.deserialize(val)
+
         return c
 
+    @staticmethod
     def unpickle(f, openfile=True):
         if openfile:
             file = open(f, "rb")

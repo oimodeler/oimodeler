@@ -154,17 +154,21 @@ class oimParam:
             except NameError:
                 print("Note valid parameter : {}".format(value))
 
-    def serialize(self):
+    def serialize(self) -> Dict[str, Any]:
+        """Serializes the oimParam and returns a dictionary."""
         return self.__dict__
 
-    def deserialize(ser):
+    @staticmethod
+    def deserialize(ser: Dict[str, Any]) -> "oimParam":
+        """Deserializes a dictionary and returns an oimParam."""
         p = oimParam()
         for key, val in ser.items():
             p.__dict__[key] = val
+
         return p
 
+    @staticmethod
     def unpickle(f, openfile=True):
-
         if openfile:
             file = open(f, "rb")
         else:
