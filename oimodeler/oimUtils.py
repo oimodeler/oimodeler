@@ -2,10 +2,10 @@
 """Various utilities for optical interferometry"""
 
 import csv
-
-# from functools import partial
+import io
+import pickle
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 import astropy.units as u
 import numpy as np
@@ -330,6 +330,47 @@ OI_FLUX_COLUMNS = [
     ("STA_INDEX", "I", True, "Station number contributing to the data", None),
     ("FLAG", "NWLL", False, "Flag", None),
 ]
+
+
+def attach_methods(
+    functions: Union[Callable, ArrayLike, Dict[str, Callable]],
+) -> Callable:
+    """Class decorator that attaches one or multiple functions to the class as methods."""
+    if not isinstance(functions, dict):
+        if not isinstance(function, (tuple, list, np.ndarray)):
+            functions = [functions]
+
+        functions = {func.__name__: func for func in functions}
+
+    def decorator(cls):
+        for name, func in functions.items():
+            setattr(cls, name, func)
+
+        return cls
+
+    return decorator
+
+
+def _pickle(self, f: Union[str, Path, io.BufferedWriter], **kwargs) -> None:
+    """Save the pickled representation of the object into an already
+    open file or opens a file from a string or pathlib.Path.
+    """
+    file = open(f, "wb") if isinstance(f, (str, Path)) else f
+    pickle.dump(self.serialize(), file)
+    if isinstance(f, (str, Path)):
+        file.close()
+
+
+def _unpickle(cls, f: Union[Path, io.TextIOWrapper], **kwargs) -> object:
+    """Read the pickled representation from an open file
+    or reads a string or pathlib.Path into a file to return the reconstituted object.
+    """
+    file = open(f, "rb") if isinstance(f, (str, Path)) else f
+    restored_object = cls.deserialize(pickle.load(file))
+    if isinstance(f, (str, Path)):
+        file.close()
+
+    return restored_object
 
 
 def load_toml(toml_file: Path) -> Dict[str, Any]:

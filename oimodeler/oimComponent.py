@@ -2,7 +2,6 @@
 """Components defined in Fourier or image planes"""
 
 import copy
-import pickle
 import warnings
 from pathlib import Path
 from typing import Any, Dict, Union
@@ -26,6 +25,9 @@ from .oimParam import (
     oimParamNorm,
 )
 from .oimUtils import (
+    _pickle,
+    _unpickle,
+    attach_methods,
     getWlFromFitsImageCube,
     pad_image,
     rebin_image,
@@ -53,6 +55,7 @@ def getFourierComponents():
     return res
 
 
+@attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
 class oimComponent:
     """The OImComponent class is the parent abstract class for all types of
     components that can be added to a OImModel.
@@ -289,29 +292,6 @@ class oimComponent:
             setattr(comp, key, value)
 
         return comp
-
-    @staticmethod
-    def unpickle(f, openfile=True):
-        if openfile:
-            file = open(f, "rb")
-        else:
-            file = f
-
-        ser = pickle.load(file)
-        if openfile:
-            file.close()
-
-        return oimParam.deserialize(ser)
-
-    def pickle(self, f, openfile=True):
-        if openfile:
-            file = open(f, "wb")
-        else:
-            file = f
-
-        pickle.dump(self.serialize(), file)
-        if openfile:
-            file.close()
 
 
 class oimComponentFourier(oimComponent):

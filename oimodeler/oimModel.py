@@ -24,7 +24,7 @@ from .oimParam import (
     oimParamLinkerFunction,
     oimParamNorm,
 )
-from .oimUtils import rebin_image
+from .oimUtils import _pickle, _unpickle, attach_methods, rebin_image
 
 # TODO: Remove and optimise the deserialisation as this might
 # slow down startup time of oimodeler. So-called lazyloading.
@@ -38,6 +38,7 @@ for MODULE_NAME, MODULE in sys.modules.items():
         MODEL_COMPONENT_MODULES.append(MODULE)
 
 
+@attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
 class oimModel:
     """The oimModel class hold a model made of one or more components (derived
     from the oimComponent class).

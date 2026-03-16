@@ -7,7 +7,6 @@ normalizers and interpolators.
 import copy
 import inspect
 import operator
-import pickle
 import sys
 from functools import reduce
 from pathlib import Path
@@ -19,7 +18,14 @@ from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
 from .oimOptions import constants as const
-from .oimUtils import blackbody, linear_to_angular, load_toml
+from .oimUtils import (
+    _pickle,
+    _unpickle,
+    attach_methods,
+    blackbody,
+    linear_to_angular,
+    load_toml,
+)
 
 _standardParameters: Dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "standard_parameters.toml"
@@ -46,6 +52,7 @@ _operators = {
 }
 
 
+@attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
 class oimParam:
     """
     Class of model parameters.
@@ -210,24 +217,6 @@ class oimParam:
             param.__dict__[key] = value
 
         return param
-
-    @staticmethod
-    def unpickle(f, openfile=True):
-        if openfile:
-            file = open(f, "rb")
-        else:
-            file = f
-        ser = pickle.load(file)
-        p = oimParam.deserialize(ser)
-        return p
-
-    def pickle(self, f, openfile=True):
-
-        if openfile:
-            file = open(f, "wb")
-        else:
-            file = f
-        pickle.dump(self.serialize(), file)
 
 
 class oimParamLinker:
@@ -429,8 +418,8 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
         self,
         param: oimParam = oimParam(),
         dependence: str = "wl",
-        keyframes=[],
-        keyvalues=[],
+        keyframes: ArrayLike = [],
+        keyvalues: ArrayLike = [],
         kind: str = "linear",
         fixedRef: bool = True,
         extrapolate: bool = False,
@@ -509,8 +498,8 @@ class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
     def _init(
         self,
         param: oimParam = oimParam(),
-        wl=[],
-        values=[],
+        wl: ArrayLike = [],
+        values: ArrayLike = [],
         **kwargs,
     ):
         super()._init(
@@ -525,8 +514,8 @@ class oimParamInterpolatorTime(oimParamInterpolatorKeyframes):
     def _init(
         self,
         param: oimParam = oimParam(),
-        mjd=[],
-        values=[],
+        mjd: ArrayLike = [],
+        values: ArrayLike = [],
         **kwargs,
     ):
         super()._init(
@@ -705,9 +694,9 @@ class oimParamMultipleGaussian(oimParamInterpolator):
         param: oimParam = oimParam(),
         dependence: str = "wl",
         val0: Union[int, float] = 0,
-        values=[],
-        x0=[],
-        fwhm=[],
+        values: ArrayLike = [],
+        x0: ArrayLike = [],
+        fwhm: ArrayLike = [],
         **kwargs,
     ):
         try:
@@ -787,9 +776,9 @@ class oimParamMultipleGaussianWl(oimParamMultipleGaussian):
         self,
         param: oimParam = oimParam(),
         val0: Union[int, float] = 0,
-        values=[],
-        x0=[],
-        fwhm=[],
+        values: ArrayLike = [],
+        x0: ArrayLike = [],
+        fwhm: ArrayLike = [],
         **kwargs,
     ):
         super()._init(
@@ -805,9 +794,9 @@ class oimParamMultipleGaussianTime(oimParamMultipleGaussian):
         self,
         param: oimParam = oimParam(),
         val0: Union[int, float] = 0,
-        values=[],
-        x0=[],
-        fwhm=[],
+        values: ArrayLike = [],
+        x0: ArrayLike = [],
+        fwhm: ArrayLike = [],
         **kwargs,
     ):
         super()._init(
@@ -824,8 +813,8 @@ class oimParamPolynomial(oimParamInterpolator):
         param,
         dependence: str = "wl",
         order: int = 2,
-        coeffs=None,
-        x0=None,
+        coeffs: Union[ArrayLike, None] = None,
+        x0: Union[ArrayLike, None] = None,
         **kwargs,
     ):
         self.dependence = dependence
@@ -878,8 +867,8 @@ class oimParamPolynomialWl(oimParamPolynomial):
         self,
         param: oimParam = oimParam(),
         order: int = 2,
-        coeffs=None,
-        x0=None,
+        coeffs: Union[ArrayLike, None] = None,
+        x0: Union[ArrayLike, None] = None,
         **kwargs,
     ):
         super()._init(
@@ -895,8 +884,8 @@ class oimParamPolynomialTime(oimParamPolynomial):
         self,
         param: oimParam = oimParam(),
         order: int = 2,
-        coeffs=None,
-        x0=None,
+        coeffs: Union[ArrayLike, None] = None,
+        x0: Union[ArrayLike, None] = None,
     ):
         super()._init(
             param, dependence="mjd", order=order, coeffs=coeffs, x0=x0
@@ -991,7 +980,7 @@ class oimParamLinearRangeWl(oimParamInterpolator):
         param: oimParam = oimParam(),
         wlmin: float = 2e-6,
         wlmax: float = 3e-6,
-        values=[],
+        values: ArrayLike = [],
         kind: str = "linear",
         **kwargs,
     ):
@@ -1055,7 +1044,7 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
         wl0: float = 2e-6,
         dwl: float = 1e-9,
         f_contrib: float = 1.0,
-        values=[],
+        values: ArrayLike = [],
         kind: str = "linear",
         **kwargs,
     ):
