@@ -179,9 +179,7 @@ class oimComponent:
                         f"{key} not a parameter of {self.name}: ignored"
                     )
 
-        for param in self.params.keys():
-            if not hasattr(self, param):
-                setattr(self, param, self.params[param])
+        [setattr(self, k, self.params[k]) for k in self.params.keys()]
 
     def getComplexCoherentFlux(self, u, v, wl=None, t=None) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
@@ -249,6 +247,7 @@ class oimComponent:
 
         return 0 * xx
 
+    # TODO: Make this work for oimInterp and oimParamLinker as well
     def serialize(self) -> Dict[str, Dict[str, Any]]:
         """Serializes the oimComponent and returns a dictionary."""
         ser = dict(params={}, other={})
@@ -257,12 +256,14 @@ class oimComponent:
 
         return ser
 
+    # TODO: Make this work for oimInterp and oimParamLinker as well
     @classmethod
     def deserialize(cls, ser: Dict[str, Dict[str, Any]]) -> "oimComponent":
         """Deserializes a dictionary and returns a oimComponent."""
         c = cls()
         for key, val in ser["params"].items():
             c.params[key] = oimParam.deserialize(val)
+            setattr(c, key, c.params[key])
 
         return c
 
