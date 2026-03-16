@@ -247,7 +247,7 @@ class oimComponent:
 
         return 0 * xx
 
-    # TODO: Make this work for oimInterp and oimParamLinker as well
+    # TODO: Also serialise other things (e.g. model_name, flat, elliptic, etc.)
     def serialize(self) -> Dict[str, Dict[str, Any]]:
         """Serializes the oimComponent and returns a dictionary."""
         ser = dict(params={}, other={})
@@ -256,7 +256,6 @@ class oimComponent:
 
         return ser
 
-    # TODO: Make this work for oimInterp and oimParamLinker as well
     @classmethod
     def deserialize(cls, ser: Dict[str, Dict[str, Any]]) -> "oimComponent":
         """Deserializes a dictionary and returns a oimComponent."""

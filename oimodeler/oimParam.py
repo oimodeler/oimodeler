@@ -10,7 +10,7 @@ import pickle
 import sys
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Union
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 
 import astropy.units as u
 import numpy as np
@@ -154,18 +154,43 @@ class oimParam:
             except NameError:
                 print("Note valid parameter : {}".format(value))
 
+    # TODO: Make this work for oimParamLinker
     def serialize(self) -> Dict[str, Any]:
-        """Serializes the oimParam and returns a dictionary."""
-        return self.__dict__
+        """Serializes the oimParam/oimInterp and returns a dictionary."""
+        ser = self.__dict__
+        if issubclass(type(self), oimParamInterpolator):
+            for key, value in ser.items():
+                # TODO: Assumes iterable only contain parameters, verify if correct
+                if isinstance(value, (list, tuple, np.ndarray)):
+                    ser[key] = [v.serialize() for v in value]
+                elif isinstance(value, oimParam):
+                    ser[key] = value.serialize()
+
+            ser["interpName"] = type(self).__name__
+
+        return ser
 
     @staticmethod
     def deserialize(ser: Dict[str, Any]) -> "oimParam":
         """Deserializes a dictionary and returns an oimParam."""
-        p = oimParam()
-        for key, val in ser.items():
-            p.__dict__[key] = val
+        if "interpName" in ser:
+            param = getattr(sys.modules[__name__], ser.pop("interpName"))()
+        else:
+            param = oimParam()
 
-        return p
+        for key, value in ser.items():
+            try:
+                value = oimParam.deserialize(value)
+            except (AttributeError, TypeError):
+                pass
+
+            # TODO: Assumes iterable only contain parameters, verify if correct
+            if isinstance(value, (list, tuple, np.ndarray)):
+                value = [oimParam().deserialize(v) for v in value]
+
+            param.__dict__[key] = value
+
+        return param
 
     @staticmethod
     def unpickle(f, openfile=True):
@@ -327,7 +352,7 @@ class oimParamInterpolator(oimParam):
     interpdescription = "Generic interpolator (to be subclassed)"
     interpparams = []
 
-    def __init__(self, param, **kwargs):
+    def __init__(self, param: oimParam = oimParam(), **kwargs):
         self.name = param.name
         self.description = param.description
         self.unit = param.unit
@@ -383,7 +408,7 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
 
     def _init(
         self,
-        param,
+        param: oimParam = oimParam(),
         dependence: str = "wl",
         keyframes=[],
         keyvalues=[],
@@ -430,6 +455,7 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
             var = wl
         else:
             var = t
+
         values = np.array([pi() for pi in self.keyvalues])
         keyframes = np.array([pi() for pi in self.keyframes])
 
@@ -461,7 +487,13 @@ class oimParamInterpolatorWl(oimParamInterpolatorKeyframes):
     interpdescription = "Interpolation between keyframes in wl"
     interparams = ["wl", "values", "kind", "fixedRef", "extrapolate"]
 
-    def _init(self, param, wl=[], values=[], **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        wl=[],
+        values=[],
+        **kwargs,
+    ):
         super()._init(
             param, dependence="wl", keyframes=wl, keyvalues=values, **kwargs
         )
@@ -471,7 +503,13 @@ class oimParamInterpolatorTime(oimParamInterpolatorKeyframes):
     interpdescription = "Interpolation between keyframes in mjd"
     interparams = ["mjd", "values", "kind", "fixedRef", "extrapolate"]
 
-    def _init(self, param, mjd=[], values=[], **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        mjd=[],
+        values=[],
+        **kwargs,
+    ):
         super()._init(
             param, dependence="mjd", keyframes=mjd, keyvalues=values, **kwargs
         )
@@ -483,7 +521,7 @@ class oimParamCosineTime(oimParamInterpolator):
 
     def _init(
         self,
-        param,
+        param: oimParam = oimParam(),
         T0: Union[int, float] = 0,
         P: Union[int, float] = 1,
         values: List[int] = [0, 1],
@@ -531,10 +569,12 @@ class oimParamCosineTime(oimParamInterpolator):
     def _getParams(self):
         params = []
         params.extend([self.T0, self.P])
+
         try:
             params.append(self.x0)
         except:
             pass
+
         params.extend(self.values)
         return params
 
@@ -545,12 +585,12 @@ class oimParamGaussian(oimParamInterpolator):
 
     def _init(
         self,
-        param,
+        param: oimParam = oimParam(),
         dependence: str = "wl",
-        val0=0,
-        value=0,
-        x0=0,
-        fwhm=0,
+        val0: Union[int, float] = 0,
+        value: Union[int, float] = 0,
+        x0: Union[int, float] = 0,
+        fwhm: Union[int, float] = 0,
         **kwargs,
     ):
         self.dependence = dependence
@@ -605,7 +645,15 @@ class oimParamGaussianWl(oimParamGaussian):
     interpdescription = " Gaussian interpolator in wl"
     interparams = ["val0", "value", "x0", "fwhm"]
 
-    def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        val0: Union[int, float] = 0,
+        value: Union[int, float] = 0,
+        x0: Union[int, float] = 0,
+        fwhm: Union[int, float] = 0,
+        **kwargs,
+    ):
         super()._init(
             param, dependence="wl", val0=val0, value=value, x0=x0, fwhm=fwhm
         )
@@ -615,7 +663,15 @@ class oimParamGaussianTime(oimParamGaussian):
     interpdescription = "Gaussian interpolator in mjd"
     interparams = ["val0", "value", "x0", "fwhm"]
 
-    def _init(self, param, val0=0, value=0, x0=0, fwhm=0, **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        val0: Union[int, float] = 0,
+        value: Union[int, float] = 0,
+        x0: Union[int, float] = 0,
+        fwhm: Union[int, float] = 0,
+        **kwargs,
+    ):
         super()._init(
             param, dependence="mjd", val0=val0, value=value, x0=x0, fwhm=fwhm
         )
@@ -627,9 +683,9 @@ class oimParamMultipleGaussian(oimParamInterpolator):
 
     def _init(
         self,
-        param,
+        param: oimParam = oimParam(),
         dependence: str = "wl",
-        val0=0,
+        val0: Union[int, float] = 0,
         values=[],
         x0=[],
         fwhm=[],
@@ -708,7 +764,15 @@ class oimParamMultipleGaussianWl(oimParamMultipleGaussian):
     interpdescription = "Multiple Gaussian interpolator in wl"
     interparams = ["val0", "values", "x0", "fwhm"]
 
-    def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        val0: Union[int, float] = 0,
+        values=[],
+        x0=[],
+        fwhm=[],
+        **kwargs,
+    ):
         super()._init(
             param, dependence="wl", val0=val0, values=values, x0=x0, fwhm=fwhm
         )
@@ -718,7 +782,15 @@ class oimParamMultipleGaussianTime(oimParamMultipleGaussian):
     interpdescription = "Multiple Gaussian interpolator in mjd"
     interparams = ["val0", "values", "x0", "fwhm"]
 
-    def _init(self, param, val0=0, values=[], x0=[], fwhm=[], **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        val0: Union[int, float] = 0,
+        values=[],
+        x0=[],
+        fwhm=[],
+        **kwargs,
+    ):
         super()._init(
             param, dependence="mjd", val0=val0, values=values, x0=x0, fwhm=fwhm
         )
@@ -783,7 +855,14 @@ class oimParamPolynomialWl(oimParamPolynomial):
     interpdescription = "Polynomial interpolation in wl"
     interparams = ["order", "coeffs", "x0"]
 
-    def _init(self, param, order: int = 2, coeffs=None, x0=None, **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        order: int = 2,
+        coeffs=None,
+        x0=None,
+        **kwargs,
+    ):
         super()._init(
             param, dependence="wl", order=order, coeffs=coeffs, x0=x0
         )
@@ -793,7 +872,13 @@ class oimParamPolynomialTime(oimParamPolynomial):
     interpdescription = "Polynomial interpolation in mjd"
     interparams = ["order", "coeffs", "x0"]
 
-    def _init(self, param, order: int = 2, coeffs=None, x0=None):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        order: int = 2,
+        coeffs=None,
+        x0=None,
+    ):
         super()._init(
             param, dependence="mjd", order=order, coeffs=coeffs, x0=x0
         )
@@ -804,7 +889,15 @@ class oimParamPowerLaw(oimParamInterpolator):
     """Power-law interpolation, i.e. A*(x/x0)**p."""
     interparams = ["dependence", "x0", "A", "p"]
 
-    def _init(self, param, dependence: str = "wl", x0=0, A=0, p=1, **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        dependence: str = "wl",
+        x0: Union[int, float] = 0,
+        A: Union[int, float] = 0,
+        p: Union[int, float] = 1,
+        **kwargs,
+    ):
         self.dependence = dependence
 
         self.x0 = oimParam(**_standardParameters[dependence])
@@ -846,7 +939,13 @@ class oimParamPowerLawTime(oimParamPowerLaw):
     interpdescription = "Powerlaw interpolation in mjd"
     interparams = ["x0", "A", "p"]
 
-    def _init(self, param, x0=0, A=0, p=1):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        x0: Union[int, float] = 0,
+        A: Union[int, float] = 0,
+        p: Union[int, float] = 1,
+    ):
         super()._init(param, dependence="mjd", x0=x0, A=A, p=p)
 
 
@@ -854,7 +953,13 @@ class oimParamPowerLawWl(oimParamPowerLaw):
     interpdescription = "Powerlaw interpolation in wl"
     interparams = ["x0", "A", "p"]
 
-    def _init(self, param, x0=0, A=0, p=1):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        x0: Union[int, float] = 0,
+        A: Union[int, float] = 0,
+        p: Union[int, float] = 1,
+    ):
         super()._init(param, dependence="wl", x0=x0, A=A, p=p)
 
 
@@ -864,9 +969,9 @@ class oimParamLinearRangeWl(oimParamInterpolator):
 
     def _init(
         self,
-        param,
-        wlmin=2e-6,
-        wlmax=3e-6,
+        param: oimParam = oimParam(),
+        wlmin: float = 2e-6,
+        wlmax: float = 3e-6,
         values=[],
         kind: str = "linear",
         **kwargs,
@@ -927,10 +1032,10 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
 
     def _init(
         self,
-        param,
-        wl0=2e-6,
-        dwl=1e-9,
-        f_contrib=1.0,
+        param: oimParam = oimParam(),
+        wl0: float = 2e-6,
+        dwl: float = 1e-9,
+        f_contrib: float = 1.0,
         values=[],
         kind: str = "linear",
         **kwargs,
@@ -1018,7 +1123,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
 
     def _init(
         self,
-        param: oimParam,
+        param: oimParam = oimParam(),
         temp: Union[int, float] = 0,
         solid_angle: Union[int, float, oimParam] = 0,
         **kwargs,
@@ -1106,7 +1211,7 @@ class oimParamLinearStarWl(oimParamInterpolator):
 
     def _init(
         self,
-        param: oimParam,
+        param: oimParam = oimParam(),
         temp: Union[int, float, ArrayLike] = 0,
         dist: Union[int, float] = 0,
         lum: Union[int, float, None] = 0,
@@ -1121,13 +1226,7 @@ class oimParamLinearStarWl(oimParamInterpolator):
             free=False,
             description="The star's effective temperature",
         )
-        self.dist = oimParam(
-            name="dist",
-            value=dist,
-            unit=u.pc,
-            free=False,
-            description="Distance to the star",
-        )
+        self.dist = oimParam(description="Distance to the star", base="dist")
         self.lum = oimParam(
             name="lum",
             value=lum,
@@ -1204,7 +1303,13 @@ class oimParamLinearStarWl(oimParamInterpolator):
 class oimParamUserFunc(oimParamInterpolator):
     interpdescription = "Interpolate from user-supplied function"
 
-    def _init(self, param, userfunc, dependence="wl", **kwargs):
+    def _init(
+        self,
+        param: oimParam = oimParam(),
+        userfunc: Callable = lambda x: x,
+        dependence: str = "wl",
+        **kwargs,
+    ):
         self.dependence = dependence
         self.userfunc = userfunc
         self.interparams = []

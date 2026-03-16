@@ -2,6 +2,7 @@
 """
 Basic model-components defined in the Fourier plan
 """
+
 import operator
 from functools import reduce
 

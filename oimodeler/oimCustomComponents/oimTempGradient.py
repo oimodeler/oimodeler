@@ -4,7 +4,7 @@ import numpy as np
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import constants as const
 from ..oimOptions import oimOptions
-from ..oimParam import _standardParameters, oimParam
+from ..oimParam import oimParam
 from ..oimUtils import blackbody, linear_to_angular
 
 
@@ -20,7 +20,7 @@ class oimTempGrad(oimComponentRadialProfile):
         Outer radius of the disk [au].
     r0 : float
         Reference radius [au].
-    T0 : float
+    temp0 : float
         Temperature at reference radius r0 [K].
     Sigma0 : float
          Dust surface density at reference radius r0 [M_sun].
