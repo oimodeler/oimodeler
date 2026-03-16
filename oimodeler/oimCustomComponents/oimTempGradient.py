@@ -122,11 +122,8 @@ class oimTempGrad(oimComponentRadialProfile):
             )
             self.params["kappa_ratio"] = oimParam(
                 name="kappa_ratio",
-                value=1,
-                unit=u.one,
                 description="Silicate to continuum ratio",
-                mini=0,
-                maxi=1,
+                base="amp",
             )
 
         self.params["dist"] = oimParam(base="dist")
