@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Creation of models"""
 
+import copy
+import sys
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import astropy.units as u
 import matplotlib.colors as colors
@@ -24,6 +26,17 @@ from .oimParam import (
 )
 from .oimUtils import rebin_image
 
+# TODO: Remove and optimise the deserialisation as this might
+# slow down startup time of oimodeler. So-called lazyloading.
+# Implement this for all taxing options
+MODEL_COMPONENT_MODULES = []
+for MODULE_NAME, MODULE in sys.modules.items():
+    if any(
+        x in MODULE_NAME
+        for x in ["oimBasicFourierComponents", "oimCustomComponents"]
+    ):
+        MODEL_COMPONENT_MODULES.append(MODULE)
+
 
 class oimModel:
     """The oimModel class hold a model made of one or more components (derived
@@ -44,14 +57,22 @@ class oimModel:
        The components of the model.
     """
 
-    def __init__(self, *components: List[oimComponent], extParams=[]) -> None:
+    def __init__(
+        self,
+        *components: Union[
+            List[oimComponent], Tuple[oimComponent], np.ndarray
+        ],
+        extParams: ArrayLike = [],
+    ) -> None:
         """Constructor of the class"""
-        if len(components) == 1 and type(components[0]) == list:
+        if len(components) == 1 and isinstance(
+            components[0], (list, tuple, np.ndarray)
+        ):
             self.components = components[0]
         else:
             self.components = components
-        
-        if type(extParams)!=type([]):
+
+        if not isinstance(extParams, (list, tuple, np.ndarray)):
             self.extParams = [extParams]
         else:
             self.extParams = extParams
@@ -75,6 +96,56 @@ class oimModel:
     def shortname(self):
         """Return a short name of the model"""
         return " + ".join([comp.shortname for comp in self.components])
+
+    def serialize(self) -> Dict[str, Any]:
+        """Serializes the oimModel."""
+        ser = {"components": [], "other": {}}
+        for comp in copy.deepcopy(self.components):
+            ser["components"].append(
+                [comp.__class__.__name__, comp.serialize()]
+            )
+
+        for key, value in {**self.__class__.__dict__, **vars(self)}.items():
+            if (
+                (key.startswith("_") and key.endswith("_"))
+                or key == "components"
+                or isinstance(value, (property, classmethod, staticmethod))
+                or callable(value)
+            ):
+                continue
+
+            try:
+                value = value.tolist()
+            except AttributeError:
+                pass
+
+            ser["other"][key] = value
+
+        return ser
+
+    @classmethod
+    def deserialize(cls, ser: Dict[str, Any]) -> "oimModel":
+        """Deserializes into an oimModel."""
+        model, components = cls(), []
+        for name, ser_comp in ser["components"]:
+            for module in MODEL_COMPONENT_MODULES:
+                try:
+                    comp = getattr(module, name).deserialize(ser_comp)
+                    break
+                except AttributeError:
+                    continue
+
+            # TODO: Add an error here?
+            components.append(comp)
+
+        model.__dict__["components"] = components
+        for key, value in ser["other"].items():
+            if isinstance(value, list):
+                value = np.array(value)
+
+            setattr(model, key, value)
+
+        return model
 
     def getComplexCoherentFlux(
         self,
@@ -105,6 +176,7 @@ class oimModel:
         res = complex(0, 0)
         for component in self.components:
             res += component.getComplexCoherentFlux(ucoord, vcoord, wl, t)
+
         return res
 
     def getParameters(self, free: bool = False) -> Dict[str, oimParam]:
@@ -149,7 +221,8 @@ class oimModel:
                                         iparam + 1,
                                         component.shortname.replace(" ", "_"),
                                         parami.name,
-                                    )] = parami
+                                    )
+                                ] = parami
                     else:
                         if param.free or not free:
                             params[
@@ -159,11 +232,11 @@ class oimModel:
                                     name,
                                 )
                             ] = param
-                            
+
         for extParami in self.extParams:
             if extParami.free or not free:
                 params[extParami.name] = extParami
-                
+
         return params
 
     def getFreeParameters(self) -> Dict[str, oimParam]:
@@ -280,7 +353,7 @@ class oimModel:
                 for iwl in range(nwl):
                     image[it, iwl, :, :] /= np.max(image[it, iwl, :, :])
 
-        # Always squeeze dim which are equal to one if exported to fits format
+        # NOTE: Always squeeze dim which are equal to one if exported to fits format
         if squeeze or toFits:
             image = np.squeeze(image)
 
@@ -770,8 +843,10 @@ class oimModel:
         return fig, axe, im
 
     def normalizeFlux(self, comp=None):
+        """Normalises the flux."""
         if comp is None:
             comp = self.components[-1]
+
         fluxes = []
         for compi in self.components:
             if compi != comp:

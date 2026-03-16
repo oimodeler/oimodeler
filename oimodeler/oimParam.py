@@ -155,9 +155,9 @@ class oimParam:
             except NameError:
                 print("Note valid parameter : {}".format(value))
 
-    # TODO: Make this work for oimParamLinker
+    # TODO: Make this work for oimParamLinker as well
     def serialize(self) -> Dict[str, Any]:
-        """Serializes the oimParam/oimInterp and returns a dictionary."""
+        """Serializes the oimParam/oimParamInterpolator."""
         ser = copy.deepcopy(self.__dict__)
         if issubclass(type(self), oimParamInterpolator):
             for key, value in ser.items():
@@ -172,8 +172,10 @@ class oimParam:
         return ser
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParam":
-        """Deserializes a dictionary and returns an oimParam."""
+    def deserialize(
+        ser: Dict[str, Any],
+    ) -> Union["oimParam", "oimParamInterpolator"]:
+        """Deserializes into an oimParam/oimParamInterpolator."""
         ser = copy.deepcopy(ser)
         if "interpName" in ser:
             param = getattr(sys.modules[__name__], ser.pop("interpName"))()

@@ -248,40 +248,47 @@ class oimComponent:
 
         return 0 * xx
 
-    # TODO: Also serialise other things (e.g. model_name, flat, elliptic, etc.)
-    def serialize(self) -> Dict[str, Dict[str, Any]]:
-        """Serializes the oimComponent and returns a dictionary."""
+    def serialize(self) -> Dict[str, Any]:
+        """Serializes the oimComponent."""
         ser = dict(params={}, other={})
         for name, param in copy.deepcopy(self.params).items():
             ser["params"][name] = param.serialize()
 
         for key, value in {**self.__class__.__dict__, **vars(self)}.items():
+            # TODO: This might not work for SubSubComponents
             key = key.replace("_oimComponent_", "")
-
-            # TODO: The callable check might be too strict
             if (
                 (key.startswith("_") and key.endswith("_"))
                 or key == "params"
+                or isinstance(value, (property, classmethod, staticmethod))
                 or callable(value)
             ):
                 continue
+
+            try:
+                value = value.tolist()
+            except AttributeError:
+                pass
 
             ser["other"][key] = value
 
         return ser
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Dict[str, Any]]) -> "oimComponent":
-        """Deserializes a dictionary and returns a oimComponent."""
-        component = cls()
+    def deserialize(cls, ser: Dict[str, Any]) -> "oimComponent":
+        """Deserializes into an oimComponent."""
+        comp = cls()
         for key, value in ser["params"].items():
-            component.params[key] = oimParam.deserialize(value)
-            setattr(component, key, component.params[key])
+            comp.params[key] = oimParam.deserialize(value)
+            setattr(comp, key, comp.params[key])
 
         for key, value in ser["other"].items():
-            setattr(component, key, value)
+            if isinstance(value, list):
+                value = np.array(value)
 
-        return component
+            setattr(comp, key, value)
+
+        return comp
 
     @staticmethod
     def unpickle(f, openfile=True):
