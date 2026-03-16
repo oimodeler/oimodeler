@@ -34,7 +34,7 @@ _interpolators: Dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "interpolators.toml"
 )["interpolators"]
 
-_operators = {
+OPERATORS = {
     "add": operator.add,
     "+": operator.add,
     "sub": operator.sub,
@@ -50,6 +50,10 @@ _operators = {
     "pow": operator.pow,
     "**": operator.pow,
 }
+
+# NOTE: Will be lazy loaded by the oimParam.deserialize method or the
+# oimInterp class when needed
+OIM_PARAM_MODULE = None
 
 
 @attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
@@ -200,7 +204,12 @@ class oimParam:
         """Deserializes into an oimParam/oimParamInterpolator."""
         ser = copy.deepcopy(ser)
         if "interpName" in ser:
-            param = getattr(sys.modules[__name__], ser.pop("interpName"))()
+            global OIM_PARAM_MODULE
+
+            if OIM_PARAM_MODULE is None:
+                OIM_PARAM_MODULE = sys.modules[__name__]
+
+            param = getattr(OIM_PARAM_MODULE, ser.pop("interpName"))()
         else:
             param = oimParam()
 
@@ -248,7 +257,7 @@ class oimParamLinker:
         self.fact = (
             fact if isinstance(fact, (tuple, list, np.ndarray)) else [fact]
         )
-        self.op = _operators[operator.lower()]
+        self.op = OPERATORS[operator.lower()]
         self.free = False
 
     @property
@@ -353,7 +362,12 @@ class oimInterp:
         self.kwargs = kwargs
         self.type = _interpolators[name]
         if isinstance(self.type, str):
-            self.type = getattr(sys.modules[__name__], self.type)
+            global OIM_PARAM_MODULE
+
+            if OIM_PARAM_MODULE is None:
+                OIM_PARAM_MODULE = sys.modules[__name__]
+
+            self.type = getattr(OIM_PARAM_MODULE, self.type)
 
 
 class oimParamInterpolator(oimParam):

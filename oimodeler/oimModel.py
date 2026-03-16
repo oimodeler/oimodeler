@@ -26,16 +26,8 @@ from .oimParam import (
 )
 from .oimUtils import _pickle, _unpickle, attach_methods, rebin_image
 
-# TODO: Remove and optimise the deserialisation as this might
-# slow down startup time of oimodeler. So-called lazyloading.
-# Implement this for all taxing options
+# NOTE: Will be lazy loaded by the oimModel.deserialize function when needed
 MODEL_COMPONENT_MODULES = []
-for MODULE_NAME, MODULE in sys.modules.items():
-    if any(
-        x in MODULE_NAME
-        for x in ["oimBasicFourierComponents", "oimCustomComponents"]
-    ):
-        MODEL_COMPONENT_MODULES.append(MODULE)
 
 
 @attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
@@ -127,6 +119,19 @@ class oimModel:
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> "oimModel":
         """Deserializes into an oimModel."""
+        global MODEL_COMPONENT_MODULES
+
+        if not MODEL_COMPONENT_MODULES:
+            for MODULE_NAME, MODULE in sys.modules.items():
+                if any(
+                    x in MODULE_NAME
+                    for x in [
+                        "oimBasicFourierComponents",
+                        "oimCustomComponents",
+                    ]
+                ):
+                    MODEL_COMPONENT_MODULES.append(MODULE)
+
         model, components = cls(), []
         for name, ser_comp in ser["components"]:
             for module in MODEL_COMPONENT_MODULES:
