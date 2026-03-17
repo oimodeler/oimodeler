@@ -15,6 +15,7 @@ maxi = 50
 
 [cosi]
 name = "cosi"
+value = 1
 description = "The cosine of the inclination"
 mini = 0
 maxi = 1
