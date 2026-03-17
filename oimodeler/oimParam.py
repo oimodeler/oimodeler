@@ -176,7 +176,10 @@ class oimParam:
                     ser[key] = [
                         v.serialize()
                         for v in value
-                        if isinstance(v, (oimParam, oimParamInterpolator))
+                        if (
+                            isinstance(v, (oimParam))
+                            or issubclass(type(v), oimParamInterpolator)
+                        )
                     ]
                 elif isinstance(value, oimParam):
                     ser[key] = value.serialize()
@@ -226,7 +229,10 @@ class oimParam:
                 value = [
                     oimParam.deserialize(v)
                     for v in value
-                    if isinstance(v, (oimParam, oimParamInterpolator))
+                    if (
+                        isinstance(v, (oimParam))
+                        or issubclass(type(v), oimParamInterpolator)
+                    )
                 ]
 
             param.__dict__[key] = value
