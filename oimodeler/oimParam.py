@@ -207,7 +207,7 @@ class oimParam:
             global OIM_PARAM_MODULE
 
             if OIM_PARAM_MODULE is None:
-                OIM_PARAM_MODULE = getattr(sys.modules, __name__)
+                OIM_PARAM_MODULE = sys.modules[__name__]
 
             param = getattr(OIM_PARAM_MODULE, ser.pop("interpName"))()
         else:
@@ -365,7 +365,7 @@ class oimInterp:
             global OIM_PARAM_MODULE
 
             if OIM_PARAM_MODULE is None:
-                OIM_PARAM_MODULE = getattr(sys.modules, __name__)
+                OIM_PARAM_MODULE = sys.modules[__name__]
 
             self.type = getattr(OIM_PARAM_MODULE, self.type)
 
