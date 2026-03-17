@@ -172,9 +172,12 @@ class oimParam:
         ser = copy.deepcopy(self.__dict__)
         if issubclass(type(self), oimParamInterpolator):
             for key, value in ser.items():
-                # TODO: Assumes iterable only contain parameters, verify if correct
                 if isinstance(value, (list, tuple, np.ndarray)):
-                    ser[key] = [v.serialize() for v in value]
+                    ser[key] = [
+                        v.serialize()
+                        for v in value
+                        if isinstance(v, (oimParam, oimParamInterpolator))
+                    ]
                 elif isinstance(value, oimParam):
                     ser[key] = value.serialize()
 
@@ -219,9 +222,12 @@ class oimParam:
             except (AttributeError, TypeError):
                 pass
 
-            # TODO: Assumes iterable only contain parameters, verify if correct
             if isinstance(value, (list, tuple, np.ndarray)):
-                value = [oimParam.deserialize(v) for v in value]
+                value = [
+                    oimParam.deserialize(v)
+                    for v in value
+                    if isinstance(v, (oimParam, oimParamInterpolator))
+                ]
 
             param.__dict__[key] = value
 
