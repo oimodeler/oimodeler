@@ -171,19 +171,6 @@ class oimParam:
         """Serializes the oimParam/oimParamInterpolator."""
         ser = copy.deepcopy(self.__dict__)
         if issubclass(type(self), oimParamInterpolator):
-            for key, value in ser.items():
-                if isinstance(value, (list, tuple, np.ndarray)):
-                    ser[key] = [
-                        v.serialize()
-                        for v in value
-                        if (
-                            isinstance(v, (oimParam))
-                            or issubclass(type(v), oimParamInterpolator)
-                        )
-                    ]
-                elif isinstance(value, oimParam):
-                    ser[key] = value.serialize()
-
             for key, value in self.__class__.__dict__.items():
                 if (
                     (key.startswith("_") and key.endswith("_"))
@@ -196,6 +183,21 @@ class oimParam:
                     value = value.tolist()
                 except AttributeError:
                     pass
+
+                ser[key] = value
+
+            for key, value in ser.items():
+                if isinstance(value, (list, tuple, np.ndarray)):
+                    value = [
+                        v.serialize()
+                        for v in value
+                        if (
+                            isinstance(v, (oimParam))
+                            or issubclass(type(v), oimParamInterpolator)
+                        )
+                    ]
+                elif isinstance(value, oimParam):
+                    value = value.serialize()
 
                 ser[key] = value
 
