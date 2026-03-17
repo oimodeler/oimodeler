@@ -228,14 +228,10 @@ class oimParam:
                 pass
 
             if isinstance(value, (list, tuple, np.ndarray)):
-                value = [
-                    oimParam.deserialize(v)
-                    for v in value
-                    if (
-                        isinstance(v, (oimParam))
-                        or issubclass(type(v), oimParamInterpolator)
-                    )
-                ]
+                try:
+                    value = [oimParam.deserialize(v) for v in value]
+                except AttributeError:
+                    pass
 
             param.__dict__[key] = value
 
