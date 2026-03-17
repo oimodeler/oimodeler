@@ -183,7 +183,12 @@ class oimComponent:
                         f"{key} not a parameter of {self.name}: ignored"
                     )
 
-        [setattr(self, k, self.params[k]) for k in self.params.keys()]
+        for key in self.params.keys():
+            prop = property(
+                lambda self, k=key: self.params[k],
+                lambda self, v, k=key: self.params.__setitem__(k, v),
+            )
+            setattr(type(self), key, prop)
 
     def getComplexCoherentFlux(self, u, v, wl=None, t=None) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
@@ -283,7 +288,11 @@ class oimComponent:
         comp = cls()
         for key, value in ser["params"].items():
             comp.params[key] = oimParam.deserialize(value)
-            setattr(comp, key, comp.params[key])
+            prop = property(
+                lambda self, k=key: self.params[k],
+                lambda self, v, k=key: self.params.__setitem__(k, v),
+            )
+            setattr(type(comp), key, prop)
 
         for key, value in ser["other"].items():
             if isinstance(value, list):
