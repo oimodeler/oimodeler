@@ -153,6 +153,7 @@ class oimParam:
         except AttributeError:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
 
+    # TODO: Make an alias decorator to enable simple aliases
     def qty(self, wl=None, t=None):
         return self.quantity(wl, t)
 
@@ -166,58 +167,25 @@ class oimParam:
             except NameError:
                 print("Note valid parameter : {}".format(value))
 
-    # TODO: Make this work for oimParamLinker as well
     def serialize(self) -> Dict[str, Any]:
         """Serializes the oimParam/oimParamInterpolator."""
-        ser = copy.deepcopy(self.__dict__)
-        if issubclass(type(self), oimParamInterpolator):
-            for key, value in self.__class__.__dict__.items():
-                if (
-                    (key.startswith("_") and key.endswith("_"))
-                    or isinstance(value, (property, classmethod, staticmethod))
-                    or callable(value)
-                ):
-                    continue
+        return self.__dict__
 
-                try:
-                    value = value.tolist()
-                except AttributeError:
-                    pass
-
-                ser[key] = value
-
-            for key, value in ser.items():
-                if isinstance(value, (list, tuple, np.ndarray)):
-                    value = [
-                        v.serialize()
-                        for v in value
-                        if (
-                            isinstance(v, (oimParam))
-                            or issubclass(type(v), oimParamInterpolator)
-                        )
-                    ]
-                elif isinstance(value, oimParam):
-                    value = value.serialize()
-
-                ser[key] = value
-
-            ser["interpName"] = type(self).__name__
-
-        return ser
-
+    # TODO: Remove this method from this class and implement it in all oimParam... classes?
+    # TODO: Make the oimParamNorm link to the correct parameter
     @staticmethod
     def deserialize(
         ser: Dict[str, Any],
-    ) -> Union["oimParam", "oimParamInterpolator"]:
-        """Deserializes into an oimParam/oimParamInterpolator."""
+    ) -> Union["oimParam", "oimParamInterpolator", "oimParamNorm"]:
+        """Deserializes into an oimParam/oimParamInterpolator/oimParamNorm."""
         ser = copy.deepcopy(ser)
-        if "interpName" in ser:
+        if "class" in ser:
             global OIM_PARAM_MODULE
 
             if OIM_PARAM_MODULE is None:
                 OIM_PARAM_MODULE = sys.modules[__name__]
 
-            param = getattr(OIM_PARAM_MODULE, ser.pop("interpName"))()
+            param = getattr(OIM_PARAM_MODULE, ser.pop("class"))()
         else:
             param = oimParam()
 
@@ -264,14 +232,16 @@ class oimParamLinker:
         """
 
         self.param = param
-        self.fact = (
-            fact if isinstance(fact, (tuple, list, np.ndarray)) else [fact]
-        )
+        if not isinstance(fact, (list, tuple, np.ndarray)):
+            fact = [fact]
+
+        self.fact = fact
         self.op = OPERATORS[operator.lower()]
         self.free = False
 
     @property
     def unit(self):
+        """Returns the unit of the oimParamLinker."""
         return self.param.unit
 
     def __call__(self, wl=None, t=None):
@@ -283,6 +253,19 @@ class oimParamLinker:
             ],
         ]
         return reduce(self.op, values)
+
+    def serialize(self) -> Dict[str, Any]:
+        """Serializes the oimParamLinker."""
+        raise NotImplementedError(
+            "Serialization of oimParamLinker not yet implemented."
+        )
+
+    @staticmethod
+    def deserialize(ser: Dict[str, Any]) -> "oimParamLinker":
+        """Deserializes into an oimParamLinker."""
+        raise NotImplementedError(
+            "Deserialization of oimParamLinker not yet implemented."
+        )
 
 
 class oimParamLinkerFunction:
@@ -302,40 +285,85 @@ class oimParamLinkerFunction:
             params.append(p(wl, t))
         return self.func(*params)
 
+    def serialize(self) -> Dict[str, Any]:
+        """Serializes the oimParamLinkerFunction."""
+        raise NotImplementedError(
+            "Serialization of oimParamLinkerFunction not yet implemented."
+        )
 
+    @staticmethod
+    def deserialize(ser: Dict[str, Any]) -> "oimParamLinkerFunction":
+        """Deserializes into an oimParamLinkerFunction."""
+        raise NotImplementedError(
+            "Deserialization of oimParamLinkerFunction not yet implemented."
+        )
+
+
+@attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
 class oimParamNorm:
     """
     Class to normalize a list of oimParam
 
     Example :
-    p2 = oimParamNorm([p0,p1)]
+    p2 = oimParamNorm([p0, p1)]
 
     The value of p2 will always be 1-p2-p1
     """
 
-    def __init__(self, params, norm=1):
-        if not isinstance(params, list):
-            self.params = [params]
-        else:
-            self.params = params
+    def __init__(
+        self, params: List[oimParam] = [], norm: Union[int, float] = 1
+    ) -> None:
+        if not isinstance(params, (list, tuple, np.ndarray)):
+            params = [params]
 
+        self.params = params
         self.norm = norm
         self.free = False
 
+    # FIXME: This doesn't work as self.params is a list (no "unit" attribute)
     @property
     def unit(self):
+        """Returns the unit of the oimParamNorm."""
         return self.params.unit
 
     def __call__(self, wl=None, t=None):
+        remainder = self.norm
+        for param in self.params:
+            remainder -= param(wl, t)
 
-        res = self.norm
-        for p in self.params:
-            res -= p(wl, t)
-        return res
+        return remainder
+
+    def serialize(self) -> Dict[str, Any]:
+        """Serializes the oimParamNorm."""
+        ser = copy.deepcopy(self.__dict__)
+        for key, value in self.__class__.__dict__.items():
+            if (
+                (key.startswith("_") and key.endswith("_"))
+                or isinstance(value, (property, classmethod, staticmethod))
+                or callable(value)
+            ):
+                continue
+
+            try:
+                value = value.tolist()
+            except AttributeError:
+                pass
+
+            ser[key] = value
+
+        ser["params"] = [v.serialize() for v in ser["params"]]
+        ser["class"] = type(self).__name__
+        return ser
+
+    @staticmethod
+    def deserialize(ser: Dict[str, Any]) -> "oimParamNorm":
+        """Deserializes into an oimParamNorm."""
+        return oimParam.deserialize(ser)
 
 
 class oimInterp:
-    """Macro to directly create an oimParamInterpolator
+    """
+    Macro to directly create an oimParamInterpolator
 
     Example :
 
@@ -380,6 +408,8 @@ class oimInterp:
             self.type = getattr(OIM_PARAM_MODULE, self.type)
 
 
+# TODO: Is the inheritance from oimParam required?
+# @attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
 class oimParamInterpolator(oimParam):
     interpdescription = "Generic interpolator (to be subclassed)"
     interpparams = []
@@ -412,6 +442,45 @@ class oimParamInterpolator(oimParam):
             if pi not in params and not isinstance(pi, oimParamLinker):
                 params.append(pi)
         return params
+
+    def serialize(self) -> Dict[str, Any]:
+        """Serializes the oimParam/oimParamInterpolator."""
+        ser = copy.deepcopy(self.__dict__)
+        for key, value in self.__class__.__dict__.items():
+            if (
+                (key.startswith("_") and key.endswith("_"))
+                or isinstance(value, (property, classmethod, staticmethod))
+                or callable(value)
+            ):
+                continue
+
+            try:
+                value = value.tolist()
+            except AttributeError:
+                pass
+
+            ser[key] = value
+
+        for key, value in ser.items():
+            if isinstance(value, (list, tuple, np.ndarray)):
+                ser[key] = [
+                    v.serialize()
+                    for v in value
+                    if (
+                        isinstance(v, (oimParam))
+                        or issubclass(type(v), oimParamInterpolator)
+                    )
+                ]
+            elif isinstance(value, oimParam):
+                ser[key] = value.serialize()
+
+        ser["class"] = type(self).__name__
+        return ser
+
+    @staticmethod
+    def deserialize(ser: Dict[str, Any]) -> "oimParamInterpolator":
+        """Deserializes into an oimParamInterpolator."""
+        return oimParam.deserialize(ser)
 
     def set(self, **kwargs):
         print(
