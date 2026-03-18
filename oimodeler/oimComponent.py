@@ -401,7 +401,7 @@ class oimComponentFourier(oimComponent):
 
             y_arr = yp
             if self.flat:
-                x_arr = xp / self.params["cosi"](wl_arr, t_arr), yp
+                x_arr = xp / self.params["cosi"](wl_arr, t_arr)
             else:
                 x_arr = xp * self.params["elong"](wl_arr, t_arr)
 
@@ -409,6 +409,7 @@ class oimComponentFourier(oimComponent):
         if self.extincted:
             extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
+        breakpoint()
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = (
             self._imageFunction(
