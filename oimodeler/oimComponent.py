@@ -409,7 +409,6 @@ class oimComponentFourier(oimComponent):
         if self.extincted:
             extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
-        breakpoint()
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = (
             self._imageFunction(
