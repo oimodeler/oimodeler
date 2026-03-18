@@ -1742,7 +1742,12 @@ def _interpolateBinHDU(
             if col.name == "EFF_WAVE":
                 bini = binGrid
             elif col.name == "EFF_BAND":
-                bini = np.append(np.diff(binGrid), np.diff(binGrid)[0])
+                diff = np.diff(binGrid)
+                bini = (
+                    np.full(binGrid.shape, 0)
+                    if diff.size == 0
+                    else np.append(diff, diff[0])
+                )
             else:
                 if "ERR" in col.name:
                     if any(x in col.name for x in ["VIS2", "FLUX"]):
