@@ -19,7 +19,8 @@ filt_bin_L = oim.oimWavelengthBinningFilter(
 filt_bin_N = oim.oimWavelengthBinningFilter(
     targets=1, bin=7, normalizeError=False
 )
-data.setFilter(oim.oimDataFilter([f1,filt_bin_L,filt_bin_N]))
+f2 = oim.oimKeepDataType(dataType=["FLUXDATA", "VISAMP"])
+data.setFilter(oim.oimDataFilter([f1, f2, filt_bin_L, filt_bin_N]))
 wave_data = np.unique(data.vect_wl)
 
 # NOTE: plot the unfiltered and filtered data (VISAMP)
@@ -126,8 +127,8 @@ opac_file = (
 )
 op_wl, op = np.loadtxt(opac_file, usecols=[0, 1], unpack=True)
 plt.figure()
-plt.plot(op_wl,op)
-plt.xlim(3,13)
+plt.plot(op_wl, op)
+plt.xlim(3, 13)
 plt.show()
 
 # NOTE: Define a first instance of the temperature gradient model for the circumstellar emission
@@ -147,7 +148,7 @@ tg = oim.oimTempGrad(
 
 # NOTE: Set the number of spatial frequency elements at which the Hankel transform will be computed.
 # If not specified, the Hankel Transform will be computed for all the spatial frequencies of the data (usually slower).
-tg.precision = 128
+tg.precision = 32
 
 # NOTE: (OPTIONAL) Uncomment the following two lines if you want to set manually the model wavelengths to be fitted (to speed up fitting process).
 # tg._wl = np.array([3.0e-6,3.5e-6,4.0e-6,8.0e-6,10.e-6,13e-6])
@@ -234,7 +235,7 @@ ax[0].set_title(r"$\lambda = 3.5~\mu$m")
 ax[1].set_title(r"$\lambda = 10.5~\mu$m")
 plt.show()
 
-#%%
+# %%
 # NOTE: Specifying the parameter space for the fit
 tg.params["rin"].free = False
 tg.params["rout"].free = False
@@ -276,7 +277,7 @@ fig1, ax1 = fit.simulator.plot(
 )
 
 
-#%%
+# %%
 # NOTE: (OPTIONAL) Uncomment the following lines if you want to plot the data and best-fit model (with SED)
 # fig3= plt.figure()
 # ax3 = plt.subplot(projection='oimAxes')
