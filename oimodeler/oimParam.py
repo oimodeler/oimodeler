@@ -1327,7 +1327,9 @@ class oimParamLinearStarWl(oimParamInterpolator):
             free=False,
             description="The star's effective temperature",
         )
-        self.dist = oimParam(description="Distance to the star", base="dist")
+        self.dist = oimParam(
+            value=dist, description="Distance to the star", base="dist"
+        )
         self.lum = oimParam(
             name="lum",
             value=lum,
