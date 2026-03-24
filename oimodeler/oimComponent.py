@@ -285,7 +285,24 @@ class oimComponent:
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> "oimComponent":
         """Deserializes into an oimComponent."""
+        cls = copy.deepcopy(cls)
+        # HACK: This makes sure that that things like "elliptic", "flat",
+        # "extincted", or any future additions are read in first as they
+        # set/enable/remove certain parameters
+        for key, value in ser["other"].items():
+            if isinstance(value, list):
+                value = np.array(value)
+
+            setattr(cls, key, value)
+
         comp = cls()
+        # TODO: Rewrite this to remove this or the above loop
+        for key, value in ser["other"].items():
+            if isinstance(value, list):
+                value = np.array(value)
+
+            setattr(comp, key, value)
+
         for key, value in ser["params"].items():
             comp.params[key] = oimParam.deserialize(value)
             prop = property(
@@ -293,12 +310,6 @@ class oimComponent:
                 lambda self, v, k=key: self.params.__setitem__(k, v),
             )
             setattr(type(comp), key, prop)
-
-        for key, value in ser["other"].items():
-            if isinstance(value, list):
-                value = np.array(value)
-
-            setattr(comp, key, value)
 
         return comp
 
