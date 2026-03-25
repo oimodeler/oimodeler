@@ -104,7 +104,13 @@ class oimComponent:
                     # TODO: Have a string for each oimParamInterpolator
                     txt.append(f"{param.name}={param.__class__.__name__}")
                 else:
-                    txt.append(f"{param.name}={param.value:.2f}")
+                    if np.abs(param.value) < 1e-2 and param.value != 0:
+                        value_string = f"{param.value:.2e}"
+                    else:
+                        value_string = f"{param.value:.2f}"
+
+                    txt.append(f"{param.name}={value_string}")
+
             elif isinstance(param, oimParamNorm) or isinstance(
                 param, oimParamLinker
             ):
