@@ -113,8 +113,8 @@ Advanced components
 
 These examples are dedicated to the use of some of the most advanced and complex components implemented in oimodeler. These tutorials are provided as notebooks with detailed explanations.
 
-Modelling binary orbits with **oimBinaryOrbit**
-"""""""""""""""""""""""""""""""""""""""""""""""
+**Modelling binary orbits with oimBinaryOrbit**
+
 
 .. list-table:: 
    :class: borderless
@@ -136,8 +136,7 @@ Modelling binary orbits with **oimBinaryOrbit**
               `Multi-techniques model-fitting with oimBinaryOrbit       <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_
 
 
-Semi-physical modelling of gaeous disk emission using **oimDisco** 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+**Modelling of gaeous disk emission using oimDisco** 
 
 .. list-table:: 
    :class: borderless
@@ -155,5 +154,4 @@ Semi-physical modelling of gaeous disk emission using **oimDisco**
               `Multi-techniques model-fitting with oimBinaryOrbit       <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimDisco.ipynb>`_
 
 
-Semi-physical modelling of dusty disk emission using **oimTempGrad** 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+**Modelling dusty disk emission using oimTempGrad** 
