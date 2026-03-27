@@ -33,9 +33,7 @@ _oimDataTypeErr = [
     "FLUXERR",
 ]
 _oimDataTypeArr = ["OI_VIS2", "OI_VIS", "OI_VIS", "OI_T3", "OI_T3", "OI_FLUX"]
-
 _oimDataAnalysisInComplex = [False, False, True, False, True, False]
-
 _cutArr = [
     "EFF_WAVE",
     "EFF_BAND",
@@ -57,7 +55,6 @@ _cutArr = [
 ]
 
 OI_TARGET_KEYWORDS = [("OI_REVN", False, "Revision number")]
-
 OI_TARGET_COLUMNS = [
     ("TARGET_ID", "I", False, "Index number. Must be >=1", None),
     ("TARGET", "16A", False, "Target name", None),
@@ -90,7 +87,6 @@ OI_TARGET_COLUMNS = [
     ("SPECTYP", "16A", False, "Spectral type", "deg"),
     ("CATEGORY", "3A", True, "CAL or SCI", None),
 ]
-
 OI_ARRAY_KEYWORDS = [
     ("OI_REVN", False, "Revision number"),
     ("ARRNAME", False, "A Array name, for cross-referencing"),
@@ -99,7 +95,6 @@ OI_ARRAY_KEYWORDS = [
     ("ARRAYY", False, "Array center y coordinates (m)"),
     ("ARRAYZ", False, "Array center z coordinates (m)"),
 ]
-
 OI_ARRAY_COLUMNS = [
     ("TEL_NAME", "16A", False, " Telescope name", None),
     ("STA_NAME", "16A", False, "Station name", None),
@@ -109,17 +104,14 @@ OI_ARRAY_COLUMNS = [
     ("FOV", "D", False, " Photometric field of view", "arcsec"),
     ("FOVTYPE", "6A", False, "Model for FOV: FWHM or RADIUS", None),
 ]
-
 OI_WL_KEYWORDS = [
     ("OI_REVN", False, "Revision number"),
     ("INSNAME", False, "Identifies corresponding OI_WAVELENGTH table"),
 ]
-
 OI_WL_COLUMNS = [
     ("EFF_WAVE", "E", False, "Effective wavelength of channel", "m"),
     ("EFF_BAND", "E", False, "Effective bandpass of channel", "m"),
 ]
-
 OI_VIS2_KEYWORDS = [
     ("OI_REVN", False, "Revision number"),
     ("DATE-OBS", False, "UTC start date of observations"),
@@ -127,7 +119,6 @@ OI_VIS2_KEYWORDS = [
     ("INSNAME", False, "Identifies corresponding OI_WAVELENGTH table"),
     ("CORRNAME", True, "Identifies corresponding OI_CORR table"),
 ]
-
 OI_VIS2_COLUMNS = [
     (
         "TARGET_ID",
@@ -159,7 +150,6 @@ OI_VIS2_COLUMNS = [
     ),
     ("FLAG", "NWLL", False, "Flag", None),
 ]
-
 OI_VIS_KEYWORDS = [
     ("OI_REVN", False, "Revision number"),
     ("DATE-OBS", False, "UTC start date of observations"),
@@ -221,7 +211,6 @@ OI_VIS_COLUMNS = [
     ),
     ("FLAG", "NWLL", False, "Flag", None),
 ]
-
 OI_T3_KEYWORDS = [
     ("OI_REVN", False, "Revision number"),
     ("DATE-OBS", False, "UTC start date of observations"),
@@ -229,7 +218,6 @@ OI_T3_KEYWORDS = [
     ("INSNAME", False, "Identifies corresponding OI_WAVELENGTH table"),
     ("CORRNAME", True, "Identifies corresponding OI_CORR table"),
 ]
-
 OI_T3_COLUMNS = [
     (
         "TARGET_ID",
@@ -296,7 +284,6 @@ OI_T3_COLUMNS = [
     ),
     ("FLAG", "NWLL", False, "Flag", None),
 ]
-
 OI_FLUX_KEYWORDS = [
     ("OI_REVN", False, "Revision number"),
     ("DATE-OBS", False, "UTC start date of observations"),
@@ -307,7 +294,6 @@ OI_FLUX_KEYWORDS = [
     ("FOVTYPE", True, "Model for FOV: FWHM or RADIUS"),
     ("CALSTAT", True, "C: Spectrum is calibrated, U: uncalibrated"),
 ]
-
 OI_FLUX_COLUMNS = [
     (
         "TARGET_ID",
@@ -335,7 +321,7 @@ OI_FLUX_COLUMNS = [
 def attach_methods(
     functions: Union[Callable, ArrayLike, Dict[str, Callable]],
 ) -> Callable:
-    """Class decorator that attaches one or multiple functions to the class as methods."""
+    """Class decorator that attaches function(s) to a class as methods."""
     if not isinstance(functions, dict):
         if not isinstance(function, (tuple, list, np.ndarray)):
             functions = [functions]
@@ -1132,15 +1118,14 @@ def cutWavelengthRange(
         data = fits.open(oifits)
     else:
         data = oifits
-    extnames = np.array([data[i].name for i in range(len(data))])
 
-    oiwl_idx = np.where(extnames == "OI_WAVELENGTH")[0]
+    extnames = np.array([data[i].name for i in range(len(data))])
     wlRange = np.array(wlRange)
 
     if wlRange.ndim == 1:
         wlRange = wlRange.reshape((1, len(wlRange)))
 
-    for i in oiwl_idx:
+    for i in np.where(extnames == "OI_WAVELENGTH")[0]:
         insname = data[i].header["INSNAME"]
 
         idx_wl_cut = []
@@ -1464,8 +1449,8 @@ def shiftWavelength(
         data = fits.open(oifits)
     else:
         data = oifits
-    extnames = np.array([data[i].name for i in range(len(data))])
 
+    extnames = np.array([data[i].name for i in range(len(data))])
     wl_idx = np.where(extnames == "OI_WAVELENGTH")[0]
     for i in wl_idx:
         if verbose:
@@ -1694,6 +1679,10 @@ def _interpolateBinHDU(
     cols, new_cols = hdu.data.columns, []
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
         for col in cols:
+            if not np.isin(col.name, _cutArr):
+                new_cols.append(col)
+                continue
+
             circular = True if "PHI" in col.name else False
             newformat, shape = col.format, hdu.data[col.name].shape
             if len(shape) == 2 and (col.name not in exception):
@@ -1721,6 +1710,7 @@ def _interpolateBinHDU(
                         **kwargs,
                     )
                     bini.append(binij)
+
                 bini = np.array(bini)
                 newformat = f"{binGrid.shape[0]}{col.format[-1]}"
             else:
@@ -1739,6 +1729,10 @@ def _interpolateBinHDU(
             )
     else:
         for col in cols:
+            if not np.isin(col.name, _cutArr):
+                new_cols.append(col)
+                continue
+
             if col.name == "EFF_WAVE":
                 bini = binGrid
             elif col.name == "EFF_BAND":
@@ -1821,34 +1815,35 @@ def intpBinWavelength(
     else:
         data = oifits
 
-    # TODO: This might not work with GRAVITY. Think of how to fix?
-    wl = data["OI_WAVELENGTH"].data["EFF_WAVE"]
-    if kwargs["binWindow"] is None:
-        window = np.full(binGrid.shape, np.diff(binGrid)[0])
-    else:
-        window = kwargs["binWindow"]
+    extnames = np.array([data[i].name for i in range(len(data))])
+    for i in np.where(extnames == "OI_WAVELENGTH")[0]:
+        insname, wl = data[i].header["INSNAME"], data[i].data["EFF_WAVE"]
+        if kwargs["binWindow"] is None:
+            window = np.full(binGrid.shape, np.diff(binGrid)[0])
+        else:
+            window = kwargs["binWindow"]
 
-    binEdgeGrid = np.array(
-        [(bin - win / 2, bin + win / 2) for win, bin in zip(window, binGrid)]
-    )
-    binMasks = np.array(
-        [(wl > lower) & (wl < upper) for lower, upper in binEdgeGrid]
-    )
-
-    to_interpolate = ["OI_WAVELENGTH", "OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
-    for i, _ in enumerate(data):
-        if data[i].name not in to_interpolate:
-            continue
-
-        data[i] = _interpolateBinHDU(
-            data[i],
-            binGrid,
-            binMasks,
-            binEdgeGrid,
-            wl,
-            exception=["STA_INDEX"],
-            **kwargs,
+        binEdgeGrid = np.array(
+            [
+                (bin - win / 2, bin + win / 2)
+                for win, bin in zip(window, binGrid)
+            ]
         )
+        binMasks = np.array(
+            [(wl > lower) & (wl < upper) for lower, upper in binEdgeGrid]
+        )
+
+        for idata, datai in enumerate(data):
+            if datai.header.get("INSNAME", None) == insname:
+                data[idata] = _interpolateBinHDU(
+                    datai,
+                    binGrid,
+                    binMasks,
+                    binEdgeGrid,
+                    wl,
+                    exception=["STA_INDEX"],
+                    **kwargs,
+                )
 
 
 def rebin_image(
@@ -2094,7 +2089,6 @@ def oifitsFlagWithExpression(
                 LENGTH = np.tile(length[:, None], (1, nwl))
 
                 PA = np.tile(pa[:, None], (1, nwl))
-
                 SPAFREQ = LENGTH / EFF_WAVE
 
                 for colname in data[arri].columns:
