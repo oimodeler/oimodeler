@@ -299,9 +299,9 @@ class oimModel:
              astropy.io.fits hdu.imagehdu if fits=True.
              The image of the component with given size in pixels and mas or rad
         """
-        # TODO : maybe we should change all None to zero as default values
         if wl is None:
             wl = 0
+
         if t is None:
             t = 0
 
@@ -458,8 +458,8 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[float, ArrayLike] = 0.0,
-        t: Union[int, float, ArrayLike] = 0.0,
+        wl: Union[Union[float, ArrayLike], None] = None,
+        t: Union[Union[int, float, ArrayLike], None] = None,
         fromFT: bool = False,
         padFact: int = 1,
         axe: Union[Axes, None] = None,
@@ -483,9 +483,9 @@ class oimModel:
         pixSize : float
             Pixel angular size in mas.
         wl : float or array_like, optional
-            Wavelength(s) in meter. The default is 0.
+            Wavelength(s) in meter. The default is None.
         t :  int, float or array_like, optional
-            Time(s) in s (mjd). The default is 0.
+            Time(s) in s (mjd). The default is None.
         fromFT : bool, optional
             If True compute the image using FT formula when available.
             The default is False.
@@ -640,8 +640,8 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[float, ArrayLike] = 0.0,
-        t: Union[float, ArrayLike] = 0.0,
+        wl: Union[Union[float, ArrayLike], None] = None,
+        t: Union[Union[int, float, ArrayLike], None] = None,
         axe: Union[Axes, None] = None,
         normPow: float = 0.5,
         figsize: Tuple[float, float] = (3.5, 2.5),
@@ -702,6 +702,12 @@ class oimModel:
         im  : numpy.ndarray
             The image(s).
         """
+        if wl is None:
+            wl = 0
+
+        if t is None:
+            t = 0
+
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
 
         if swapAxes:
@@ -736,7 +742,7 @@ class oimModel:
         elif display == "phase":
             im = np.angle(vc, deg=True)
         else:
-            raise NameError(
+            raise ValueError(
                 "Only 'amp' and 'phase' are valid"
                 " choices for the display parameter!"
             )
