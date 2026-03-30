@@ -109,7 +109,7 @@ for i, m in enumerate(models):
     v = v / v.max()
     ax[1, i].plot(spf, v)
     ax[0, i].set_title(mNames[i])
-    ax[1, i].set_xlabel("sp. freq. (cycles/rad)")
+    ax[1, i].set_xlabel("Sp. freq. (cycles/rad)")
 
 fig.savefig(save_dir / "basicModel_all.png")
 
@@ -136,6 +136,5 @@ for i, m in enumerate(models):
         display="phase",
     )
     ax[0, i].set_title(mNames[i])
-    ax[1, i].set_xlabel("sp. freq. (cycles/rad)")
 
 fig.savefig(save_dir / "basicModelFourier_all.png")

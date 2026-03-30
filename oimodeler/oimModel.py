@@ -639,6 +639,8 @@ class oimModel:
         pixSize: float,
         wl: Union[Union[float, ArrayLike], None] = None,
         t: Union[Union[int, float, ArrayLike], None] = None,
+        unit: str = "cycle/rad",
+        unit_format: str = "latex_inline",
         axe: Union[Axes, None] = None,
         normPow: float = 0.5,
         figsize: Tuple[float, float] = (3.5, 2.5),
@@ -705,15 +707,22 @@ class oimModel:
         if t is None:
             t = 0
 
-        t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
+        mult = 1
+        if unit == "cycle/mas":
+            mult = u.mas.to(u.rad)
+        elif unit == "cycle/arcsec":
+            mult = u.arcsec.to(u.rad)
+        elif unit == "Mlam":
+            mult = 1e-6
 
+        t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
         if swapAxes:
             t, wl = wl, t
 
         nt, nwl = t.size, wl.size
         dims = (nt, nwl, dim, dim)
 
-        v = np.linspace(-0.5, 0.5, dim, endpoint=False)
+        v = np.linspace(-0.5, 0.5, dim, endpoint=False) * dim
         vx, vy = np.meshgrid(v, v)
 
         vx_arr = np.tile(vx[None, None, ...], (nt, nwl, 1, 1))
@@ -721,10 +730,26 @@ class oimModel:
         wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
         t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
-        spfx_arr, spfy_arr = map(
-            lambda x: (x / pixSize / u.mas.to(u.rad)).flatten(),
-            [vx_arr, vy_arr],
-        )
+        if all(
+            [
+                np.array_equal(wl, np.array([0])),
+                np.array_equal(t, np.array([0])),
+            ]
+        ):
+            spfx_arr, spfy_arr = map(
+                lambda x: (x / pixSize / u.mas.to(u.rad) * mult).flatten(),
+                [vx_arr, vy_arr],
+            )
+        else:
+            if not swapAxes:
+                spfx_arr, spfy_arr = map(
+                    lambda x: (x / wl_arr * mult).flatten(), [vx_arr, vy_arr]
+                )
+            else:
+                spfx_arr, spfy_arr = map(
+                    lambda x: (x / t_arr * mult).flatten(), [vx_arr, vy_arr]
+                )
+
         wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
         spfx_extent = spfx_arr.max()
 
@@ -799,9 +824,13 @@ class oimModel:
                     )
 
                 if iwl == nwl - 1:
-                    axe[iwl, it].set_xlabel("sp. freq. (cycles/rad)")
+                    axe[iwl, it].set_xlabel(
+                        f"u ({u.Unit(unit).to_string(unit_format)})"
+                    )
                 if it == 0:
-                    axe[iwl, it].set_ylabel("sp. freq. (cycles/rad)")
+                    axe[iwl, it].set_ylabel(
+                        f"v ({u.Unit(unit).to_string(unit_format)})"
+                    )
 
                 if legend:
                     txt = ""
