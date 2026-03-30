@@ -310,15 +310,14 @@ class oimModel:
         dims = (nt, nwl, dim, dim)
 
         # TODO: The from FFT is not good for all functions
-
         dimpad = dim * padFact
         dimspad = (nt, nwl, dimpad, dimpad)
         if fromFT:
             v = np.linspace(-0.5 * padFact, 0.5 * padFact, dimpad)
             vx, vy = np.meshgrid(v, v)
 
-            vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
-            vy_arr = np.tile(vy[None, None, :, :], (nt, nwl, 1, 1))
+            vx_arr = np.tile(vx[None, None, ...], (nt, nwl, 1, 1))
+            vy_arr = np.tile(vy[None, None, ...], (nt, nwl, 1, 1))
             wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dimpad, dimpad))
             t_arr = np.tile(t[:, None, None, None], (1, nwl, dimpad, dimpad))
 
@@ -337,8 +336,6 @@ class oimModel:
                     axes=[-2, -1],
                 )
             )
-            # odd = dim % 2
-            # image = image[:,:,dimpad//2-dim//2:dimpad//2+dim//2+odd,dimpad//2-dim//2:dimpad//2+dim//2+odd]
             image = image.reshape((nt, nwl, dim, padFact, dim, padFact)).sum(
                 axis=(-1, -3)
             )
@@ -350,7 +347,7 @@ class oimModel:
         if normalize:
             for it in range(nt):
                 for iwl in range(nwl):
-                    image[it, iwl, :, :] /= np.max(image[it, iwl, :, :])
+                    image[it, iwl] /= np.max(image[it, iwl])
 
         # NOTE: Always squeeze dim which are equal to one if exported to fits format
         if squeeze or toFits:
@@ -566,7 +563,7 @@ class oimModel:
             for it, ti in enumerate(t):
                 if not swapAxes:
                     cb = axe[iwl, it].imshow(
-                        im[it, iwl, :, :],
+                        im[it, iwl],
                         extent=[
                             -dim / 2 * pixSize,
                             dim / 2 * pixSize,
@@ -578,7 +575,7 @@ class oimModel:
                     )
                 else:
                     cb = axe[iwl, it].imshow(
-                        im[iwl, it, :, :],
+                        im[iwl, it],
                         extent=[
                             -dim / 2 * pixSize,
                             dim / 2 * pixSize,
@@ -719,8 +716,8 @@ class oimModel:
         v = np.linspace(-0.5, 0.5, dim)
         vx, vy = np.meshgrid(v, v)
 
-        vx_arr = np.tile(vx[None, None, :, :], (nt, nwl, 1, 1))
-        vy_arr = np.tile(vy[None, None, :, :], (nt, nwl, 1, 1))
+        vx_arr = np.tile(vx[None, None, ...], (nt, nwl, 1, 1))
+        vy_arr = np.tile(vy[None, None, ...], (nt, nwl, 1, 1))
         wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
         t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
@@ -750,7 +747,7 @@ class oimModel:
         if normalize:
             for it in range(nt):
                 for iwl in range(nwl):
-                    im[it, iwl, :, :] /= np.max(im[it, iwl, :, :])
+                    im[it, iwl] /= np.max(im[it, iwl])
 
         if axe is None:
             fig, axe = plt.subplots(
@@ -768,13 +765,17 @@ class oimModel:
                 fig = axe.flatten()[0].get_figure()
 
         axe = np.array(axe).flatten().reshape((nwl, nt))
-        kwargs["norm"] = kwargs.get("norm", colors.PowerNorm(gamma=normPow))
+
+        if display != "phase":
+            kwargs["norm"] = kwargs.get(
+                "norm", colors.PowerNorm(gamma=normPow)
+            )
 
         for iwl, wli in enumerate(wl):
             for it, ti in enumerate(t):
                 if not swapAxes:
                     cb = axe[iwl, it].imshow(
-                        im[it, iwl, :, :],
+                        im[it, iwl],
                         extent=[
                             -spfx_extent,
                             spfx_extent,
@@ -786,7 +787,7 @@ class oimModel:
                     )
                 else:
                     cb = axe[iwl, it].imshow(
-                        im[iwl, it, :, :],
+                        im[iwl, it],
                         extent=[
                             -spfx_extent,
                             spfx_extent,
@@ -796,8 +797,6 @@ class oimModel:
                         origin="lower",
                         **kwargs,
                     )
-
-                axe[iwl, it].set_xlim(-spfx_extent, spfx_extent)
 
                 if iwl == nwl - 1:
                     axe[iwl, it].set_xlabel("sp. freq. (cycles/rad)")
@@ -829,7 +828,10 @@ class oimModel:
                         **kwargs_legend,
                     )
         if colorbar:
-            fig.colorbar(cb, ax=axe, label="Normalized Intensity")
+            label = (
+                "Amplitude (a.u.)" if display == "amp" else r"Phase $(^\circ)$"
+            )
+            fig.colorbar(cb, ax=axe, label=label)
 
         if savefig is not None:
             savefig = Path(savefig)
@@ -848,4 +850,5 @@ class oimModel:
         for compi in self.components:
             if compi != comp:
                 fluxes.append(compi.params["f"])
+
         comp.params["f"] = oimParamNorm(fluxes)
