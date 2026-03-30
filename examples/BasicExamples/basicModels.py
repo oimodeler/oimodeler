@@ -124,7 +124,7 @@ for i, m in enumerate(models):
         normPow=0.2,
         axe=ax[0, i],
         colorbar=False,
-        display_mode="vis",
+        display="amp",
     )
     m.showFourier(
         512,
@@ -133,7 +133,7 @@ for i, m in enumerate(models):
         normPow=0.2,
         axe=ax[1, i],
         colorbar=False,
-        display_mode="phase",
+        display="phase",
     )
     ax[0, i].set_title(mNames[i])
     ax[1, i].set_xlabel("sp. freq. (cycles/rad)")

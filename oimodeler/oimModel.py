@@ -458,8 +458,8 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[Union[int, ArrayLike], None] = None,
-        t: Union[Union[int, ArrayLike], None] = None,
+        wl: Union[float, ArrayLike] = 0.0,
+        t: Union[int, float, ArrayLike] = 0.0,
         fromFT: bool = False,
         padFact: int = 1,
         axe: Union[Axes, None] = None,
@@ -482,10 +482,10 @@ class oimModel:
             Image x & y dimension in pixels.
         pixSize : float
             Pixel angular size in mas.
-        wl : int or array_like, optional
-            Wavelength(s) in meter. The default is None.
-        t :  int or array_like, optional
-            Time in s (mjd). The default is None.
+        wl : float or array_like, optional
+            Wavelength(s) in meter. The default is 0.
+        t :  int, float or array_like, optional
+            Time(s) in s (mjd). The default is 0.
         fromFT : bool, optional
             If True compute the image using FT formula when available.
             The default is False.
@@ -527,7 +527,6 @@ class oimModel:
         im  : numpy.array
             The image(s).
         """
-        dpi = kwargs.pop("dpi", 300)
         im = self.getImage(
             dim,
             pixSize,
@@ -561,9 +560,7 @@ class oimModel:
                 fig = axe.flatten()[0].get_figure()
 
         axe = np.array(axe).flatten().reshape((nwl, nt))
-
-        if "norm" not in kwargs:
-            kwargs["norm"] = colors.PowerNorm(gamma=normPow)
+        kwargs["norm"] = kwargs.get("norm", colors.PowerNorm(gamma=normPow))
 
         for iwl, wli in enumerate(wl):
             for it, ti in enumerate(t):
@@ -630,7 +627,9 @@ class oimModel:
 
         if savefig is not None:
             savefig = Path(savefig)
-            plt.savefig(savefig, format=savefig.suffix[1:], dpi=dpi)
+            plt.savefig(
+                savefig, format=savefig.suffix[1:], dpi=kwargs.get("dpi", 300)
+            )
 
         if rebin:
             im = rebin_image(im)
@@ -641,8 +640,8 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[Union[int, ArrayLike], None] = None,
-        t: Union[Union[int, ArrayLike], None] = None,
+        wl: Union[float, ArrayLike] = 0.0,
+        t: Union[float, ArrayLike] = 0.0,
         axe: Union[Axes, None] = None,
         normPow: float = 0.5,
         figsize: Tuple[float, float] = (3.5, 2.5),
@@ -650,7 +649,7 @@ class oimModel:
         colorbar: bool = True,
         legend: bool = False,
         swapAxes: bool = True,
-        display_mode: str = "vis",
+        display: str = "amp",
         kwargs_legend: Dict = {},
         normalize: bool = False,
         **kwargs: Dict,
@@ -663,10 +662,10 @@ class oimModel:
             Image x & y dimension in pixels.
         pixSize : float
             Pixel angular size in mas.
-        wl : int or array_like, optional
+        wl : float or array_like, optional
             Wavelength(s) in meter. The default is None.
-        t :  int or array_like, optional
-            Time in s (mjd). The default is None.
+        t :  int, float or array_like, optional
+            Time(s) in s (mjd). The default is None.
         axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
             will be created. The default is None.
@@ -685,7 +684,7 @@ class oimModel:
         swapAxes : bool, optional
             If True swaps the axes of the wavelength and time.
             Default is True.
-        display_mode : str, optional
+        display : str, optional
             Displays either the amplitude "amp" or the phase "phase".
             Default is "amp".
         kwargs_legend: dict, optional
@@ -703,7 +702,6 @@ class oimModel:
         im  : numpy.ndarray
             The image(s).
         """
-        dpi = kwargs.pop("dpi", 300)
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
 
         if swapAxes:
@@ -728,25 +726,19 @@ class oimModel:
         spfx_extent = spfx_arr.max()
 
         if not swapAxes:
-            ft = self.getComplexCoherentFlux(
-                spfx_arr, spfy_arr, wl_arr, t_arr
-            ).reshape(dims)
+            vc = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr)
         else:
-            ft = self.getComplexCoherentFlux(
-                spfx_arr, spfy_arr, t_arr, wl_arr
-            ).reshape(dims)
+            vc = self.getComplexCoherentFlux(spfx_arr, spfy_arr, t_arr, wl_arr)
 
-        if display_mode == "vis":
-            im = np.abs(ft)
-            im /= im.max()
-        elif display_mode == "corr_flux":
-            im = np.abs(ft)
-        elif display_mode == "phase":
-            im = np.angle(ft, deg=True)
+        vc = vc.reshape(dims)
+        if display == "amp":
+            im = np.abs(vc)
+        elif display == "phase":
+            im = np.angle(vc, deg=True)
         else:
             raise NameError(
-                "Only 'vis', 'corr_flux' and 'phase' are valid"
-                " choices for the display_mode!"
+                "Only 'amp' and 'phase' are valid"
+                " choices for the display parameter!"
             )
 
         if normalize:
@@ -770,9 +762,7 @@ class oimModel:
                 fig = axe.flatten()[0].get_figure()
 
         axe = np.array(axe).flatten().reshape((nwl, nt))
-
-        if "norm" not in kwargs:
-            kwargs["norm"] = colors.PowerNorm(gamma=normPow)
+        kwargs["norm"] = kwargs.get("norm", colors.PowerNorm(gamma=normPow))
 
         for iwl, wli in enumerate(wl):
             for it, ti in enumerate(t):
@@ -837,7 +827,9 @@ class oimModel:
 
         if savefig is not None:
             savefig = Path(savefig)
-            plt.savefig(savefig, format=savefig.suffix[1:], dpi=dpi)
+            plt.savefig(
+                savefig, format=savefig.suffix[1:], dpi=kwargs.get("dpi", 300)
+            )
 
         return fig, axe, im
 
