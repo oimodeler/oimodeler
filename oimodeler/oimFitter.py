@@ -497,7 +497,7 @@ class oimFitterDynesty(oimFitter):
     def getResults(self, mode: str = "median", **kwargs):
         if mode == "median":
             samples = self.sampler.results.samples
-            quantiles = np.percentile(samples, [10, 50, 84], axis=0)
+            quantiles = np.percentile(samples, [16, 50, 84], axis=0)
             res = quantiles[1]
             err_m, err_p = np.diff(quantiles, axis=0)
         else:
@@ -506,7 +506,6 @@ class oimFitterDynesty(oimFitter):
             )
 
         err = 0.5 * (err_m + err_p)
-
         for iparam, parami in enumerate(self.freeParams.values()):
             parami.value = res[iparam]
             parami.error = err[iparam]
