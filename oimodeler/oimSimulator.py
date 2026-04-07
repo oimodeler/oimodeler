@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """Data/model simulation"""
 
+from pathlib import Path
 from typing import Dict, List, Union
+
 import astropy.units as u
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 from .oimData import oimData, oimDataType
 from .oimPlots import (
@@ -416,7 +418,7 @@ class oimSimulator:
         self,
         arr,
         simulated: bool = True,
-        savefig=None,
+        savefig: Union[str, Path, None] = None,
         visLog: bool = False,
         xaxis: str = "SPAFREQ",
         xunit: str = "cycle/rad",
@@ -483,13 +485,14 @@ class oimSimulator:
 
             # NOTE: Over-plotting the simulated data as a dotted line vs spatial
             # frequencies
-            axi.oiplot(
-                self.simulatedData.data,
-                xaxis,
-                arr[iax],
-                xunit=xunit,
-                **kwargsSimulatedData,
-            )
+            if simulated:
+                axi.oiplot(
+                    self.simulatedData.data,
+                    xaxis,
+                    arr[iax],
+                    xunit=xunit,
+                    **kwargsSimulatedData,
+                )
 
             if axi != axe[-1]:
                 axi.get_xaxis().set_visible(False)
@@ -526,7 +529,7 @@ class oimSimulator:
                 scale, ax=axe.ravel().tolist(), label=f"{xlabel} ({cunittext})"
             )
 
-        if savefig != None:
+        if savefig is not None:
             plt.savefig(savefig)
 
         return fig, axe
