@@ -227,11 +227,14 @@ class oimFitterEmcee(oimFitter):
         self,
         mode: str = "best",
         discard: int = 0,
+        thin: int = 1,
         chi2limfact: Union[int, float] = 20,
         **kwargs,
     ):
-        chi2 = -2 * self.sampler.get_log_prob(discard=discard, flat=True)
-        chain = self.sampler.get_chain(discard=discard, flat=True)
+        chi2 = -2 * self.sampler.get_log_prob(
+            discard=discard, flat=True, thin=thin
+        )
+        chain = self.sampler.get_chain(discard=discard, flat=True, thin=thin)
 
         idx = np.where(chi2 <= chi2limfact * chi2.min())[0]
         chain2 = chain[idx, :]
@@ -278,6 +281,7 @@ class oimFitterEmcee(oimFitter):
     def cornerPlot(
         self,
         discard: int = 0,
+        thin: int = 1,
         chi2limfact: Union[int, float] = 20,
         savefig=None,
         **kwargs,
@@ -304,8 +308,10 @@ class oimFitterEmcee(oimFitter):
                 txt += f" ({uniti.to_string()})"
             labels.append(txt)
 
-        c = self.sampler.get_chain(discard=discard, flat=True)
-        chi2 = -2 * self.sampler.get_log_prob(discard=discard, flat=True)
+        c = self.sampler.get_chain(discard=discard, flat=True, thin=thin)
+        chi2 = -2 * self.sampler.get_log_prob(
+            discard=discard, flat=True, thin=thin
+        )
 
         idx = np.where(chi2 < chi2limfact * chi2.min())[0]
         c2 = c[idx, :]
@@ -324,7 +330,9 @@ class oimFitterEmcee(oimFitter):
 
     def walkersPlot(
         self,
-        savefig=None,
+        savefig: Union[str, Path, None] = None,
+        discard: int = 0,
+        thin: int = 1,
         chi2limfact: Union[int, float] = 20,
         labelsize: int = 10,
         ncolors: int = 128,
@@ -334,8 +342,8 @@ class oimFitterEmcee(oimFitter):
         if self.nfree == 1:
             ax = np.array([ax])
 
-        samples = self.sampler.get_chain()
-        chi2 = -2 * self.sampler.get_log_prob()
+        samples = self.sampler.get_chain(discard=discard, thin=thin)
+        chi2 = -2 * self.sampler.get_log_prob(discard=discard, thin=thin)
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
         x = np.arange(chi2.shape[0])
