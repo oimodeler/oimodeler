@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
 
-# from multiprocessing import Pool
-
-from typing import Dict, Union
 import warnings
 from pathlib import Path
+from typing import Dict, Union
 
 import astropy.units as unit
 import corner
@@ -16,7 +14,8 @@ import numpy as np
 from dynesty import DynamicNestedSampler, NestedSampler
 from dynesty import plotting as dyplot
 from matplotlib import cm
-from scipy.optimize import least_squares, minimize
+from matplotlib.axes import Axes
+from scipy.optimize import minimize
 from tqdm import tqdm
 
 from .oimParam import oimParam
@@ -98,7 +97,7 @@ class oimFitter:
 
 
 class oimFitterEmcee(oimFitter):
-    description = "MCMC sampler based on the emcee python module"
+    description = "MCMC sampler (based on the emcee python package)"
 
     def __init__(self, *args, **kwargs):
         self.params["nwalkers"] = oimParam(
@@ -201,9 +200,9 @@ class oimFitterEmcee(oimFitter):
                 state = self.initialParams
             else:
                 state = None
+
         self.sampler.run_mcmc(state, **kwargs)
         self.getResults()
-
         return kwargs
 
     # TODO: Maybe make it possible for end-user to input their own
@@ -235,37 +234,31 @@ class oimFitterEmcee(oimFitter):
             discard=discard, flat=True, thin=thin
         )
         chain = self.sampler.get_chain(discard=discard, flat=True, thin=thin)
-
-        idx = np.where(chi2 <= chi2limfact * chi2.min())[0]
-        chain2 = chain[idx, :]
+        filtered_chain = chain[np.where(chi2 <= chi2limfact * chi2.min())[0]]
 
         if mode == "best":
-            idx = np.argmin(chi2)
-            res = chain[idx]
+            res = chain[np.argmin(chi2)]
         elif mode == "mean":
-            res = np.mean(chain2, axis=0)
+            res = np.mean(filtered_chain, axis=0)
         elif mode == "median":
-            res = np.median(chain2, axis=0)
+            res = np.median(filtered_chain, axis=0)
         else:
             raise NameError(
                 "'mode' should be either 'best', 'mean' or 'median'"
             )
 
-        nparam = chain.shape[1]
-        err_m = np.ndarray([nparam])
-        err_p = np.ndarray([nparam])
-        for iparam in range(nparam):
+        err_m, err_p = np.ndarray([self.nfree]), np.ndarray([self.nfree])
+        for iparam in range(self.nfree):
             err_m[iparam] = np.abs(
-                np.quantile(chain2[:, iparam], 0.16) - res[iparam]
+                np.quantile(filtered_chain[:, iparam], 0.16) - res[iparam]
             )
             err_p[iparam] = np.abs(
-                np.quantile(chain2[:, iparam], 0.84) - res[iparam]
+                np.quantile(filtered_chain[:, iparam], 0.84) - res[iparam]
             )
 
-        err = 0.5 * (err_m + err_p)
+        err = np.mean([err_m, err_p], axis=0)
         for iparam, parami in enumerate(self.freeParams.values()):
-            parami.value = res[iparam]
-            parami.error = err[iparam]
+            parami.value, parami.error = res[iparam], err[iparam]
 
         self.simulator.compute(
             computeChi2=True,
@@ -283,12 +276,9 @@ class oimFitterEmcee(oimFitter):
         discard: int = 0,
         thin: int = 1,
         chi2limfact: Union[int, float] = 20,
-        savefig=None,
+        savefig: Union[str, Path, None] = None,
         **kwargs,
     ):
-        pnames = list(self.freeParams.keys())
-        punits = [p.unit for p in list(self.freeParams.values())]
-
         kwargs0 = dict(
             quantiles=[0.16, 0.5, 0.84],
             show_titles=True,
@@ -298,31 +288,34 @@ class oimFitterEmcee(oimFitter):
             fontsize=8,
             title_kwargs={"fontsize": 8},
             use_math_text=True,
+            color="blue",
+            truth_color="black",
         )
         kwargs = {**kwargs0, **kwargs}
 
-        labels = []
-        for namei, uniti in zip(pnames, punits):
-            txt = namei
-            if uniti.to_string() != "":
-                txt += f" ({uniti.to_string()})"
-            labels.append(txt)
+        labels, truths = [], []
+        for name, param in self.freeParams.items():
+            label = name
+            if param.unit.to_string() != "":
+                label += f" ({param.unit.to_string()})"
 
-        c = self.sampler.get_chain(discard=discard, flat=True, thin=thin)
+            truths.append(param.value)
+            labels.append(label)
+
+        chain = self.sampler.get_chain(discard=discard, flat=True, thin=thin)
         chi2 = -2 * self.sampler.get_log_prob(
             discard=discard, flat=True, thin=thin
         )
-
-        idx = np.where(chi2 < chi2limfact * chi2.min())[0]
-        c2 = c[idx, :]
-        if c2.size == 0:
+        chain = chain[np.where(chi2 < chi2limfact * chi2.min())[0]]
+        if chain.size == 0:
             raise ValueError(
                 "The emcee chain does not contain enough valid samples for the corner plot. "
                 "Potentially the `chi2limfact` parameter is too stringent or the min and max "
-                "values of your priors are switched."
+                "values of your priors may be switched."
             )
 
-        fig = corner.corner(c2, labels=labels, **kwargs)
+        kwargs["truths"] = kwargs.get("truths", truths)
+        fig = corner.corner(chain, labels=labels, **kwargs)
         if savefig is not None:
             plt.savefig(savefig)
 
@@ -330,10 +323,10 @@ class oimFitterEmcee(oimFitter):
 
     def walkersPlot(
         self,
-        savefig: Union[str, Path, None] = None,
         discard: int = 0,
         thin: int = 1,
         chi2limfact: Union[int, float] = 20,
+        savefig: Union[str, Path, None] = None,
         labelsize: int = 10,
         ncolors: int = 128,
         **kwargs,
@@ -342,24 +335,21 @@ class oimFitterEmcee(oimFitter):
         if self.nfree == 1:
             ax = np.array([ax])
 
-        samples = self.sampler.get_chain(discard=discard, thin=thin)
-        chi2 = -2 * self.sampler.get_log_prob(discard=discard, thin=thin)
         pnames = list(self.freeParams.keys())
         punits = [p.unit for p in list(self.freeParams.values())]
+
+        chi2 = -2 * self.sampler.get_log_prob(discard=discard, thin=thin)
         x = np.arange(chi2.shape[0])
-
-        samples = self.sampler.get_chain()
-
         xm = np.outer(x, np.ones(chi2.shape[1]))
-        chi2f = chi2.flatten() / self.simulator.nelChi2
-        xf = xm.flatten()
-        idx = np.argsort(-1 * chi2f)
+        chi2f, xf = chi2.flatten() / self.simulator.nelChi2, xm.flatten()
 
-        chi2f = chi2f[idx]
-        xf = xf[idx]
+        idx = np.argsort(-1 * chi2f)
+        chi2f, xf = chi2f[idx], xf[idx]
+
+        samples = self.sampler.get_chain(discard=discard, thin=thin)
         samples = samples.reshape(
             [samples.shape[0] * samples.shape[1], samples.shape[2]]
-        )[idx, :]
+        )[idx]
 
         chi2min = chi2f.min()
         chi2max = chi2limfact * chi2min
@@ -391,17 +381,17 @@ class oimFitterEmcee(oimFitter):
 
             ax[i].set_xlim(0, np.max(xf))
 
-            txt, unit_txt = pnames[i], ""
+            label, unit_label = pnames[i], ""
             if punits[i].to_string() != "":
-                unit_txt += f" ({punits[i].to_string()})"
+                unit_label += f" ({punits[i].to_string()})"
 
-            ax[i].set_ylabel(unit_txt)
+            ax[i].set_ylabel(unit_label)
 
-            c = (np.max(samples[:, i]) + np.min(samples[:, i])) / 2
+            chain = (np.max(samples[:, i]) + np.min(samples[:, i])) / 2
             ax[i].text(
                 0.02 * np.max(xf),
-                c,
-                txt,
+                chain,
+                label,
                 va="center",
                 ha="left",
                 fontsize=labelsize,
@@ -413,10 +403,8 @@ class oimFitterEmcee(oimFitter):
         sm = cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         fig.colorbar(sm, ax=ax.ravel().tolist(), label=r"$\chi^2_r$ ")
-        # fig.colorbar(scale, ax=ax.ravel().tolist(), label="$\\chi^2_r$ ")
 
-        ax[-1].set_xlabel("step number")
-
+        ax[-1].set_xlabel("Step number")
         if savefig is not None:
             plt.savefig(savefig)
 
@@ -427,7 +415,9 @@ class oimFitterDynesty(oimFitter):
     """A multinested fitter that has generally a better coverage of the
     global (than MCMC) parameter space."""
 
-    description = "a dynamic nested sampler based on the dynesty python module"
+    description = (
+        "Dynamic/static nested sampler (based on the the dynesty package)"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -502,6 +492,7 @@ class oimFitterDynesty(oimFitter):
         )
         return -0.5 * self.simulator.chi2r
 
+    # TODO: Implement best and mean here as well and then set the default to best
     def getResults(self, mode: str = "median", **kwargs):
         if mode == "median":
             samples = self.sampler.results.samples
@@ -513,10 +504,9 @@ class oimFitterDynesty(oimFitter):
                 "'mode' should be either 'best', 'mean' or 'median'"
             )
 
-        err = 0.5 * (err_m + err_p)
+        err = np.mean([err_m, err_p], axis=0)
         for iparam, parami in enumerate(self.freeParams.values()):
-            parami.value = res[iparam]
-            parami.error = err[iparam]
+            parami.value, parami.error = res[iparam], err[iparam]
 
         self.simulator.compute(
             computeChi2=True,
@@ -527,57 +517,49 @@ class oimFitterDynesty(oimFitter):
 
         return res, err, err_m, err_p
 
-    def cornerPlot(self, savefig=None, **kwargs):
-        pnames = list(self.freeParams.keys())
-        punits = [p.unit for p in list(self.freeParams.values())]
-
+    def cornerPlot(self, savefig: Union[str, Path, None] = None, **kwargs):
         kwargs0 = dict(
             quantiles=[0.16, 0.5, 0.84],
             show_titles=True,
             title_quantiles=[0.16, 0.5, 0.84],
             use_math_text=True,
             max_n_ticks=3,
+            color="blue",
+            truth_color="black",
         )
-
         kwargs = {**kwargs0, **kwargs}
 
-        labels = []
-        for namei, uniti in zip(pnames, punits):
-            txt = namei
-            if uniti.to_string() != "":
-                txt += " (" + uniti.to_string() + ")"
-            labels.append(txt)
+        labels, truths = [], []
+        for name, param in self.freeParams.items():
+            label = name
+            if param.unit.to_string() != "":
+                label += f" ({param.unit.to_string()})"
 
+            truths.append(param.value)
+            labels.append(label)
+
+        kwargs["truths"] = kwargs.get("truths", truths)
         results = self.sampler.results
-        fig, _ = dyplot.cornerplot(
-            results,
-            color="blue",
-            truths=np.zeros(len(pnames)),
-            labels=labels,
-            truth_color="black",
-            **kwargs,
-        )
+        fig, _ = dyplot.cornerplot(results, labels=labels, **kwargs)
 
         if savefig is not None:
             plt.savefig(savefig)
 
         return fig, fig.axes
 
-    def walkersPlot(self, savefig=None, **kwargs):
-        pnames = list(self.freeParams.keys())
-        punits = [p.unit for p in list(self.freeParams.values())]
-
+    def walkersPlot(self, savefig: Union[str, Path, None] = None, **kwargs):
         kwargs0 = dict(
             quantiles=[0.16, 0.5, 0.84], show_titles=True, use_math_text=True
         )
         kwargs = {**kwargs0, **kwargs}
 
         labels = []
-        for namei, uniti in zip(pnames, punits):
-            txt = namei
-            if uniti.to_string() != "":
-                txt += f" ({uniti.to_string()})"
-            labels.append(txt)
+        for name, param in self.freeParams.items():
+            label = name
+            if param.unit.to_string() != "":
+                label += f" ({param.unit.to_string()})"
+
+            labels.append(label)
 
         results = self.sampler.results
         fig, ax = dyplot.traceplot(
@@ -615,7 +597,6 @@ class oimFitterMinimize(oimFitter):
             mini=1,
             description="chi2fact",
         )
-
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
@@ -640,10 +621,7 @@ class oimFitterMinimize(oimFitter):
         return self.simulator.chi2 / self.params["chi2fact"].value
 
     def _run(self, **kwargs):
-
         self.res = minimize(self._getChi2r, self.initialParams, **kwargs)
-        # self.res = least_squares(self._getChi2r, self.initialParams,method=
-        #                         self.params["method"].value)
         self.getResults()
         return kwargs
 
@@ -684,11 +662,9 @@ class oimFitterRegularGrid(oimFitter):
     description = r"regular grid with :math:`\chi^2` explorer"
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
     def _prepare(self, **kwargs):
-
         if "params" in kwargs:
             self.gridParams = kwargs["params"]
         else:
@@ -754,7 +730,6 @@ class oimFitterRegularGrid(oimFitter):
         return kwargs
 
     def getResults(self, **kwargs):
-
         idx_best = np.unravel_index(np.argmin(self.chi2rMap), self.gridSize)
 
         best = []
@@ -791,7 +766,7 @@ class oimFitterRegularGrid(oimFitter):
         contour_kwargs: Dict = {},
         clabel_kwargs: Dict = {},
         min_kwargs: Dict = {},
-        axe=None,
+        axe: Union[Axes, None] = None,
         **kwargs,
     ):
 
@@ -847,12 +822,12 @@ class oimFitterRegularGrid(oimFitter):
             ax.set_ylabel("$\\chi^2_r$")
 
         else:
-            if len(self.gridSize) != 2 and params == None:
+            if len(self.gridSize) != 2 and params is None:
                 raise TypeError(
                     "The 2 parameters to plot should be specified "
                     "when the grid dimension is higher than 2"
                 )
-            elif ndims == 2 and params == None:
+            elif ndims == 2 and params is None:
 
                 im = self.chi2rMap
 
@@ -860,7 +835,7 @@ class oimFitterRegularGrid(oimFitter):
                 dim1 = 0
                 dim2 = 1
 
-            elif ndims > 2 and params != None:
+            elif ndims > 2 and params is not None:
                 dim1 = np.where(np.array(self.gridParams) == params[0])[0][0]
                 dim2 = np.where(np.array(self.gridParams) == params[1])[0][0]
 
@@ -955,7 +930,11 @@ class oimFitterRegularGrid(oimFitter):
 
 
 def oimComputeChi2PlusOneUncertainties(
-    fit, factErr=500, npts=100, plot: bool = False, dataTypes=None
+    fit,
+    factErr: int = 500,
+    npts: int = 100,
+    plot: bool = False,
+    dataTypes=None,
 ):
     grids = []
     errs = []
