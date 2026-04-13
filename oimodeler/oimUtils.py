@@ -832,7 +832,7 @@ def getBaselineLengthAndPA(
     for datai in data:
         if arr != "OI_T3":
             u, v = datai.data["UCOORD"], datai.data["VCOORD"]
-            if showFlagged == False:
+            if not showFlagged:
                 flag = datai.data["FLAG"]
                 if (len(flag.shape) == 2) & (u.size == flag.shape[0]):
                     flag = np.all(flag, axis=1)
@@ -854,14 +854,13 @@ def getBaselineLengthAndPA(
             ucoord.append(u123)
             vcoord.append(v123)
 
-            # TODO: Check if this give the same as adding up individually
-            # TODO: Shouldn't the positional angles be the other way around? -> Convention?
             b123 = np.hypot(u123, v123)
             pa123 = np.rad2deg(np.arctan2(u123, v123))
 
             if T3Max:
                 baselines.append(np.max(b123, axis=0))
-                pa.append(0 * pa123)  # TODO: what's the PAS of a triangle?
+                # TODO: what's the PAS of a triangle?
+                pa.append(0 * pa123)
             else:
                 baselines.append(b123)
                 pa.append(np.max(pa123, axis=0))

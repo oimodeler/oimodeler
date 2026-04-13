@@ -294,11 +294,12 @@ def uvPlot(
     showLegend: bool = True,
     showColorbar: bool = True,
     showFlagged: bool = False,
-    colorTab=None,
-    axe=None,
+    colorTab: Union[List[str], None] = None,
+    axe: Union[Axes, None] = None,
     title: Union[str, None] = None,
     cunit: u.Quantity = u.m,
     legendkwargs: Dict = {},
+    wavelength: Union[u.Quantity, None] = None,
     **kwargs,
 ) -> Axes:
     """Plot the uv coverage of the data.
@@ -331,6 +332,19 @@ def uvPlot(
         Show the colorbar. The default is True.
     showFlagged  : bool, optional
         Show the u,v point even when data are flagged. The default is False.
+    colorTab: list of str, optional
+        A list with colornames to apply. The default is None.
+    axe : matplotlib.axes.Axes, optional
+        An axes to be plotted onto. The default is None.
+    title : str, optional
+        The title of the plot. The default is None.
+    cunit : astropy.units.Quantity, optional
+        The colorbar unit. The default is astropy.unit.m.
+    legendkwargs : dict, optional
+        Keyword arguments for the legend. The default is {}.
+    wavelength : astropy.units.m
+        A singular wavelength to display for the cycle/rad unit.
+        The default is None (shows all wavelengths).
 
     Returns
     -------
@@ -341,8 +355,6 @@ def uvPlot(
         _, axe = plt.subplots(nrows=1, ncols=1)
 
     oifitsList = loadOifitsData(oifitsList)
-    # nfiles = len(oifitsList)
-
     unit, cunit = u.Unit(unit), u.Unit(cunit)
     if colorTab is None:
         colorTab = oimPlotParamColorCycle
@@ -381,7 +393,6 @@ def uvPlot(
     )
 
     for datai in oifitsList:
-
         _, _, ui, vi = getBaselineLengthAndPA(
             datai,
             arr=arrname,
@@ -432,7 +443,10 @@ def uvPlot(
             maxi = 1.1 * np.max(np.abs(np.array([ucoord, vcoord])))
 
     elif unit.is_equivalent(u.Unit("cycle/rad")):
-        for iB, ui, vi, wli in zip(range(len(ucoord)), ucoord, vcoord, wl):
+        for iB, (ui, vi, wli) in enumerate(zip(ucoord, vcoord, wl)):
+            if wavelength is not None:
+                wli = wavelength
+
             spfu = ui / wli * u.Unit("cycle/rad").to(unit)
             spfv = vi / wli * u.Unit("cycle/rad").to(unit)
 
