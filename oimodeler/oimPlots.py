@@ -276,7 +276,6 @@ def _colorPlot(
 
     return res
 
-
 def uvPlot(
     oifitsList: fits.HDUList,
     arrname: str = "OI_VIS2",
