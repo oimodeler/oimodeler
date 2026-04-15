@@ -1647,7 +1647,6 @@ sta_pos = np.array(
     ]
 )
 
-
 def vltiplot(
     axe=None,
     configs: np.ndarray = np.array([]),
