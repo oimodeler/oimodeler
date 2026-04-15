@@ -14,8 +14,8 @@ Index
 
 .. rst-class:: hide-me
 
-    Introduction
-    ============
+Introduction
+============
 
 The **oimodeler** project aims to develop modular, easily expandable Python software for optical
 interferometry modeling. Initiated in late 2021, it now offers a fully functional beta version.
