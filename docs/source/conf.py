@@ -19,10 +19,15 @@ sys.path.insert(0,str(Path("sphinxext").resolve()))
 print(sys.path)
 
 
+from oimodeler import __version__
+
+release = __version__
+version = ".".join(__version__.split(".")[:2])
+
 project = 'oimodeler'
 copyright = '2024, Anthony Meilland'
 author = 'Anthony Meilland'
-release = '0.9.2'
+
 
 
 extensions = [
