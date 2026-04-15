@@ -30,11 +30,15 @@ jobs:
           VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' oimodeler/__init__.py)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Detect bump level
+      - name: Detect commit info
         id: detect
         run: |
           MSG=$(git log -1 --pretty=%B)
 
+          echo "Commit message:"
+          echo "$MSG"
+
+          # Detect version level
           if echo "$MSG" | grep -q "MAJOR:"; then
             LEVEL="MAJOR"
           elif echo "$MSG" | grep -q "MINOR:"; then
@@ -43,24 +47,32 @@ jobs:
             LEVEL="PATCH"
           fi
 
-          echo "level=$LEVEL" >> $GITHUB_OUTPUT
-
-      - name: Decide tag creation
-        id: decision
-        run: |
-          if [ "${{ steps.detect.outputs.level }}" = "PATCH" ]; then
-            echo "tag=false" >> $GITHUB_OUTPUT
+          # Detect TAG via "(TAG)"
+          if echo "$MSG" | grep -qE "\(\s*TAG\s*\)"; then
+            TAG_REQUEST="true"
           else
-            echo "tag=true" >> $GITHUB_OUTPUT
+            TAG_REQUEST="false"
           fi
 
-      - name: Create Git tag
-        if: steps.decision.outputs.tag == 'true'
+          echo "level=$LEVEL" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_REQUEST" >> $GITHUB_OUTPUT
+
+      - name: Decide if tag should be created
+        id: decision
+        run: |
+          if [ "${{ steps.detect.outputs.level }}" = "PATCH" ] && [ "${{ steps.detect.outputs.tag }}" != "true" ]; then
+            echo "create_tag=false" >> $GITHUB_OUTPUT
+          else
+            echo "create_tag=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Git tag (if not exists)
+        if: steps.decision.outputs.create_tag == 'true'
         run: |
           VERSION="v${{ steps.version.outputs.version }}"
 
           if git ls-remote --tags origin | grep -q "$VERSION"; then
-            echo "Tag already exists → skip"
+            echo "Tag already exists → skipping"
             exit 0
           fi
 
@@ -68,7 +80,7 @@ jobs:
           git push origin "$VERSION"
 
       - name: Create GitHub Release
-        if: steps.decision.outputs.tag == 'true'
+        if: steps.decision.outputs.create_tag == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}

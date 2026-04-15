@@ -15,11 +15,13 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
@@ -34,9 +36,16 @@ jobs:
           base: main
           title: "BUMP: auto version update"
           commit-message: "BUMP: auto version update"
+          body: "Automatic version bump"
           delete-branch: true
 
-      # 👉 AUTO-MERGE
+      - name: Auto-approve PR
+        if: steps.cpr.outputs.pull-request-number != ''
+        run: |
+          gh pr review ${{ steps.cpr.outputs.pull-request-number }} --approve
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Enable auto-merge
         if: steps.cpr.outputs.pull-request-number != ''
         run: |
