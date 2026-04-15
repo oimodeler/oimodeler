@@ -145,9 +145,7 @@ oimPlotParamUnit0 = np.array(
 )
 oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-
 oimPlotParamColorCycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-
 
 # NOTE: might be useful as unit cycles is not defined but cycle is
 # u.add_enabled_units(u.def_unit("cycles",u.cycle))
