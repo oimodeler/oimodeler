@@ -20,3 +20,4 @@ oimParamLinearRangeWl|rangeWl|Linear range interpolation in wl|wlmin, wlmax, val
 oimParamLinearTemplateWl|templateWl|Interpolation in wl using external regular grid template|wl0, dwl, f_contrib, values, kind
 oimParamLinearTemperatureWl|tempWl|Blackbody in wl for given temperature|temp, solid_angle
 oimParamLinearStarWl|starWl|Blackbody in wl for given Teff, dist, and radius or lum|temp, dist, lum, radius
+oimParamUserFunc|userFunc|Interpolate from user-supplied function|

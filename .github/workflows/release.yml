@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    tags-ignore:
+      - "v*"
+
+concurrency:
+  group: release
+  cancel-in-progress: true
 
 jobs:
   release:
@@ -24,12 +30,11 @@ jobs:
           VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' oimodeler/__init__.py)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Detect commit info
+      - name: Detect commit type
         id: detect
         run: |
           MSG=$(git log -1 --pretty=%B)
 
-          # Detect version type
           if echo "$MSG" | grep -q "MAJOR:"; then
             LEVEL="MAJOR"
           elif echo "$MSG" | grep -q "MINOR:"; then
@@ -38,7 +43,6 @@ jobs:
             LEVEL="PATCH"
           fi
 
-          # Detect explicit TAG request
           if echo "$MSG" | grep -q "TAG:"; then
             TAG_REQUEST="true"
           else
@@ -48,7 +52,7 @@ jobs:
           echo "level=$LEVEL" >> $GITHUB_OUTPUT
           echo "tag=$TAG_REQUEST" >> $GITHUB_OUTPUT
 
-      - name: Decide if we create tag
+      - name: Decide if tag should be created
         id: decision
         run: |
           if [ "${{ steps.detect.outputs.level }}" = "PATCH" ] && [ "${{ steps.detect.outputs.tag }}" != "true" ]; then
@@ -57,11 +61,25 @@ jobs:
             echo "create_tag=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create Git tag
+      - name: Create Git tag (if not exists)
         if: steps.decision.outputs.create_tag == 'true'
         run: |
-          git tag v${{ steps.version.outputs.version }}
-          git push origin v${{ steps.version.outputs.version }}
+          VERSION="v${{ steps.version.outputs.version }}"
+
+          # Check local tag
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag already exists locally → skipping"
+            exit 0
+          fi
+
+          # Check remote tag
+          if git ls-remote --tags origin | grep -q "$VERSION"; then
+            echo "Tag already exists on remote → skipping"
+            exit 0
+          fi
+
+          git tag "$VERSION"
+          git push origin "$VERSION"
 
       - name: Create GitHub Release
         if: steps.decision.outputs.create_tag == 'true'
