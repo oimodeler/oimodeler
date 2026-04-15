@@ -39,13 +39,6 @@ jobs:
           body: "Automatic version bump"
           delete-branch: true
 
-      - name: Auto-approve PR
-        if: steps.cpr.outputs.pull-request-number != ''
-        run: |
-          gh pr review ${{ steps.cpr.outputs.pull-request-number }} --approve
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Enable auto-merge
         if: steps.cpr.outputs.pull-request-number != ''
         run: |
