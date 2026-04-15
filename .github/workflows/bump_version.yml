@@ -7,24 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      code: ${{ steps.filter.outputs.code }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            code:
-              - 'oimodeler/**'
-
-  bump-version:
-    needs: check-changes
-    if: needs.check-changes.outputs.code == 'true'
+  bump:
     runs-on: ubuntu-latest
 
     permissions:
@@ -32,21 +15,36 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
-      - name: Bump version
+      - name: Run bump script
         run: python bump_version.py
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: bump-version
-          title: "Auto bump version"
-          commit-message: "Auto bump version"
-          delete-branch: true
+      - name: Debug (check changes)
+        run: |
+          echo "=== FILE CONTENT ==="
+          cat oimodeler/__init__.py
+          git status
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add oimodeler/__init__.py
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "BUMP: auto version update"
+          git push

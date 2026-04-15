@@ -3,11 +3,11 @@ import re
 from pathlib import Path
 
 
-PACKAGE_FILE = Path("oimodeler/__init__.py")
+BASE_DIR = Path(__file__).resolve().parent
+PACKAGE_FILE = BASE_DIR / "oimodeler" / "__init__.py"
 
 
-def get_commits_since_last_tag():
-    """Récupère les messages de commit depuis le dernier tag."""
+def get_commits():
     try:
         last_tag = subprocess.check_output(
             ["git", "describe", "--tags", "--abbrev=0"],
@@ -17,18 +17,10 @@ def get_commits_since_last_tag():
     except subprocess.CalledProcessError:
         cmd = ["git", "log", "--pretty=%B"]
 
-    output = subprocess.check_output(cmd, text=True)
-    return output.splitlines()
+    return subprocess.check_output(cmd, text=True).splitlines()
 
 
-def detect_bump_level(commits):
-    """
-    Règles :
-    - MAJOR: → MAJOR
-    - MINOR: → MINOR
-    - PATCH: → PATCH
-    - sinon → None (pas de bump)
-    """
+def detect_level(commits):
     level = None
 
     for msg in commits:
@@ -44,29 +36,16 @@ def detect_bump_level(commits):
     return level
 
 
-def bump_version(version, level):
+def bump(version, level):
     major, minor, patch = map(int, version.split("."))
 
     if level == "MAJOR":
-        return f"{major + 1}.0.0"
+        return f"{major+1}.0.0"
     elif level == "MINOR":
-        return f"{major}.{minor + 1}.0"
+        return f"{major}.{minor+1}.0"
     elif level == "PATCH":
-        return f"{major}.{minor}.{patch + 1}"
-    else:
-        return None
-
-
-def update_file(old_version, new_version):
-    content = PACKAGE_FILE.read_text()
-
-    content = re.sub(
-        r'(__version__\s*=\s*)"[^"]+"',
-        rf'\1"{new_version}"',
-        content
-    )
-
-    PACKAGE_FILE.write_text(content)
+        return f"{major}.{minor}.{patch+1}"
+    return None
 
 
 def main():
@@ -74,26 +53,28 @@ def main():
 
     match = re.search(r'__version__\s*=\s*"([^"]+)"', content)
     if not match:
-        raise ValueError("Version not found in __init__.py")
+        raise ValueError("__version__ not found")
 
-    current_version = match.group(1)
+    current = match.group(1)
 
-    commits = get_commits_since_last_tag()
-    level = detect_bump_level(commits)
+    commits = get_commits()
+    level = detect_level(commits)
 
     if level is None:
-        print("No bump keyword found → skipping version bump")
+        print("No bump keyword → skip")
         return
 
-    new_version = bump_version(current_version, level)
+    new_version = bump(current, level)
 
-    if new_version is None:
-        print("No valid bump → skipping")
-        return
+    updated = re.sub(
+        r'(__version__\s*=\s*)"[^"]+"',
+        rf'\1"{new_version}"',
+        content
+    )
 
-    update_file(current_version, new_version)
+    PACKAGE_FILE.write_text(updated)
 
-    print(f"{current_version} → {new_version} ({level})")
+    print(f"{current} → {new_version} ({level})")
 
 
 if __name__ == "__main__":
