@@ -1,0 +1,17 @@
+name: Docs trigger
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'README.md'
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger message
+        run: echo "Docs changed → Read the Docs will rebuild automatically"
