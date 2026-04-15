@@ -1,24 +1,34 @@
-name: Docs Build
+name: Build Docs (RTD API)
 
 on:
-  workflow_run:
-    workflows: ["Release"]
-    types:
-      - completed
-
   push:
     branches:
       - main
-    paths:
-      - 'docs/**'
-      - 'README.md'
 
 jobs:
   docs:
-    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - run: echo "Docs rebuilt via Read the Docs"
+      - name: Detect docs changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - 'README.md'
+
+      - name: Trigger Read the Docs build
+        if: steps.changes.outputs.docs == 'true'
+        run: |
+          curl -X POST \
+            -H "Authorization: Token ${{ secrets.RTD_TOKEN }}" \
+            https://readthedocs.org/api/v3/projects/oimodeler/versions/latest/builds/
+
+      - name: Skip build
+        if: steps.changes.outputs.docs != 'true'
+        run: echo "No docs changes → skipping RTD build"
