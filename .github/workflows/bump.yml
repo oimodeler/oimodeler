@@ -1,4 +1,4 @@
-name: Auto bump patch
+name: Auto bump patch version
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  bump-version:
+  bump:
     runs-on: ubuntu-latest
 
     permissions:
@@ -15,13 +15,11 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
@@ -34,5 +32,4 @@ jobs:
           branch: bump-version
           title: "Auto bump patch version"
           commit-message: "Auto bump patch version"
-          body: "Automatic PATCH version bump"
           delete-branch: true

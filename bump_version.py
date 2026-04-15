@@ -4,45 +4,27 @@ import re
 from pathlib import Path
 
 
-def bump_patch(version: str) -> str:
-    major, minor, patch = map(int, version.split("."))
-    patch += 1
-    return f"{major}.{minor}.{patch}"
+def bump_patch(v):
+    major, minor, patch = map(int, v.split("."))
+    return f"{major}.{minor}.{patch + 1}"
 
 
-def update_file(path: Path, pattern: str):
-    if not path.exists():
-        raise FileNotFoundError(f"Fichier introuvable: {path}")
+path = Path("oimodeler/__init__.py")
+content = path.read_text()
 
-    content = path.read_text()
+match = re.search(r'__version__\s*=\s*"([^"]+)"', content)
+if not match:
+    raise ValueError("Version not found")
 
-    match = re.search(pattern, content)
-    if not match:
-        raise ValueError(f"Version non trouvée dans {path}")
+old = match.group(1)
+new = bump_patch(old)
 
-    old_version = match.group(2)
-    new_version = bump_patch(old_version)
+content = re.sub(
+    r'(__version__\s*=\s*)"[^"]+"',
+    rf'\1"{new}"',
+    content
+)
 
-    new_content = re.sub(pattern, rf'\1"{new_version}"', content)
-    path.write_text(new_content)
+path.write_text(content)
 
-    print(f"{path} : {old_version} → {new_version}")
-
-    return old_version, new_version
-
-
-def main():
-    BASE_DIR = Path(__file__).resolve().parent
-
-    files = [
-        (BASE_DIR / "oimodeler" / "__init__.py",
-         r'(__version__\s*=\s*)"([^"]+)"'),
-    ]
-
-    for path, pattern in files:
-        update_file(path, pattern)
-
-
-if __name__ == "__main__":
-    print("=== Bump version PATCH ===")
-    main()
+print(f"{old} → {new}")
