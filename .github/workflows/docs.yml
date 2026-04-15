@@ -1,6 +1,11 @@
-name: Docs trigger
+name: Docs Build
 
 on:
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
+
   push:
     branches:
       - main
@@ -10,8 +15,10 @@ on:
 
 jobs:
   docs:
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger message
-        run: echo "Docs changed → Read the Docs will rebuild automatically"
+      - uses: actions/checkout@v4
+
+      - run: echo "Docs rebuilt via Read the Docs"

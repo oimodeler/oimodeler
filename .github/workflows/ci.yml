@@ -8,6 +8,7 @@ on:
 jobs:
   changes:
     runs-on: ubuntu-latest
+
     outputs:
       code: ${{ steps.filter.outputs.code }}
       docs: ${{ steps.filter.outputs.docs }}
