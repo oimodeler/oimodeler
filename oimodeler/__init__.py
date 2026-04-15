@@ -32,7 +32,7 @@ np.seterr(invalid="ignore")
 proj.register_projection(oimAxes)
 
 
-__version__ = "0.9.7"
+__version__ = "0.9.8"
 __pkg_dir__ = Path(inspect.getfile(inspect.currentframe())).parent
 
 if split(__pkg_dir__)[-1] == "":
