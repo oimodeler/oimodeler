@@ -31,6 +31,7 @@ from .oimUtils import _oimDataType, _oimDataTypeArr, _oimDataTypeErr
 np.seterr(invalid="ignore")
 proj.register_projection(oimAxes)
 
+
 __version__ = "0.9.7"
 __pkg_dir__ = Path(inspect.getfile(inspect.currentframe())).parent
 
