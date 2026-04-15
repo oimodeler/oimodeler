@@ -1,15 +1,10 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
-    tags-ignore:
-      - "v*"
-
-concurrency:
-  group: release
-  cancel-in-progress: true
+  workflow_run:
+    workflows: ["Auto Bump Version"]
+    types:
+      - completed
 
 jobs:
   release:
@@ -24,26 +19,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ----------------------------
-      # 1. READ VERSION (SOURCE OF TRUTH)
-      # ----------------------------
-      - name: Get version from package
+      - name: Get latest code
+        run: |
+          git fetch origin main
+          git checkout main
+
+      - name: Get version
         id: version
         run: |
           VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' oimodeler/__init__.py)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
-      # ----------------------------
-      # 2. DETECT TAG REQUEST
-      # ----------------------------
       - name: Detect TAG request
         id: detect
         run: |
           MSG=$(git log -1 --pretty=%B)
-
-          echo "Commit message:"
-          echo "$MSG"
 
           if echo "$MSG" | grep -qE "\(\s*TAG\s*\)"; then
             echo "tag=true" >> $GITHUB_OUTPUT
@@ -51,9 +42,6 @@ jobs:
             echo "tag=false" >> $GITHUB_OUTPUT
           fi
 
-      # ----------------------------
-      # 3. DECIDE IF TAG SHOULD BE CREATED
-      # ----------------------------
       - name: Decide tag creation
         id: decision
         run: |
@@ -63,27 +51,19 @@ jobs:
             echo "create_tag=false" >> $GITHUB_OUTPUT
           fi
 
-      # ----------------------------
-      # 4. CREATE GIT TAG (SAFE + IDEMPOTENT)
-      # ----------------------------
       - name: Create Git tag
         if: steps.decision.outputs.create_tag == 'true'
         run: |
           VERSION="v${{ steps.version.outputs.version }}"
 
-          echo "Creating tag $VERSION"
-
           if git ls-remote --tags origin | grep -q "$VERSION"; then
-            echo "Tag already exists → skipping"
+            echo "Tag exists → skip"
             exit 0
           fi
 
           git tag "$VERSION"
           git push origin "$VERSION"
 
-      # ----------------------------
-      # 5. CREATE GITHUB RELEASE
-      # ----------------------------
       - name: Create GitHub Release
         if: steps.decision.outputs.create_tag == 'true'
         uses: softprops/action-gh-release@v2
