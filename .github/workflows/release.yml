@@ -30,7 +30,7 @@ jobs:
           VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' oimodeler/__init__.py)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Detect commit type
+      - name: Detect bump level
         id: detect
         run: |
           MSG=$(git log -1 --pretty=%B)
@@ -43,38 +43,24 @@ jobs:
             LEVEL="PATCH"
           fi
 
-          if echo "$MSG" | grep -q "TAG:"; then
-            TAG_REQUEST="true"
-          else
-            TAG_REQUEST="false"
-          fi
-
           echo "level=$LEVEL" >> $GITHUB_OUTPUT
-          echo "tag=$TAG_REQUEST" >> $GITHUB_OUTPUT
 
-      - name: Decide if tag should be created
+      - name: Decide tag creation
         id: decision
         run: |
-          if [ "${{ steps.detect.outputs.level }}" = "PATCH" ] && [ "${{ steps.detect.outputs.tag }}" != "true" ]; then
-            echo "create_tag=false" >> $GITHUB_OUTPUT
+          if [ "${{ steps.detect.outputs.level }}" = "PATCH" ]; then
+            echo "tag=false" >> $GITHUB_OUTPUT
           else
-            echo "create_tag=true" >> $GITHUB_OUTPUT
+            echo "tag=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create Git tag (if not exists)
-        if: steps.decision.outputs.create_tag == 'true'
+      - name: Create Git tag
+        if: steps.decision.outputs.tag == 'true'
         run: |
           VERSION="v${{ steps.version.outputs.version }}"
 
-          # Check local tag
-          if git rev-parse "$VERSION" >/dev/null 2>&1; then
-            echo "Tag already exists locally → skipping"
-            exit 0
-          fi
-
-          # Check remote tag
           if git ls-remote --tags origin | grep -q "$VERSION"; then
-            echo "Tag already exists on remote → skipping"
+            echo "Tag already exists → skip"
             exit 0
           fi
 
@@ -82,7 +68,7 @@ jobs:
           git push origin "$VERSION"
 
       - name: Create GitHub Release
-        if: steps.decision.outputs.create_tag == 'true'
+        if: steps.decision.outputs.tag == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
