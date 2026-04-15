@@ -185,7 +185,6 @@ def _errorplot(
 
     axe.fill_between(x, ys - dy, ys + dy, **kwargs)
 
-
 def _colorPlot(
     axe,
     x: np.ndarray,
