@@ -39,10 +39,10 @@ jobs:
           body: "Automatic version bump"
           delete-branch: true
 
-      - name: Enable auto-merge
+      - name: Merge PR immediately
         if: steps.cpr.outputs.pull-request-number != ''
         run: |
           gh pr merge ${{ steps.cpr.outputs.pull-request-number }} \
-            --squash --auto
+            --squash --delete-branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
