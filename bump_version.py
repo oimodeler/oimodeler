@@ -30,7 +30,7 @@ def update_file(path, pattern):
 
 # fichiers à modifier
 files = [
-    ("package/__init__.py", r'(__version__\s*=\s*)"([^"]+)"'),
+    ("oimodeler/__init__.py", r'(__version__\s*=\s*)"([^"]+)"'),
     ("docs/conf.py", r'(release\s*=\s*)"([^"]+)"'),
 ]
 
