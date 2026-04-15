@@ -14,27 +14,62 @@ jobs:
       contents: write
 
     steps:
+      # ----------------------------
+      # Checkout repo at latest state
+      # ----------------------------
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Get latest code
+      # ----------------------------
+      # Ensure we are on latest main
+      # ----------------------------
+      - name: Sync main branch
         run: |
           git fetch origin main
           git checkout main
+          git pull origin main
 
-      - name: Get version
+      # ----------------------------
+      # SOURCE OF TRUTH: VERSION
+      # ----------------------------
+      - name: Get version from package
         id: version
         run: |
           VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' oimodeler/__init__.py)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
+      # ----------------------------
+      # GET ORIGINAL USER COMMIT (IMPORTANT FIX)
+      # ----------------------------
+      - name: Get triggering commit message
+        id: commit
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha }}"
+
+          echo "Trigger SHA: $SHA"
+
+          MSG=$(git show -s --format=%B $SHA)
+
+          echo "Commit message:"
+          echo "$MSG"
+
+          echo "msg<<EOF" >> $GITHUB_OUTPUT
+          echo "$MSG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # ----------------------------
+      # DETECT TAG REQUEST
+      # ----------------------------
       - name: Detect TAG request
         id: detect
         run: |
-          MSG=$(git log -1 --pretty=%B)
+          MSG="${{ steps.commit.outputs.msg }}"
+
+          echo "Analyzing message:"
+          echo "$MSG"
 
           if echo "$MSG" | grep -qE "\(\s*TAG\s*\)"; then
             echo "tag=true" >> $GITHUB_OUTPUT
@@ -42,6 +77,9 @@ jobs:
             echo "tag=false" >> $GITHUB_OUTPUT
           fi
 
+      # ----------------------------
+      # DECISION
+      # ----------------------------
       - name: Decide tag creation
         id: decision
         run: |
@@ -51,19 +89,27 @@ jobs:
             echo "create_tag=false" >> $GITHUB_OUTPUT
           fi
 
+      # ----------------------------
+      # CREATE GIT TAG
+      # ----------------------------
       - name: Create Git tag
         if: steps.decision.outputs.create_tag == 'true'
         run: |
           VERSION="v${{ steps.version.outputs.version }}"
 
+          echo "Creating tag: $VERSION"
+
           if git ls-remote --tags origin | grep -q "$VERSION"; then
-            echo "Tag exists → skip"
+            echo "Tag already exists → skipping"
             exit 0
           fi
 
           git tag "$VERSION"
           git push origin "$VERSION"
 
+      # ----------------------------
+      # CREATE GITHUB RELEASE
+      # ----------------------------
       - name: Create GitHub Release
         if: steps.decision.outputs.create_tag == 'true'
         uses: softprops/action-gh-release@v2
