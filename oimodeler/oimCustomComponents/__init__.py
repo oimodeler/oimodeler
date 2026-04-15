@@ -28,3 +28,4 @@ from .oimTempGradient import oimTempGrad
 from .oimKinematicDisk import oimKinematicDisk
 from .oimBinaryOrbit import oimBinaryOrbit
 from .oimDisco import oimDisco
+from .oimBipolar import oimBipolar
