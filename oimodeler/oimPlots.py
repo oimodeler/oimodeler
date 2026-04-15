@@ -988,10 +988,12 @@ def oimPlot(
                                 ilam0 = ilam
                             else:
                                 doPlot = True
+                                ilam1 = ilam
 
                             flag0 = flagi
                         if ilam == (nflags - 1) and not flagi:
                             doPlot = True
+                            ilam1=ilam+1
 
                         if doPlot:
                             labeli = (
@@ -1002,12 +1004,12 @@ def oimPlot(
 
                             if cname is None:
                                 if (
-                                    xdata[idata][iB, ilam0 : ilam + 1].size
+                                    xdata[idata][iB, ilam0 : ilam1].size
                                     == 1
                                 ):
                                     axe.scatter(
-                                        xdata[idata][iB, ilam0 : ilam + 1],
-                                        ydata[idata][iB, ilam0 : ilam + 1],
+                                        xdata[idata][iB, ilam0 : ilam1],
+                                        ydata[idata][iB, ilam0 : ilam1],
                                         color=colorTab[
                                             colorIdx[ifile][idata][iB] % ncol
                                         ],
@@ -1017,8 +1019,8 @@ def oimPlot(
                                 else:
 
                                     axe.plot(
-                                        xdata[idata][iB, ilam0 : ilam + 1],
-                                        ydata[idata][iB, ilam0 : ilam + 1],
+                                        xdata[idata][iB, ilam0 : ilam1],
+                                        ydata[idata][iB, ilam0 : ilam1],
                                         color=colorTab[
                                             colorIdx[ifile][idata][iB] % ncol
                                         ],
@@ -1035,10 +1037,10 @@ def oimPlot(
 
                                         _errorplot(
                                             axe,
-                                            xdata[idata][iB, ilam0 : ilam + 1],
-                                            ydata[idata][iB, ilam0 : ilam + 1],
+                                            xdata[idata][iB, ilam0 : ilam1],
+                                            ydata[idata][iB, ilam0 : ilam1],
                                             ydataerr[idata][
-                                                iB, ilam0 : ilam + 1
+                                                iB, ilam0 : ilam1
                                             ],
                                             **kwargs_errori,
                                         )
@@ -1048,17 +1050,17 @@ def oimPlot(
                                 # with collections thus not updating the xlim and ylim
                                 # automatically
                                 axe.plot(
-                                    xdata[idata][iB, ilam0 : ilam + 1],
-                                    ydata[idata][iB, ilam0 : ilam + 1],
+                                    xdata[idata][iB, ilam0 : ilam1],
+                                    ydata[idata][iB, ilam0 : ilam1],
                                     color="k",
                                     alpha=0,
                                 )
 
                                 res = _colorPlot(
                                     axe,
-                                    xdata[idata][iB, ilam0 : ilam + 1],
-                                    ydata[idata][iB, ilam0 : ilam + 1],
-                                    cdata[idata][iB, ilam0 : ilam + 1],
+                                    xdata[idata][iB, ilam0 : ilam1],
+                                    ydata[idata][iB, ilam0 : ilam1],
+                                    cdata[idata][iB, ilam0 : ilam1],
                                     label=labeli,
                                     setlim=False,
                                     **kwargs,
@@ -1067,9 +1069,9 @@ def oimPlot(
                                 if errorbar:
                                     _errorplot(
                                         axe,
-                                        xdata[idata][iB, ilam0 : ilam + 1],
-                                        ydata[idata][iB, ilam0 : ilam + 1],
-                                        ydataerr[idata][iB, ilam0 : ilam + 1],
+                                        xdata[idata][iB, ilam0 : ilam1],
+                                        ydata[idata][iB, ilam0 : ilam1],
+                                        ydataerr[idata][iB, ilam0 : ilam1],
                                         **kwargs_error,
                                     )
 
