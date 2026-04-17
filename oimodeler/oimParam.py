@@ -1313,9 +1313,9 @@ class oimParamLinearStarWl(oimParamInterpolator):
     def _init(
         self,
         param: oimParam = oimParam(),
-        temp: Union[int, float, ArrayLike] = 0,
+        temp: Union[int, float] = 0,
         dist: Union[int, float] = 0,
-        lum: Union[int, float, None] = 0,
+        lum: Union[int, float, None] = None,
         radius: Union[int, float, None] = None,
         **kwargs: Dict,
     ) -> None:
@@ -1344,9 +1344,10 @@ class oimParamLinearStarWl(oimParamInterpolator):
             free=False,
             description="The star's radius",
         )
-        if self.lum.value is None and self.radius.value is None:
+        self.compute_radius = True if radius is None else False
+        if lum is None and radius is None:
             raise ValueError(
-                "Either luminosity or radius must be provided to calculate stellar flux."
+                "Either luminosity or radius must be provided to compute stellar flux."
             )
 
     @property
@@ -1361,13 +1362,13 @@ class oimParamLinearStarWl(oimParamInterpolator):
         if self._angular_stellar_radius is not None:
             return self._angular_stellar_radius
 
-        if self.radius.value is not None:
-            stellar_radius = self.radius.value * self.radius.unit.to(u.au)
-        else:
+        if self.compute_radius:
             luminosity = self.lum.value * self.lum.unit.to(u.W)
             stellar_radius = np.sqrt(
                 luminosity / (4 * np.pi * const.sigma_sb * self.temp.value**4)
             ) * u.m.to(u.au)
+        else:
+            stellar_radius = self.radius.value * self.radius.unit.to(u.au)
 
         self._angular_stellar_radius = (
             linear_to_angular(stellar_radius, self.dist.value) * 1e3
