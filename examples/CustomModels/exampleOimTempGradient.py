@@ -135,20 +135,25 @@ plt.show()
 tg = oim.oimTempGrad(
     dim=128,
     dist=121.0,
-    temp0=350,
+    T0=350,
     rin=0.1,
     rout=30,
     p=-1,
     q=-0.5,
-    dust_mass=7e-9,
+    Mdust=7e-9,
     pa=76,
     elong=1.5,
     kappa_abs=oim.oimInterp("wl", wl=op_wl * 1e-6, values=op),
 )
 
+# NOTE: Access/Set the temperature at the inner radius
+Tin = tg.Tin
+tg.Tin = Tin
+print(Tin)
+
 # NOTE: Set the number of spatial frequency elements at which the Hankel transform will be computed.
 # If not specified, the Hankel Transform will be computed for all the spatial frequencies of the data (usually slower).
-tg.precision = 32
+tg.precision = 256
 
 # NOTE: (OPTIONAL) Uncomment the following two lines if you want to set manually the model wavelengths to be fitted (to speed up fitting process).
 # tg._wl = np.array([3.0e-6,3.5e-6,4.0e-6,8.0e-6,10.e-6,13e-6])
@@ -239,10 +244,10 @@ plt.show()
 # NOTE: Specifying the parameter space for the fit
 tg.params["rin"].free = False
 tg.params["rout"].free = False
-tg.params["temp0"].free = False
+tg.params["T0"].free = False
 tg.params["q"].set(min=-1, max=0)
 tg.params["p"].set(min=-1.5, max=-0.5)
-tg.params["dust_mass"].set(min=6e-9, max=6e-8)
+tg.params["Mdust"].set(min=6e-9, max=6e-8)
 tg.params["elong"].set(min=1, max=5)
 tg.params["pa"].set(min=0, max=180)
 
@@ -298,12 +303,12 @@ fig1, ax1 = fit.simulator.plot(
 tg_bestfit = oim.oimTempGrad(
     dim=128,
     dist=121.0,
-    temp0=350,
+    T0=350,
     rin=0.1,
     rout=30,
     p=best[4],
     q=best[3],
-    dust_mass=best[2],
+    Mdust=best[2],
     pa=best[1],
     elong=best[0],
     kappa_abs=oim.oimInterp("wl", wl=op_wl * 1e-6, values=op),

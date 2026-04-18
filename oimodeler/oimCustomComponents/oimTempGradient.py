@@ -1,3 +1,5 @@
+from typing import Any
+
 import astropy.units as u
 import numpy as np
 
@@ -19,17 +21,17 @@ class oimTempGrad(oimComponentRadialProfile):
     rout : float
         Outer radius of the disk [au].
     r0 : float
-        Reference radius [au].
-    temp0 : float
+        Reference radius for power-laws [au].
+    T0 : float
         Temperature at reference radius r0 [K].
-    Sigma0 : float
+    sigma0 : float
          Dust surface density at reference radius r0 [M_sun].
     Mdust : float
          Mass of the dusty disk [M_sun].
     q : float
-        Power-law exponent for the temperature profile.
+        Power-law exponent of the temperature profile.
     p : float
-        Power-law exponent for the dust surface density profile.
+        Power-law exponent of the dust surface density profile.
 
     dist : float
         Distance of the star [pc].
@@ -38,10 +40,29 @@ class oimTempGrad(oimComponentRadialProfile):
     ----------
     params : dict with keys of str and values of oimParam
         Dictionary of parameters.
-    _r : array_like
-    _wl : array_like
+    rin : oimParam
+        Inner radius of the disk [au].
+    rout : oimParam
+        Outer radius of the disk [au].
+    r0 : oimParam
+        Reference radius for power-laws [au].
+    T0 : oimParam
+        Temperature at reference radius r0 [K].
+    Tin : float
+        Temperature at inner radius rin [K].
+    sigma0 : oimParam
+         Dust surface density at reference radius r0 [M_sun].
+    Mdust : oimParam
+         Mass of the dusty disk [M_sun].
+    q : oimParam
+        Power-law exponent of the temperature profile.
+    p : oimParam
+        Power-law exponent of the dust surface density profile.
+    _r : numpy.ndarray
+        Radii [mas].
+    _wl : numpy.ndarray
         Wavelengths [micron].
-    _t : array_like
+    _t : numpy.ndarray
         Times [second].
 
     Methods
@@ -68,8 +89,8 @@ class oimTempGrad(oimComponentRadialProfile):
             free=False,
             description="Reference radius",
         )
-        self.params["temp0"] = oimParam(
-            name="temp0",
+        self.params["T0"] = oimParam(
+            name="T0",
             value=300,
             unit=u.K,
             description="Temperature at reference radius",
@@ -87,8 +108,8 @@ class oimTempGrad(oimComponentRadialProfile):
             )
         else:
             self.compute_sigma0 = True
-            self.params["dust_mass"] = oimParam(
-                name="dust_mass",
+            self.params["Mdust"] = oimParam(
+                name="Mdust",
                 value=0.2,
                 unit=u.M_sun,
                 description="Mass of the dusty disk",
@@ -106,7 +127,6 @@ class oimTempGrad(oimComponentRadialProfile):
         )
         self.params["kappa_abs"] = oimParam(
             name="kappa_abs",
-            value=0,
             unit=u.cm**2 / u.g,
             description="Absorption (silicate) opacity",
             free=False,
@@ -146,9 +166,23 @@ class oimTempGrad(oimComponentRadialProfile):
         )
 
     @_r.setter
-    def _r(self, value) -> None:
+    def _r(self, value: Any) -> None:
         """Sets the radial profile [mas]."""
         return None
+
+    @property
+    def Tin(self) -> float:
+        """Gets the temperature at the inner radius."""
+        r0_mas = linear_to_angular(self.r0.value, self.dist.value) * 1e3
+        rin_mas = linear_to_angular(self.rin.value, self.dist.value) * 1e3
+        return self.T0.value * (rin_mas / r0_mas) ** self.q.value
+
+    @Tin.setter
+    def Tin(self, value: Any) -> None:
+        """Sets the reference temperature from that at the inner radius."""
+        r0_mas = linear_to_angular(self.r0.value, self.dist.value) * 1e3
+        rin_mas = linear_to_angular(self.rin.value, self.dist.value) * 1e3
+        self.T0.value = value * (rin_mas / r0_mas) ** -self.q.value
 
     def _radialProfileFunction(
         self, r: np.ndarray, wl: np.ndarray, t: np.ndarray
@@ -195,12 +229,12 @@ class oimTempGrad(oimComponentRadialProfile):
             r = r[np.newaxis, :]
 
         rin, rout, r0 = self.rin(wl, t), self.rout(wl, t), self.r0(wl, t)
-        q, p = self.q(wl, t), self.p(wl, t)
+        p = self.p(wl, t)
         if self.compute_sigma0:
             rin_cm = self.rin.qty(wl, t).to(u.cm).value
             rout_cm = self.rout.qty(wl, t).to(u.cm).value
             r0_cm = self.r0.qty(wl, t).to(u.cm).value
-            dust_mass = self.dust_mass.qty(wl, t).to(u.g).value
+            dust_mass = self.Mdust.qty(wl, t).to(u.g).value
             if np.isclose(p, -2, rtol=1e-2):
                 sigma0 = dust_mass / (
                     2.0 * np.pi * np.log(rout_cm / rin_cm) * r0_cm**2
@@ -212,9 +246,10 @@ class oimTempGrad(oimComponentRadialProfile):
             sigma0 = self.sigma0(wl, t)
 
         r0_mas = linear_to_angular(r0, dist) * 1e3
-        temp = self.temp0(wl, t) * (r / r0_mas) ** q
         sigma = sigma0 * (r / r0_mas) ** p
         emissivity = 1 - np.exp(-sigma * kappa_abs * elong)
+
+        temp = self.T0(wl, t) * (r / r0_mas) ** self.q(wl, t)
         spectral_density = (
             blackbody(temp, const.c / wl) * emissivity * (1 / elong)
         )
