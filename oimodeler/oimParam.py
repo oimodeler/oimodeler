@@ -1208,42 +1208,41 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
     ----------
     param : .oimParam
         The parameter that is to be calculated (interpolated).
-    temperature : int or float
-        The temperature (K).
+    T : int or float
+        The blackbody temperature (K).
     solid_angle : int, float, or .oimParam
         The solid angle of the object or an oimParam containing the solid angle (mas).
 
     Attributes
     ----------
-    temp : .oimParam
+    T : .oimParam
     solid_angle : int, float or .oimParam
     """
 
     interpdescription = "Blackbody in wl for given temperature"
-    interparams = ["temp", "solid_angle"]
+    interparams = ["T", "solid_angle"]
 
     def _init(
         self,
         param: oimParam = oimParam(),
-        temp: Union[int, float] = 0,
+        T: Union[int, float] = 0,
         solid_angle: Union[int, float, oimParam] = 0,
         **kwargs,
     ) -> None:
         """The subclass's constructor."""
-        self.temp = oimParam(
-            name="temp",
-            value=temp,
+        self.T = oimParam(
+            name="T",
+            value=T,
             unit=u.K,
-            free=True,
             mini=0,
             maxi=3000,
-            description="The temperature",
+            description="The blackbody temperature",
         )
         self.solid_angle = solid_angle
 
     def _getParams(self):
         """Gets the parameters of the interpolator."""
-        return [self.temp]
+        return [self.T]
 
     def _interpFunction(self, wl: np.ndarray, t: np.ndarray):
         """Calculates a temperature and wavelength dependent blackbody
@@ -1267,14 +1266,13 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
             solid_angle = self.solid_angle
 
         return (
-            blackbody(self.temp(wl, t), const.c / wl)
+            blackbody(self.T(wl, t), const.c / wl)
             / u.rad.to(u.mas) ** 2
             * solid_angle**2
             * 1e23
         )
 
 
-# TODO: Add extinction to this model at some point
 class oimParamLinearStarWl(oimParamInterpolator):
     """Calculates the stellar flux for different wavelengths.
 
@@ -1284,100 +1282,72 @@ class oimParamLinearStarWl(oimParamInterpolator):
     ----------
     param : oimParam
         The parameter that is to be calculated (interpolated).
-    temp : array_like
-        The temperature (K).
+    T : array_like
+        The star's effective temperature (K).
+    R : int or float, optional
+        The star's radius (Rsun).
+    L : int or float, optional
+        The star's luminosity (Lsun).
     dist : int or float
         The distance to the star (pc).
-    lum : int or float, optional
-        The star's luminosity (Lsun).
-    radius : int or float, optional
-        The star's radius (Rsun).
 
     Attributes
     ----------
-    stellar_radius : astropy.units.m
-        The stellar radius (m).
-    stellar_angular_radius : astropy.units.mas
-        The angular stellar radius (mas).
+    T : .oimParam
+        The star's effective temperature (K).
+    R : .oimParam
+        The star's radius (Rsun).
+    L : .oimParam
+        The star's luminosity (Lsun).
     dist : .oimParam
-        An oimParam containing the distance to the star (pc).
-    lum : .oimParam
-        An oimParam containing the star's luminosity (Lsun).
+        The distance to the star (pc).
     """
 
-    interpdescription = (
-        "Blackbody in wl for given Teff, dist, and radius or lum"
-    )
-    interparams = ["temp", "dist", "lum", "radius"]
+    interpdescription = "Blackbody (per wavelength) for given temperature, radius or luminosity, and distance"
+    interparams = ["T", "L", "R", "dist"]
 
     def _init(
         self,
         param: oimParam = oimParam(),
-        temp: Union[int, float] = 0,
+        T: Union[int, float] = 0,
+        R: Union[int, float, None] = None,
+        L: Union[int, float, None] = None,
         dist: Union[int, float] = 0,
-        lum: Union[int, float, None] = None,
-        radius: Union[int, float, None] = None,
         **kwargs: Dict,
     ) -> None:
-        self._angular_stellar_radius = None
-        self.temp = oimParam(
-            name="temp",
-            value=temp,
+        self.T = oimParam(
+            name="T",
+            value=T,
             unit=u.K,
             free=False,
             description="The star's effective temperature",
         )
-        self.dist = oimParam(
-            value=dist, description="Distance to the star", base="dist"
-        )
-        self.lum = oimParam(
-            name="lum",
-            value=lum,
-            unit=u.Lsun,
-            free=False,
-            description="The star's luminosity",
-        )
-        self.radius = oimParam(
-            name="radius",
-            value=radius,
+        self.R = oimParam(
+            name="R",
+            value=R,
             unit=u.R_sun,
             free=False,
             description="The star's radius",
         )
-        self.compute_radius = True if radius is None else False
-        if lum is None and radius is None:
+        self.L = oimParam(
+            name="L",
+            value=L,
+            unit=u.Lsun,
+            free=False,
+            description="The star's luminosity",
+        )
+        self.dist = oimParam(
+            value=dist, description="Distance to the star", base="dist"
+        )
+        self.compute_radius = True if R is None else False
+        if L is None and R is None:
             raise ValueError(
                 "Either luminosity or radius must be provided to compute stellar flux."
             )
 
-    @property
-    def angular_stellar_radius(self) -> float:
-        """Calculates the angular stellar radius.
-
-        Returns
-        -------
-        angular_stellar_radius : float
-            The star's radius (mas).
-        """
-        if self._angular_stellar_radius is not None:
-            return self._angular_stellar_radius
-
-        if self.compute_radius:
-            luminosity = self.lum.value * self.lum.unit.to(u.W)
-            stellar_radius = np.sqrt(
-                luminosity / (4 * np.pi * const.sigma_sb * self.temp.value**4)
-            ) * u.m.to(u.au)
-        else:
-            stellar_radius = self.radius.value * self.radius.unit.to(u.au)
-
-        self._angular_stellar_radius = (
-            linear_to_angular(stellar_radius, self.dist.value) * 1e3
-        )
-        return self._angular_stellar_radius
-
     def _getParams(self):
         """Gets the parameters of the interpolator."""
-        return [self.temp]
+        return [self.T]
 
     def _interpFunction(self, wl: np.ndarray, t: np.ndarray) -> np.ndarray:
         """Calculates the stellar flux from its distance and radius at
@@ -1392,14 +1362,26 @@ class oimParamLinearStarWl(oimParamInterpolator):
 
         Returns
         -------
-        stellar_flux : np.ndarray
+        F : numpy.ndarray
             The star's flux (Jy).
         """
+        if self.compute_radius:
+            luminosity = self.L.value * self.L.unit.to(u.W)
+            stellar_radius = np.sqrt(
+                luminosity / (4 * np.pi * const.sigma_sb * self.T.value**4)
+            ) * u.m.to(u.au)
+        else:
+            stellar_radius = self.R.value * self.R.unit.to(u.au)
+
+        angular_radius = (
+            linear_to_angular(stellar_radius, self.dist.value) * 1e3
+        )
+
         return (
-            blackbody(self.temp(wl, t), const.c / wl)
+            blackbody(self.T(wl, t), const.c / wl)
             / u.rad.to(u.mas) ** 2
             * np.pi
-            * self.angular_stellar_radius**2
+            * angular_radius**2
             * 1e23
         )
 
