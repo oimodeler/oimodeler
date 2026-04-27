@@ -96,7 +96,7 @@ class oimTempGrad(oimComponentRadialProfile):
             description="Temperature at reference radius",
         )
 
-        if "sigma0" in kwargs or not kwargs.pop(
+        if "log_sigma0" in kwargs or not kwargs.pop(
             "compute_sigma0", self.compute_sigma0
         ):
             self.compute_sigma0 = False
