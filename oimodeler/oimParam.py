@@ -112,8 +112,7 @@ class oimParam:
             elif k in defaults:
                 v = defaults[k]
 
-            k = k[:-1] if k in ["mini", "maxi"] else k
-            setattr(self, k, v)
+            setattr(self, k[:-1] if k in ["mini", "maxi"] else k, v)
 
     def __call__(self, wl=None, t=None) -> Union[int, float, np.ndarray]:
         """

@@ -100,11 +100,13 @@ class oimTempGrad(oimComponentRadialProfile):
             "compute_sigma0", self.compute_sigma0
         ):
             self.compute_sigma0 = False
-            self.params["sigma0"] = oimParam(
-                name="sigma0",
-                value=1e-2,
-                unit=u.g / u.cm**2,
-                description="Dust surface density at reference radius",
+            self.params["log_sigma0"] = oimParam(
+                name="log_sigma0",
+                value=-2,
+                mini=-5,
+                maxi=0,
+                unit=u.one,
+                description="Logarithmic dust surface density at reference radius",
             )
         else:
             self.compute_sigma0 = True
@@ -243,7 +245,7 @@ class oimTempGrad(oimComponentRadialProfile):
                 f = (rout_cm ** (2 + p) - rin_cm ** (2 + p)) / (2 + p)
                 sigma0 = dust_mass / (2.0 * np.pi * f * r0_cm ** (-p))
         else:
-            sigma0 = self.sigma0(wl, t)
+            sigma0 = 10 ** self.log_sigma0(wl, t)
 
         r0_mas = linear_to_angular(r0, dist) * 1e3
         sigma = sigma0 * (r / r0_mas) ** p
