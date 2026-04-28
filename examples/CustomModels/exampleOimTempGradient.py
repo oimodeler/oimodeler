@@ -117,9 +117,7 @@ oim.oimOptions.model.grid.type = "logarithmic"
 oim.oimOptions.ft.padding = 1
 
 # NOTE: Define a point source for the central start with a flux defined with a blackbody interpolator
-s = oim.oimPt(
-    f=oim.oimInterp("starWl", temp=4600, dist=121, lum=2.23, wl=None)
-)
+s = oim.oimPt(f=oim.oimInterp("starWl", T=4600, L=2.23, dist=121, wl=None))
 
 # NOTE: Sets the dust opacities
 opac_file = (
@@ -149,7 +147,7 @@ tg = oim.oimTempGrad(
 # NOTE: Access/Set the temperature at the inner radius
 Tin = tg.Tin
 tg.Tin = Tin
-print(Tin)
+print(f"Tin: {Tin} K")
 
 # NOTE: Set the number of spatial frequency elements at which the Hankel transform will be computed.
 # If not specified, the Hankel Transform will be computed for all the spatial frequencies of the data (usually slower).
@@ -165,14 +163,10 @@ model = oim.oimModel([s, tg])
 # NOTE: Simulate the initial model observables and compute the associated reduced Chi2
 sim = oim.oimSimulator(data=data, model=model)
 sim.compute(computeChi2=True, computeSimulatedData=True)
-print("Chi2r = {}".format(sim.chi2r))
+print(f"Chi2r = {sim.chi2r}")
 
 # NOTE: plot the model observables and data (without SED)
-fig0, ax0 = sim.plot(
-    [
-        "VISAMP",
-    ]
-)
+fig0, ax0 = sim.plot(["VISAMP"])
 fig3 = plt.figure()
 ax3 = plt.subplot(projection="oimAxes")
 ax3.oiplot(
