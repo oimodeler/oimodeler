@@ -184,7 +184,7 @@ class oimTempGrad(oimComponentRadialProfile):
         """Sets the reference temperature from that at the inner radius."""
         r0_mas = linear_to_angular(self.r0.value, self.dist.value) * 1e3
         rin_mas = linear_to_angular(self.rin.value, self.dist.value) * 1e3
-        self.T0.value = value * (rin_mas / r0_mas) ** -self.q.value
+        self.T0.value = value * (rin_mas / r0_mas) ** self.q.value
 
     def _radialProfileFunction(
         self, r: np.ndarray, wl: np.ndarray, t: np.ndarray
