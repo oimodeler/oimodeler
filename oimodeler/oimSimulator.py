@@ -811,7 +811,7 @@ class oimSimulator:
                         )
             # ax[i].set_title(label_p)
             # ax[2*i+1].set_xlabel(label_xaxis+' ('+xunit+')')
-            ax[2 * i + 1].set_ylabel("($\\sigma$)")
+            ax[2 * i + 1].set_ylabel(r"($\sigma$)")
             ax[2 * i + 1].margins(x=0)
 
             ymax = np.max(np.abs(ax[2 * i + 1].get_ylim()))

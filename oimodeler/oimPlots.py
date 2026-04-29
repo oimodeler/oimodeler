@@ -147,6 +147,7 @@ oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 oimPlotParamColorCycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
+
 # NOTE: might be useful as unit cycles is not defined but cycle is
 # u.add_enabled_units(u.def_unit("cycles",u.cycle))
 def _errorplot(
@@ -184,6 +185,7 @@ def _errorplot(
         ys = np.convolve(y, ker, mode="same")  # [smooth//2:-smooth//2-1]
 
     axe.fill_between(x, ys - dy, ys + dy, **kwargs)
+
 
 def _colorPlot(
     axe,
@@ -275,6 +277,7 @@ def _colorPlot(
         axe.autoscale_view()
 
     return res
+
 
 def uvPlot(
     oifitsList: fits.HDUList,
@@ -514,7 +517,7 @@ def uvPlot(
         and color is None
         and showColorbar
     ):
-        plt.colorbar(res, ax=axe, label=f"$\\lambda$ ({cunit:latex})")
+        plt.colorbar(res, ax=axe, label=rf"$\lambda$ ({cunit:latex})")
 
     if showLegend:
         axe.legend(**legendkwargs)
@@ -989,7 +992,7 @@ def oimPlot(
                             flag0 = flagi
                         if ilam == (nflags - 1) and not flagi:
                             doPlot = True
-                            ilam1=ilam+1
+                            ilam1 = ilam + 1
 
                         if doPlot:
                             labeli = (
@@ -999,13 +1002,10 @@ def oimPlot(
                             )
 
                             if cname is None:
-                                if (
-                                    xdata[idata][iB, ilam0 : ilam1].size
-                                    == 1
-                                ):
+                                if xdata[idata][iB, ilam0:ilam1].size == 1:
                                     axe.scatter(
-                                        xdata[idata][iB, ilam0 : ilam1],
-                                        ydata[idata][iB, ilam0 : ilam1],
+                                        xdata[idata][iB, ilam0:ilam1],
+                                        ydata[idata][iB, ilam0:ilam1],
                                         color=colorTab[
                                             colorIdx[ifile][idata][iB] % ncol
                                         ],
@@ -1015,8 +1015,8 @@ def oimPlot(
                                 else:
 
                                     axe.plot(
-                                        xdata[idata][iB, ilam0 : ilam1],
-                                        ydata[idata][iB, ilam0 : ilam1],
+                                        xdata[idata][iB, ilam0:ilam1],
+                                        ydata[idata][iB, ilam0:ilam1],
                                         color=colorTab[
                                             colorIdx[ifile][idata][iB] % ncol
                                         ],
@@ -1033,11 +1033,9 @@ def oimPlot(
 
                                         _errorplot(
                                             axe,
-                                            xdata[idata][iB, ilam0 : ilam1],
-                                            ydata[idata][iB, ilam0 : ilam1],
-                                            ydataerr[idata][
-                                                iB, ilam0 : ilam1
-                                            ],
+                                            xdata[idata][iB, ilam0:ilam1],
+                                            ydata[idata][iB, ilam0:ilam1],
+                                            ydataerr[idata][iB, ilam0:ilam1],
                                             **kwargs_errori,
                                         )
 
@@ -1046,17 +1044,17 @@ def oimPlot(
                                 # with collections thus not updating the xlim and ylim
                                 # automatically
                                 axe.plot(
-                                    xdata[idata][iB, ilam0 : ilam1],
-                                    ydata[idata][iB, ilam0 : ilam1],
+                                    xdata[idata][iB, ilam0:ilam1],
+                                    ydata[idata][iB, ilam0:ilam1],
                                     color="k",
                                     alpha=0,
                                 )
 
                                 res = _colorPlot(
                                     axe,
-                                    xdata[idata][iB, ilam0 : ilam1],
-                                    ydata[idata][iB, ilam0 : ilam1],
-                                    cdata[idata][iB, ilam0 : ilam1],
+                                    xdata[idata][iB, ilam0:ilam1],
+                                    ydata[idata][iB, ilam0:ilam1],
+                                    cdata[idata][iB, ilam0:ilam1],
                                     label=labeli,
                                     setlim=False,
                                     **kwargs,
@@ -1065,9 +1063,9 @@ def oimPlot(
                                 if errorbar:
                                     _errorplot(
                                         axe,
-                                        xdata[idata][iB, ilam0 : ilam1],
-                                        ydata[idata][iB, ilam0 : ilam1],
-                                        ydataerr[idata][iB, ilam0 : ilam1],
+                                        xdata[idata][iB, ilam0:ilam1],
+                                        ydata[idata][iB, ilam0:ilam1],
+                                        ydataerr[idata][iB, ilam0:ilam1],
                                         **kwargs_error,
                                     )
 
@@ -1356,7 +1354,7 @@ class oimWlTemplatePlots(Figure):
     def set_xlabels(self, mode: str, *arg, **kwargs) -> None:
         """Set the x-axis label of the plot."""
         if mode == "auto":
-            label = f"$\\lambda$ ({self.xunit:latex})"
+            label = rf"$\lambda$ ({self.xunit:latex})"
             for k in range(len(self.plotList)):
                 for l in range(len(self.plotList[k])):
                     for (
@@ -1642,6 +1640,7 @@ sta_pos = np.array(
         [112.000, 8.000, 103.306, 43.999],
     ]
 )
+
 
 def vltiplot(
     axe=None,
