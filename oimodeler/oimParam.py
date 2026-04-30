@@ -194,7 +194,10 @@ class oimParam:
             except (AttributeError, TypeError):
                 pass
 
-            if isinstance(value, (list, tuple, np.ndarray)):
+            if (
+                isinstance(value, (list, tuple, np.ndarray))
+                and np.array(value).shape != ()
+            ):
                 try:
                     value = [oimParam.deserialize(v) for v in value]
                 except AttributeError:
