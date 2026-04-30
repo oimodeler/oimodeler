@@ -587,11 +587,10 @@ class oimModel:
                     )
 
                 axe[iwl, it].set_xlim(dim / 2 * pixSize, -dim / 2 * pixSize)
-
                 if iwl == nwl - 1:
-                    axe[iwl, it].set_xlabel(r"$\alpha$(mas)")
+                    axe[iwl, it].set_xlabel(r"$\alpha$ (mas)")
                 if it == 0:
-                    axe[iwl, it].set_ylabel(r"$\delta$(mas)")
+                    axe[iwl, it].set_ylabel(r"$\delta$ (mas)")
 
                 if legend:
                     txt = ""
@@ -610,6 +609,7 @@ class oimModel:
                             txt += f"Time={wli}"
                         if "color" not in kwargs_legend:
                             kwargs_legend["color"] = "w"
+
                     axe[iwl, it].text(
                         0,
                         0.95 * dim / 2 * pixSize,
@@ -620,7 +620,7 @@ class oimModel:
                     )
 
         if colorbar:
-            fig.colorbar(cb, ax=axe, label="Normalized Intensity")
+            fig.colorbar(cb, ax=axe, label="Intensity (a.u.)")
 
         if savefig is not None:
             savefig = Path(savefig)
@@ -642,7 +642,6 @@ class oimModel:
         unit: str = "cycle/rad",
         unit_format: str = "latex_inline",
         axe: Union[Axes, None] = None,
-        normPow: float = 0.5,
         figsize: Tuple[float, float] = (3.5, 2.5),
         savefig: Union[str, Path, None] = None,
         colorbar: bool = True,
@@ -668,9 +667,6 @@ class oimModel:
         axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
             will be created. The default is None.
-        normPow : float, optional
-            Exponent for the Image colorscale powerLaw normalisation.
-            The default is 0.5.
         figsize : tuple of float, optional
             The Figure size in inches. The default is (8., 6.).
         savefig : str, optional
@@ -790,12 +786,6 @@ class oimModel:
                 fig = axe.flatten()[0].get_figure()
 
         axe = np.array(axe).flatten().reshape((nwl, nt))
-
-        if display != "phase":
-            kwargs["norm"] = kwargs.get(
-                "norm", colors.PowerNorm(gamma=normPow)
-            )
-
         for iwl, wli in enumerate(wl):
             for it, ti in enumerate(t):
                 if not swapAxes:
@@ -848,6 +838,7 @@ class oimModel:
                             txt += f"Time={wli}"
                         if "color" not in kwargs_legend:
                             kwargs_legend["color"] = "w"
+
                     axe[iwl, it].text(
                         0,
                         0.95 * dim / 2 * pixSize,
@@ -857,9 +848,14 @@ class oimModel:
                         **kwargs_legend,
                     )
         if colorbar:
-            label = (
-                "Amplitude (a.u.)" if display == "amp" else r"Phase $(^\circ)$"
-            )
+            label = "Amplitude" if display == "amp" else "Phase"
+
+            # TODO: Implement proper units for correlated flux/visibility
+            if normalize:
+                label += " (a.u.)"
+            else:
+                label += r" $(^\circ)$" if display == "phase" else ""
+
             fig.colorbar(cb, ax=axe, label=label)
 
         if savefig is not None:
