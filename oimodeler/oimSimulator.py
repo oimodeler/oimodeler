@@ -416,7 +416,7 @@ class oimSimulator:
 
     def plot(
         self,
-        arr,
+        arr: Union[str, List[str]],
         simulated: bool = True,
         savefig: Union[str, Path, None] = None,
         visLog: bool = False,
@@ -425,11 +425,45 @@ class oimSimulator:
         cname: str = "EFF_WAVE",
         cunit: str = "micron",
         cmap: str = "plasma",
+        colorbar: bool = True,
         kwargsData: Dict = {},
         kwargsSimulatedData: Dict = {},
         fig: Union[Figure, None] = None,
         axe: Union[Axes, None] = None,
-    ):
+    ) -> None:
+        """Plots data vs. simulated data.
+
+        Parameters
+        ----------
+        arr : str or list of str
+            The name of the OIFITS column that is plotted.
+        simulated : bool, optional
+            If True, simulated data are plotted. Default is True.
+        savefig : str or pathlib.Path, optional
+            Saves the plot. Default is None.
+        visLog : bool, optional
+            If True, sets the y-scale to logarithmic. Default is False.
+        xaxis : str, optional
+            OIFITS information plotted on the x-axis. Default is "SPAFREQ".
+        xunit : str, optional
+            Unit of the x-axis. Default is "cycle/rad".
+        cname : str, optional
+            OIFITS information plotted on the colorbar. Default is "EFF_WAVE".
+        cunit : str, optional
+            Unit of the colorbar. Default is "micron".
+        cmap : str, optional
+            Name of the colormap. Default is "plasma".
+        colorbar : bool, optional
+            If True, plots a colorbar. Default is True.
+        kwargsData : dict, optional
+            Keyword arguments passed to the data `oiplot`. Default is {}.
+        kwargsSimulatedData : dict, optional
+            Keyword arguments passed to the simulated data `oiplot`. Default is {}.
+        fig : matplotlib.figure.Figure, optional
+            Figure used for the plotting. Default is None.
+        axe : matplotlib.axes.Axes, optional
+            Axes used for the plotting. Default is None.
+        """
         # NOTE: Plotting  data and simulated data
         kwargsData0 = dict(
             cname=cname,
@@ -441,7 +475,6 @@ class oimSimulator:
         )
 
         kwargsSimulatedData0 = dict(color="k", ls=":", lw=1, label="model")
-
         kwargsData = {**kwargsData0, **kwargsData}
         kwargsData["cunit"] = u.Unit(kwargsData["cunit"])
 
@@ -449,6 +482,7 @@ class oimSimulator:
             kwargsData.pop("cmap")
             kwargsData.pop("cname")
             kwargsData.pop("cunit")
+
         kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
 
         if type(arr) != type([]):
@@ -521,7 +555,7 @@ class oimSimulator:
         axe[0].set_xlim(xmin, xmax)
 
         # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
-        if "cname" in kwargsData:
+        if colorbar:
             idxC = np.where(oimPlotParamName == kwargsData["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargsData['cunit']:latex_inline}"
