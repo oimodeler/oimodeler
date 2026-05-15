@@ -334,7 +334,12 @@ class oimSimulator:
                                     (dataErr[ival] != 0)
                                     * np.logical_not(flag[ival])
                                 )
-                                chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
+                                if np.any(np.isnan(chi2i)):
+                                    raise ValueError(
+                                        "Chi2 computation contains NaNs."
+                                    )
+
+                                chi2 += np.sum(chi2i)
 
                                 chi2List.append(chi2i)
                                 residuals.append(resi)
