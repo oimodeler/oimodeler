@@ -14,6 +14,7 @@ from astropy.io import fits
 from astropy.io.fits import PrimaryHDU
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.ticker import ScalarFormatter
 from numpy.typing import ArrayLike
 
 from .oimComponent import oimComponent
@@ -620,7 +621,11 @@ class oimModel:
                     )
 
         if colorbar:
-            fig.colorbar(cb, ax=axe, label="Intensity (a.u.)")
+            cbar = fig.colorbar(cb, ax=axe, label="Intensity (a.u.)")
+            formatter = ScalarFormatter(useOffset=False)
+            formatter.set_scientific(True)
+            formatter.set_powerlimits((-2, 2))
+            cbar.ax.yaxis.set_major_formatter(formatter)
 
         if savefig is not None:
             savefig = Path(savefig)
