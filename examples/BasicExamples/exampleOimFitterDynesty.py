@@ -30,7 +30,9 @@ pt.params["f"].free = False
 pprint(model.getFreeParameters())
 
 # NOTE: Create a new fitter with 500 live points and the list of oifits files and the model
-fit = oim.oimFitterDynesty(files, model, method="dynamic")
+fit = oim.oimFitterDynesty(
+    files, model, method="dynamic", nlive=200, bound="single", sample="slice"
+)
 
 # NOTE: Prepare the fitter. Here we set the intial positions of all walkers to
 # the current parameters values of our model.
@@ -38,10 +40,13 @@ fit.prepare()
 
 # NOTE: Perfoming the model-fitting
 fit.run(
-    dlogz_init=0.010,
-    nlive_init=1000,
-    nlive_batch=1000,
-    maxbatch=100,
+    dlogz_init=0.5,
+    nlive_init=200,
+    nlive_batch=50,
+    n_effective=1e3,
+    maxiter_init=1e5,
+    maxiter_batch=1e4,
+    maxcall=1e6,
     progress=True,
 )
 
