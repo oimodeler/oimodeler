@@ -166,9 +166,18 @@ class oimParam:
             except NameError:
                 print("Note valid parameter : {}".format(value))
 
-    def serialize(self) -> Dict[str, Any]:
-        """Serializes the oimParam/oimParamInterpolator."""
-        return self.__dict__
+    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+        """Serializes the oimParam/oimParamInterpolator.
+
+        Parameters
+        ----------
+        skip_copy : bool, optional
+            If "True" skips the top-level deepcopy of oimParam. Default is False.
+        """
+        if skip_copy:
+            return self.__dict__
+
+        return copy.deepcopy(self.__dict__)
 
     # TODO: Remove this method from this class and implement it in all oimParam... classes?
     # TODO: Make the oimParamNorm link to the correct parameter
@@ -256,7 +265,7 @@ class oimParamLinker:
         ]
         return reduce(self.op, values)
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
         """Serializes the oimParamLinker."""
         raise NotImplementedError(
             "Serialization of oimParamLinker not yet implemented."
@@ -287,7 +296,7 @@ class oimParamLinkerFunction:
             params.append(p(wl, t))
         return self.func(*params)
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
         """Serializes the oimParamLinkerFunction."""
         raise NotImplementedError(
             "Serialization of oimParamLinkerFunction not yet implemented."
@@ -335,9 +344,20 @@ class oimParamNorm:
 
         return remainder
 
-    def serialize(self) -> Dict[str, Any]:
-        """Serializes the oimParamNorm."""
-        ser = copy.deepcopy(self.__dict__)
+    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+        """Serializes the oimParamNorm.
+
+        Parameters
+        ----------
+        skip_copy : bool, optional
+            If "True" skips the top-level deepcopy of oimParamNorm.
+            Sub-level deepcopies (e.g. oimParam) are skipped by default.
+            Default is False.
+        """
+        ser = self.__dict__
+        if not skip_copy:
+            ser = copy.deepcopy(ser)
+
         for key, value in self.__class__.__dict__.items():
             if (
                 (key.startswith("_") and key.endswith("_"))
@@ -353,7 +373,7 @@ class oimParamNorm:
 
             ser[key] = value
 
-        ser["params"] = [v.serialize() for v in ser["params"]]
+        ser["params"] = [v.serialize(skip_copy=True) for v in ser["params"]]
         ser["class"] = type(self).__name__
         return ser
 
@@ -445,9 +465,20 @@ class oimParamInterpolator(oimParam):
                 params.append(pi)
         return params
 
-    def serialize(self) -> Dict[str, Any]:
-        """Serializes the oimParam/oimParamInterpolator."""
-        ser = copy.deepcopy(self.__dict__)
+    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+        """Serializes the oimParamInterpolator.
+
+        Parameters
+        ----------
+        skip_copy : bool, optional
+            If "True" skips the top-level deepcopy of oimParamInterpolator.
+            Sub-level deepcopies (e.g. oimParam) are skipped by default.
+            Default is False.
+        """
+        ser = self.__dict__
+        if not skip_copy:
+            ser = copy.deepcopy(ser)
+
         for key, value in self.__class__.__dict__.items():
             if (
                 (key.startswith("_") and key.endswith("_"))
@@ -466,7 +497,7 @@ class oimParamInterpolator(oimParam):
         for key, value in ser.items():
             if isinstance(value, (list, tuple, np.ndarray)):
                 ser[key] = [
-                    v.serialize()
+                    v.serialize(skip_copy=True)
                     for v in value
                     if (
                         isinstance(v, (oimParam))
@@ -474,7 +505,7 @@ class oimParamInterpolator(oimParam):
                     )
                 ]
             elif isinstance(value, oimParam):
-                ser[key] = value.serialize()
+                ser[key] = value.serialize(skip_copy=True)
 
         ser["class"] = type(self).__name__
         return ser

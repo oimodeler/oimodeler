@@ -91,15 +91,28 @@ class oimModel:
         """Return a short name of the model"""
         return " + ".join([comp.shortname for comp in self.components])
 
-    def serialize(self) -> Dict[str, Any]:
-        """Serializes the oimModel."""
+    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+        """Serializes the oimModel.
+
+        Parameters
+        ----------
+        skip_copy : bool, optional
+            If "True" skips the top-level deepcopy of oimModel.
+            Sub-level deepcopies (e.g. oimComponent or oimParam)
+            are skipped by default. Default is False.
+        """
         ser = {"components": [], "other": {}}
-        for comp in copy.deepcopy(self.components):
+        components = self.components
+        if not skip_copy:
+            components = copy.deepcopy(self.components)
+
+        for comp in components:
             ser["components"].append(
-                [comp.__class__.__name__, comp.serialize()]
+                [comp.__class__.__name__, comp.serialize(skip_copy=True)]
             )
 
-        for key, value in {**self.__class__.__dict__, **vars(self)}.items():
+        other = {**self.__class__.__dict__, **vars(self)}
+        for key, value in other.items():
             if (
                 (key.startswith("_") and key.endswith("_"))
                 or key == "components"
