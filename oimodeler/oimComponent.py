@@ -262,11 +262,23 @@ class oimComponent:
 
         return 0 * xx
 
-    def serialize(self) -> Dict[str, Any]:
-        """Serializes the oimComponent."""
+    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+        """Serializes the oimComponent.
+
+        Parameters
+        ----------
+        skip_copy : bool, optional
+            If "True" skips the top-level deepcopy of oimComponent.
+            Sub-level deepcopies (e.g. oimParam) are skipped by default.
+            Default is False.
+        """
         ser = dict(params={}, other={})
-        for name, param in copy.deepcopy(self.params).items():
-            ser["params"][name] = param.serialize()
+        params = self.params
+        if not skip_copy:
+            params = copy.deepcopy(params)
+
+        for name, param in params.items():
+            ser["params"][name] = param.serialize(skip_copy=True)
 
         for key, value in {**self.__class__.__dict__, **vars(self)}.items():
             # TODO: This might not work for SubSubComponents
