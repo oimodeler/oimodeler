@@ -455,20 +455,9 @@ class oimFitterDynesty(oimFitter):
 
     def _run(self, **kwargs):
         print_progress = kwargs.pop("progress", False)
-        if self.method == "dynamic":
-            run_kwargs = {
-                "nlive_batch": kwargs.pop("nlive_batch", 1000),
-                "maxbatch": kwargs.pop("maxbatch", 100),
-                "dlogz_init": kwargs.pop("dlogz_init", 0.01),
-                "nlive_init": kwargs.pop("nlive_init", 1000),
-            }
-        else:
-            run_kwargs = {"dlogz": kwargs.pop("dlogz", 0.01)}
 
         # TODO: Implement checkpoint file here
-        self.sampler.run_nested(
-            print_progress=print_progress, **run_kwargs, **kwargs
-        )
+        self.sampler.run_nested(print_progress=print_progress, **kwargs)
         self.getResults()
         return kwargs
 
