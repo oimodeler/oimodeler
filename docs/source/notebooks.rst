@@ -135,8 +135,6 @@ These examples are dedicated to the use of some of the most advanced and complex
 
             `Multi-techniques model-fitting with oimBinaryOrbit       <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbitFit.ipynb>`_ 
 
-
-
 **Modelling of gaeous disk emission using oimDisco** 
 
 .. list-table:: 
