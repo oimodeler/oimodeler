@@ -130,11 +130,10 @@ These examples are dedicated to the use of some of the most advanced and complex
 
 
      - .. figure:: _static/notebooks/exampleOimBinaryOrbitFit_thumbnail.png
-              :target: https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbitFit.ipynb
+            :target: https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbitFit.ipynb
+            :alt: Multi-techniques model-fitting with oimBinaryOrbit    
 
-              :alt: Multi-techniques model-fitting with oimBinaryOrbit    
-
-              `Multi-techniques model-fitting with oimBinaryOrbit       <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbitFit.ipynb>`_ 
+            `Multi-techniques model-fitting with oimBinaryOrbit       <https://github.com/oimodeler/oimodeler/blob/main/examples/notebooks/CustomComponents/ExampleOimBinaryOrbitFit.ipynb>`_ 
 
 
 
