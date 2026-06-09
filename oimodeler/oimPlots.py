@@ -8,6 +8,7 @@ from typing import Dict, List, Tuple, Union
 
 import astropy.units as u
 import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
@@ -286,10 +287,10 @@ def uvPlot(
     stringunitformat: str = "latex_inline",
     color: Union[str, None] = None,
     maxi: Union[float, None] = None,
-    grid: bool = True,
-    gridcolor: str = "k",
     fontsize: Union[int, None] = None,
     xytitle: List[bool] = [True, True],
+    showGrid: bool = True,
+    showCircles: bool = False,
     showLegend: bool = True,
     showColorbar: bool = True,
     showFlagged: bool = False,
@@ -297,6 +298,8 @@ def uvPlot(
     axe: Union[Axes, None] = None,
     title: Union[str, None] = None,
     cunit: u.Quantity = u.m,
+    gridkwargs: Dict = {},
+    circlekwargs: Dict = {},
     legendkwargs: Dict = {},
     wavelength: Union[u.Quantity, None] = None,
     **kwargs,
@@ -317,14 +320,14 @@ def uvPlot(
         The color of the plot. The default is None.
     maxi : float, optional
         The maximum value of the plot. The default is None.
-    grid : bool, optional
-        Show the grid. The default is True.
-    gridcolor : str, optional
-        The color of the grid. The default is "k".
     fontsize : int, optional
         The fontsize of the labels. The default is None.
     xytitle : list of bool, optional
         Show the x and y labels. The default is [True, True].
+    showGrid : bool, optional
+        Show the grid. The default is True.
+    showCircles : bool, optional
+        Show circles of equal spacing. The default is False.
     showLegend : bool, optional
         Show the legend. The default is True.
     showColorbar : bool, optional
@@ -339,6 +342,11 @@ def uvPlot(
         The title of the plot. The default is None.
     cunit : astropy.units.Quantity, optional
         The colorbar unit. The default is astropy.unit.m.
+    gridkwargs : dict, optional
+        Keyword arguments for the grid. The default is {}.
+    circlekwargs : dict, optional
+        Keyword arguments for circles
+        (based on matplotlib.patches.Circle). The default is {}.
     legendkwargs : dict, optional
         Keyword arguments for the legend. The default is {}.
     wavelength : astropy.units.m
@@ -497,9 +505,24 @@ def uvPlot(
 
         maxi = 1.1 * max(xmax, ymax)
 
-    if grid:
-        axe.plot([-maxi, maxi], [0, 0], linewidth=1, color=gridcolor, zorder=5)
-        axe.plot([0, 0], [-maxi, maxi], linewidth=1, color=gridcolor, zorder=5)
+    if showGrid:
+        gridkwargs = {"c": "k", "zorder": 5, "lw": 1, **gridkwargs}
+        axe.axhline(0, **gridkwargs)
+        axe.axvline(0, **gridkwargs)
+
+    if showCircles:
+        circlekwargs = {
+            "spacing": 50 if unit == u.m else 5e6,
+            "edgecolor": "green",
+            "lw": 0.5,
+            "ls": "--",
+            "fill": False,
+            **circlekwargs,
+        }
+        step = circlekwargs.pop("spacing")
+        for radius in np.arange(0, maxi + step, step):
+            axe.add_patch(patches.Circle((0, 0), radius, **circlekwargs))
+
     axe.set_aspect("equal", "box")
     axe.set_xlim([maxi, -maxi])
     axe.set_ylim([-maxi, maxi])
@@ -521,6 +544,7 @@ def uvPlot(
 
     if showLegend:
         axe.legend(**legendkwargs)
+
     return axe
 
 
