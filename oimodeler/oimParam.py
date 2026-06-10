@@ -1213,7 +1213,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
     T : int or float
         The blackbody temperature (K).
     solid_angle : int, float, or .oimParam
-        The solid angle of the object or an oimParam containing the solid angle (mas).
+        The solid angle of the object or an oimParam containing the solid angle (mas**2).
 
     Attributes
     ----------
@@ -1270,7 +1270,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         return (
             blackbody(self.T(wl, t), const.c / wl)
             / u.rad.to(u.mas) ** 2
-            * solid_angle**2
+            * solid_angle
             * 1e23
         )
 
