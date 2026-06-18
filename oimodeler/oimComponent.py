@@ -878,26 +878,18 @@ class oimComponentRadialProfile(oimComponent):
             r2D,
             axis=2,
         )
-        flux = np.nan_to_num(
-            2.0 * np.pi * integrate.trapezoid(r1D * Ir, r1D, axis=2), nan=0
-        )
+        flux = 2.0 * np.pi * integrate.trapezoid(r1D * Ir, r1D, axis=2)
         flux_r = flux[:, :, np.newaxis]
-        res0 /= flux_r
+        res0 = np.nan_to_num(res0 / flux_r, nan=0)
 
         grid = (tin, wlin, sfreq0)
         coord = np.transpose([t, wl, sfreq])
 
-        real = np.nan_to_num(
-            interpolate.interpn(
-                grid, np.real(res0), coord, bounds_error=False, fill_value=None
-            ),
-            0,
+        real = interpolate.interpn(
+            grid, np.real(res0), coord, bounds_error=False, fill_value=None
         )
-        imag = np.nan_to_num(
-            interpolate.interpn(
-                grid, np.imag(res0), coord, bounds_error=False, fill_value=None
-            ),
-            nan=0,
+        imag = interpolate.interpn(
+            grid, np.imag(res0), coord, bounds_error=False, fill_value=None
         )
         return real + imag * 1j, flux
 

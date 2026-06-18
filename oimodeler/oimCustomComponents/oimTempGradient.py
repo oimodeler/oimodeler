@@ -258,8 +258,7 @@ class oimTempGrad(oimComponentRadialProfile):
         rin_mas, rout_mas = map(
             lambda x: linear_to_angular(x, dist) * 1e3, [rin, rout]
         )
-        radial_profile = ((r > rin_mas) & (r < rout_mas)).astype(int)
-        image = np.nan_to_num(radial_profile * spectral_density, nan=0)
+        image = ((r > rin_mas) & (r < rout_mas)).astype(int) * spectral_density
         if len(r.shape) == 3:
             return image
 
