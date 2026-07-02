@@ -839,28 +839,7 @@ class oimComponentRadialProfile(oimComponent):
             res = self._radialProfileFunction(r_arr, wl_arr, t_arr)
         return res
 
-    # TODO: Re-implement this version of the hankel transform
-    # @staticmethod
-    # def fht(Ir, r, wlin, tin, sfreq, wl, t):
-    #     nfreq, nwl = len(sfreq), len(wlin)
-    #     r, Ir = (
-    #         r[np.newaxis, np.newaxis, :, np.newaxis],
-    #         Ir[:, :, :, np.newaxis],
-    #     )
-    #     sfreq = sfreq.reshape(nfreq // nwl, nwl).T[
-    #         np.newaxis, :, np.newaxis, :
-    #     ]
-    #     num_hankel = (
-    #         2.0
-    #         * np.pi
-    #         * integrate.trapezoid(
-    #             r * Ir * j0(2 * np.pi * r * sfreq), r, axis=2
-    #         )
-    #     )
-    #     norm = integrate.trapezoid(2 * np.pi * r * Ir, r, axis=2)
-    #     return (num_hankel / norm).T.reshape(nfreq).astype(complex)
-
-    # TODO: Convert this to non-statimethod for the asymmetric case
+    # TODO: Implement asymmetric case here
     @staticmethod
     def hankel(Ir, r, wlin, tin, sfreq, wl, t, precision=None):
         if precision is None:
@@ -933,7 +912,6 @@ class oimComponentRadialProfile(oimComponent):
 
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
-
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         im = np.nan_to_num(
             im.reshape(dims)
@@ -980,10 +958,6 @@ class oimComponentRadialProfile(oimComponent):
             extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
 
         spf = np.hypot(fxp, fyp)
-
-        # TODO: Implement this for asymmetric models
-        psi = np.arctan2(fyp, fxp) if self.asymmetric else None
-
         wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
         t0 = np.sort(np.unique(t)) if self._t is None else self._t
 
