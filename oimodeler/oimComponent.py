@@ -847,7 +847,6 @@ class oimComponentRadialProfile(oimComponent):
         else:
             sfreq0 = np.linspace(0, np.max(sfreq), num=precision)
 
-        r1D = r[np.newaxis, np.newaxis, :]
         r2D = r[np.newaxis, np.newaxis, :, np.newaxis]
         Ir2D = Ir[:, :, :, np.newaxis]
         sf2D = sfreq0[np.newaxis, np.newaxis, np.newaxis, :]
@@ -857,10 +856,6 @@ class oimComponentRadialProfile(oimComponent):
             r2D,
             axis=2,
         )
-        flux = 2.0 * np.pi * integrate.trapezoid(r1D * Ir, r1D, axis=2)
-        flux_r = flux[:, :, np.newaxis]
-        res0 = np.nan_to_num(res0 / flux_r, nan=0)
-
         grid = (tin, wlin, sfreq0)
         coord = np.transpose([t, wl, sfreq])
 
@@ -870,7 +865,7 @@ class oimComponentRadialProfile(oimComponent):
         imag = interpolate.interpn(
             grid, np.imag(res0), coord, bounds_error=False, fill_value=None
         )
-        return real + imag * 1j, flux
+        return real + imag * 1j
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         wl, t = 0 if wl is None else wl, 0 if t is None else t
@@ -912,6 +907,7 @@ class oimComponentRadialProfile(oimComponent):
 
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
+
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         im = np.nan_to_num(
             im.reshape(dims)
@@ -961,9 +957,8 @@ class oimComponentRadialProfile(oimComponent):
         wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
         t0 = np.sort(np.unique(t)) if self._t is None else self._t
 
-        Ir = self.getInternalRadialProfile(wl0, t0)
-        vc, ftot = self.hankel(
-            Ir,
+        vc = self.hankel(
+            self.getInternalRadialProfile(wl0, t0),
             self._r * units.mas.to(units.rad),
             wl0,
             t0,
@@ -972,25 +967,12 @@ class oimComponentRadialProfile(oimComponent):
             t,
             precision=self.precision,
         )
-        nwl0 = np.size(wl0)
-        ftot = ftot.reshape(nwl0)
-        ftot_Jy_interp = np.interp(wl, wl0, ftot * 1e23)
-
-        # HACK: Corrects this for the TempGrad model
-        if "TempGrad" in self.shortname:
-            return (
-                vc
-                * self._ftTranslateFactor(fxp, fyp, wl, t)
-                * ftot_Jy_interp
-                * extfactor
-            )
-        else:
-            return (
-                vc
-                * self._ftTranslateFactor(fxp, fyp, wl, t)
-                * self.params["f"](wl, t)
-                * extfactor
-            )
+        return (
+            vc
+            * self._ftTranslateFactor(fxp, fyp, wl, t)
+            * self.params["f"](wl, t)
+            * extfactor
+        )
 
 
 class oimComponentFitsImage(oimComponentImage):
