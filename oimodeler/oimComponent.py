@@ -933,9 +933,12 @@ class oimComponentRadialProfile(oimComponent):
 
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
+
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
-        im = (
-            im.reshape(dims) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
+        im = np.nan_to_num(
+            im.reshape(dims)
+            * extfactor[np.newaxis, :, np.newaxis, np.newaxis],
+            nan=0,
         )
 
         if self.normalizeImage:
