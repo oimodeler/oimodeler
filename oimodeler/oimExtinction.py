@@ -20,7 +20,7 @@ def extlaw_FitzIndeb(
     kappa = interpolate.splev(wavelength, FITZINDEBSPLINE, der=0)
     return A_V * (kappa / 211.4)
 
-def extlaw_Cardelli(wavelength, A_V=10.0, R_V=3.1):
+def extlaw_Cardelli89(wavelength, A_V=10.0, R_V=3.1):
     """Extinction law from Cardelli et al. (1989, ApJ 345, 245).
     Appropriate for 0.125-3.5 µm."""
 

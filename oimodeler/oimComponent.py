@@ -3,6 +3,7 @@
 
 import copy
 import warnings
+import inspect
 from pathlib import Path
 from typing import Any, Dict, Union
 
@@ -350,10 +351,16 @@ class oimComponentFourier(oimComponent):
 
             self.params["pa"] = oimParam(**_standardParameters["pa"])
 
-        # NOTE: Add extinction if A_V is specified in kwargs
-        if "A_V" in kwargs:
+        # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
+        if ("extlaw" in kwargs) or (kwargs.get("extincted", False)):
             self.extincted = True
-            self.params["A_V"] = oimParam(**_standardParameters["A_V"])
+            self.extlaw = kwargs.get("extlaw", extlaw) # Take either the supplied extinction law, or the default
+            self.extargs = []
+            for extarg in inspect.getfullargspec(self.extlaw).args[1:]:
+                self.extargs.append(extarg)
+                self.params[extarg] = oimParam(**_standardParameters.get(extarg, {"name":extarg}))
+        if "A_V" in kwargs:
+            raise NotImplementedError("Extinction must now be defined by specifying extlaw or extincted, instead of A_V")
 
         self._eval(**kwargs, checkParam=False)
 
@@ -374,7 +381,7 @@ class oimComponentFourier(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
+            extfactor = 10 ** (-0.4 * self.extlaw(wl, *[self.params[extarg].value for extarg in self.extargs]))
 
         vc = self._visFunction(fxp, fyp, np.hypot(fxp, fyp), wl, t)
         return (
@@ -422,9 +429,9 @@ class oimComponentFourier(oimComponent):
             else:
                 x_arr = xp * self.params["elong"](wl_arr, t_arr)
 
-        extfactor = np.array([1.0])
+        extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
+            extfactor = 10 ** (-0.4 * self.extlaw(wl, *[self.params[extarg].value for extarg in self.extargs]))
 
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = (
@@ -466,9 +473,9 @@ class oimComponentFourier(oimComponent):
             else:
                 xx = xp * self.params["elong"](wl, t)
 
-        extfactor = np.array([1.0])
+        extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
+            extfactor = 10 ** (-0.4 * self.extlaw(wl, *[self.params[extarg].value for extarg in self.extargs]))
 
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         return (
@@ -512,10 +519,16 @@ class oimComponentImage(oimComponent):
             else:
                 self.params["elong"] = oimParam(**_standardParameters["elong"])
 
-        # NOTE: Add extinction if A_V is specified in kwargs
-        if "A_V" in kwargs:
+        # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
+        if ("extlaw" in kwargs) or (kwargs.get("extincted", False)):
             self.extincted = True
-            self.params["A_V"] = oimParam(**_standardParameters["A_V"])
+            self.extlaw = kwargs.get("extlaw", extlaw) # Take either the supplied extinction law, or the default
+            self.extargs = []
+            for extarg in inspect.getfullargspec(self.extlaw).args[1:]:
+                self.extargs.append(extarg)
+                self.params[extarg] = oimParam(**_standardParameters.get(extarg, {"name":extarg}))
+        if "A_V" in kwargs:
+            raise NotImplementedError("Extinction must now be defined by specifying extlaw or extincted, instead of A_V")
 
         if "FTBackend" in kwargs:
             self.FTBackend = kwargs["FTBackend"]()
@@ -572,7 +585,7 @@ class oimComponentImage(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
+            extfactor = 10 ** (-0.4 * self.extlaw(wl, *[self.params[extarg].value for extarg in self.extargs]))
 
         if not (
             self.FTBackend.check(
@@ -631,9 +644,9 @@ class oimComponentImage(oimComponent):
                 else:
                     x_arr *= self.params["elong"](wl_arr, t_arr)
 
-        extfactor = np.array([1.0])
+        extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
+            extfactor = 10 ** (-0.4 * self.extlaw(wl, *[self.params[extarg].value for extarg in self.extargs]))
 
         im0 = self._internalImage()
         if im0 is None:
@@ -784,10 +797,16 @@ class oimComponentRadialProfile(oimComponent):
                     **_standardParameters["skwPa"]
                 )
 
-        # NOTE: Add extinction if A_V is specified in kwargs
-        if "A_V" in kwargs:
+        # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
+        if ("extlaw" in kwargs) or (kwargs.get("extincted", False)):
             self.extincted = True
-            self.params["A_V"] = oimParam(**_standardParameters["A_V"])
+            self.extlaw = kwargs.get("extlaw", extlaw) # Take either the supplied extinction law, or the default
+            self.extargs = []
+            for extarg in inspect.getfullargspec(self.extlaw).args[1:]:
+                self.extargs.append(extarg)
+                self.params[extarg] = oimParam(**_standardParameters.get(extarg, {"name":extarg}))
+        if "A_V" in kwargs:
+            raise NotImplementedError("Extinction must now be defined by specifying extlaw or extincted, instead of A_V")
 
         self.params["dim"] = oimParam(**_standardParameters["dim"])
         self._eval(**kwargs, checkParam=False)
@@ -927,9 +946,9 @@ class oimComponentRadialProfile(oimComponent):
             else:
                 x_arr = xp * self.params["elong"](wl_arr, t_arr)
 
-        extfactor = np.array([1.0])
+        extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
+            extfactor = 10 ** (-0.4 * self.extlaw(wl, *[self.params[extarg].value for extarg in self.extargs]))
 
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
@@ -977,7 +996,7 @@ class oimComponentRadialProfile(oimComponent):
 
         extfactor = 1.0
         if self.extincted:
-            extfactor = 10 ** (-0.4 * extlaw(wl, self.params["A_V"].value))
+            extfactor = 10 ** (-0.4 * self.extlaw(wl, *[self.params[extarg].value for extarg in self.extargs]))
 
         spf = np.hypot(fxp, fyp)
 

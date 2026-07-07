@@ -13,6 +13,14 @@ free = false
 mini = 0
 maxi = 50
 
+[R_V]
+name = 'R_V'
+description = 'Ratio of total to selective extinction'
+free = false
+value = 3.1
+mini = 1
+maxi = 6
+
 [cosi]
 name = "cosi"
 value = 1
