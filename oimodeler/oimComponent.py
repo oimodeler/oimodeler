@@ -185,7 +185,7 @@ class oimComponent:
                         self.params[key].unit = value.unit
 
             elif checkParam:
-                if key not in ["pa", "elong", "cosi", "elliptic", "flat"]:
+                if key not in ["pa", "elong", "cosi", "elliptic", "flat", "extlaw", "extincted"]:
                     warnings.warn(
                         f"{key} not a parameter of {self.name}: ignored"
                     )
