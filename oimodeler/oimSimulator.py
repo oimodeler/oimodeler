@@ -436,7 +436,7 @@ class oimSimulator:
         Parameters
         ----------
         arr : str or list of str
-            The name of the OIFITS column that is plotted.
+            The name(s) of the OIFITS column(s) to be plotted.
         simulated : bool, optional
             If True, simulated data are plotted. Default is True.
         savefig : str or pathlib.Path, optional
@@ -488,8 +488,6 @@ class oimSimulator:
         if type(arr) != type([]):
             arr = [arr]
 
-        # NOTE: Set the projection to oimAxes for all subplots to use oimodeler
-        # custom plots
         if fig is None or axe is None:
             fig, axe = plt.subplots(
                 len(arr),
@@ -504,10 +502,7 @@ class oimSimulator:
 
         plt.subplots_adjust(left=0.09, top=0.98, right=0.98, hspace=0.14)
 
-        # NOTE: Plotting loop: Plotting data and simulated data for each data type in arr
         for iax, axi in enumerate(axe):
-            # NOTE: Plotting the data with wavelength colorscale + errorbars vs
-            # spatial frequencies
             scale = axi.oiplot(
                 self.data.data,
                 xaxis,
@@ -517,8 +512,6 @@ class oimSimulator:
                 **kwargsData,
             )
 
-            # NOTE: Over-plotting the simulated data as a dotted line vs spatial
-            # frequencies
             if simulated:
                 axi.oiplot(
                     self.simulatedData.data,
@@ -533,7 +526,6 @@ class oimSimulator:
             if axi == axe[0]:
                 axi.legend()
 
-            # NOTE: Automatic ylim => 0-1 for visibilties, -180,180 for phases
             if arr[iax] in ["VIS2DATA", "VISAMP"] and visLog:
                 axi.set_yscale("log")
 
@@ -554,7 +546,6 @@ class oimSimulator:
 
         axe[0].set_xlim(xmin, xmax)
 
-        # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
         if colorbar:
             idxC = np.where(oimPlotParamName == kwargsData["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
@@ -578,14 +569,51 @@ class oimSimulator:
         cname: str = "EFF_WAVE",
         cunit: str = "micron",
         cmap: str = "plasma",
+        colorbar: bool = True,
         marker: str = ".",
-        levels: List[int] = [1, 2, 3],
+        levels: Union[List[int], None] = [1, 2, 3],
+        fig: Union[Figure, None] = None,
+        axe: Union[Axes, None] = None,
         **kwargs,
     ):
+        """Plots the residuals of the data and the simulatedData.
 
-        kwargs0 = dict(cname=cname, cunit=cunit, lw=2, cmap=cmap)
-
-        kwargs = {**kwargs0, **kwargs}
+        Parameters
+        ----------
+        arr : str or list of str
+            The name(s) of the OIFITS column(s) to be plotted.
+        xaxis : str, optional
+            OIFITS information plotted on the x-axis. Default is "SPAFREQ".
+        xunit : str, optional
+            Unit of the x-axis. Default is "cycle/rad".
+        savefig : str or pathlib.Path, optional
+            Saves the plot. Default is None.
+        visLog : bool, optional
+            If True, sets the y-scale to logarithmic. Default is False.
+        cname : str, optional
+            OIFITS information plotted on the colorbar. Default is "EFF_WAVE".
+        cunit : str, optional
+            Unit of the colorbar. Default is "micron".
+        cmap : str, optional
+            Name of the colormap. Default is "plasma".
+        colorbar : bool, optional
+            If True, plots a colorbar. Default is True.
+        marker : str, optional
+            The marker of the residuals. Default is ".".
+        levels : list of int, optional
+            Marks residual levels with horizontal lines.
+        fig : matplotlib.figure.Figure, optional
+            Figure used for the plotting. Default is None.
+        axe : matplotlib.axes.Axes, optional
+            Axes used for the plotting. Default is None.
+        """
+        kwargs = {
+            "cname": cname,
+            "cunit": cunit,
+            "lw": 2,
+            "cmap": cmap,
+            **kwargs,
+        }
         kwargs["cunit"] = u.Unit(kwargs["cunit"])
 
         if "color" in kwargs:
@@ -596,16 +624,21 @@ class oimSimulator:
         if "ls" not in kwargs and "linestyle" not in kwargs:
             kwargs["ls"] = ""
 
-        residuals_data = oimData()
+        if type(arr) != type([]):
+            arr = [arr]
+
+        residual_data = oimData()
         for i, (dat, fit_dat) in enumerate(
             zip(self.data.data, self.simulatedData.data)
         ):
-            residuals_data.addData(hdulistDeepCopy(fit_dat))
+            residual_data.addData(hdulistDeepCopy(fit_dat))
             for param in arr:
-
                 idx_p = np.where(oimPlotParamName == param)[0][0]
                 p_arr = oimPlotParamArr[idx_p]
                 p_err = oimPlotParamError[idx_p]
+
+                if p_arr not in dat:
+                    continue
 
                 if param in ["T3PHI", "VISPHI"]:
                     res_ph = (
@@ -619,72 +652,71 @@ class oimSimulator:
                             )
                         )
                     ) / dat[p_arr].data[p_err]
-                    residuals_data.data[i][p_arr].data[param] = res_ph
+                    residual_data.data[i][p_arr].data[param] = res_ph
                 else:
                     res_vis = (
                         dat[p_arr].data[param] - fit_dat[p_arr].data[param]
                     ) / fit_dat[p_arr].data[p_err]
-                    residuals_data.data[i][p_arr].data[param] = res_vis
+                    residual_data.data[i][p_arr].data[param] = res_vis
 
-        # kwargs = dict(cname = cname, cunit=cunit)
-        idx_xaxis = np.where(oimPlotParamName == xaxis)[0][0]
-        label_xaxis = oimPlotParamLabel[idx_xaxis]
+        if fig is None or axe is None:
+            fig, axe = plt.subplots(
+                len(arr),
+                1,
+                subplot_kw={"projection": "oimAxes"},
+                figsize=(14, 8),
+                constrained_layout=True,
+            )
 
-        fig, ax = plt.subplots(
-            len(arr),
-            1,
-            subplot_kw=dict(projection="oimAxes"),
-            figsize=(14, 8),
-            constrained_layout=True,
-        )
+        if len(arr) == 1:
+            axe = np.array([axe])
 
-        for i in range(len(arr)):
-            idx_p = np.where(oimPlotParamName == arr[i])[0][0]
+        for axi, arri in zip(axe, arr):
+            idx_p = np.where(oimPlotParamName == arri)[0][0]
             label_p = oimPlotParamLabel[idx_p]
 
-            scale = ax[i].oiplot(
-                residuals_data,
+            scale = axi.oiplot(
+                residual_data,
                 xaxis,
-                arr[i],
+                arri,
                 xunit=xunit,
                 marker=marker,
                 showColorbar=False,
                 **kwargs,
             )
 
-            xlim = ax[0].get_xlim()
-
-            if type(levels) != type(None):
+            if levels is not None:
                 alpha = np.linspace(1, 0.2, num=len(levels))
-                ax[i].plot(xlim, [0, 0], ls="-", color="grey")
+                axi.axhline(0, ls="-", color="grey")
                 for j, leveli in enumerate(levels):
                     for k in range(2):
-                        y = np.array([1, 1]) * (2 * k - 1) * (leveli)
-                        ax[i].plot(
-                            xlim, y, ls="--", color="grey", alpha=alpha[j]
+                        axi.axhline(
+                            (2 * k - 1) * leveli,
+                            ls="--",
+                            color="grey",
+                            alpha=alpha[j],
                         )
-            # ax[i].set_title(label_p)
-            ax[i].set_xlabel(label_xaxis + " (" + xunit + ")")
-            ax[i].set_ylabel(f"{label_p} Residuals")
-            ax[i].margins(x=0)
 
-            if ax[i] != ax[-1]:
-                ax[i].get_xaxis().set_visible(False)
-        # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
+            axi.set_ylabel(f"{label_p} Residuals")
+            axi.margins(x=0)
 
-        if "cname" in kwargs:
+            if axi != axe[-1]:
+                axi.get_xaxis().set_visible(False)
+
+        if colorbar:
             idxC = np.where(oimPlotParamName == kwargs["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargs['cunit']:latex_inline}"
             fig.colorbar(
-                scale, ax=ax.ravel().tolist(), label=f"{xlabel} ({cunittext})"
+                scale, ax=axe.ravel().tolist(), label=f"{xlabel} ({cunittext})"
             )
 
-        if savefig != None:
+        if savefig is not None:
             plt.savefig(savefig)
 
-        return fig, ax
+        return fig, axe
 
+    # TODO: Make this a combination of the "plot" and "plotResiduals" methods?
     def plotWithResiduals(
         self,
         arr,
@@ -843,8 +875,7 @@ class oimSimulator:
                         ax[2 * i + 1].plot(
                             xlim, y, ls="--", color="grey", alpha=alpha[j]
                         )
-            # ax[i].set_title(label_p)
-            # ax[2*i+1].set_xlabel(label_xaxis+' ('+xunit+')')
+
             ax[2 * i + 1].set_ylabel(r"($\sigma$)")
             ax[2 * i + 1].margins(x=0)
 
