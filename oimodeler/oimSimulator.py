@@ -610,7 +610,6 @@ class oimSimulator:
         kwargs = {
             "cname": cname,
             "cunit": cunit,
-            "lw": 2,
             "cmap": cmap,
             **kwargs,
         }
@@ -620,9 +619,6 @@ class oimSimulator:
             kwargs.pop("cmap")
             kwargs.pop("cname")
             kwargs.pop("cunit")
-
-        if "ls" not in kwargs and "linestyle" not in kwargs:
-            kwargs["ls"] = ""
 
         if type(arr) != type([]):
             arr = [arr]

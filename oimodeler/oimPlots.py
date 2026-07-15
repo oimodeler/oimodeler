@@ -221,17 +221,16 @@ def _colorPlot(
     """
     noline = False
     if "ls" in kwargs:
-        if kwargs["ls"] == None or kwargs["ls"] == "":
+        if kwargs["ls"] is None or kwargs["ls"] == "":
             noline = True
     if "linestyle" in kwargs:
-        if kwargs["linestyle"] == None or kwargs["linestyle"] == "":
+        if kwargs["linestyle"] is None or kwargs["linestyle"] == "":
             noline = True
 
     if "cmap" not in kwargs:
         kwargs["cmap"] = "plasma"
 
-    maxi = [np.max(z)]
-    mini = [np.min(z)]
+    mini, maxi = [np.min(z)], [np.max(z)]
     for ci in axe.collections:
         maxii = np.max(ci.get_array())
         minii = np.min(ci.get_array())
@@ -239,24 +238,20 @@ def _colorPlot(
             maxi.append(maxii)
             mini.append(minii)
 
-    maxi = np.max(maxi)
-    mini = np.min(mini)
-
+    mini, maxi = np.min(mini), np.max(maxi)
     if type(flag) == type(None):
         flag = (0 * x).astype(bool)
 
     yma = np.ma.masked_where(flag, y)
-
     if "norm" not in kwargs:
         norm = plt.Normalize(mini, maxi)
     else:
         norm = kwargs["norm"]
 
     res = None
-
     if x.size == 1 or "marker" in kwargs:
         res = axe.scatter(x, yma, c=z, **kwargs)
-    if x.size > 1 and noline == False:
+    if x.size > 1 and not noline:
         points = np.array([x, y]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
         flag_seg = flag[1:] | flag[0:-1]
@@ -667,7 +662,6 @@ def oimPlot(
     showColorbar: bool = True,
     errorbar: bool = False,
     showFlagged: bool = False,
-    colorbar: bool = True,
     legend: bool = False,
     kwargs_error: Dict = {},
     **kwargs,
@@ -683,37 +677,37 @@ def oimPlot(
     yname : str
         The name of the y-axis parameter.
     axe : matplotlib.axes.Axes, optional
-        The axes to plot on. The default is None.
+        The axes to plot on. Default is None.
     xunit : astropy.units.Quantity, optional
-        The unit of the x-axis parameter. The default is None.
+        The unit of the x-axis parameter. Default is None.
     yunit : astropy.units.Quantity, optional
-        The unit of the y-axis parameter. The default is None.
+        The unit of the y-axis parameter. Default is None.
     cname : str, optional
-        The name of the colorbar. The default is None.
+        The name of the colorbar. Default is None.
     cunit : astropy.units.Quantity, optional
-        The unit of the colorbar. The default is None.
+        The unit of the colorbar. Default is None.
     xlim : float, optional
-        The limit of the x-axis. The default is None.
+        The limit of the x-axis. Default is None.
     ylim : float, optional
-        The limit of the y-axis. The default is None.
+        The limit of the y-axis. Default is None.
     xscale : str, optional
-        The scale of the x-axis. The default is None.
+        The scale of the x-axis. Default is None.
     yscale : str, optional
-        The scale of the y-axis. The default is None.
+        The scale of the y-axis. Default is None.
     shortLabel : str, optional
-        The label format. The default is True.
+        The label format. Default is True.
     color : str, optional
-        The color of the plot. The default is None.
+        The color of the plot. Default is None.
     colorTab : str, optional
-        The color table. The default is None.
+        The color table. Default is None.
     errorbar : bool, optional
-        If toggled shows error bars. The default is False.
+        If toggled shows error bars. Default is False.
     showFlagged : bool, optional
-        If toggled shows flagged data. The default is False.
+        If toggled shows flagged data. Default is False.
     legend : bool, optional
-            show the plot legend False.
+        Show the plot legend. Default is False.
     kwargs_error : dict, optional
-        Additional keyword arguments for the error plot. The default is {}.
+        Additional keyword arguments for the error plot. Default is {}.
     **kwargs : dict
         Keyword arguments for the plot.
 
@@ -724,12 +718,10 @@ def oimPlot(
     """
     res = None
     oifitsList = loadOifitsData(oifitsList)
-    # ndata0 = len(oifitsList)
 
     idxX = np.where(oimPlotParamName == xname)[0][0]
     idxY = np.where(oimPlotParamName == yname)[0][0]
 
-    # xerrname = oimPlotParamError[idxX]
     yerrname = oimPlotParamError[idxY]
 
     xarr = oimPlotParamArr[idxX]
@@ -771,13 +763,13 @@ def oimPlot(
     if yIsUVcoord:
         raise TypeError("Y shouldn't be UCOORD,VCOORD, SPAFREQ, or PA")
 
-    if colorTab == None:
+    if colorTab is None:
         colorTab = oimPlotParamColorCycle
 
     try:
         if "by" not in color:
             colorTab = [color]
-    except:
+    except TypeError:
         pass
 
     ncol = len(colorTab)
@@ -795,12 +787,12 @@ def oimPlot(
         axe = plt.axes()
 
     for ifile, data in enumerate(oifitsList):
-        # yname can be anything but  UCOORD, VCOORD, LENGTH, SPAFREQ, PA or EFF_WAVE
+        # NOTE: yname can be anything but  UCOORD, VCOORD, LENGTH, SPAFREQ, PA or EFF_WAVE
         extnames = np.array([di.name for di in data])
         idx_yext = np.where(extnames == yarr)[0]
         yinsname = np.array([data[i].header["INSNAME"] for i in idx_yext])
 
-        # yname can be VISDATA =sqrt(VIS2DATA)
+        # NOTE: yname can be VISDATA =sqrt(VIS2DATA)
         if yname != "VISDATA":
             ydata = [data[i].data[yname] for i in idx_yext]
             ydataerr = [data[i].data[yerrname] for i in idx_yext]
@@ -814,7 +806,7 @@ def oimPlot(
             ]
             yflag = [data[i].data["FLAG"] for i in idx_yext]
 
-        # xname can be LENGTH, SPAFREQ, PA or EFF_WAVE
+        # NOTE: xname can be LENGTH, SPAFREQ, PA or EFF_WAVE
         if xname == "EFF_WAVE":
             idx_xext = np.where(extnames == xarr)[0]
             xinsname = np.array([data[i].header["INSNAME"] for i in idx_xext])
@@ -876,7 +868,7 @@ def oimPlot(
                 cunitmultiplier = 1
 
             if cunit0 != u.one:
-                clabel += " (" + f"{cunit0:latex}" + ")"
+                clabel += f" ({cunit0:latex})"
 
             if cname == "MJD":
                 carr = yarr
@@ -1037,7 +1029,6 @@ def oimPlot(
                                         **kwargs,
                                     )
                                 else:
-
                                     axe.plot(
                                         xdata[idata][iB, ilam0:ilam1],
                                         ydata[idata][iB, ilam0:ilam1],
@@ -1132,8 +1123,9 @@ def oimPlot(
     if cname and showColorbar:
         plt.colorbar(res, ax=axe, label=clabel)
 
-    if legend == True:
+    if legend:
         axe.legend()
+
     return res
 
 
