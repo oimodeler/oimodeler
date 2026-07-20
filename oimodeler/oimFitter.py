@@ -293,14 +293,15 @@ class oimFitterEmcee(oimFitter):
         )
         kwargs = {**kwargs0, **kwargs}
 
-        labels, truths = [], []
+        labels, truths, fmts = [], [], []
         for name, param in self.freeParams.items():
             label = name
             if param.unit.to_string() != "":
                 label += f" ({param.unit.to_string()})"
 
-            truths.append(param.value)
             labels.append(label)
+            truths.append(param.value)
+            fmts.append(".2f" if np.abs(param.value) >= 1e-2 else ".2e")
 
         chain = self.sampler.get_chain(discard=discard, flat=True, thin=thin)
         chi2 = -2 * self.sampler.get_log_prob(
@@ -315,6 +316,7 @@ class oimFitterEmcee(oimFitter):
             )
 
         kwargs["truths"] = kwargs.get("truths", truths)
+        kwargs["title_fmt"] = kwargs.get("title_fmt", fmts)
         fig = corner.corner(chain, labels=labels, **kwargs)
         if savefig is not None:
             plt.savefig(savefig)
@@ -518,16 +520,18 @@ class oimFitterDynesty(oimFitter):
         )
         kwargs = {**kwargs0, **kwargs}
 
-        labels, truths = [], []
+        labels, truths, fmts = [], [], []
         for name, param in self.freeParams.items():
             label = name
             if param.unit.to_string() != "":
                 label += f" ({param.unit.to_string()})"
 
-            truths.append(param.value)
             labels.append(label)
+            truths.append(param.value)
+            fmts.append(".2f" if np.abs(param.value) >= 1e-2 else ".2e")
 
         kwargs["truths"] = kwargs.get("truths", truths)
+        kwargs["title_fmt"] = kwargs.get("title_fmt", fmts)
         results = self.sampler.results
         fig, _ = dyplot.cornerplot(results, labels=labels, **kwargs)
 
