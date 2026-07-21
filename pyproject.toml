@@ -67,6 +67,9 @@ include-package-data = true
 [tool.setuptools.packages.find]
 exclude = ["docs*", "images*", "examples*", "requirements*"]
 
+[tool.setuptools.package-data]
+oimodeler = ["config/*.toml", "extlaws/*.dat"]
+
 [tool.setuptools.dynamic]
 version = { attr = "oimodeler.__version__" }
 
