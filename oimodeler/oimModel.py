@@ -111,6 +111,7 @@ class oimModel:
                 [comp.__class__.__name__, comp.serialize(skip_copy=True)]
             )
 
+        # TODO: Does this also need a deepcopy?
         other = {**self.__class__.__dict__, **vars(self)}
         for key, value in other.items():
             if (
