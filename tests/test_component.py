@@ -12,11 +12,9 @@ def component():
     return oimComponent(x=5, y=10, f=f)
 
 
-def test_getFourierComponents():
-    ...
+def test_getFourierComponents(): ...
 
 
-# NOTE: The shift might be a bit counterintuitive
 def test_oimComponent_eval(component: oimComponent) -> None:
     """Test the oimComponent's initialization."""
     params = component.params
@@ -58,7 +56,7 @@ def test_oimComponent_directTranslate(component: oimComponent) -> None:
     assert component._directTranslate(0, 0, wl=None, t=None) == (-5, -10)
 
 
-# TODO: Do here the aspro tests
+# TODO: Use ASPRO here for the test
 def test_oimComponent_ftTranslateFactor(component: oimComponent) -> None:
     """Test oimComponent's fourier space spatial translation."""
     ...
@@ -68,7 +66,8 @@ def test_oimComponent_getComplexCoherentFlux(component: oimComponent) -> None:
     """Test oimComponent's complex coherent flux calculation."""
     ucoord = np.linspace(-500, 500)
     complex_coherent_flux = component.getComplexCoherentFlux(
-            u=ucoord, v=ucoord.copy())
+        u=ucoord, v=ucoord.copy()
+    )
     assert complex_coherent_flux.shape == ucoord.shape
     assert np.array_equal(complex_coherent_flux, np.zeros(ucoord.shape))
 

@@ -64,16 +64,16 @@ class oimComponent:
     (or image cubes fore wavelength dependent models or time dependent models)
     and complex coherentFluxes for a vector of u,v,wl, and t coordinates
 
-    Variables
+    Attributes
     ----------
-    name:
-        The name of the component
-    shortname:
-        Short name for the component
-    description:
-        Detailed description of the component
-    params:
-        The dictionary of the component parameters
+    name : str
+        The name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Detailed description of the component.
+    params : dict of str to oimParam
+        The dictionary of the component parameters.
     """
 
     _firstInit = True

@@ -8,6 +8,7 @@ import copy
 import inspect
 import operator
 import sys
+import warnings
 from functools import reduce
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Union
@@ -1374,8 +1375,8 @@ class oimParamLinearStarWl(oimParamInterpolator):
         )
         self.compute_radius = True if R is None else False
         if L is None and R is None:
-            raise ValueError(
-                "Either luminosity or radius must be provided to compute stellar flux."
+            warnings.warn(
+                "Luminosity or radius must be provided for stellar flux computation."
             )
 
     def _getParams(self):
