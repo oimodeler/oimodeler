@@ -65,16 +65,16 @@ class oimComponent:
     (or image cubes fore wavelength dependent models or time dependent models)
     and complex coherentFluxes for a vector of u,v,wl, and t coordinates
 
-    Variables
+    Attributes
     ----------
-    name:
-        The name of the component
-    shortname:
-        Short name for the component
-    description:
-        Detailed description of the component
-    params:
-        The dictionary of the component parameters
+    name : str
+        The name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Detailed description of the component.
+    params : dict of str to oimParam
+        The dictionary of the component parameters.
     """
 
     _firstInit = True
@@ -133,6 +133,9 @@ class oimComponent:
         """Gets the wavelengths."""
         return self.__wl
 
+    # NOTE: .__wl or .__t is not the cleanest approach for serialisation (MBS).
+    # Python adds, for instance, _oimComponent__wl automatically, making it harder
+    # to directly serialise
     @_wl.setter
     def _wl(self, value: Any) -> Union[np.ndarray, None]:
         """Sets the wavelengths."""
@@ -271,12 +274,25 @@ class oimComponent:
 
         return 0 * xx
 
-    def serialize(self) -> Dict[str, Any]:
-        """Serializes the oimComponent."""
-        ser = dict(params={}, other={})
-        for name, param in copy.deepcopy(self.params).items():
-            ser["params"][name] = param.serialize()
+    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+        """Serializes the oimComponent.
 
+        Parameters
+        ----------
+        skip_copy : bool, optional
+            If "True" skips the top-level deepcopy of oimComponent.
+            Sub-level deepcopies (e.g. oimParam) are skipped by default.
+            Default is False.
+        """
+        ser = dict(params={}, other={})
+        params = self.params
+        if not skip_copy:
+            params = copy.deepcopy(params)
+
+        for name, param in params.items():
+            ser["params"][name] = param.serialize(skip_copy=True)
+
+        # TODO: Does this also need a deepcopy?
         for key, value in {**self.__class__.__dict__, **vars(self)}.items():
             # TODO: This might not work for SubSubComponents
             key = key.replace("_oimComponent_", "")

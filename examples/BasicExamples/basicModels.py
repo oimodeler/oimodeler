@@ -38,6 +38,10 @@ mG = oim.oimModel(g)
 mR = oim.oimModel(r)
 mUDPt = oim.oimModel(ud, pt)
 
+# NOTE: Serialize model
+ser = mUDPt.serialize()
+print("Serialized Point + Uniform Disk:")
+pprint(ser)
 
 # %%
 params = mUDPt.getParameters()
