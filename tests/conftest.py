@@ -2,6 +2,8 @@ from pathlib import Path
 
 import pytest
 
+# TODO: Make more tests for dictionaries in the serialisations?
+
 
 @pytest.fixture(scope="session")
 def global_data_dir():
