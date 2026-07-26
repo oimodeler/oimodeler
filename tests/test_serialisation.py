@@ -150,7 +150,9 @@ class TestOimParamInterpolator:
 
     @pytest.fixture
     def wl_intp(self) -> oimParam:
-        intp = oimInterp("wl", wls=[], values=[])
+        intp = oimInterp(
+            "wl", wls=[3e-6, 3.5e-6, 4e-6], values=[0.9, 0.85, 0.8]
+        )
         return intp.type(oimParam(base="f"), **intp.kwargs)
 
     def test_roundtrip(
@@ -196,9 +198,8 @@ class TestOimComponent:
         current = component
         for _ in range(cycles):
             serialised = current.serialize()
-            assert component_equal(
-                current, oimComponent.deserialize(serialised)
-            )
+            current = oimComponent.deserialize(serialised)
+            assert component_equal(component, current)
 
     def test_deepcopy(self, component: oimComponent) -> None:
         serialised = component.serialize()
