@@ -89,7 +89,7 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
     def _vis_gauss_lorentz(self, xp, yp, rho, wl, t):
         la, flor = self.params["la"](wl, t), self.params["flor"](wl, t)
         xx = np.pi * 10**la * u.mas.to(u.rad) * rho
-        vis_gauss = np.exp(-xx**2 / np.log(2))
+        vis_gauss = np.exp(-(xx**2) / np.log(2))
         vis_lor = np.exp(-2 * xx / np.sqrt(3))
         return (1 - flor) * vis_gauss + flor * vis_lor
 
@@ -112,10 +112,12 @@ class oimStarHaloGaussLorentz(oimComponentFourier):
         image_gauss = (
             np.log(2)
             / (np.pi * hlr**2)
-            * np.exp(-(radius / hlr) ** 2 * np.log(2))
+            * np.exp(-((radius / hlr) ** 2) * np.log(2))
         )
         image_lor = (
-            hlr / (2 * np.pi * np.sqrt(3)) * (hlr**2 / 3 + radius**2) ** (-3 / 2)
+            hlr
+            / (2 * np.pi * np.sqrt(3))
+            * (hlr**2 / 3 + radius**2) ** (-3 / 2)
         )
         return (1 - flor) * image_gauss + flor * image_lor
 
@@ -156,7 +158,7 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         la, lkr = self.params["la"](wl, t), self.params["lkr"](wl, t)
         ak = np.sqrt(10 ** (2 * la) / (1 + 10 ** (-2 * lkr)))
         xx = np.pi * ak * u.mas.to(u.rad) * rho
-        vis_gauss = np.exp(-xx**2 / np.log(2))
+        vis_gauss = np.exp(-(xx**2) / np.log(2))
         vis_lor = np.exp(-2 * xx / np.sqrt(3))
         return (1 - flor) * vis_gauss + flor * vis_lor
 
@@ -189,7 +191,7 @@ class oimStarHaloIRing(oimStarHaloGaussLorentz):
         image_gauss = (
             np.log(2)
             / (np.pi * ak**2)
-            * np.exp(-(radius / ak) ** 2 * np.log(2))
+            * np.exp(-((radius / ak) ** 2) * np.log(2))
         )
         image_lor = (
             ak / (2 * np.pi * np.sqrt(3)) * (ak**2 / 3 + radius**2) ** (-3 / 2)
