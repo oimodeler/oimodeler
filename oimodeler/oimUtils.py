@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """Various utilities for optical interferometry"""
 
+from __future__ import annotations
+
 import csv
 import io
 import pickle
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any
 
 import astropy.units as u
 import numpy as np
@@ -319,7 +322,7 @@ OI_FLUX_COLUMNS = [
 
 
 def attach_methods(
-    functions: Union[Callable, ArrayLike, Dict[str, Callable]],
+    functions: Callable | ArrayLike | dict[str, Callable],
 ) -> Callable:
     """Class decorator that attaches function(s) to a class as methods."""
     if not isinstance(functions, dict):
@@ -337,7 +340,7 @@ def attach_methods(
     return decorator
 
 
-def _pickle(self, f: Union[str, Path, io.BufferedWriter], **kwargs) -> None:
+def _pickle(self, f: str | Path | io.BufferedWriter, **kwargs) -> None:
     """Save the pickled representation of the object into an already
     open file or opens a file from a string or pathlib.Path.
     """
@@ -347,7 +350,7 @@ def _pickle(self, f: Union[str, Path, io.BufferedWriter], **kwargs) -> None:
         file.close()
 
 
-def _unpickle(cls, f: Union[Path, io.TextIOWrapper], **kwargs) -> object:
+def _unpickle(cls, f: Path | io.TextIOWrapper, **kwargs) -> object:
     """Read the pickled representation from an open file
     or reads a string or pathlib.Path into a file to return the reconstituted object.
     """
@@ -359,7 +362,7 @@ def _unpickle(cls, f: Union[Path, io.TextIOWrapper], **kwargs) -> object:
     return restored_object
 
 
-def load_toml(toml_file: Path) -> Dict[str, Any]:
+def load_toml(toml_file: Path) -> dict[str, Any]:
     """Loads a toml file into a dictionary."""
     with open(toml_file, "r") as file:
         dictionary = toml.load(file)
@@ -396,7 +399,7 @@ def getDataArrname(dataType: str) -> str:
         raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
 
 
-def getDataType(dataArrname: str) -> List[str]:
+def getDataType(dataArrname: str) -> list[str]:
     """Returns the datatype for a given dataArrname."""
     return [
         datatypei
@@ -405,7 +408,7 @@ def getDataType(dataArrname: str) -> List[str]:
     ]
 
 
-def getDataTypeError(dataArrname: str) -> List[str]:
+def getDataTypeError(dataArrname: str) -> list[str]:
     """Returns the error datatype for a given dataArrname."""
     return [
         datatypei
@@ -424,7 +427,7 @@ def compare_angles(phi: float, psi: float) -> float:
 
 def blackbody(
     temperature: float,
-    nu: Union[float, ArrayLike, None] = None,
+    nu: float | ArrayLike | None = None,
 ) -> np.ndarray:
     """Planck's law in CGS.
 
@@ -447,7 +450,7 @@ def blackbody(
 
 # TODO: Remove astropy from here
 def compute_intensity(
-    wavelengths: u.um, temperature: u.K, pixel_size: Union[float, None] = None
+    wavelengths: u.um, temperature: u.K, pixel_size: float | None = None
 ) -> np.ndarray:
     """Calculates the blackbody_profile via Planck's law and the
     emissivity_factor for a given wavelength, temperature- and
@@ -508,9 +511,7 @@ def compute_photometric_slope(
     )
 
 
-def pad_image(
-    image: np.ndarray, padfact: Union[int, float, None] = None
-) -> np.ndarray:
+def pad_image(image: np.ndarray, padfact: float | None = None) -> np.ndarray:
     """Pads an image with additional zeros for Fourier transform.
 
     Parameters
@@ -558,12 +559,12 @@ def pad_image(
     )
 
 
-def get_next_power_of_two(number: Union[int, float]) -> int:
+def get_next_power_of_two(number: float) -> int:
     """Returns the next power of two for an integer or float input.
 
     Parameters
     ----------
-    number : int or float
+    number : float
         An input number.
 
     Returns
@@ -575,9 +576,8 @@ def get_next_power_of_two(number: Union[int, float]) -> int:
 
 
 def angular_to_linear(
-    radius: Union[float, np.ndarray],
-    distance: float,
-) -> Union[float, np.ndarray]:
+    radius: float | np.ndarray, distance: float
+) -> float | np.ndarray:
     """Converts angular radius, using the object's distance, to linear radius.
 
     Parameters
@@ -605,9 +605,8 @@ def angular_to_linear(
 
 
 def linear_to_angular(
-    radius: Union[float, np.ndarray],
-    distance: float,
-) -> Union[float, np.ndarray]:
+    radius: float | np.ndarray, distance: float
+) -> float | np.ndarray:
     """Converts linear radius, using the object's distance, to angular radius.
 
     Parameters
@@ -639,9 +638,9 @@ def getBaselineName(
     hduname: str = "OI_VIS2",
     length: bool = False,
     angle: bool = False,
-    extver: Union[int, None] = None,
+    extver: int | None = None,
     squeeze: bool = True,
-) -> List[str]:
+) -> list[str]:
     """Gets the baseline names (i.e., telescopes names
     separated by minus sign) in an extension of a oifits file.
 
@@ -725,9 +724,9 @@ def getBaselineName(
 def getConfigName(
     oifits: fits.HDUList,
     hduname: str = "OI_VIS2",
-    extver: Union[int, None] = None,
+    extver: int | None = None,
     squeeze: bool = True,
-) -> List[str]:
+) -> list[str]:
     """Gets the configuration names in an extension of a oifits file.
 
     Parameters
@@ -784,12 +783,12 @@ def getConfigName(
 def getBaselineLengthAndPA(
     oifits: fits.HDUList,
     arr: str = "OI_VIS2",
-    extver: Union[int, None] = None,
+    extver: int | None = None,
     squeeze: bool = True,
     returnUV: bool = False,
     T3Max: bool = False,
     showFlagged: bool = True,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
 
@@ -878,10 +877,10 @@ def getBaselineLengthAndPA(
 def get2DSpaFreq(
     oifits: fits.HDUList,
     arr: str = "OI_VIS2",
-    unit: Union[str, None] = None,
-    extver: Union[int, None] = None,
+    unit: str | None = None,
+    extver: int | None = None,
     squeeze: bool = True,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the spatial two dimensional frequencies.
 
     Parameters
@@ -960,10 +959,10 @@ def get2DSpaFreq(
 def getSpaFreq(
     oifits: fits.HDUList,
     arr: str = "OI_VIS2",
-    unit: Union[str, None] = None,
-    extver: Union[int, None] = None,
+    unit: str | None = None,
+    extver: int | None = None,
     squeeze: bool = True,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the spatial dimensional frequencies.
 
     Parameters
@@ -1035,9 +1034,9 @@ def getSpaFreq(
 def getWlFromOifits(
     oifits: fits.HDUList,
     arr: str = "OI_VIS2",
-    extver: Union[int, None] = None,
+    extver: int | None = None,
     returnBand: bool = False,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the wavelength
 
     Parameters
@@ -1094,8 +1093,8 @@ def hdulistDeepCopy(hdulist: fits.HDUList) -> fits.HDUList:
 
 def cutWavelengthRange(
     oifits: fits.HDUList,
-    wlRange: Union[List[float], None] = None,
-    addCut: List[float] = [],
+    wlRange: list[float] | None = None,
+    addCut: list[float] = [],
 ) -> fits.HDUList:
     """Cut the wavelength range of an oifits file.
 
@@ -1190,7 +1189,7 @@ def cutWavelengthRange(
 
 
 def getWlFromFitsImageCube(
-    header: fits.header.Header, outputUnit: Union[str, None] = None
+    header: fits.header.Header, outputUnit: str | None = None
 ) -> float:
     """Returns the wavelength law from a chromatic cube image in the fits format.
 
@@ -1229,8 +1228,8 @@ def getWlFromFitsImageCube(
 
 def _createOiTab(
     extname: str,
-    keywords_def: Tuple[Any],
-    colums_def: Tuple[Any],
+    keywords_def: tuple[Any],
+    colums_def: tuple[Any],
     dataTypeFromShape: str,
     **kwargs,
 ) -> fits.BinTableHDU:
@@ -1373,7 +1372,7 @@ def createOiFlux(**kwargs):
     )[0]
 
 
-def createOiTargetFromSimbad(names: Union[str, List[str]]) -> fits.BinTableHDU:
+def createOiTargetFromSimbad(names: str | list[str]) -> fits.BinTableHDU:
     """Create a OI_TARGET table from a dictionary of data.
 
     Parameters
@@ -1465,7 +1464,7 @@ def shiftWavelength(
 def spectralSmoothing(
     oifits: fits.HDUList,
     kernel_size: float,
-    cols2Smooth: Union[str, List[str]] = "all",
+    cols2Smooth: str | list[str] = "all",
     normalizeError: bool = True,
 ) -> None:
     """Smooth the spectral data of an oifits file.
@@ -1584,7 +1583,7 @@ def _intpBinning(
     array: ArrayLike,
     binMasks: ArrayLike,
     binEdgeValues: ArrayLike,
-    values: Union[ArrayLike, None] = None,
+    values: ArrayLike | None = None,
     nSpecChannels: float = 1.0,
     circular: bool = False,
     **kwargs,
@@ -1639,7 +1638,7 @@ def _interpolateBinHDU(
     binMasks: ArrayLike,
     binEdgeGrid: ArrayLike,
     grid: ArrayLike,
-    exception: List[str] = [],
+    exception: list[str] = [],
     **kwargs,
 ) -> fits.BinTableHDU:
     """Bin an HDU via interpolation.
@@ -1790,7 +1789,7 @@ def intpBinWavelength(
 
     Parameters
     ----------
-    oifits : astropy.io.fits.HDUList
+    oifits : astropy.io.fits.HDUlist
         An oifits file structure already opened with astropy.io.fits.
     binGrid : array_like
         The binned wavelength grid.
@@ -1847,7 +1846,7 @@ def intpBinWavelength(
 
 def rebin_image(
     image: np.ndarray,
-    binning_factor: Union[int, None] = None,
+    binning_factor: int | None = None,
     rdim: bool = False,
 ) -> np.ndarray:
     """Bins a 2D-image down according.
@@ -1931,7 +1930,7 @@ def _rebin(
 def _rebinHDU(
     hdu: fits.BinTableHDU,
     binsize: int,
-    exception: List[str] = [],
+    exception: list[str] = [],
 ) -> fits.BinTableHDU:
     """Rebin an HDU.
 
@@ -1991,7 +1990,7 @@ def _rebinHDU(
 # TODO: For phases binning should be done in complex plane
 def binWavelength(
     oifits: fits.HDUList,
-    binsize: Union[int, None] = None,
+    binsize: int | None = None,
     normalizeError: bool = True,
 ) -> None:
     """Bin the wavelength of an oifits file.
@@ -2264,11 +2263,11 @@ def oifitsRemoveTelescopes(
 
 def computeDifferentialError(
     oifits: fits.HDUList,
-    ranges: List[int] = [[0, 5]],
+    ranges: list[int] = [[0, 5]],
     excludeRange: bool = False,
     rangeType: str = "index",
     dataType: str = "VISPHI",
-    extver: List[Union[int, None]] = [None],
+    extver: list[int | None] = [None],
 ) -> None:
     """Compute the differential error.
 
@@ -2349,9 +2348,9 @@ def computeDifferentialError(
 
 def setMinimumError(
     oifits: fits.HDUList,
-    dataTypes: Union[str, List[str]],
-    values: Union[float, List[float]],
-    extver: Union[Union[int, List[int]], None] = None,
+    dataTypes: str | list[str],
+    values: float | list[float],
+    extver: int | list[int] | None = None,
 ) -> None:
     """Set the minimum error of a given data type to a given value.
 

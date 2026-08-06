@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Data filtering/modifying"""
-import numpy as np
+
 from fnmatch import fnmatch
+
+import numpy as np
 
 from .oimUtils import (
     _oimDataType,

@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 """The oimParam.py module contains the definition of main model parameter class
 :func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers,
-normalizers and interpolators.
+normalizers ad interpolators.
 """
+
+from __future__ import annotations
 
 import copy
 import inspect
 import operator
 import sys
 import warnings
+from collections.abc import Callable, Iterable
 from functools import reduce
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Union
+from typing import Any
 
 import astropy.units as u
 import numpy as np
@@ -28,10 +31,10 @@ from .oimUtils import (
     load_toml,
 )
 
-_standardParameters: Dict[str, Any] = load_toml(
+_standardParameters: dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "standard_parameters.toml"
 )
-_interpolators: Dict[str, Any] = load_toml(
+_interpolators: dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "interpolators.toml"
 )["interpolators"]
 
@@ -87,14 +90,14 @@ class oimParam:
 
     def __init__(
         self,
-        name: Union[str, None] = None,
-        value: Union[int, float, u.Quantity, None] = None,
-        mini: Union[int, float, None] = None,
-        maxi: Union[int, float, None] = None,
-        description: Union[str, None] = None,
-        unit: Union[u.Quantity, None] = None,
-        free: Union[bool, None] = None,
-        error: Union[int, float, None] = None,
+        name: str | None = None,
+        value: float | u.Quantity | None = None,
+        mini: float | None = None,
+        maxi: float | None = None,
+        description: str | None = None,
+        unit: u.Quantity | None = None,
+        free: bool | None = None,
+        error: float | None = None,
         base: str = "",
     ):
         """Initialize a new instance of the oimParam class."""
@@ -115,7 +118,7 @@ class oimParam:
 
             setattr(self, k[:-1] if k in ["mini", "maxi"] else k, v)
 
-    def __call__(self, wl=None, t=None) -> Union[int, float, np.ndarray]:
+    def __call__(self, wl=None, t=None) -> float | np.ndarray:
         """
         The call function will be useful for wavelength or time dependent
         parameters. In a simple oimParam it only return the parameter value
@@ -167,7 +170,7 @@ class oimParam:
             except NameError:
                 print("Note valid parameter : {}".format(value))
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParam/oimParamInterpolator.
 
         Parameters
@@ -184,8 +187,8 @@ class oimParam:
     # TODO: Make the oimParamNorm link to the correct parameter
     @staticmethod
     def deserialize(
-        ser: Dict[str, Any],
-    ) -> Union["oimParam", "oimParamInterpolator", "oimParamNorm"]:
+        ser: dict[str, Any],
+    ) -> "oimParam | oimParamInterpolator | oimParamNorm":
         """Deserializes into an oimParam/oimParamInterpolator/oimParamNorm."""
         ser = copy.deepcopy(ser)
         if "class" in ser:
@@ -225,9 +228,7 @@ class oimParamLinker:
         self,
         param: oimParam,
         operator: str = "add",
-        fact: Union[
-            int, float, oimParam, List[Union[int, float, oimParam]]
-        ] = 0,
+        fact: float | oimParam | list[float | oimParam] = 0,
     ) -> None:
         """
 
@@ -266,14 +267,14 @@ class oimParamLinker:
         ]
         return reduce(self.op, values)
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParamLinker."""
         raise NotImplementedError(
             "Serialization of oimParamLinker not yet implemented."
         )
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParamLinker":
+    def deserialize(ser: dict[str, Any]) -> "oimParamLinker":
         """Deserializes into an oimParamLinker."""
         raise NotImplementedError(
             "Deserialization of oimParamLinker not yet implemented."
@@ -297,14 +298,14 @@ class oimParamLinkerFunction:
             params.append(p(wl, t))
         return self.func(*params)
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParamLinkerFunction."""
         raise NotImplementedError(
             "Serialization of oimParamLinkerFunction not yet implemented."
         )
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParamLinkerFunction":
+    def deserialize(ser: dict[str, Any]) -> "oimParamLinkerFunction":
         """Deserializes into an oimParamLinkerFunction."""
         raise NotImplementedError(
             "Deserialization of oimParamLinkerFunction not yet implemented."
@@ -322,9 +323,7 @@ class oimParamNorm:
     The value of p2 will always be 1-p2-p1
     """
 
-    def __init__(
-        self, params: List[oimParam] = [], norm: Union[int, float] = 1
-    ) -> None:
+    def __init__(self, params: list[oimParam] = [], norm: float = 1.0) -> None:
         if not isinstance(params, (list, tuple, np.ndarray)):
             params = [params]
 
@@ -345,7 +344,7 @@ class oimParamNorm:
 
         return remainder
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParamNorm.
 
         Parameters
@@ -379,7 +378,7 @@ class oimParamNorm:
         return ser
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParamNorm":
+    def deserialize(ser: dict[str, Any]) -> "oimParamNorm":
         """Deserializes into an oimParamNorm."""
         return oimParam.deserialize(ser)
 
@@ -466,7 +465,7 @@ class oimParamInterpolator(oimParam):
                 params.append(pi)
         return params
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParamInterpolator.
 
         Parameters
@@ -512,7 +511,7 @@ class oimParamInterpolator(oimParam):
         return ser
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParamInterpolator":
+    def deserialize(ser: dict[str, Any]) -> "oimParamInterpolator":
         """Deserializes into an oimParamInterpolator."""
         return oimParam.deserialize(ser)
 
@@ -657,9 +656,9 @@ class oimParamCosineTime(oimParamInterpolator):
     def _init(
         self,
         param: oimParam = oimParam(),
-        T0: Union[int, float] = 0,
-        P: Union[int, float] = 1,
-        values: List[int] = [0, 1],
+        T0: float = 0.0,
+        P: float = 1.0,
+        values: list[int] = [0, 1],
         x0=None,
         **kwargs,
     ):
@@ -722,10 +721,10 @@ class oimParamGaussian(oimParamInterpolator):
         self,
         param: oimParam = oimParam(),
         dependence: str = "wl",
-        val0: Union[int, float] = 0,
-        value: Union[int, float] = 0,
-        x0: Union[int, float] = 0,
-        fwhm: Union[int, float] = 0,
+        val0: float = 0.0,
+        value: float = 0.0,
+        x0: float = 0.0,
+        fwhm: float = 0.0,
         **kwargs,
     ):
         self.dependence = dependence
@@ -783,10 +782,10 @@ class oimParamGaussianWl(oimParamGaussian):
     def _init(
         self,
         param: oimParam = oimParam(),
-        val0: Union[int, float] = 0,
-        value: Union[int, float] = 0,
-        x0: Union[int, float] = 0,
-        fwhm: Union[int, float] = 0,
+        val0: float = 0.0,
+        value: float = 0.0,
+        x0: float = 0.0,
+        fwhm: float = 0.0,
         **kwargs,
     ):
         super()._init(
@@ -801,10 +800,10 @@ class oimParamGaussianTime(oimParamGaussian):
     def _init(
         self,
         param: oimParam = oimParam(),
-        val0: Union[int, float] = 0,
-        value: Union[int, float] = 0,
-        x0: Union[int, float] = 0,
-        fwhm: Union[int, float] = 0,
+        val0: float = 0.0,
+        value: float = 0.0,
+        x0: float = 0.0,
+        fwhm: float = 0.0,
         **kwargs,
     ):
         super()._init(
@@ -820,7 +819,7 @@ class oimParamMultipleGaussian(oimParamInterpolator):
         self,
         param: oimParam = oimParam(),
         dependence: str = "wl",
-        val0: Union[int, float] = 0,
+        val0: float = 0.0,
         values: ArrayLike = [],
         x0: ArrayLike = [],
         fwhm: ArrayLike = [],
@@ -902,7 +901,7 @@ class oimParamMultipleGaussianWl(oimParamMultipleGaussian):
     def _init(
         self,
         param: oimParam = oimParam(),
-        val0: Union[int, float] = 0,
+        val0: float = 0.0,
         values: ArrayLike = [],
         x0: ArrayLike = [],
         fwhm: ArrayLike = [],
@@ -920,7 +919,7 @@ class oimParamMultipleGaussianTime(oimParamMultipleGaussian):
     def _init(
         self,
         param: oimParam = oimParam(),
-        val0: Union[int, float] = 0,
+        val0: float = 0.0,
         values: ArrayLike = [],
         x0: ArrayLike = [],
         fwhm: ArrayLike = [],
@@ -940,8 +939,8 @@ class oimParamPolynomial(oimParamInterpolator):
         param,
         dependence: str = "wl",
         order: int = 2,
-        coeffs: Union[ArrayLike, None] = None,
-        x0: Union[ArrayLike, None] = None,
+        coeffs: ArrayLike | None = None,
+        x0: ArrayLike | None = None,
         **kwargs,
     ):
         self.dependence = dependence
@@ -994,8 +993,8 @@ class oimParamPolynomialWl(oimParamPolynomial):
         self,
         param: oimParam = oimParam(),
         order: int = 2,
-        coeffs: Union[ArrayLike, None] = None,
-        x0: Union[ArrayLike, None] = None,
+        coeffs: ArrayLike | None = None,
+        x0: ArrayLike | None = None,
         **kwargs,
     ):
         super()._init(
@@ -1011,8 +1010,8 @@ class oimParamPolynomialTime(oimParamPolynomial):
         self,
         param: oimParam = oimParam(),
         order: int = 2,
-        coeffs: Union[ArrayLike, None] = None,
-        x0: Union[ArrayLike, None] = None,
+        coeffs: ArrayLike | None = None,
+        x0: ArrayLike | None = None,
     ):
         super()._init(
             param, dependence="mjd", order=order, coeffs=coeffs, x0=x0
@@ -1028,9 +1027,9 @@ class oimParamPowerLaw(oimParamInterpolator):
         self,
         param: oimParam = oimParam(),
         dependence: str = "wl",
-        x0: Union[int, float] = 0,
-        A: Union[int, float] = 0,
-        p: Union[int, float] = 1,
+        x0: float = 0.0,
+        A: float = 0.0,
+        p: float = 1.0,
         **kwargs,
     ):
         self.dependence = dependence
@@ -1077,9 +1076,9 @@ class oimParamPowerLawTime(oimParamPowerLaw):
     def _init(
         self,
         param: oimParam = oimParam(),
-        x0: Union[int, float] = 0,
-        A: Union[int, float] = 0,
-        p: Union[int, float] = 1,
+        x0: float = 0.0,
+        A: float = 0.0,
+        p: float = 1.0,
     ):
         super()._init(param, dependence="mjd", x0=x0, A=A, p=p)
 
@@ -1091,9 +1090,9 @@ class oimParamPowerLawWl(oimParamPowerLaw):
     def _init(
         self,
         param: oimParam = oimParam(),
-        x0: Union[int, float] = 0,
-        A: Union[int, float] = 0,
-        p: Union[int, float] = 1,
+        x0: float = 0.0,
+        A: float = 0.0,
+        p: float = 1.0,
     ):
         super()._init(param, dependence="wl", x0=x0, A=A, p=p)
 
@@ -1242,15 +1241,15 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
     ----------
     param : .oimParam
         The parameter that is to be calculated (interpolated).
-    T : int or float
+    T : float
         The blackbody temperature (K).
-    solid_angle : int, float, or .oimParam
+    solid_angle : float or .oimParam
         The solid angle of the object or an oimParam containing the solid angle (mas**2).
 
     Attributes
     ----------
     T : .oimParam
-    solid_angle : int, float or .oimParam
+    solid_angle : float or .oimParam
     """
 
     interpdescription = "Blackbody in wl for given temperature"
@@ -1259,8 +1258,8 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
     def _init(
         self,
         param: oimParam = oimParam(),
-        T: Union[int, float] = 0,
-        solid_angle: Union[int, float, oimParam] = 0,
+        T: float = 0.0,
+        solid_angle: float | oimParam = 0,
         **kwargs,
     ) -> None:
         """The subclass's constructor."""
@@ -1318,11 +1317,11 @@ class oimParamLinearStarWl(oimParamInterpolator):
         The parameter that is to be calculated (interpolated).
     T : array_like
         The star's effective temperature (K).
-    R : int or float, optional
+    R : float, optional
         The star's radius (Rsun).
-    L : int or float, optional
+    L : float, optional
         The star's luminosity (Lsun).
-    dist : int or float
+    dist : float
         The distance to the star (pc).
 
     Attributes
@@ -1343,11 +1342,11 @@ class oimParamLinearStarWl(oimParamInterpolator):
     def _init(
         self,
         param: oimParam = oimParam(),
-        T: Union[int, float] = 0,
-        R: Union[int, float, None] = None,
-        L: Union[int, float, None] = None,
-        dist: Union[int, float] = 0,
-        **kwargs: Dict,
+        T: float = 0.0,
+        R: float | None = None,
+        L: float | None = None,
+        dist: float = 0.0,
+        **kwargs: dict,
     ) -> None:
         self.T = oimParam(
             name="T",

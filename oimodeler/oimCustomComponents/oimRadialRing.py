@@ -1,8 +1,8 @@
 import numpy as np
 
-from ..oimParam import _standardParameters, oimParam
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import oimOptions
+from ..oimParam import _standardParameters, oimParam
 
 
 class oimRadialRing(oimComponentRadialProfile):
@@ -41,6 +41,7 @@ class oimRadialRing(oimComponentRadialProfile):
     _radialProfileFunction(xx, yy, wl, t)
         Calculates a radial power law profile.
     """
+
     name = "Radial Ring"
     shortname = "RadRing"
     elliptic = True
@@ -56,8 +57,9 @@ class oimRadialRing(oimComponentRadialProfile):
         self._wl = None
         self._eval(**kwargs)
 
-    def _radialProfileFunction(self, r: np.ndarray,
-                               wl: np.ndarray, t: np.ndarray) -> np.ndarray:
+    def _radialProfileFunction(
+        self, r: np.ndarray, wl: np.ndarray, t: np.ndarray
+    ) -> np.ndarray:
         """Calculates a radial power law profile.
 
         Parameters
@@ -75,7 +77,7 @@ class oimRadialRing(oimComponentRadialProfile):
         """
         # HACK: Sets the multi wavelength coordinates properly. Does not account for time, improves computation time.
         wl, p = np.unique(wl), self.params["p"](wl, t)
-        rin, rout = map(lambda x: self.params[x](wl, t)/2, ("din", "dout"))
+        rin, rout = map(lambda x: self.params[x](wl, t) / 2, ("din", "dout"))
 
         if len(r.shape) == 3:
             r = r[0, 0][np.newaxis, np.newaxis, :]
@@ -83,17 +85,23 @@ class oimRadialRing(oimComponentRadialProfile):
         else:
             r, wl = r[np.newaxis, :], wl[np.newaxis, :]
 
-        image = np.nan_to_num(np.logical_and(r > rin, r < rout).astype(int) * (r / rin) ** p, nan=0)
+        image = np.nan_to_num(
+            np.logical_and(r > rin, r < rout).astype(int) * (r / rin) ** p,
+            nan=0,
+        )
         return image * np.ones_like(wl)
 
     @property
     def _r(self):
         """Gets the radial profile [mas]."""
-        rin, rout = map(lambda x: self.params[x].value/2, ("din", "dout"))
+        rin, rout = map(lambda x: self.params[x].value / 2, ("din", "dout"))
         if oimOptions.model.grid.type == "linear":
             return np.linspace(rin, rout, self.params["dim"].value)
-        return np.logspace(0.0 if rin == 0 else np.log10(rin),
-                           np.log10(rout), self.params["dim"].value)
+        return np.logspace(
+            0.0 if rin == 0 else np.log10(rin),
+            np.log10(rout),
+            self.params["dim"].value,
+        )
 
     @_r.setter
     def _r(self, r: np.ndarray):

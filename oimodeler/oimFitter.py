@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """model fitting"""
 
+from __future__ import annotations
+
 import warnings
 from pathlib import Path
-from typing import Dict, Union
 
 import astropy.units as unit
 import corner
@@ -227,7 +228,7 @@ class oimFitterEmcee(oimFitter):
         mode: str = "best",
         discard: int = 0,
         thin: int = 1,
-        chi2limfact: Union[int, float] = 20,
+        chi2limfact: int | float = 20,
         **kwargs,
     ):
         chi2 = -2 * self.sampler.get_log_prob(
@@ -275,8 +276,8 @@ class oimFitterEmcee(oimFitter):
         self,
         discard: int = 0,
         thin: int = 1,
-        chi2limfact: Union[int, float] = 20,
-        savefig: Union[str, Path, None] = None,
+        chi2limfact: float = 20,
+        savefig: str | Path | None = None,
         **kwargs,
     ):
         kwargs0 = dict(
@@ -325,8 +326,8 @@ class oimFitterEmcee(oimFitter):
         self,
         discard: int = 0,
         thin: int = 1,
-        chi2limfact: Union[int, float] = 20,
-        savefig: Union[str, Path, None] = None,
+        chi2limfact: float = 20,
+        savefig: str | Path | None = None,
         labelsize: int = 10,
         ncolors: int = 128,
         **kwargs,
@@ -506,7 +507,7 @@ class oimFitterDynesty(oimFitter):
 
         return res, err, err_m, err_p
 
-    def cornerPlot(self, savefig: Union[str, Path, None] = None, **kwargs):
+    def cornerPlot(self, savefig: str | Path | None = None, **kwargs):
         kwargs0 = dict(
             quantiles=[0.16, 0.5, 0.84],
             show_titles=True,
@@ -536,7 +537,7 @@ class oimFitterDynesty(oimFitter):
 
         return fig, fig.axes
 
-    def walkersPlot(self, savefig: Union[str, Path, None] = None, **kwargs):
+    def walkersPlot(self, savefig: str | Path | None = None, **kwargs):
         kwargs0 = dict(
             quantiles=[0.16, 0.5, 0.84], show_titles=True, use_math_text=True
         )
@@ -751,11 +752,11 @@ class oimFitterRegularGrid(oimFitter):
         plotContour: bool = False,
         plotMinLines: bool = False,
         plotMin: bool = True,
-        minLines_kwargs: Dict = {},
-        contour_kwargs: Dict = {},
-        clabel_kwargs: Dict = {},
-        min_kwargs: Dict = {},
-        axe: Union[Axes, None] = None,
+        minLines_kwargs: dict = {},
+        contour_kwargs: dict = {},
+        clabel_kwargs: dict = {},
+        min_kwargs: dict = {},
+        axe: Axes | None = None,
         **kwargs,
     ):
 

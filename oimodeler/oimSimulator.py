@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Data/model simulation"""
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Dict, List, Union
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -22,8 +23,7 @@ from .oimPlots import (
 )
 from .oimUtils import hdulistDeepCopy
 
-oimDataArrDict = dict()
-
+oimDataArrDict = {}
 oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
 oimDataArrDict["OI_VIS"] = dict(
     data=["VISAMP", "VISPHI"], err=["VISAMPERR", "VISPHIERR"]
@@ -35,8 +35,7 @@ oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
 oimDataArrDict["OI_FLUX"] = dict(data=["FLUXDATA"], err=["FLUXERR"])
 
 
-oimDataArrDict = dict()
-
+oimDataArrDict = {}
 oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
 oimDataArrDict["OI_VIS"] = dict(
     data=["VISAMP", "VISPHI"], err=["VISAMPERR", "VISPHIERR"]
@@ -390,8 +389,8 @@ class oimSimulator:
         xunit: str = "m",
         plotFuntionData=_errorplot,
         plotFunctionSimulatedData=plt.Axes.plot,
-        kwargsData: Dict = {},
-        kwargsSimulatedData: Dict = {},
+        kwargsData: dict = {},
+        kwargsSimulatedData: dict = {},
         **kwargs,
     ):
         kwargsData0 = dict(color="tab:red", alpha=0.5)
@@ -416,9 +415,9 @@ class oimSimulator:
 
     def plot(
         self,
-        arr: Union[str, List[str]],
+        arr: str | list[str],
         simulated: bool = True,
-        savefig: Union[str, Path, None] = None,
+        savefig: str | Path | None = None,
         visLog: bool = False,
         xaxis: str = "SPAFREQ",
         xunit: str = "cycle/rad",
@@ -426,10 +425,10 @@ class oimSimulator:
         cunit: str = "micron",
         cmap: str = "plasma",
         colorbar: bool = True,
-        kwargsData: Dict = {},
-        kwargsSimulatedData: Dict = {},
-        fig: Union[Figure, None] = None,
-        axe: Union[Axes, None] = None,
+        kwargsData: dict = {},
+        kwargsSimulatedData: dict = {},
+        fig: Figure | None = None,
+        axe: Axes | None = None,
     ) -> None:
         """Plots data vs. simulated data.
 
@@ -571,9 +570,9 @@ class oimSimulator:
         cmap: str = "plasma",
         colorbar: bool = True,
         marker: str = ".",
-        levels: Union[List[int], None] = [1, 2, 3],
-        fig: Union[Figure, None] = None,
-        axe: Union[Axes, None] = None,
+        levels: list[int] | None = [1, 2, 3],
+        fig: Figure | None = None,
+        axe: Axes | None = None,
         **kwargs,
     ):
         """Plots the residuals of the data and the simulatedData.
@@ -724,10 +723,10 @@ class oimSimulator:
         cname: str = "EFF_WAVE",
         cunit: str = "micron",
         cmap: str = "plasma",
-        kwargsData: Dict = {},
-        kwargsSimulatedData: Dict = {},
-        kwargsResiduals: Dict = {},
-        levels: List[int] = [1, 2, 3],
+        kwargsData: dict = {},
+        kwargsSimulatedData: dict = {},
+        kwargsResiduals: dict = {},
+        levels: list[int] = [1, 2, 3],
     ):
 
         # NOTE: Plotting  data and simulated data

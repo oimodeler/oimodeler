@@ -3,15 +3,15 @@
 various plotting function and classes
 """
 
+from __future__ import annotations
+
 import os
-from typing import Dict, List, Tuple, Union
 
 import astropy.units as u
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
+from matplotlib import gridspec, patches
 from matplotlib.axes import Axes
 from matplotlib.collections import Collection, LineCollection
 from matplotlib.figure import Figure
@@ -156,7 +156,7 @@ def _errorplot(
     x: np.ndarray,
     y: np.ndarray,
     dy: np.ndarray,
-    smooth: Union[int, None] = 1,
+    smooth: int | None = 1,
     **kwargs,
 ):
     """Creates a plot with error bars.
@@ -194,7 +194,7 @@ def _colorPlot(
     y: np.ndarray,
     z: np.ndarray,
     flag: np.ndarray = None,
-    setlim: Union[bool, None] = False,
+    setlim: bool = False,
     **kwargs,
 ) -> Collection:
     """Creates a plot of the x and y data with the z data as color.
@@ -280,23 +280,23 @@ def uvPlot(
     arrname: str = "OI_VIS2",
     unit: u.Quantity = u.m,
     stringunitformat: str = "latex_inline",
-    color: Union[str, None] = None,
-    maxi: Union[float, None] = None,
-    fontsize: Union[int, None] = None,
-    xytitle: List[bool] = [True, True],
+    color: str | None = None,
+    maxi: float | None = None,
+    fontsize: int | None = None,
+    xytitle: list[bool] = [True, True],
     showGrid: bool = True,
     showCircles: bool = False,
     showLegend: bool = True,
     showColorbar: bool = True,
     showFlagged: bool = False,
-    colorTab: Union[List[str], None] = None,
-    axe: Union[Axes, None] = None,
-    title: Union[str, None] = None,
+    colorTab: list[str] | None = None,
+    axe: Axes | None = None,
+    title: str | None = None,
     cunit: u.Quantity = u.m,
-    gridkwargs: Dict = {},
-    circlekwargs: Dict = {},
-    legendkwargs: Dict = {},
-    wavelength: Union[u.Quantity, None] = None,
+    gridkwargs: dict = {},
+    circlekwargs: dict = {},
+    legendkwargs: dict = {},
+    wavelength: u.Quantity | None = None,
     **kwargs,
 ) -> Axes:
     """Plot the uv coverage of the data.
@@ -549,7 +549,7 @@ def getColorIndices(
     yarr: np.ndarray,
     yname: str,
     flatten: bool = False,
-) -> Tuple[np.ndarray, List[str]]:
+) -> tuple[np.ndarray, list[str]]:
     """Get the color indices of the data depending on the colorisation.
 
     Parameters
@@ -647,23 +647,23 @@ def oimPlot(
     oifitsList: fits.HDUList,
     xname: str,
     yname: str,
-    axe: Union[Axes, None] = None,
-    xunit: Union[u.Quantity, None] = None,
-    yunit: Union[u.Quantity, None] = None,
-    cname: Union[str, None] = None,
-    cunit: Union[str, None] = None,
-    xlim: Union[float, None] = None,
-    ylim: Union[float, None] = None,
-    xscale: Union[str, None] = None,
-    yscale: Union[str, None] = None,
+    axe: Axes | None = None,
+    xunit: u.Quantity | None = None,
+    yunit: u.Quantity | None = None,
+    cname: str | None = None,
+    cunit: str | None = None,
+    xlim: float | None = None,
+    ylim: float | None = None,
+    xscale: str | None = None,
+    yscale: str | None = None,
     shortLabel: bool = True,
-    color: Union[str, None] = None,
-    colorTab: Union[str, None] = None,
+    color: str | None = None,
+    colorTab: str | None = None,
     showColorbar: bool = True,
     errorbar: bool = False,
     showFlagged: bool = False,
     legend: bool = False,
-    kwargs_error: Dict = {},
+    kwargs_error: dict = {},
     **kwargs,
 ):
     """Plot the data from the oifits files.
@@ -1164,7 +1164,7 @@ class oimWlTemplatePlots(Figure):
     def autoShape(
         self,
         oifitsList: fits.HDUList,
-        shape: Union[List[List[str]], None] = [
+        shape: list[list[str | None]] | None = [
             ["VIS2DATA", None],
             ["VISAMP", None],
             ["VISPHI", None],
@@ -1306,7 +1306,7 @@ class oimWlTemplatePlots(Figure):
         oifitsList: fits.HDUList,
         add: bool = True,
         plotFunction: Axes = plt.Axes.plot,
-        plotFunctionkwarg: Dict = {},
+        plotFunctionkwarg: dict = {},
     ) -> None:
         """Plot the data from the oifits files."""
         if isinstance(oifitsList, oimData):
@@ -1356,7 +1356,7 @@ class oimWlTemplatePlots(Figure):
         """Set the x-axis limits of the plot."""
         self.set_wllim(*arg)
 
-    def set_ylim(self, dataTypes: Union[str, List[str]], *arg) -> None:
+    def set_ylim(self, dataTypes: str | list[str], *arg) -> None:
         """Set the y-axis limits of the plot."""
         if not isinstance(dataTypes, list):
             dataTypes = [dataTypes]
@@ -1470,10 +1470,10 @@ def oimSimplePlotWavelength(
     dataType: str,
     iB: int,
     extver=None,
-    axe: Union[Axes, None] = None,
+    axe: Axes | None = None,
     plotFunction: Axes = plt.Axes.plot,
     xunit: u.Quantity = u.m,
-    plotFunctionkwarg: Dict = {},
+    plotFunctionkwarg: dict = {},
 ) -> None:
     """Set the x-axis to the wavelength of the data.
 

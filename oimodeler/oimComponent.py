@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 """Components defined in Fourier or image planes"""
 
+from __future__ import annotations
+
 import copy
-import warnings
 import inspect
+import warnings
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any
 
 import astropy.units as u
 import numpy as np
-from astropy import units as units
+from astropy import units
 from astropy.io import fits
 from scipy import integrate, interpolate
 from scipy.special import j0
@@ -137,7 +139,7 @@ class oimComponent:
     # Python adds, for instance, _oimComponent__wl automatically, making it harder
     # to directly serialise
     @_wl.setter
-    def _wl(self, value: Any) -> Union[np.ndarray, None]:
+    def _wl(self, value: Any) -> np.ndarray | None:
         """Sets the wavelengths."""
         if value is None:
             self.__wl = None
@@ -158,7 +160,7 @@ class oimComponent:
         return self.__t
 
     @_t.setter
-    def _t(self, value: Any) -> Union[np.ndarray, None]:
+    def _t(self, value: Any) -> np.ndarray | None:
         """Sets the times."""
         if value is None:
             self.__t = None
@@ -274,7 +276,7 @@ class oimComponent:
 
         return 0 * xx
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimComponent.
 
         Parameters
@@ -314,7 +316,7 @@ class oimComponent:
         return ser
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> "oimComponent":
+    def deserialize(cls, ser: dict[str, Any]) -> "oimComponent":
         """Deserializes into an oimComponent."""
         cls = copy.deepcopy(cls)
         # HACK: This makes sure that that things like "elliptic", "flat",

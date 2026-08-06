@@ -4,11 +4,13 @@ Created on Fri Oct 21 12:27:15 2022
 
 @author: Ame
 """
+
 import numpy as np
-from astropy import units as units
+from astropy import units
 
 from ..oimComponent import oimComponentRadialProfile
-from ..oimParam import oimParam, _standardParameters
+from ..oimParam import _standardParameters, oimParam
+
 
 class oimExpRing(oimComponentRadialProfile):
     name = "Exponential Ring"
@@ -31,22 +33,24 @@ class oimExpRing(oimComponentRadialProfile):
 
     def _radialProfileFunction(self, r, wl, t):
 
-        r0 = self.params["d"](wl, t)/2
+        r0 = self.params["d"](wl, t) / 2
         fwhm = self.params["fwhm"](wl, t)
-        I = np.nan_to_num((r > r0).astype(float) *
-                          np.exp(-0.692*np.divide(r-r0, fwhm)), nan=0)
+        I = np.nan_to_num(
+            (r > r0).astype(float) * np.exp(-0.692 * np.divide(r - r0, fwhm)),
+            nan=0,
+        )
         return I
 
     @property
     def _r(self):
         if False:
             fwhm_max = np.max(self.params["fwhm"](self._wl, self._t))
-            r0_max = np.max(self.params["d"](self._wl, self._t))/2
+            r0_max = np.max(self.params["d"](self._wl, self._t)) / 2
         else:
             fwhm_max = self.params["fwhm"](1e99)
             r0_max = self.params["d"](1e99)
-        rmax = r0_max+8*fwhm_max
-        return np.linspace(0, 1,  self.params["dim"].value)*rmax
+        rmax = r0_max + 8 * fwhm_max
+        return np.linspace(0, 1, self.params["dim"].value) * rmax
 
     @_r.setter
     def _r(self, r):

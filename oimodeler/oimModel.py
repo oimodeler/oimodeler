@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 """Creation of models"""
 
+from __future__ import annotations
+
 import copy
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import astropy.units as u
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from astropy.io.fits import PrimaryHDU
+from matplotlib import colors
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.ticker import ScalarFormatter
@@ -53,9 +55,7 @@ class oimModel:
 
     def __init__(
         self,
-        *components: Union[
-            List[oimComponent], Tuple[oimComponent], np.ndarray
-        ],
+        *components: list[oimComponent] | tuple[oimComponent] | np.ndarray,
         extParams: ArrayLike = [],
     ) -> None:
         """Constructor of the class"""
@@ -91,7 +91,7 @@ class oimModel:
         """Return a short name of the model"""
         return " + ".join([comp.shortname for comp in self.components])
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimModel.
 
         Parameters
@@ -132,7 +132,7 @@ class oimModel:
         return ser
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> "oimModel":
+    def deserialize(cls, ser: dict[str, Any]) -> "oimModel":
         """Deserializes into an oimModel."""
         global COMPONENT_MODULES
 
@@ -165,8 +165,8 @@ class oimModel:
         self,
         ucoord: ArrayLike,
         vcoord: ArrayLike,
-        wl: Union[ArrayLike, None] = None,
-        t: Union[ArrayLike, None] = None,
+        wl: ArrayLike | None = None,
+        t: ArrayLike | None = None,
     ) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
         (and optionally wavelength and time) coordinates.
@@ -193,7 +193,7 @@ class oimModel:
 
         return res
 
-    def getParameters(self, free: bool = False) -> Dict[str, oimParam]:
+    def getParameters(self, free: bool = False) -> dict[str, oimParam]:
         """Get the Model paramters (or free parameters)
 
         Parameters
@@ -204,7 +204,7 @@ class oimModel:
 
         Returns
         -------
-        params : Dict of oimParam
+        params : dict of oimParam
             Dictionary of the model's parameters (or free parameters).
         """
         params = {}
@@ -253,12 +253,12 @@ class oimModel:
 
         return params
 
-    def getFreeParameters(self) -> Dict[str, oimParam]:
+    def getFreeParameters(self) -> dict[str, oimParam]:
         """Get the Model free paramters
 
         Returns
         -------
-        Dict of oimParam
+        dict of oimParam
             A Dictionary of the model's free parameters.
         """
         return self.getParameters(free=True)
@@ -267,14 +267,14 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[Union[float, ArrayLike], None] = None,
-        t: Union[Union[float, ArrayLike], None] = None,
+        wl: float | ArrayLike | None = None,
+        t: float | ArrayLike | None = None,
         toFits: bool = False,
         fromFT: bool = False,
         padFact: int = 1,
         squeeze: bool = True,
         normalize: bool = False,
-    ) -> Union[np.ndarray, PrimaryHDU]:
+    ) -> np.ndarray | PrimaryHDU:
         """Compute and return an image or and image cube (if wavelength and time
         are given).
 
@@ -422,11 +422,11 @@ class oimModel:
         filename: str,
         dim: int,
         pixSize: float,
-        wl: Union[Union[int, ArrayLike], None] = None,
-        t: Union[Union[int, ArrayLike], None] = None,
+        wl: int | ArrayLike | None = None,
+        t: int | ArrayLike | None = None,
         fromFT: bool = False,
         normalize: bool = False,
-    ) -> Union[np.ndarray, PrimaryHDU]:
+    ) -> np.ndarray | PrimaryHDU:
         """Save the model image
 
         Parameters
@@ -470,22 +470,22 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[Union[float, ArrayLike], None] = None,
-        t: Union[Union[int, float, ArrayLike], None] = None,
+        wl: float | ArrayLike | None = None,
+        t: int | float | ArrayLike | None = None,
         fromFT: bool = False,
         padFact: int = 1,
-        axe: Union[Axes, None] = None,
+        axe: Axes | None = None,
         normPow: float = 0.5,
-        figsize: Tuple[float, float] = (3.5, 2.5),
-        savefig: Union[str, Path, None] = None,
+        figsize: tuple[float, float] = (3.5, 2.5),
+        savefig: str | Path | None = None,
         colorbar: bool = True,
         legend: bool = False,
         swapAxes: bool = True,
-        kwargs_legend: Dict = {},
+        kwargs_legend: dict = {},
         normalize: bool = False,
         rebin: bool = False,
-        **kwargs: Dict,
-    ) -> Tuple[Figure, Axes, np.ndarray]:
+        **kwargs: dict,
+    ) -> tuple[Figure, Axes, np.ndarray]:
         """Show the mode Image or image-Cube
 
         Parameters
@@ -656,20 +656,20 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[Union[float, ArrayLike], None] = None,
-        t: Union[Union[int, float, ArrayLike], None] = None,
+        wl: float | ArrayLike | None = None,
+        t: int | float | ArrayLike | None = None,
         unit: str = "cycle/rad",
         unit_format: str = "latex_inline",
-        axe: Union[Axes, None] = None,
-        figsize: Tuple[float, float] = (3.5, 2.5),
-        savefig: Union[str, Path, None] = None,
+        axe: Axes | None = None,
+        figsize: tuple[float, float] = (3.5, 2.5),
+        savefig: str | Path | None = None,
         colorbar: bool = True,
         legend: bool = False,
         swapAxes: bool = True,
         display: str = "amp",
-        kwargs_legend: Dict = {},
+        kwargs_legend: dict = {},
         normalize: bool = False,
-        **kwargs: Dict,
+        **kwargs: dict,
     ):
         """Show the amplitude and phase of the Fourier space
 

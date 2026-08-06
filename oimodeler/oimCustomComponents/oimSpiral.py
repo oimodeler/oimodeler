@@ -4,11 +4,12 @@ Created on Fri Oct 21 12:27:15 2022
 
 @author: Ame
 """
+
 import numpy as np
-from astropy import units as units
+from astropy import units
 
 from ..oimComponent import oimComponentImage
-from ..oimParam import oimParam, _standardParameters
+from ..oimParam import _standardParameters, oimParam
 
 
 class oimSpiral(oimComponentImage):
@@ -26,13 +27,16 @@ class oimSpiral(oimComponentImage):
         # x,y,f and dim as parameters
         self.params["fwhm"] = oimParam(**_standardParameters["fwhm"])
         self.params["P"] = oimParam(
-            name="P", value=1, description="Period in mas", unit=units.mas)
+            name="P", value=1, description="Period in mas", unit=units.mas
+        )
         self.params["width"] = oimParam(
-            name="width", value=0.01,
+            name="width",
+            value=0.01,
             description="Width as filling factor",
-            unit=units.one)
+            unit=units.one,
+        )
 
-        #self.pixSize=0.3
+        # self.pixSize=0.3
         self._t = np.array([0])  # constant value <=> static model
         self._wl = np.array([0])  # constant value <=> achromatic model
 
@@ -51,12 +55,12 @@ class oimSpiral(oimComponentImage):
 
         im = 1 + np.cos(-phi - 2 * np.pi * np.log(r / p + 1))
         im = (im < 2 * w) * np.exp(-(r**2) / (2 * sig**2))
-        #im =np.exp(-(r**2) / (2 * sig**2))
-        
+        # im =np.exp(-(r**2) / (2 * sig**2))
+
         return im
 
     def getPixelSize(self):
         fwhm = self.params["fwhm"]()
-        dim  = self.params["dim"]()
-        return 4*fwhm/dim*units.mas.to(units.rad)
-         
+        dim = self.params["dim"]()
+        return 4 * fwhm / dim * units.mas.to(units.rad)
+
