@@ -2,14 +2,14 @@
 """Components defined in Fourier or image planes"""
 
 import copy
-import warnings
 import inspect
+import warnings
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import astropy.units as u
 import numpy as np
-from astropy import units as units
+from astropy import units
 from astropy.io import fits
 from scipy import integrate, interpolate
 from scipy.special import j0
@@ -274,7 +274,7 @@ class oimComponent:
 
         return 0 * xx
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimComponent.
 
         Parameters
@@ -314,7 +314,7 @@ class oimComponent:
         return ser
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> "oimComponent":
+    def deserialize(cls, ser: dict[str, Any]) -> "oimComponent":
         """Deserializes into an oimComponent."""
         cls = copy.deepcopy(cls)
         # HACK: This makes sure that that things like "elliptic", "flat",

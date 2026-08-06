@@ -3,7 +3,7 @@
 
 import warnings
 from pathlib import Path
-from typing import Dict, Union
+from typing import Union
 
 import astropy.units as unit
 import corner
@@ -751,10 +751,10 @@ class oimFitterRegularGrid(oimFitter):
         plotContour: bool = False,
         plotMinLines: bool = False,
         plotMin: bool = True,
-        minLines_kwargs: Dict = {},
-        contour_kwargs: Dict = {},
-        clabel_kwargs: Dict = {},
-        min_kwargs: Dict = {},
+        minLines_kwargs: dict = {},
+        contour_kwargs: dict = {},
+        clabel_kwargs: dict = {},
+        min_kwargs: dict = {},
         axe: Union[Axes, None] = None,
         **kwargs,
     ):

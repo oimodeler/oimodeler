@@ -3,7 +3,7 @@
 
 from enum import IntFlag
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -59,7 +59,7 @@ class oimDataType(IntFlag):
     FLUXDATA = 256
 
 
-def oimGetDataValErrAndTypeFlag(table: fits.BinTableHDU) -> Tuple[np.ndarray]:
+def oimGetDataValErrAndTypeFlag(table: fits.BinTableHDU) -> tuple[np.ndarray]:
     """Get the data, error and flag arrays from the oifits data.
 
     Parameters
@@ -148,7 +148,7 @@ def oimGetDataValErrAndTypeFlag(table: fits.BinTableHDU) -> Tuple[np.ndarray]:
     return dtype, val, err, flag
 
 
-def oimDataCheckData(table: fits.BinTableHDU) -> List[str]:
+def oimDataCheckData(table: fits.BinTableHDU) -> list[str]:
     cdata = []
     if np.size(np.where(table.data["FLAG"] == False)) != 0:
         if table.name == "OI_VIS2":
@@ -186,7 +186,7 @@ def oimDataCheckData(table: fits.BinTableHDU) -> List[str]:
 
 def oimDataGetVectCoord(
     data: fits.HDUList, arr: fits.BinTableHDU
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the (u, v)-coordinates from the data.
 
     Parameters
@@ -413,7 +413,7 @@ class oimData:
             if not self._filteredDataReady:
                 self.applyFilter()
 
-    def _analyzeOIFitFile(self, data: List[fits.HDUList]) -> None:
+    def _analyzeOIFitFile(self, data: list[fits.HDUList]) -> None:
         """Analyze the oifits file and get the data info.
 
         Parameters
@@ -768,7 +768,7 @@ class oimData:
 
 
 def loadOifitsData(
-    input: Union[str, Path, List[str], List[Path], fits.HDUList, oimData],
+    input: Union[str, Path, list[str], list[Path], fits.HDUList, oimData],
     mode: str = "listOfHdlulist",
 ) -> oimData:
     """Return the oifits data from either filenames, already opened oifts or a

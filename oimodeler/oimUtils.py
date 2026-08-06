@@ -4,8 +4,9 @@
 import csv
 import io
 import pickle
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import astropy.units as u
 import numpy as np
@@ -319,7 +320,7 @@ OI_FLUX_COLUMNS = [
 
 
 def attach_methods(
-    functions: Union[Callable, ArrayLike, Dict[str, Callable]],
+    functions: Union[Callable, ArrayLike, dict[str, Callable]],
 ) -> Callable:
     """Class decorator that attaches function(s) to a class as methods."""
     if not isinstance(functions, dict):
@@ -359,7 +360,7 @@ def _unpickle(cls, f: Union[Path, io.TextIOWrapper], **kwargs) -> object:
     return restored_object
 
 
-def load_toml(toml_file: Path) -> Dict[str, Any]:
+def load_toml(toml_file: Path) -> dict[str, Any]:
     """Loads a toml file into a dictionary."""
     with open(toml_file, "r") as file:
         dictionary = toml.load(file)
@@ -396,7 +397,7 @@ def getDataArrname(dataType: str) -> str:
         raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
 
 
-def getDataType(dataArrname: str) -> List[str]:
+def getDataType(dataArrname: str) -> list[str]:
     """Returns the datatype for a given dataArrname."""
     return [
         datatypei
@@ -405,7 +406,7 @@ def getDataType(dataArrname: str) -> List[str]:
     ]
 
 
-def getDataTypeError(dataArrname: str) -> List[str]:
+def getDataTypeError(dataArrname: str) -> list[str]:
     """Returns the error datatype for a given dataArrname."""
     return [
         datatypei
@@ -641,7 +642,7 @@ def getBaselineName(
     angle: bool = False,
     extver: Union[int, None] = None,
     squeeze: bool = True,
-) -> List[str]:
+) -> list[str]:
     """Gets the baseline names (i.e., telescopes names
     separated by minus sign) in an extension of a oifits file.
 
@@ -727,7 +728,7 @@ def getConfigName(
     hduname: str = "OI_VIS2",
     extver: Union[int, None] = None,
     squeeze: bool = True,
-) -> List[str]:
+) -> list[str]:
     """Gets the configuration names in an extension of a oifits file.
 
     Parameters
@@ -789,7 +790,7 @@ def getBaselineLengthAndPA(
     returnUV: bool = False,
     T3Max: bool = False,
     showFlagged: bool = True,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
 
@@ -881,7 +882,7 @@ def get2DSpaFreq(
     unit: Union[str, None] = None,
     extver: Union[int, None] = None,
     squeeze: bool = True,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the spatial two dimensional frequencies.
 
     Parameters
@@ -963,7 +964,7 @@ def getSpaFreq(
     unit: Union[str, None] = None,
     extver: Union[int, None] = None,
     squeeze: bool = True,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the spatial dimensional frequencies.
 
     Parameters
@@ -1037,7 +1038,7 @@ def getWlFromOifits(
     arr: str = "OI_VIS2",
     extver: Union[int, None] = None,
     returnBand: bool = False,
-) -> Tuple[np.ndarray]:
+) -> tuple[np.ndarray]:
     """Get the wavelength
 
     Parameters
@@ -1094,8 +1095,8 @@ def hdulistDeepCopy(hdulist: fits.HDUList) -> fits.HDUList:
 
 def cutWavelengthRange(
     oifits: fits.HDUList,
-    wlRange: Union[List[float], None] = None,
-    addCut: List[float] = [],
+    wlRange: Union[list[float], None] = None,
+    addCut: list[float] = [],
 ) -> fits.HDUList:
     """Cut the wavelength range of an oifits file.
 
@@ -1229,8 +1230,8 @@ def getWlFromFitsImageCube(
 
 def _createOiTab(
     extname: str,
-    keywords_def: Tuple[Any],
-    colums_def: Tuple[Any],
+    keywords_def: tuple[Any],
+    colums_def: tuple[Any],
     dataTypeFromShape: str,
     **kwargs,
 ) -> fits.BinTableHDU:
@@ -1373,7 +1374,7 @@ def createOiFlux(**kwargs):
     )[0]
 
 
-def createOiTargetFromSimbad(names: Union[str, List[str]]) -> fits.BinTableHDU:
+def createOiTargetFromSimbad(names: Union[str, list[str]]) -> fits.BinTableHDU:
     """Create a OI_TARGET table from a dictionary of data.
 
     Parameters
@@ -1465,7 +1466,7 @@ def shiftWavelength(
 def spectralSmoothing(
     oifits: fits.HDUList,
     kernel_size: float,
-    cols2Smooth: Union[str, List[str]] = "all",
+    cols2Smooth: Union[str, list[str]] = "all",
     normalizeError: bool = True,
 ) -> None:
     """Smooth the spectral data of an oifits file.
@@ -1639,7 +1640,7 @@ def _interpolateBinHDU(
     binMasks: ArrayLike,
     binEdgeGrid: ArrayLike,
     grid: ArrayLike,
-    exception: List[str] = [],
+    exception: list[str] = [],
     **kwargs,
 ) -> fits.BinTableHDU:
     """Bin an HDU via interpolation.
@@ -1790,7 +1791,7 @@ def intpBinWavelength(
 
     Parameters
     ----------
-    oifits : astropy.io.fits.HDUList
+    oifits : astropy.io.fits.HDUlist
         An oifits file structure already opened with astropy.io.fits.
     binGrid : array_like
         The binned wavelength grid.
@@ -1931,7 +1932,7 @@ def _rebin(
 def _rebinHDU(
     hdu: fits.BinTableHDU,
     binsize: int,
-    exception: List[str] = [],
+    exception: list[str] = [],
 ) -> fits.BinTableHDU:
     """Rebin an HDU.
 
@@ -2264,11 +2265,11 @@ def oifitsRemoveTelescopes(
 
 def computeDifferentialError(
     oifits: fits.HDUList,
-    ranges: List[int] = [[0, 5]],
+    ranges: list[int] = [[0, 5]],
     excludeRange: bool = False,
     rangeType: str = "index",
     dataType: str = "VISPHI",
-    extver: List[Union[int, None]] = [None],
+    extver: list[Union[int, None]] = [None],
 ) -> None:
     """Compute the differential error.
 
@@ -2349,9 +2350,9 @@ def computeDifferentialError(
 
 def setMinimumError(
     oifits: fits.HDUList,
-    dataTypes: Union[str, List[str]],
-    values: Union[float, List[float]],
-    extver: Union[Union[int, List[int]], None] = None,
+    dataTypes: Union[str, list[str]],
+    values: Union[float, list[float]],
+    extver: Union[Union[int, list[int]], None] = None,
 ) -> None:
     """Set the minimum error of a given data type to a given value.
 

@@ -4,14 +4,13 @@ various plotting function and classes
 """
 
 import os
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 import astropy.units as u
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
+from matplotlib import gridspec, patches
 from matplotlib.axes import Axes
 from matplotlib.collections import Collection, LineCollection
 from matplotlib.figure import Figure
@@ -283,19 +282,19 @@ def uvPlot(
     color: Union[str, None] = None,
     maxi: Union[float, None] = None,
     fontsize: Union[int, None] = None,
-    xytitle: List[bool] = [True, True],
+    xytitle: list[bool] = [True, True],
     showGrid: bool = True,
     showCircles: bool = False,
     showLegend: bool = True,
     showColorbar: bool = True,
     showFlagged: bool = False,
-    colorTab: Union[List[str], None] = None,
+    colorTab: Union[list[str], None] = None,
     axe: Union[Axes, None] = None,
     title: Union[str, None] = None,
     cunit: u.Quantity = u.m,
-    gridkwargs: Dict = {},
-    circlekwargs: Dict = {},
-    legendkwargs: Dict = {},
+    gridkwargs: dict = {},
+    circlekwargs: dict = {},
+    legendkwargs: dict = {},
     wavelength: Union[u.Quantity, None] = None,
     **kwargs,
 ) -> Axes:
@@ -549,7 +548,7 @@ def getColorIndices(
     yarr: np.ndarray,
     yname: str,
     flatten: bool = False,
-) -> Tuple[np.ndarray, List[str]]:
+) -> tuple[np.ndarray, list[str]]:
     """Get the color indices of the data depending on the colorisation.
 
     Parameters
@@ -663,7 +662,7 @@ def oimPlot(
     errorbar: bool = False,
     showFlagged: bool = False,
     legend: bool = False,
-    kwargs_error: Dict = {},
+    kwargs_error: dict = {},
     **kwargs,
 ):
     """Plot the data from the oifits files.
@@ -1164,7 +1163,7 @@ class oimWlTemplatePlots(Figure):
     def autoShape(
         self,
         oifitsList: fits.HDUList,
-        shape: Union[List[List[str]], None] = [
+        shape: Union[list[list[str]], None] = [
             ["VIS2DATA", None],
             ["VISAMP", None],
             ["VISPHI", None],
@@ -1306,7 +1305,7 @@ class oimWlTemplatePlots(Figure):
         oifitsList: fits.HDUList,
         add: bool = True,
         plotFunction: Axes = plt.Axes.plot,
-        plotFunctionkwarg: Dict = {},
+        plotFunctionkwarg: dict = {},
     ) -> None:
         """Plot the data from the oifits files."""
         if isinstance(oifitsList, oimData):
@@ -1356,7 +1355,7 @@ class oimWlTemplatePlots(Figure):
         """Set the x-axis limits of the plot."""
         self.set_wllim(*arg)
 
-    def set_ylim(self, dataTypes: Union[str, List[str]], *arg) -> None:
+    def set_ylim(self, dataTypes: Union[str, list[str]], *arg) -> None:
         """Set the y-axis limits of the plot."""
         if not isinstance(dataTypes, list):
             dataTypes = [dataTypes]
@@ -1473,7 +1472,7 @@ def oimSimplePlotWavelength(
     axe: Union[Axes, None] = None,
     plotFunction: Axes = plt.Axes.plot,
     xunit: u.Quantity = u.m,
-    plotFunctionkwarg: Dict = {},
+    plotFunctionkwarg: dict = {},
 ) -> None:
     """Set the x-axis to the wavelength of the data.
 

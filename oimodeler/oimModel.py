@@ -4,14 +4,14 @@
 import copy
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import astropy.units as u
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from astropy.io.fits import PrimaryHDU
+from matplotlib import colors
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.ticker import ScalarFormatter
@@ -54,7 +54,7 @@ class oimModel:
     def __init__(
         self,
         *components: Union[
-            List[oimComponent], Tuple[oimComponent], np.ndarray
+            list[oimComponent], tuple[oimComponent], np.ndarray
         ],
         extParams: ArrayLike = [],
     ) -> None:
@@ -91,7 +91,7 @@ class oimModel:
         """Return a short name of the model"""
         return " + ".join([comp.shortname for comp in self.components])
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimModel.
 
         Parameters
@@ -132,7 +132,7 @@ class oimModel:
         return ser
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> "oimModel":
+    def deserialize(cls, ser: dict[str, Any]) -> "oimModel":
         """Deserializes into an oimModel."""
         global COMPONENT_MODULES
 
@@ -193,7 +193,7 @@ class oimModel:
 
         return res
 
-    def getParameters(self, free: bool = False) -> Dict[str, oimParam]:
+    def getParameters(self, free: bool = False) -> dict[str, oimParam]:
         """Get the Model paramters (or free parameters)
 
         Parameters
@@ -204,7 +204,7 @@ class oimModel:
 
         Returns
         -------
-        params : Dict of oimParam
+        params : dict of oimParam
             Dictionary of the model's parameters (or free parameters).
         """
         params = {}
@@ -253,12 +253,12 @@ class oimModel:
 
         return params
 
-    def getFreeParameters(self) -> Dict[str, oimParam]:
+    def getFreeParameters(self) -> dict[str, oimParam]:
         """Get the Model free paramters
 
         Returns
         -------
-        Dict of oimParam
+        dict of oimParam
             A Dictionary of the model's free parameters.
         """
         return self.getParameters(free=True)
@@ -476,16 +476,16 @@ class oimModel:
         padFact: int = 1,
         axe: Union[Axes, None] = None,
         normPow: float = 0.5,
-        figsize: Tuple[float, float] = (3.5, 2.5),
+        figsize: tuple[float, float] = (3.5, 2.5),
         savefig: Union[str, Path, None] = None,
         colorbar: bool = True,
         legend: bool = False,
         swapAxes: bool = True,
-        kwargs_legend: Dict = {},
+        kwargs_legend: dict = {},
         normalize: bool = False,
         rebin: bool = False,
-        **kwargs: Dict,
-    ) -> Tuple[Figure, Axes, np.ndarray]:
+        **kwargs: dict,
+    ) -> tuple[Figure, Axes, np.ndarray]:
         """Show the mode Image or image-Cube
 
         Parameters
@@ -661,15 +661,15 @@ class oimModel:
         unit: str = "cycle/rad",
         unit_format: str = "latex_inline",
         axe: Union[Axes, None] = None,
-        figsize: Tuple[float, float] = (3.5, 2.5),
+        figsize: tuple[float, float] = (3.5, 2.5),
         savefig: Union[str, Path, None] = None,
         colorbar: bool = True,
         legend: bool = False,
         swapAxes: bool = True,
         display: str = "amp",
-        kwargs_legend: Dict = {},
+        kwargs_legend: dict = {},
         normalize: bool = False,
-        **kwargs: Dict,
+        **kwargs: dict,
     ):
         """Show the amplitude and phase of the Fourier space
 

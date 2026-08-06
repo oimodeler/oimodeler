@@ -9,9 +9,10 @@ import inspect
 import operator
 import sys
 import warnings
+from collections.abc import Callable, Iterable
 from functools import reduce
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Union
+from typing import Any, Union
 
 import astropy.units as u
 import numpy as np
@@ -28,10 +29,10 @@ from .oimUtils import (
     load_toml,
 )
 
-_standardParameters: Dict[str, Any] = load_toml(
+_standardParameters: dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "standard_parameters.toml"
 )
-_interpolators: Dict[str, Any] = load_toml(
+_interpolators: dict[str, Any] = load_toml(
     Path(__file__).parent / "config" / "interpolators.toml"
 )["interpolators"]
 
@@ -167,7 +168,7 @@ class oimParam:
             except NameError:
                 print("Note valid parameter : {}".format(value))
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParam/oimParamInterpolator.
 
         Parameters
@@ -184,7 +185,7 @@ class oimParam:
     # TODO: Make the oimParamNorm link to the correct parameter
     @staticmethod
     def deserialize(
-        ser: Dict[str, Any],
+        ser: dict[str, Any],
     ) -> Union["oimParam", "oimParamInterpolator", "oimParamNorm"]:
         """Deserializes into an oimParam/oimParamInterpolator/oimParamNorm."""
         ser = copy.deepcopy(ser)
@@ -226,7 +227,7 @@ class oimParamLinker:
         param: oimParam,
         operator: str = "add",
         fact: Union[
-            int, float, oimParam, List[Union[int, float, oimParam]]
+            int, float, oimParam, list[Union[int, float, oimParam]]
         ] = 0,
     ) -> None:
         """
@@ -266,14 +267,14 @@ class oimParamLinker:
         ]
         return reduce(self.op, values)
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParamLinker."""
         raise NotImplementedError(
             "Serialization of oimParamLinker not yet implemented."
         )
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParamLinker":
+    def deserialize(ser: dict[str, Any]) -> "oimParamLinker":
         """Deserializes into an oimParamLinker."""
         raise NotImplementedError(
             "Deserialization of oimParamLinker not yet implemented."
@@ -297,14 +298,14 @@ class oimParamLinkerFunction:
             params.append(p(wl, t))
         return self.func(*params)
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParamLinkerFunction."""
         raise NotImplementedError(
             "Serialization of oimParamLinkerFunction not yet implemented."
         )
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParamLinkerFunction":
+    def deserialize(ser: dict[str, Any]) -> "oimParamLinkerFunction":
         """Deserializes into an oimParamLinkerFunction."""
         raise NotImplementedError(
             "Deserialization of oimParamLinkerFunction not yet implemented."
@@ -323,7 +324,7 @@ class oimParamNorm:
     """
 
     def __init__(
-        self, params: List[oimParam] = [], norm: Union[int, float] = 1
+        self, params: list[oimParam] = [], norm: Union[int, float] = 1
     ) -> None:
         if not isinstance(params, (list, tuple, np.ndarray)):
             params = [params]
@@ -345,7 +346,7 @@ class oimParamNorm:
 
         return remainder
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParamNorm.
 
         Parameters
@@ -379,7 +380,7 @@ class oimParamNorm:
         return ser
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParamNorm":
+    def deserialize(ser: dict[str, Any]) -> "oimParamNorm":
         """Deserializes into an oimParamNorm."""
         return oimParam.deserialize(ser)
 
@@ -466,7 +467,7 @@ class oimParamInterpolator(oimParam):
                 params.append(pi)
         return params
 
-    def serialize(self, skip_copy: bool = False) -> Dict[str, Any]:
+    def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParamInterpolator.
 
         Parameters
@@ -512,7 +513,7 @@ class oimParamInterpolator(oimParam):
         return ser
 
     @staticmethod
-    def deserialize(ser: Dict[str, Any]) -> "oimParamInterpolator":
+    def deserialize(ser: dict[str, Any]) -> "oimParamInterpolator":
         """Deserializes into an oimParamInterpolator."""
         return oimParam.deserialize(ser)
 
@@ -659,7 +660,7 @@ class oimParamCosineTime(oimParamInterpolator):
         param: oimParam = oimParam(),
         T0: Union[int, float] = 0,
         P: Union[int, float] = 1,
-        values: List[int] = [0, 1],
+        values: list[int] = [0, 1],
         x0=None,
         **kwargs,
     ):
@@ -1347,7 +1348,7 @@ class oimParamLinearStarWl(oimParamInterpolator):
         R: Union[int, float, None] = None,
         L: Union[int, float, None] = None,
         dist: Union[int, float] = 0,
-        **kwargs: Dict,
+        **kwargs: dict,
     ) -> None:
         self.T = oimParam(
             name="T",

@@ -2,7 +2,7 @@
 """Data/model simulation"""
 
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Union
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -22,8 +22,7 @@ from .oimPlots import (
 )
 from .oimUtils import hdulistDeepCopy
 
-oimDataArrDict = dict()
-
+oimDataArrDict = {}
 oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
 oimDataArrDict["OI_VIS"] = dict(
     data=["VISAMP", "VISPHI"], err=["VISAMPERR", "VISPHIERR"]
@@ -35,8 +34,7 @@ oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
 oimDataArrDict["OI_FLUX"] = dict(data=["FLUXDATA"], err=["FLUXERR"])
 
 
-oimDataArrDict = dict()
-
+oimDataArrDict = {}
 oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
 oimDataArrDict["OI_VIS"] = dict(
     data=["VISAMP", "VISPHI"], err=["VISAMPERR", "VISPHIERR"]
@@ -390,8 +388,8 @@ class oimSimulator:
         xunit: str = "m",
         plotFuntionData=_errorplot,
         plotFunctionSimulatedData=plt.Axes.plot,
-        kwargsData: Dict = {},
-        kwargsSimulatedData: Dict = {},
+        kwargsData: dict = {},
+        kwargsSimulatedData: dict = {},
         **kwargs,
     ):
         kwargsData0 = dict(color="tab:red", alpha=0.5)
@@ -416,7 +414,7 @@ class oimSimulator:
 
     def plot(
         self,
-        arr: Union[str, List[str]],
+        arr: Union[str, list[str]],
         simulated: bool = True,
         savefig: Union[str, Path, None] = None,
         visLog: bool = False,
@@ -426,8 +424,8 @@ class oimSimulator:
         cunit: str = "micron",
         cmap: str = "plasma",
         colorbar: bool = True,
-        kwargsData: Dict = {},
-        kwargsSimulatedData: Dict = {},
+        kwargsData: dict = {},
+        kwargsSimulatedData: dict = {},
         fig: Union[Figure, None] = None,
         axe: Union[Axes, None] = None,
     ) -> None:
@@ -571,7 +569,7 @@ class oimSimulator:
         cmap: str = "plasma",
         colorbar: bool = True,
         marker: str = ".",
-        levels: Union[List[int], None] = [1, 2, 3],
+        levels: Union[list[int], None] = [1, 2, 3],
         fig: Union[Figure, None] = None,
         axe: Union[Axes, None] = None,
         **kwargs,
@@ -724,10 +722,10 @@ class oimSimulator:
         cname: str = "EFF_WAVE",
         cunit: str = "micron",
         cmap: str = "plasma",
-        kwargsData: Dict = {},
-        kwargsSimulatedData: Dict = {},
-        kwargsResiduals: Dict = {},
-        levels: List[int] = [1, 2, 3],
+        kwargsData: dict = {},
+        kwargsSimulatedData: dict = {},
+        kwargsResiduals: dict = {},
+        levels: list[int] = [1, 2, 3],
     ):
 
         # NOTE: Plotting  data and simulated data
