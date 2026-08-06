@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Data/model simulation"""
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Union
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -414,9 +415,9 @@ class oimSimulator:
 
     def plot(
         self,
-        arr: Union[str, list[str]],
+        arr: str | list[str],
         simulated: bool = True,
-        savefig: Union[str, Path, None] = None,
+        savefig: str | Path | None = None,
         visLog: bool = False,
         xaxis: str = "SPAFREQ",
         xunit: str = "cycle/rad",
@@ -426,8 +427,8 @@ class oimSimulator:
         colorbar: bool = True,
         kwargsData: dict = {},
         kwargsSimulatedData: dict = {},
-        fig: Union[Figure, None] = None,
-        axe: Union[Axes, None] = None,
+        fig: Figure | None = None,
+        axe: Axes | None = None,
     ) -> None:
         """Plots data vs. simulated data.
 
@@ -569,9 +570,9 @@ class oimSimulator:
         cmap: str = "plasma",
         colorbar: bool = True,
         marker: str = ".",
-        levels: Union[list[int], None] = [1, 2, 3],
-        fig: Union[Figure, None] = None,
-        axe: Union[Axes, None] = None,
+        levels: list[int] | None = [1, 2, 3],
+        fig: Figure | None = None,
+        axe: Axes | None = None,
         **kwargs,
     ):
         """Plots the residuals of the data and the simulatedData.

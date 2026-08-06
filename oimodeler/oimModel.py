@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """Creation of models"""
 
+from __future__ import annotations
+
 import copy
 import sys
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -53,9 +55,7 @@ class oimModel:
 
     def __init__(
         self,
-        *components: Union[
-            list[oimComponent], tuple[oimComponent], np.ndarray
-        ],
+        *components: list[oimComponent] | tuple[oimComponent] | np.ndarray,
         extParams: ArrayLike = [],
     ) -> None:
         """Constructor of the class"""
@@ -165,8 +165,8 @@ class oimModel:
         self,
         ucoord: ArrayLike,
         vcoord: ArrayLike,
-        wl: Union[ArrayLike, None] = None,
-        t: Union[ArrayLike, None] = None,
+        wl: ArrayLike | None = None,
+        t: ArrayLike | None = None,
     ) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
         (and optionally wavelength and time) coordinates.
@@ -267,14 +267,14 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[Union[float, ArrayLike], None] = None,
-        t: Union[Union[float, ArrayLike], None] = None,
+        wl: float | ArrayLike | None = None,
+        t: float | ArrayLike | None = None,
         toFits: bool = False,
         fromFT: bool = False,
         padFact: int = 1,
         squeeze: bool = True,
         normalize: bool = False,
-    ) -> Union[np.ndarray, PrimaryHDU]:
+    ) -> np.ndarray | PrimaryHDU:
         """Compute and return an image or and image cube (if wavelength and time
         are given).
 
@@ -422,11 +422,11 @@ class oimModel:
         filename: str,
         dim: int,
         pixSize: float,
-        wl: Union[Union[int, ArrayLike], None] = None,
-        t: Union[Union[int, ArrayLike], None] = None,
+        wl: int | ArrayLike | None = None,
+        t: int | ArrayLike | None = None,
         fromFT: bool = False,
         normalize: bool = False,
-    ) -> Union[np.ndarray, PrimaryHDU]:
+    ) -> np.ndarray | PrimaryHDU:
         """Save the model image
 
         Parameters
@@ -470,14 +470,14 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[Union[float, ArrayLike], None] = None,
-        t: Union[Union[int, float, ArrayLike], None] = None,
+        wl: float | ArrayLike | None = None,
+        t: int | float | ArrayLike | None = None,
         fromFT: bool = False,
         padFact: int = 1,
-        axe: Union[Axes, None] = None,
+        axe: Axes | None = None,
         normPow: float = 0.5,
         figsize: tuple[float, float] = (3.5, 2.5),
-        savefig: Union[str, Path, None] = None,
+        savefig: str | Path | None = None,
         colorbar: bool = True,
         legend: bool = False,
         swapAxes: bool = True,
@@ -656,13 +656,13 @@ class oimModel:
         self,
         dim: int,
         pixSize: float,
-        wl: Union[Union[float, ArrayLike], None] = None,
-        t: Union[Union[int, float, ArrayLike], None] = None,
+        wl: float | ArrayLike | None = None,
+        t: int | float | ArrayLike | None = None,
         unit: str = "cycle/rad",
         unit_format: str = "latex_inline",
-        axe: Union[Axes, None] = None,
+        axe: Axes | None = None,
         figsize: tuple[float, float] = (3.5, 2.5),
-        savefig: Union[str, Path, None] = None,
+        savefig: str | Path | None = None,
         colorbar: bool = True,
         legend: bool = False,
         swapAxes: bool = True,

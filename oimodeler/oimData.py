@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 """Data for optical interferometry"""
 
+from __future__ import annotations
+
 from enum import IntFlag
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 from .oimDataFilter import oimDataFilter, oimDataFilterComponent
 from .oimUtils import _oimDataTypeArr, hdulistDeepCopy
@@ -278,8 +281,8 @@ class oimData:
 
     def __init__(
         self,
-        dataOrFilename: Union[Any, None] = None,
-        filt: Union[oimDataFilter, None] = None,
+        dataOrFilename: Any | None = None,
+        filt: oimDataFilter | None = None,
     ) -> None:
         """Initialize the class with the data and the filter to use."""
         self._data = []
@@ -367,8 +370,8 @@ class oimData:
 
     def setFilter(
         self,
-        filt: Union[oimDataFilter, None] = None,
-        useFilter: Union[bool, None] = True,
+        filt: oimDataFilter | None = None,
+        useFilter: bool = True,
     ) -> None:
         """Set the filter to use.
 
@@ -600,9 +603,9 @@ class oimData:
 
     def writeto(
         self,
-        filename: Union[Union[str, Path], None] = None,
+        filename: str | Path | None = None,
         overwrite: bool = False,
-        directory: Union[Union[str, Path], None] = None,
+        directory: str | Path | None = None,
     ) -> None:
         """Write the data to a file.
 
@@ -637,7 +640,7 @@ class oimData:
         self,
         xname: str,
         yname: str,
-        axe: Union[Axes, None] = None,
+        axe: Axes | None = None,
         removeFilter: bool = False,
         savefig=None,
         **kwargs,
@@ -651,7 +654,7 @@ class oimData:
             Name of the x-axis to be plotted: can be EFF_WAVE, SPAFREQ, LENGTH, PA, MJD ...
         yname : str
             Name of the y-axis to be plotted: for instance VIS2DATA, T3PHI, ...
-        axe : Union[Axes, None], optional
+        axe : Axes, optional
             the maplotlib axe that should be used for the plot. The default is None.
         removeFilter : TYPE, optional
             Plot unfiltered data if True. The default is False.
@@ -716,29 +719,29 @@ class oimData:
 
     def uvplot(
         self,
-        axe: Union[Axes, None] = None,
+        axe: Axes | None = None,
         removeFilter: bool = False,
         savefig=None,
         **kwargs,
-    ):
+    ) -> tuple[Figure, Axes]:
         """
 
 
         Parameters
         ----------
-        axe : Union[Axes, None], optional
+        axe : Axes, optional
             The matplotlib axe to be used for the plot. The default is None.
-        removeFilter : TYPE, optional
+        removeFilter : bool, optional
             Plot unfiltered data if True. The default is False.
-        **kwargs : TYPE
+        **kwargs : dict
             kwargs to be passed to the uvplot function.
 
 
         Returns
         -------
-        fig : TYPE
+        fig : matplotlib.figure.Figure
             The matplotlib figure.
-        axe : TYPE
+        axe : matplotlib.axes.Axes
             The matplotlib axe.
 
         """
@@ -768,7 +771,7 @@ class oimData:
 
 
 def loadOifitsData(
-    input: Union[str, Path, list[str], list[Path], fits.HDUList, oimData],
+    input: str | Path | list[str] | list[Path] | fits.HDUList | oimData,
     mode: str = "listOfHdlulist",
 ) -> oimData:
     """Return the oifits data from either filenames, already opened oifts or a

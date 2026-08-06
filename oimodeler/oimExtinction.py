@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 from scipy import interpolate
@@ -11,8 +12,8 @@ FITZINDEBSPLINE = interpolate.splrep(FITZINDEB[0] / 1e10, FITZINDEB[1], s=1)
 
 
 def extlaw_FitzIndeb(
-    wavelength: Union[float, np.ndarray], A_V: float = 10.0
-) -> Union[float, np.ndarray]:
+    wavelength: float | np.ndarray, A_V: float = 10.0
+) -> float | np.ndarray:
     """Extinction law of Fitzpatrick (1999, PASP, 111, 63) improved by
     Indebetouw et al. (2005, ApJ, 619, 931), as obtained from VOSA
     (https://svo2.cab.inta-csic.es/theory/vosa/).

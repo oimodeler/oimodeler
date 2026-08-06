@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """Components defined in Fourier or image planes"""
 
+from __future__ import annotations
+
 import copy
 import inspect
 import warnings
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import astropy.units as u
 import numpy as np
@@ -137,7 +139,7 @@ class oimComponent:
     # Python adds, for instance, _oimComponent__wl automatically, making it harder
     # to directly serialise
     @_wl.setter
-    def _wl(self, value: Any) -> Union[np.ndarray, None]:
+    def _wl(self, value: Any) -> np.ndarray | None:
         """Sets the wavelengths."""
         if value is None:
             self.__wl = None
@@ -158,7 +160,7 @@ class oimComponent:
         return self.__t
 
     @_t.setter
-    def _t(self, value: Any) -> Union[np.ndarray, None]:
+    def _t(self, value: Any) -> np.ndarray | None:
         """Sets the times."""
         if value is None:
             self.__t = None
