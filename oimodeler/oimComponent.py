@@ -6,6 +6,7 @@ from __future__ import annotations
 import copy
 import inspect
 import warnings
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -473,6 +474,9 @@ class oimComponentFourier(oimComponent):
                 )
             )
 
+        if not isinstance(extfactor, (Iterable, str)):
+            extfactor = np.array([extfactor])
+
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = (
             self._imageFunction(
@@ -521,6 +525,9 @@ class oimComponentFourier(oimComponent):
                     wl, *[self.params[extarg].value for extarg in self.extargs]
                 )
             )
+
+        if not isinstance(extfactor, (Iterable, str)):
+            extfactor = np.array([extfactor])
 
         # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         return (
@@ -706,6 +713,9 @@ class oimComponentImage(oimComponent):
                     wl, *[self.params[extarg].value for extarg in self.extargs]
                 )
             )
+
+        if not isinstance(extfactor, (Iterable, str)):
+            extfactor = np.array([extfactor])
 
         im0 = self._internalImage()
         if im0 is None:
@@ -1017,6 +1027,9 @@ class oimComponentRadialProfile(oimComponent):
                     wl, *[self.params[extarg].value for extarg in self.extargs]
                 )
             )
+
+        if not isinstance(extfactor, (Iterable, str)):
+            extfactor = np.array([extfactor])
 
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
