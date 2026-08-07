@@ -153,8 +153,8 @@ pprint(m3.getFreeParameters())
 er = oim.oimERing()
 er.params["elong"] = eg.params["elong"]
 er.params["pa"] = oim.oimParamLinker(eg.params["pa"], "add", 90)
-er.params["din"] = oim.oimParamLinker(el.params["d"], "mult", 2)
-er.params["dout"] = oim.oimParamLinker(el.params["d"], "mult", 4)
+er.params["din"] = oim.oimParamLinker(el.params["d"], "mul", 2)
+er.params["dout"] = oim.oimParamLinker(el.params["d"], "mul", 4)
 
 m4 = oim.oimModel([el, eg, er])
 

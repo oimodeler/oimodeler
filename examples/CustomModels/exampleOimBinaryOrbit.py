@@ -5,9 +5,9 @@ Created on Fri Feb 20 14:42:21 2026
 @author: ame
 
 This is a basic example showing the main features of the oimBinary components:
-    
+
 - Creation of the component
-- Getting binary separation (x,y) using the getSeparation method 
+- Getting binary separation (x,y) using the getSeparation method
 - Plotting the projected orbit
 - Changing components type from point source to UD
 - Computing and plotting time-dependent visibilities ( with getComplexCoherentFlux)
@@ -35,26 +35,27 @@ save_dir = path / "images"
 if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
-#%% Setting the oimBinaryOrbit component
+# %% Setting the oimBinaryOrbit component
 T0 = 0
-T  = 1
-orb = oim.oimBinaryOrbit(e=0.4, # Eccentricity
-                         a=10,  # semi-major axis (mas)
-                         T0 = T0,     # Time Periastron passage (MJD by default or decimal year)
-                         T  = T,      # Period (in days by default or any compatible astropy unit if specified)
-                         i=45,   # inclination angle (deg)
-                         O=40,   # Longitude of ascending node (deg)
-                         o=-20    # Argument of periastron
-                         )
+T = 1
+orb = oim.oimBinaryOrbit(
+    e=0.4,  # Eccentricity
+    a=10,  # semi-major axis (mas)
+    T0=T0,  # Time Periastron passage (MJD by default or decimal year)
+    T=T,  # Period (in days by default or any compatible astropy unit if specified)
+    i=45,  # inclination angle (deg)
+    O=40,  # Longitude of ascending node (deg)
+    o=-20,  # Argument of periastron
+)
 
-#%% Get the separation at various time to plot the orbit
+# %% Get the separation at various time to plot the orbit
 nt2 = 7
 t = np.linspace(T0, T0 + T, 100)
 t2 = np.linspace(T0, T0 + T, nt2)
 x, y = orb.getSeparation(t, mas=True)
 x2, y2 = orb.getSeparation(t2, mas=True)
 
-#%% Plot the full orbit
+# %% Plot the full orbit
 fig, ax = plt.subplots(figsize=(7, 7))
 ax.grid(which="major", lw=1, alpha=0.5, zorder=-10)
 ax.grid(which="minor", lw=0.5, alpha=0.5, zorder=-10)
@@ -77,16 +78,15 @@ ax.set_xlabel("x (mas)")
 ax.set_ylabel("y (mas)")
 ax.set_xlim(10, -15)
 plt.savefig(save_dir / "ExampleBinary_orbit_plot.png")
-#%% Changing the binary flux ratio and primary type from point source to UD
+# %% Changing the binary flux ratio and primary type from point source to UD
 orb.primary = oim.oimUD(d=3)
 orb.secondary.params["f"].value = 0.3
 
-#%% Plotting visibility Baselines at different times
+# %% Plotting visibility Baselines at different times
 N = 200
 wl = 2.1e-6
 B = np.linspace(0.0, 100, num=N)
 spf = B / wl
-
 
 
 morb = oim.oimModel(orb)
@@ -152,9 +152,7 @@ plt.tight_layout()
 plt.savefig(save_dir / "ExampleBinary_visi_through_full_orbit.png")
 
 
-
-
-#%% Multi spatial frequencies and times for one (simultaneous) getComplexCoherentFlux call
+# %% Multi spatial frequencies and times for one (simultaneous) getComplexCoherentFlux call
 nt = 500  # number of epochs in one period
 t = np.linspace(T0, T0 + T, nt)
 
@@ -177,7 +175,7 @@ vis2 = np.abs(
 ).reshape(len(t), len(B))
 vis2 /= np.outer(np.max(vis2, axis=1), np.ones(nB))
 
-#%% Plot the colormap of the temporal evolution of the visibility during one period
+# %% Plot the colormap of the temporal evolution of the visibility during one period
 fig, ax = plt.subplots(1, 2, figsize=(15, 8), sharex=True, sharey=True)
 
 ax[0].pcolormesh(Bs, ts, vis1, cmap="plasma")
@@ -193,21 +191,21 @@ plt.tight_layout()
 fig.colorbar(sc, ax=ax, label="Visiblity")
 plt.savefig(save_dir / "ExampleBinary_temporal_visi_map.png")
 
-#%% Visibilities with chromatic components with different temperatures
+# %% Visibilities with chromatic components with different temperatures
 dist = 100
 
-#We use the "starWl"" interpolator to set a blackbody flux to each component.
-orb.primary = oim.oimUD(d=1, 
-        f=oim.oimInterp("starWl", temp=3000, dist=dist, radius=0.5))
-orb.secondary = oim.oimPt(
-    f=oim.oimInterp("starWl", temp=30000, dist=dist, radius=0.1))
+# We use the "starWl"" interpolator to set a blackbody flux to each component.
+orb.primary = oim.oimUD(
+    d=1, f=oim.oimInterp("starWl", T=3000, dist=dist, R=0.5)
+)
+orb.secondary = oim.oimPt(f=oim.oimInterp("starWl", T=30000, dist=dist, R=0.1))
 morb = oim.oimModel(orb)
 
 nwl = 400
 nspf = 2000
 
 # first zero of the primary used to define the spatial-frequency range
-spf_res = 1.22 / (orb.primary.params["d"].value * u.mas.to(u.rad)) 
+spf_res = 1.22 / (orb.primary.params["d"].value * u.mas.to(u.rad))
 
 spf = np.linspace(0, spf_res * 1.5, nspf)
 wl = np.linspace(1e-6, 4e-6, num=nwl)
@@ -230,31 +228,37 @@ plt.tight_layout()
 fig.colorbar(sc, ax=ax, label="$\\lambda$ ($\\mu$m)")
 plt.savefig(save_dir / "ExampleBinary_chromatic_binary.png")
 
-#%%Plot the flux of both components
+# %%Plot the flux of both components
 fp = orb.primary.params["f"](wl)
 fs = orb.secondary.params["f"](wl)
 
 fig, ax = plt.subplots()
 
-ax.plot( wl * 1e6, fp,
-          label=f"primary: T={orb.primary.params['f'].temp.value}K " \
-                f"R={orb.primary.params['f'].radius.value}Ro")
-ax.plot(wl * 1e6, fs, 
-        label=f"secondary: T={orb.secondary.params['f'].temp.value}K " \
-              f"R={orb.secondary.params['f'].radius.value}Ro")
+ax.plot(
+    wl * 1e6,
+    fp,
+    label=f"primary: T={orb.primary.params['f'].T.value}K "
+    f"R={orb.primary.params['f'].R.value}Ro",
+)
+ax.plot(
+    wl * 1e6,
+    fs,
+    label=f"secondary: T={orb.secondary.params['f'].T.value}K "
+    f"R={orb.secondary.params['f'].R.value}Ro",
+)
 ax.legend()
 ax.set_yscale("log")
 ax.set_xlabel("$\\lambda$ ($\\mu$m)")
 ax.set_ylabel("Flux (Jy)")
 plt.savefig(save_dir / "ExampleBinary_chromatic_binary_fluxes.png")
 
-#%% Simulate radial velocity
+# %% Simulate radial velocity
 orb.params["Ka"].value = 5
 orb.params["Kb"].value = 50
 orb.params["V0"].value = -5
 
-t = np.linspace(T0,T0+2*T,nt*2)
-rv=orb.getPrimaryRadialVelocity(t) # only RV of primary for SB1
+t = np.linspace(T0, T0 + 2 * T, nt * 2)
+rv = orb.getPrimaryRadialVelocity(t)  # only RV of primary for SB1
 
 rv_a, rv_b = orb.getRadialVelocities(t)
 

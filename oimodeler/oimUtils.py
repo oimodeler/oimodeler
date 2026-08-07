@@ -504,7 +504,7 @@ def compute_photometric_slope(
     temperature = u.Quantity(temperature, u.K)
     struct_wl = [item for sublist in data.struct_wl for item in sublist]
     wl = (np.unique(np.hstack(struct_wl)) * u.m).to(u.um)
-    nu = (const.c / wl.to(u.m)).to(u.Hz)
+    nu = (const.c * u.m / u.s / wl.to(u.m)).to(u.Hz)
     blackbody = models.BlackBody(temperature)(nu)
     return wl.to(u.m).value, np.gradient(
         np.log(blackbody.value), np.log(nu.value)

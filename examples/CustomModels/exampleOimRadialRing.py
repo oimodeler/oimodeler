@@ -16,7 +16,7 @@ data.setFilter(oim.oimDataFilter([f1, f2, f3]))
 
 # NOTE: Model creation
 star = oim.oimPt(f=0.6)
-rr = oim.oimRadialRing(dim=128, din=2, dout=5, p=0.5, f=0.8)
+rr = oim.oimRadialRing(dim=128, din=2, dout=5, p=0.5, f=0.8, flat=True)
 model = oim.oimModel([star, rr])
 
 # NOTE: Simulate and plot the initial model observables and compute the associated reduced Chi2

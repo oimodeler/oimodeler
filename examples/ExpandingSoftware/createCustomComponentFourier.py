@@ -124,7 +124,7 @@ b4 = oimBox(
     y=0,
     f=0.5,
 )
-b4.params["dy"] = oim.oimParamLinker(b4.params["dx"], "mult", 4)
+b4.params["dy"] = oim.oimParamLinker(b4.params["dx"], "mul", 4)
 
 m3 = oim.oimModel([b4])
 

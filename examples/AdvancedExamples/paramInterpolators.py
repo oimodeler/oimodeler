@@ -123,7 +123,7 @@ pt = oim.oimPt(f=0.5)
 m2 = oim.oimModel(c2, pt)
 
 c2.params["d"].values[1] = oim.oimParamLinker(
-    c2.params["d"].values[0], "mult", 3
+    c2.params["d"].values[0], "mul", 3
 )
 c2.params["d"].values[2] = oim.oimParamLinker(
     c2.params["d"].values[0], "add", -1
