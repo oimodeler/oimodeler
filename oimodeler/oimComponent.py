@@ -6,7 +6,6 @@ from __future__ import annotations
 import copy
 import inspect
 import warnings
-from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -465,7 +464,7 @@ class oimComponentFourier(oimComponent):
             else:
                 x_arr = xp * self.params["elong"](wl_arr, t_arr)
 
-        extfactor = 1.0
+        extfactor = np.array([1.0])
         if self.extincted:
             extfactor = 10 ** (
                 -0.4
@@ -474,10 +473,6 @@ class oimComponentFourier(oimComponent):
                 )
             )
 
-        if not isinstance(extfactor, (Iterable, str)):
-            extfactor = np.array([extfactor])
-
-        # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         image = (
             self._imageFunction(
                 x_arr.reshape(dims),
@@ -517,7 +512,7 @@ class oimComponentFourier(oimComponent):
             else:
                 xx = xp * self.params["elong"](wl, t)
 
-        extfactor = 1.0
+        extfactor = np.array([1.0])
         if self.extincted:
             extfactor = 10 ** (
                 -0.4
@@ -526,10 +521,6 @@ class oimComponentFourier(oimComponent):
                 )
             )
 
-        if not isinstance(extfactor, (Iterable, str)):
-            extfactor = np.array([extfactor])
-
-        # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         return (
             self._imageFunction(xx, yy, wl, t)
             * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
@@ -705,7 +696,7 @@ class oimComponentImage(oimComponent):
                 else:
                     x_arr *= self.params["elong"](wl_arr, t_arr)
 
-        extfactor = 1.0
+        extfactor = np.array([1.0])
         if self.extincted:
             extfactor = 10 ** (
                 -0.4
@@ -713,9 +704,6 @@ class oimComponentImage(oimComponent):
                     wl, *[self.params[extarg].value for extarg in self.extargs]
                 )
             )
-
-        if not isinstance(extfactor, (Iterable, str)):
-            extfactor = np.array([extfactor])
 
         im0 = self._internalImage()
         if im0 is None:
@@ -732,7 +720,6 @@ class oimComponentImage(oimComponent):
             f = np.sum(im)
             im = im / f * f0
 
-        # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         im = (
             im.reshape(dims) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
         )
@@ -1019,7 +1006,7 @@ class oimComponentRadialProfile(oimComponent):
             else:
                 x_arr = xp * self.params["elong"](wl_arr, t_arr)
 
-        extfactor = 1.0
+        extfactor = np.array([1.0])
         if self.extincted:
             extfactor = 10 ** (
                 -0.4
@@ -1028,13 +1015,9 @@ class oimComponentRadialProfile(oimComponent):
                 )
             )
 
-        if not isinstance(extfactor, (Iterable, str)):
-            extfactor = np.array([extfactor])
-
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
 
-        # FIXME: Did I correctly infer the dimensions of the image? (PAB)
         im = np.nan_to_num(
             im.reshape(dims)
             * extfactor[np.newaxis, :, np.newaxis, np.newaxis],
