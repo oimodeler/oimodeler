@@ -55,8 +55,8 @@ f2 = oim.oimRemoveArrayFilter(
 )
 data.setFilter(oim.oimDataFilter([f1, f2]))
 
-# # NOTE: The calculation of the photometric slope from the star's effective temperature
-wl, ks = oim.compute_photometric_slope(data, 6500)
+# NOTE: The computation of the spectral index (slope), using the star's effective temperature
+wl, ks = oim.spectral_index(data, 6500)
 ks = oim.oimInterp("wl", values=ks, wl=wl, kind="linear", extrapolate=False)
 
 # NOTE: Specifying the parameter space

@@ -6,6 +6,7 @@ from oimodeler.oimParam import oimInterp, oimParam, oimParamInterpolator
 from .helpers import assert_component_equal
 
 
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_getFourierComponents(): ...
 
 
@@ -94,15 +95,15 @@ class TestOimComponent:
         assert component._directTranslate(10, 10, wl=None, t=None) == (5, 0)
         assert component._directTranslate(0, 0, wl=None, t=None) == (-5, -10)
 
-    # TODO: Finish
+    @pytest.mark.skip(reason="Test not yet finished.")
     def test_ftTranslateFactor(self, component: oimComponent) -> None:
         """Test oimComponent's fourier space spatial translation."""
 
-    # TODO: Finish
+    @pytest.mark.skip(reason="Test not yet finished.")
     def test_getComplexCoherentFlux(self, component: oimComponent) -> None:
         """Test oimComponent's complex coherent flux calculation."""
 
-    # TODO: Finish
+    @pytest.mark.skip(reason="Test not yet finished.")
     def test_getImage(self, component: oimComponent) -> None:
         """Test oimComponent class."""
 

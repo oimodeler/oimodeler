@@ -33,7 +33,6 @@ from .oimUtils import (
     attach_methods,
     getWlFromFitsImageCube,
     pad_image,
-    rebin_image,
 )
 
 
@@ -592,10 +591,6 @@ class oimComponentImage(oimComponent):
             t = ucoord * 0
 
         im = self.getInternalImage(wl, t)
-
-        if oimOptions.ft.binning is not None:
-            im = rebin_image(im, oimOptions.ft.binning)
-
         im = pad_image(im)
 
         if self._pixSize != 0:

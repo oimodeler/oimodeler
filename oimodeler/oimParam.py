@@ -27,7 +27,6 @@ from .oimUtils import (
     _unpickle,
     attach_methods,
     blackbody,
-    linear_to_angular,
     load_toml,
 )
 
@@ -1406,10 +1405,7 @@ class oimParamLinearStarWl(oimParamInterpolator):
         else:
             stellar_radius = self.R.value * self.R.unit.to(u.au)
 
-        angular_radius = (
-            linear_to_angular(stellar_radius, self.dist.value) * 1e3
-        )
-
+        angular_radius = stellar_radius / self.dist.value * 1e3
         return (
             blackbody(self.T(wl, t), const.c / wl)
             / u.rad.to(u.mas) ** 2

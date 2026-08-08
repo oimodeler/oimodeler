@@ -27,7 +27,7 @@ from .oimParam import (
     oimParamLinkerFunction,
     oimParamNorm,
 )
-from .oimUtils import _pickle, _unpickle, attach_methods, rebin_image
+from .oimUtils import _pickle, _unpickle, attach_methods
 
 # NOTE: Will be lazy loaded by the oimModel.deserialize function when needed
 COMPONENT_MODULES = []
@@ -483,7 +483,6 @@ class oimModel:
         swapAxes: bool = True,
         kwargs_legend: dict = {},
         normalize: bool = False,
-        rebin: bool = False,
         **kwargs: dict,
     ) -> tuple[Figure, Axes, np.ndarray]:
         """Show the mode Image or image-Cube
@@ -525,8 +524,6 @@ class oimModel:
         kwargs_legend: dict, optional
         normalize : bool, optional
             If True normalizes the image.
-        rebin : bool, optional
-            If True rebin the image according to oimOptions.ft.binning.
         **kwargs : dict
             Arguments to be passed to the plt.imshow function.
 
@@ -646,9 +643,6 @@ class oimModel:
             plt.savefig(
                 savefig, format=savefig.suffix[1:], dpi=kwargs.get("dpi", 300)
             )
-
-        if rebin:
-            im = rebin_image(im)
 
         return fig, axe, im
 

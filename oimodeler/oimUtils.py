@@ -6,7 +6,7 @@ from __future__ import annotations
 import csv
 import io
 import pickle
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +15,6 @@ import numpy as np
 import toml
 from astropy.coordinates import Angle
 from astropy.io import fits
-from astropy.modeling import models
 from astroquery.simbad import Simbad
 from numpy.typing import ArrayLike
 from scipy.stats import circmean, circstd
@@ -321,25 +320,6 @@ OI_FLUX_COLUMNS = [
 ]
 
 
-def attach_methods(
-    functions: Callable | ArrayLike | dict[str, Callable],
-) -> Callable:
-    """Class decorator that attaches function(s) to a class as methods."""
-    if not isinstance(functions, dict):
-        if not isinstance(function, (tuple, list, np.ndarray)):
-            functions = [functions]
-
-        functions = {func.__name__: func for func in functions}
-
-    def decorator(cls):
-        for name, func in functions.items():
-            setattr(cls, name, func)
-
-        return cls
-
-    return decorator
-
-
 def _pickle(self, f: str | Path | io.BufferedWriter, **kwargs) -> None:
     """Save the pickled representation of the object into an already
     open file or opens a file from a string or pathlib.Path.
@@ -383,132 +363,97 @@ def load_toml(toml_file: Path) -> dict[str, Any]:
     return dictionary
 
 
-def getDataTypeIsAnalysisComplex(dataType: str) -> str:
-    """Get the data type and if it is complex."""
-    try:
-        return _oimDataAnalysisInComplex[_oimDataType.index(dataType)]
-    except Exception:
-        raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
+def attach_methods(
+    functions: Callable | ArrayLike | dict[str, Callable],
+) -> Callable:
+    """Class decorator that attaches function(s) to a class as methods."""
+    if not isinstance(functions, dict):
+        if not isinstance(functions, Iterable):
+            functions = [functions]
+
+        functions = {func.__name__: func for func in functions}
+
+    def decorator(cls):
+        for name, func in functions.items():
+            setattr(cls, name, func)
+
+        return cls
+
+    return decorator
 
 
-def getDataArrname(dataType: str) -> str:
-    """Returns the dataArrname for a given datatype."""
-    try:
-        return _oimDataTypeArr[_oimDataType.index(dataType)]
-    except Exception:
-        raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
-
-
-def getDataType(dataArrname: str) -> list[str]:
-    """Returns the datatype for a given dataArrname."""
-    return [
-        datatypei
-        for datatypei, arrnamei in zip(_oimDataType, _oimDataTypeArr)
-        if arrnamei == dataArrname
-    ]
-
-
-def getDataTypeError(dataArrname: str) -> list[str]:
-    """Returns the error datatype for a given dataArrname."""
-    return [
-        datatypei
-        for datatypei, arrnamei in zip(_oimDataTypeErr, _oimDataTypeArr)
-        if arrnamei == dataArrname
-    ]
-
-
-def compare_angles(phi: float, psi: float) -> float:
-    """Subtracts two angles and makes sure the are between -π and +π."""
-    diff = phi - psi
-    diff = np.where(diff > np.pi, diff - 2 * np.pi, diff)
-    diff = np.where(diff < -np.pi, diff + 2 * np.pi, diff)
-    return diff
-
-
+# TODO: Think of splitting into ν/λ variants to save computation time by
+# avoiding divisions outside of this function
 def blackbody(
-    temperature: float,
-    nu: float | ArrayLike | None = None,
-) -> np.ndarray:
-    """Planck's law in CGS.
+    T: float | np.ndarray, nu: float | np.ndarray
+) -> float | np.ndarray:
+    r"""Computes Planck's law.
 
     Parameters
     ----------
-    temperature : float or numpy.typing.ArrayLike
+    T: float or numpy.ndarray
         The temperature (K).
-    nu : float or numpy.typing.ArrayLike, optional
+    nu : float or numpy.ndarray
         The frequency (Hz).
 
     Returns
     -------
-    blackbody : np.ndarray
+    blackbody : float or np.ndarray
         The blackbody (erg / (cm² s Hz sr)).
+
+    Notes
+    -----
+    Planck's law is defined as
+
+    .. math::
+
+        B_\nu(\nu,T)=\frac{2h\nu^3}{c^2}\frac{1}{\exp\left(\frac{h\nu}{k_\text{B}T}\right)-1}
+
+    This custom variant is implemented for a more efficient computation (i.e. to
+    avoid the overhead of similar implementations like the astropy's
+    astropy.modeling.physical_models.BlackBody).
     """
-    factor = 2 * const.cgs.h * nu**3 / const.cgs.c**2
-    num = np.exp(const.cgs.h * nu / (const.cgs.kB * temperature)) - 1
-    return factor / num
+    return (
+        2
+        * const.cgs.h
+        * nu**3
+        / const.cgs.c**2
+        / (np.exp(const.cgs.h * nu / (const.cgs.kB * T)) - 1)
+    )
 
 
-# TODO: Remove astropy from here
-def compute_intensity(
-    wavelengths: u.um, temperature: u.K, pixel_size: float | None = None
-) -> np.ndarray:
-    """Calculates the blackbody_profile via Planck's law and the
-    emissivity_factor for a given wavelength, temperature- and
-    dust surface density profile.
-
-    Parameters
-    ----------
-    wavelengths : astropy.units.um
-        Wavelength value(s).
-    temp_profile : astropy.units.K
-        Temperature profile.
-    pixSize: float, optional
-        The pixel size [rad].
-
-    Returns
-    -------
-    intensity : numpy.ndarray
-        Intensity per pixel.
-    """
-    plancks_law = models.BlackBody(temperature=temperature * u.K)
-    spectral_profile = []
-    pixel_size *= u.rad
-    for wavelength in wavelengths * u.m:
-        spectral_radiance = plancks_law(wavelength).to(
-            u.erg / (u.cm**2 * u.Hz * u.s * u.rad**2)
-        )
-        spectral_profile.append(
-            (spectral_radiance * pixel_size**2).to(u.Jy).value
-        )
-    return np.array(spectral_profile)
-
-
-# TODO: Remove the astropy constants here
-def compute_photometric_slope(
-    data: np.ndarray, temperature: u.K
-) -> np.ndarray:
-    """Computes the photometric slope of the data from
-    the effective temperature of the star.
+def spectral_index(
+    data, T: float | np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    r"""Computes the spectral index of a star dependent on its effective
+    temperature.
 
     Parameters
     ----------
     data : oimData.oimData
-        The observed data.
-    temperature : astropy.units.K
-        The effective temperature of the star.
+        The data.
+    T : float or numpy.ndarray
+        The effective temperature of the star (K).
 
     Returns
     -------
-    photometric_slope : numpy.ndarray
+    wl : numpy.ndarray
+        The (unique) wavelengths of the data (m).
+    spectral_index : numpy.ndarray
+        The spectral index.
+
+    Notes
+    -----
+    The spectral index is defined as
+
+    .. math:: \alpha(\nu,T)=\frac{\partial\log B_\nu(T)}{\partial\log\nu}
+
     """
-    temperature = u.Quantity(temperature, u.K)
-    struct_wl = [item for sublist in data.struct_wl for item in sublist]
-    wl = (np.unique(np.hstack(struct_wl)) * u.m).to(u.um)
-    nu = (const.c * u.m / u.s / wl.to(u.m)).to(u.Hz)
-    blackbody = models.BlackBody(temperature)(nu)
-    return wl.to(u.m).value, np.gradient(
-        np.log(blackbody.value), np.log(nu.value)
+    wl = np.unique(
+        np.hstack([item for sublist in data.struct_wl for item in sublist])
     )
+    nu = const.c / wl
+    return wl, np.gradient(np.log(blackbody(T, nu)), np.log(nu))
 
 
 def pad_image(image: np.ndarray, padfact: float | None = None) -> np.ndarray:
@@ -517,7 +462,10 @@ def pad_image(image: np.ndarray, padfact: float | None = None) -> np.ndarray:
     Parameters
     ----------
     image : numpy.ndarray
-        The image to be padded.
+        The image of shape (nt, nwl, nx, ny) to be padded.
+    padfact : float, optional
+        The factor by which to pad (e.g. factor=2 with original shape 4 yields 16).
+        Defaults to oimOptions.ft.padding=4.
 
     Results
     -------
@@ -559,83 +507,43 @@ def pad_image(image: np.ndarray, padfact: float | None = None) -> np.ndarray:
     )
 
 
-def get_next_power_of_two(number: float) -> int:
-    """Returns the next power of two for an integer or float input.
-
-    Parameters
-    ----------
-    number : float
-        An input number.
-
-    Returns
-    -------
-    closest_power_of_two : int
-        The, to the input, closest power of two.
-    """
-    return int(2 ** np.ceil(np.log2(number)))
+def getDataTypeIsAnalysisComplex(dataType: str) -> bool:
+    """Returns if the given dataType is complex."""
+    try:
+        return _oimDataAnalysisInComplex[_oimDataType.index(dataType)]
+    except ValueError:
+        raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
 
 
-def angular_to_linear(
-    radius: float | np.ndarray, distance: float
-) -> float | np.ndarray:
-    """Converts angular radius, using the object's distance, to linear radius.
-
-    Parameters
-    ----------
-    radius : float or numpy.ndarray
-        The (angular) radius of the object (arcsec/").
-    distance : float
-        The object's distance to the observer (pc).
-
-    Returns
-    -------
-    radius : float or numpy.ndarray
-        The radius of the object around the star (au).
-
-    Notes
-    -----
-    The formula for the angular diameter (in small angle approximation) is
-
-    .. math:: \\delta = \\frac{d}{2D}
-
-    where d is the linear diameter from the star and D is the distance from the star
-    to the observer and ..math::`\\delta` is the angular diameter.
-    """
-    return radius * distance
+def getDataArrname(dataType: str) -> str:
+    """Returns the dataArrname for a given datatype."""
+    try:
+        return _oimDataTypeArr[_oimDataType.index(dataType)]
+    except ValueError:
+        raise TypeError(f"{dataType} not a valid OIFITS2 datatype")
 
 
-def linear_to_angular(
-    radius: float | np.ndarray, distance: float
-) -> float | np.ndarray:
-    """Converts linear radius, using the object's distance, to angular radius.
+def getDataType(dataArrname: str) -> list[str]:
+    """Returns the datatype for a given dataArrname."""
+    return [
+        datatypei
+        for datatypei, arrnamei in zip(_oimDataType, _oimDataTypeArr)
+        if arrnamei == dataArrname
+    ]
 
-    Parameters
-    ----------
-    radius : float or numpy.ndarray
-        The (linear) radius of the object (au).
-    distance : float
-        The star's distance to the observer (pc).
 
-    Returns
-    -------
-    radius : float or numpy.ndarray
-        The radius of the object around the star (arcsec/").
-
-    Notes
-    -----
-    The formula for the angular diameter small angle approximation is
-
-    .. math:: \\delta = \\frac{d}{D}
-
-    where d is the distance from the star and D is the distance from the star
-    to the observer and ..math::`\\delta` is the angular diameter.
-    """
-    return radius / distance
+def getDataTypeError(dataArrname: str) -> list[str]:
+    """Returns the error datatype for a given dataArrname."""
+    return [
+        datatypei
+        for datatypei, arrnamei in zip(_oimDataTypeErr, _oimDataTypeArr)
+        if arrnamei == dataArrname
+    ]
 
 
 def getBaselineName(
-    oifits: fits.HDUList,
-    hduname: str = "OI_VIS2",
+    data: str | Path | fits.HDUList,
+    arr: str = "OI_VIS2",
     length: bool = False,
     angle: bool = False,
     extver: int | None = None,
@@ -644,34 +552,33 @@ def getBaselineName(
     """Gets the baseline names (i.e., telescopes names
     separated by minus sign) in an extension of a oifits file.
 
-    By default it is reading the 'OI_VIS' extension.
+    Defaults to reading the "OI_VIS2" extension.
 
     Parameters
     ----------
-    oifits: astropy.io.fits.HDUList
-        An oifits file structure already opened with astropy.io.fits
+    data: str or pathlib.Path or astropy.io.fits.HDUList
+        Either a path to an oifits file or a HDUList.
     hduname: str, optional
-        The fits extension name. The default is "OI_VIS2".
+        The fits extension name. Defaults to "OI_VIS2".
     length: bool, optional
-        Add baseline length to the returned result. The default is False.
+        Adds baseline length to the result. Defaults to False.
     angle: bool, optional
-        Add baseline position angle ((in deg)à=) to the returned result.
-        The default is False
+        Adds baseline position angle (deg) to the result. Defaults to False.
     extver: int, optional
-        The extension version. The default is None.
+        The extension version. Defaults to None.
     squeeze: bool, optional
         If True and only one extension is found, the result is squeezed.
+        Defaults to True.
 
     Returns
     -------
     names : list of str
-        The array containing the baseline names (or triplet) and optionally
+        The array containing the baseline names (or triplet) and, optionally,
         the baseline length and orientation.
     """
-    if type(oifits) == type(""):
-        data = fits.open(oifits)
-    else:
-        data = oifits
+    already_open = isinstance(data, fits.HDUList)
+    if isinstance(data, (str, Path)):
+        data = fits.open(data)
 
     extnames = np.array([di.name for di in data])
 
@@ -679,9 +586,9 @@ def getBaselineName(
     arrnames = np.array([data[i].header["ARRNAME"] for i in idx_arr])
 
     if extver is not None:
-        data_arrnames = [data[hduname, extver].header["ARRNAME"]]
+        data_arrnames = [data[arr, extver].header["ARRNAME"]]
     else:
-        idx = np.where(extnames == hduname)[0]
+        idx = np.where(extnames == arr)[0]
         data_arrnames = [data[i].header["ARRNAME"] for i in idx]
 
     names = []
@@ -691,12 +598,12 @@ def getBaselineName(
         staindexes = data[iarr].data["STA_INDEX"]
 
         staidx = data[idx[idata]].data["STA_INDEX"]
-        if hduname == "OI_FLUX":
+        if arr == "OI_FLUX":
             staidx = staidx[:, None]
         shape = np.shape(staidx)
 
         namei = []
-        if length or angle and (hduname != "OI_T3" or hduname != "OI_FLUX"):
+        if (length or angle) and arr not in ["OI_T3", "OI_FLUX"]:
             u = data[idx[idata]].data["UCOORD"]
             v = data[idx[idata]].data["VCOORD"]
             B, PA = np.hypot(u, v), np.rad2deg(np.arctan2(u, v))
@@ -708,7 +615,7 @@ def getBaselineName(
                 if j < shape[1] - 1:
                     namej += "-"
 
-            if hduname != "OI_T3":
+            if arr != "OI_T3":
                 if length:
                     namej += f" {B[i]:.0f}m"
 
@@ -717,38 +624,43 @@ def getBaselineName(
             namei.append(namej)
         names.append(namei)
 
+    if not already_open:
+        data.close()
+
     return names[0] if (squeeze and len(names) == 1) else names
 
 
 # TODO : Add support for multiple extensions
 def getConfigName(
-    oifits: fits.HDUList,
-    hduname: str = "OI_VIS2",
+    data: str | Path | fits.HDUList,
+    arr: str = "OI_VIS2",
     extver: int | None = None,
     squeeze: bool = True,
 ) -> list[str]:
     """Gets the configuration names in an extension of a oifits file.
 
+    Defaults to reading the "OI_VIS2" extension.
+
     Parameters
     ----------
-    oifits: astropy.io.fits.HDUList
-        An oifits file structure already opened with astropy.io.fits
+    data: str or pathlib.Path or astropy.io.fits.HDUList
+        Either a path to an oifits file or a HDUList.
     hduname: str, optional
-        The fits extension name. The default is "OI_VIS2".
+        The fits extension name. Defaults to "OI_VIS2".
     extver: int, optional
-        The extension version. The default is None.
+        The extension version. Defaults to None.
     squeeze: bool, optional
         If True and only one extension is found, the result is squeezed.
+        Defaults to True.
 
     Results
     -------
     names : list of str
         The array containing the configuration names.
     """
-    if type(oifits) == type(""):
-        data = fits.open(oifits)
-    else:
-        data = oifits
+    already_open = isinstance(data, fits.HDUList)
+    if isinstance(data, (str, Path)):
+        data = fits.open(data)
 
     extnames = np.array([di.name for di in data])
 
@@ -756,9 +668,9 @@ def getConfigName(
     arrnames = np.array([data[i].header["ARRNAME"] for i in idx_arr])
 
     if extver is not None:
-        data_arrnames = [data[hduname, extver].header["ARRNAME"]]
+        data_arrnames = [data[arr, extver].header["ARRNAME"]]
     else:
-        idx = np.where(extnames == hduname)[0]
+        idx = np.where(extnames == arr)[0]
         data_arrnames = [data[i].header["ARRNAME"] for i in idx]
 
     names = []
@@ -777,48 +689,59 @@ def getConfigName(
                 namei += "-"
         names.append(namei)
 
+    if not already_open:
+        data.close()
+
     return names[0] if (squeeze and len(names) == 1) else names
 
 
 def getBaselineLengthAndPA(
-    oifits: fits.HDUList,
+    data: str | Path | fits.HDUList,
     arr: str = "OI_VIS2",
     extver: int | None = None,
     squeeze: bool = True,
     returnUV: bool = False,
     T3Max: bool = False,
     showFlagged: bool = True,
-) -> tuple[np.ndarray]:
+) -> tuple[np.ndarray, ...]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension within an opened oifits file.
 
-    By default it is reading the OI_VIS extension.
+    Defaults to reading the "OI_VIS2" extension.
 
     Parameters
     ----------
-    oifits: astropy.io.fits.HDUList
-        An oifits file structure already opened with astropy.io.fits.
+    data: str or pathlib.Path or astropy.io.fits.HDUList
+        Either a path to an oifits file or a HDUList.
     arr: str, optional
-        The fits extension name. The default is "OI_VIS2".
+        The fits extension name. Defaults to "OI_VIS2".
+    extver: int, optional
+        The extension version. Defaults to None.
+    squeeze: bool, optional
+        If True and only one extension is found, the result is squeezed.
+        Defaults to True.
     returnUV : bool, optional
-        If True also return the u,v coordinates in m
-        the default is False
+        If True also return the (u,v) coordinates (m). Defaults to False.
+    T3Max : bool, optional
+        If True and arr is "OI_T3" then the longest baselines of the triangles
+        are returned. Defaults to False.
+    showFlagged : bool, optional
+        If True takes flagged (u,v) coordinates into account. Defaults to True.
 
     Returns
     -------
     B : numpy.ndarray
-        The array containing the baselines length.
+        The baseline lengths.
     PA : numpy.ndarray
-        The array containing the baselines orientation (in deg).
-    ucoord : numpy.ndarray
-        The array containing the u coordinate (in m)(optional)
-    ucoord : numpy.ndarray
-        The array containing the u coordinate (in m)(optional)
+        The baseline orientations (deg).
+    ucoord : numpy.ndarray, optional
+        The u coordinate (m).
+    vcoord : numpy.ndarray, optional
+        The v coordinate (m).
     """
-    if type(oifits) == type(""):
-        data = fits.open(oifits)
-    else:
-        data = oifits
+    already_open = isinstance(data, fits.HDUList)
+    if isinstance(data, (str, Path)):
+        data = hdul = fits.open(data)
 
     if extver is not None:
         data = [data[arr, extver]]
@@ -858,7 +781,7 @@ def getBaselineLengthAndPA(
 
             if T3Max:
                 baselines.append(np.max(b123, axis=0))
-                # TODO: what's the PAS of a triangle?
+                # TODO: What's the PAS of a triangle?
                 pa.append(0 * pa123)
             else:
                 baselines.append(b123)
@@ -868,44 +791,127 @@ def getBaselineLengthAndPA(
         baselines, pa = baselines[0], pa[0]
         ucoord, vcoord = ucoord[0], vcoord[0]
 
+    if not already_open:
+        hdul.close()
+
     if returnUV:
         return baselines, pa, ucoord, vcoord
     else:
         return baselines, pa
 
 
-def get2DSpaFreq(
-    oifits: fits.HDUList,
+def getSpaFreq(
+    data: str | Path | fits.HDUList,
     arr: str = "OI_VIS2",
     unit: str | None = None,
     extver: int | None = None,
     squeeze: bool = True,
-) -> tuple[np.ndarray]:
+) -> list[np.ndarray] | np.ndarray:
+    """Get the spatial dimensional frequencies.
+
+    Parameters
+    ----------
+    data: str or pathlib.Path or astropy.io.fits.HDUList
+        Either a path to an oifits file or a HDUList.
+    arr : str, optional
+        The fits extension name. Defaults to "OI_VIS2".
+    unit : str, optional
+        The unit of the spatial frequency. Defaults to None.
+    extver : int, optional
+        The extension version. Defaults to None.
+    squeeze : bool, optional
+        If True and only one extension is found, the result is squeezed.
+        Defaults to True.
+
+    Returns
+    -------
+    spaFreq : list of numpy.ndarray or numpy.ndarray
+        The Spatial frequencies.
+    """
+    already_open = isinstance(data, fits.HDUList)
+    if isinstance(data, (str, Path)):
+        data = hdul = fits.open(data)
+
+    baselines, _ = getBaselineLengthAndPA(data, arr, extver, squeeze=False)
+
+    if arr == "OI_T3":
+        baselines = [np.max(baseline, axis=0) for baseline in baselines]
+
+    extnames = np.array([di.name for di in data])
+
+    if extver is not None:
+        arrays = [data[arr, extver]]
+        insnames = np.array([arrays.header["INSNAME"]])
+    else:
+        idx = np.where(extnames == arr)[0]
+        insnames = [data[i].header["INSNAME"] for i in idx]
+        arrays = [data[i] for i in idx]
+
+    idx_wlarr = np.where(extnames == "OI_WAVELENGTH")[0]
+    wl_insnames = np.array([data[i].header["INSNAME"] for i in idx_wlarr])
+
+    if unit == "cycles/mas":
+        mult = u.mas.to(u.rad)
+    elif unit == "cycles/arcsec":
+        mult = u.arcsec.to(u.rad)
+    elif unit == "Mlam":
+        mult = 1 / (1e6)
+    else:
+        mult = 1
+
+    spaFreq = []
+    for iarr, _ in enumerate(arrays):
+        iwlarr = idx_wlarr[np.where(wl_insnames == insnames[iarr])[0][0]]
+
+        lam = data[iwlarr].data["EFF_WAVE"]
+        nlam = np.size(lam)
+        nB = np.size(baselines[iarr])
+
+        spaFreqi = np.ndarray([nB, nlam])
+        for iB in range(nB):
+            spaFreqi[iB, :] = baselines[iarr][iB] / lam * mult
+
+        spaFreq.append(spaFreqi)
+
+    if not already_open:
+        hdul.close()
+
+    return spaFreq[0] if (squeeze and len(spaFreq) == 1) else spaFreq
+
+
+def get2DSpaFreq(
+    data: str | Path | fits.HDUList,
+    arr: str = "OI_VIS2",
+    unit: str | None = None,
+    extver: int | None = None,
+    squeeze: bool = True,
+) -> tuple[np.ndarray, np.ndarray]:
     """Get the spatial two dimensional frequencies.
 
     Parameters
     ----------
-    oifits : astropy.io.fits.HDUList
-        An oifits file structure already opened with astropy.io.fits.
+    data: str or pathlib.Path or astropy.io.fits.HDUList
+        Either a path to an oifits file or a HDUList.
     arr : str, optional
-        The fits extension name. The default is "OI_VIS2".
+        The fits extension name. Defaults to "OI_VIS2".
     unit : str, optional
-        The unit of the spatial frequency. The default is None.
+        The unit of the spatial frequency. Defaults to None.
     extver : int, optional
-        The extension version. The default is None.
+        The extension version. Defaults to None.
     squeeze : bool, optional
         If True and only one extension is found, the result is squeezed.
+        Defaults to True.
 
     Returns
     -------
-    spaFreq : tuple of numpy.ndarray
+    2DspaFreq : tuple of numpy.ndarray
+        The two-dimensional spatial frequencies.
     """
-    if type(oifits) == type(""):
-        data = fits.open(oifits)
-    else:
-        data = oifits
+    already_open = isinstance(data, fits.HDUList)
+    if isinstance(data, (str, Path)):
+        data = hdul = fits.open(data)
 
-    _, _, ucoord, vcoord = getBaselineLengthAndPA(
+    *_, ucoord, vcoord = getBaselineLengthAndPA(
         data, arr, extver, squeeze=False, returnUV=True
     )
 
@@ -953,239 +959,69 @@ def get2DSpaFreq(
     if squeeze and len(spaFreqU) == 1:
         spaFreqU, spaFreqV = spaFreqU[0], spaFreqV[0]
 
+    if not already_open:
+        hdul.close()
+
     return spaFreqU, spaFreqV
 
 
-def getSpaFreq(
-    oifits: fits.HDUList,
-    arr: str = "OI_VIS2",
-    unit: str | None = None,
-    extver: int | None = None,
-    squeeze: bool = True,
-) -> tuple[np.ndarray]:
-    """Get the spatial dimensional frequencies.
-
-    Parameters
-    ----------
-    oifits : astropy.io.fits.HDUList
-        An oifits file structure already opened with astropy.io.fits.
-    arr : str, optional
-        The fits extension name. The default is "OI_VIS2".
-    unit : str, optional
-        The unit of the spatial frequency. The default is None.
-    extver : int, optional
-        The extension version. The default is None.
-    squeeze : bool, optional
-        If True and only one extension is found, the result is squeezed.
-
-    Returns
-    -------
-    spaFreq : tuple of numpy.ndarray
-    """
-    if type(oifits) == type(""):
-        data = fits.open(oifits)
-    else:
-        data = oifits
-
-    baselines, _ = getBaselineLengthAndPA(data, arr, extver, squeeze=False)
-
-    if arr == "OI_T3":
-        baselines = [np.max(baseline, axis=0) for baseline in baselines]
-
-    extnames = np.array([di.name for di in data])
-
-    if extver is not None:
-        arrays = [data[arr, extver]]
-        insnames = np.array([arrays.header["INSNAME"]])
-    else:
-        idx = np.where(extnames == arr)[0]
-        insnames = [data[i].header["INSNAME"] for i in idx]
-        arrays = [data[i] for i in idx]
-
-    idx_wlarr = np.where(extnames == "OI_WAVELENGTH")[0]
-    wl_insnames = np.array([data[i].header["INSNAME"] for i in idx_wlarr])
-
-    if unit == "cycles/mas":
-        mult = u.mas.to(u.rad)
-    elif unit == "cycles/arcsec":
-        mult = u.arcsec.to(u.rad)
-    elif unit == "Mlam":
-        mult = 1 / (1e6)
-    else:
-        mult = 1
-
-    spaFreq = []
-    for iarr, _ in enumerate(arrays):
-        iwlarr = idx_wlarr[np.where(wl_insnames == insnames[iarr])[0][0]]
-
-        lam = data[iwlarr].data["EFF_WAVE"]
-        nlam = np.size(lam)
-        nB = np.size(baselines[iarr])
-
-        spaFreqi = np.ndarray([nB, nlam])
-        for iB in range(nB):
-            spaFreqi[iB, :] = baselines[iarr][iB] / lam * mult
-
-        spaFreq.append(spaFreqi)
-
-    return spaFreq[0] if (squeeze and len(spaFreq) == 1) else spaFreq
-
-
 def getWlFromOifits(
-    oifits: fits.HDUList,
+    data: str | Path | fits.HDUList,
     arr: str = "OI_VIS2",
     extver: int | None = None,
     returnBand: bool = False,
-) -> tuple[np.ndarray]:
+) -> tuple[np.ndarray, ...]:
     """Get the wavelength
 
     Parameters
     ----------
-    oifits : astropy.io.fits.HDUList
-        An oifits file structure already opened with astropy.io.fits.
+    data: str or pathlib.Path or astropy.io.fits.HDUList
+        Either a path to an oifits file or a HDUList.
     arr : str, optional
-        The fits extension name. The default is "OI_VIS2".
+        The fits extension name. Defaults to "OI_VIS2".
     unit : str, optional
-        The unit of the spatial frequency. The default is None.
+        The unit of the spatial frequency. Defaults to None.
     extver : int, optional
-        The extension version. The default is None.
+        The extension version. Defaults to None.
     returnBand : bool, optional
-        If True return the bandwith. The default is False.
+        If True return the bandwith. Defaults to False.
 
     Returns
     -------
     wavelength : numpy.ndarray
-        The wavelength.
-    dwl : numpy.ndarray
+        The wavelength (m).
+    dwl : numpy.ndarray, optional
         The bandwith.
     """
+    already_open = isinstance(data, fits.HDUList)
+    if isinstance(data, (str, Path)):
+        data = fits.open(data)
+
     try:
         if isinstance(arr, str):
-            arr = oifits[arr, extver]
+            arr = data[arr, extver]
     except:
         if extver == 1:
-            arr = oifits[arr]
+            arr = data[arr]
         else:
-            TypeError(f"No extver in {arr}")
+            raise TypeError(f"No extver in {arr}")
+
     insname = arr.header["INSNAME"]
-    oiwls = np.array([di for di in oifits if di.name == "OI_WAVELENGTH"])
+    oiwls = np.array([di for di in data if di.name == "OI_WAVELENGTH"])
     oiwls_insname = np.array([oiwli.header["INSNAME"] for oiwli in oiwls])
 
     iwl = np.where(oiwls_insname == insname)[0][0]
     oiwl = oiwls[iwl]
 
-    wavelength = oiwl.data["EFF_WAVE"]
+    wavelength, bandwidth = oiwl.data["EFF_WAVE"], oiwl.data["EFF_BAND"]
+
+    if not already_open:
+        data.close()
+
     if returnBand:
-        return wavelength, oiwl.data["EFF_BAND"]
+        return wavelength, bandwidth
     else:
         return wavelength
-
-
-def hdulistDeepCopy(hdulist: fits.HDUList) -> fits.HDUList:
-    """Deep copy of a fits HDUList."""
-    res = hdulist.copy()
-    res._file = hdulist._file
-    for iext, exti in enumerate(res):
-        res[iext] = exti.copy()
-        res[iext].header = exti.header.copy()
-    return res
-
-
-def cutWavelengthRange(
-    oifits: fits.HDUList,
-    wlRange: list[float] | None = None,
-    addCut: list[float] = [],
-) -> fits.HDUList:
-    """Cut the wavelength range of an oifits file.
-
-    Parameters
-    ----------
-    oifits : astropy.io.fits.HDUList
-        An oifits file structure already opened with astropy.io.fits.
-    wlRange : list of float, optional
-        The wavelength range to keep. The default is None.
-    addCut : list of float, optional
-        Additional columns to cut. The default is [].
-
-    Returns
-    -------
-    data : fits.HDUList
-        The new oifits file with the cut wavelength range.
-    """
-    if type(oifits) == type(""):
-        data = fits.open(oifits)
-    else:
-        data = oifits
-
-    extnames = np.array([data[i].name for i in range(len(data))])
-    wlRange = np.array(wlRange)
-
-    if wlRange.ndim == 1:
-        wlRange = wlRange.reshape((1, len(wlRange)))
-
-    for i in np.where(extnames == "OI_WAVELENGTH")[0]:
-        insname = data[i].header["INSNAME"]
-
-        idx_wl_cut = []
-        for wlRangei in wlRange:
-            idx_wl_cut.extend(
-                np.where(
-                    (data[i].data["EFF_WAVE"] >= wlRangei[0])
-                    & (data[i].data["EFF_WAVE"] <= wlRangei[1])
-                )[0]
-            )
-
-        idx_wl_cut = np.sort(idx_wl_cut).astype("int64")
-        nwl_cut = len(idx_wl_cut)
-        for idata, datai in enumerate(data):
-            if "INSNAME" in datai.header:
-                if datai.header["INSNAME"] == insname:
-                    colDefs = []
-                    for col in datai.columns:
-                        if np.isin(col.name, _cutArr) or np.isin(
-                            col.name, addCut
-                        ):
-                            format0 = col.format[-1]
-                            shape = datai.data[col.name].shape
-                            if len(shape) == 2:
-                                arr = np.take(
-                                    datai.data[col.name], idx_wl_cut, axis=1
-                                )
-                                colDefs.append(
-                                    fits.Column(
-                                        name=col.name,
-                                        format=f"{nwl_cut}{format0}",
-                                        array=arr,
-                                        unit=col.unit,
-                                    )
-                                )
-                            else:
-                                arr = np.take(datai.data[col.name], idx_wl_cut)
-                                colDefs.append(
-                                    fits.Column(
-                                        name=col.name,
-                                        format=col.format,
-                                        array=arr,
-                                        unit=col.unit,
-                                    )
-                                )
-
-                        else:
-                            colDefs.append(
-                                fits.Column(
-                                    name=col.name,
-                                    format=col.format,
-                                    array=datai.data[col.name],
-                                    unit=col.unit,
-                                )
-                            )
-
-                    cols = fits.ColDefs(colDefs)
-                    hdu = fits.BinTableHDU.from_columns(cols)
-                    hdu.header = datai.header
-                    hdu.update_header()
-                    data[idata] = hdu
-    return data
 
 
 def getWlFromFitsImageCube(
@@ -1226,10 +1062,21 @@ def getWlFromFitsImageCube(
     return wl
 
 
+# TODO: Check if this is needed or if copy.deepcopy does the same.
+def hdulistDeepCopy(hdulist: fits.HDUList) -> fits.HDUList:
+    """Deep copy of a fits HDUList."""
+    res = hdulist.copy()
+    res._file = hdulist._file
+    for iext, exti in enumerate(res):
+        res[iext] = exti.copy()
+        res[iext].header = exti.header.copy()
+    return res
+
+
 def _createOiTab(
     extname: str,
-    keywords_def: tuple[Any],
-    colums_def: tuple[Any],
+    keywords_def: tuple[Any, ...],
+    colums_def: tuple[Any, ...],
     dataTypeFromShape: str,
     **kwargs,
 ) -> fits.BinTableHDU:
@@ -1239,9 +1086,9 @@ def _createOiTab(
     ----------
     extname : str
         The extension name.
-    keywords_def : tuple of any
+    keywords_def : tuple of typing.Any
         The keywords definition.
-    colums_def : tuple of any
+    colums_def : tuple of typing.Any
         The columns definition.
     dataTypeFromShape : str
         The key in kwargs to get the data type from.
@@ -1427,6 +1274,103 @@ def createOiTargetFromSimbad(names: str | list[str]) -> fits.BinTableHDU:
     )
 
 
+def cutWavelengthRange(
+    oifits: fits.HDUList,
+    wlRange: list[float] | None = None,
+    addCut: list[float] = [],
+) -> fits.HDUList:
+    """Cut the wavelength range of an oifits file.
+
+    Parameters
+    ----------
+    oifits : astropy.io.fits.HDUList
+        An oifits file structure already opened with astropy.io.fits.
+    wlRange : list of float, optional
+        The wavelength range to keep. Defaults to None.
+    addCut : list of float, optional
+        Additional columns to cut. Defaults to [].
+
+    Returns
+    -------
+    data : fits.HDUList
+        The new oifits file with the cut wavelength range.
+    """
+    if type(oifits) == type(""):
+        data = fits.open(oifits)
+    else:
+        data = oifits
+
+    extnames = np.array([data[i].name for i in range(len(data))])
+    wlRange = np.array(wlRange)
+
+    if wlRange.ndim == 1:
+        wlRange = wlRange.reshape((1, len(wlRange)))
+
+    for i in np.where(extnames == "OI_WAVELENGTH")[0]:
+        insname = data[i].header["INSNAME"]
+
+        idx_wl_cut = []
+        for wlRangei in wlRange:
+            idx_wl_cut.extend(
+                np.where(
+                    (data[i].data["EFF_WAVE"] >= wlRangei[0])
+                    & (data[i].data["EFF_WAVE"] <= wlRangei[1])
+                )[0]
+            )
+
+        idx_wl_cut = np.sort(idx_wl_cut).astype("int64")
+        nwl_cut = len(idx_wl_cut)
+        for idata, datai in enumerate(data):
+            if "INSNAME" in datai.header:
+                if datai.header["INSNAME"] == insname:
+                    colDefs = []
+                    for col in datai.columns:
+                        if np.isin(col.name, _cutArr) or np.isin(
+                            col.name, addCut
+                        ):
+                            format0 = col.format[-1]
+                            shape = datai.data[col.name].shape
+                            if len(shape) == 2:
+                                arr = np.take(
+                                    datai.data[col.name], idx_wl_cut, axis=1
+                                )
+                                colDefs.append(
+                                    fits.Column(
+                                        name=col.name,
+                                        format=f"{nwl_cut}{format0}",
+                                        array=arr,
+                                        unit=col.unit,
+                                    )
+                                )
+                            else:
+                                arr = np.take(datai.data[col.name], idx_wl_cut)
+                                colDefs.append(
+                                    fits.Column(
+                                        name=col.name,
+                                        format=col.format,
+                                        array=arr,
+                                        unit=col.unit,
+                                    )
+                                )
+
+                        else:
+                            colDefs.append(
+                                fits.Column(
+                                    name=col.name,
+                                    format=col.format,
+                                    array=datai.data[col.name],
+                                    unit=col.unit,
+                                )
+                            )
+
+                    cols = fits.ColDefs(colDefs)
+                    hdu = fits.BinTableHDU.from_columns(cols)
+                    hdu.header = datai.header
+                    hdu.update_header()
+                    data[idata] = hdu
+    return data
+
+
 # TODO: This current method does not allow to shift baseline of the same oifits
 # individually.
 def shiftWavelength(
@@ -1441,7 +1385,7 @@ def shiftWavelength(
     shift : float
         The wavelength shift to apply.
     verbose : bool, optional
-        If True print the tables index. The default is False.
+        If True print the tables index. Defaults to False.
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
@@ -1476,9 +1420,9 @@ def spectralSmoothing(
     kernel_size : float
         The kernel size.
     cols2Smooth : str or list of str, optional
-        The columns to smooth. The default is "all".
+        The columns to smooth. Defaults to "all".
     normalizeError : bool, optional
-        If True normalize the error. The default is True.
+        If True normalize the error. Defaults to True.
     """
     tableToSmooth = ["OI_VIS", "OI_VIS2", "OI_T3", "OI_FLUX"]
 
@@ -1601,15 +1545,15 @@ def _intpBinning(
         The interpolated values at the edge of the bins.
     values : array_like, optional
         If provided will treat the "array" as errors and use the values
-        for error propagation. Default is "None".
+        for error propagation. Defaults to "None".
     spectralChannels : int, optional
         The number of channels of the set bin resolution. Will be used to
-        calculate the divisor within the error propagation. Default is 1.0.
+        calculate the divisor within the error propagation. Defaults to 1.0.
 
         .. math:: divisor = bin_elements / spectralChannels
 
     circular : bool, optional
-        If True, treats the values periodically. Default is "False".
+        If True, treats the values periodically. Default to "False".
 
     Returns
     -------
@@ -1659,7 +1603,7 @@ def _interpolateBinHDU(
         The exceptions.
     spectralChannels : int, optional
         The number of channels of the set bin resolution. Will be used to
-        calculate the divisor within the error propagation. Default is 1.0.
+        calculate the divisor within the error propagation. Defaults to 1.0.
 
         .. math:: divisor = bin_elements / spectralChannels
 
@@ -1796,15 +1740,15 @@ def intpBinWavelength(
     binWindow : array_like, optional
         The bin windows that correspond to the binGrid elements.
         If None, computes the bin windows from the distance between two
-        elements in the binGrid. Default is None.
+        elements in the binGrid. Defaults to None.
     resetFlags : bool, optional
-        If True, resets the flags after binning. Default is True.
+        If True, resets the flags after binning. Defaults to True.
     averageError : bool, optional
         If True, forgoes error propagation and simply averages the errors
-        for each bin. Default is False.
+        for each bin. Defaults to False.
     spectralChannels : int, optional
         The number of channels of the set bin resolution. Will be used to
-        calculate the divisor within the error propagation. Default is 1.0.
+        calculate the divisor within the error propagation. Defaults to 1.0.
 
         .. math:: divisor = bin_elements / spectralChannels
     """
@@ -1844,52 +1788,6 @@ def intpBinWavelength(
                 )
 
 
-def rebin_image(
-    image: np.ndarray,
-    binning_factor: int | None = None,
-    rdim: bool = False,
-) -> np.ndarray:
-    """Bins a 2D-image down according.
-
-    The down binning is according to the binning factor
-    in oimOptions.ft.binning. Only accounts for
-    square images.
-
-    Parameters
-    ----------
-    image : numpy.ndarray
-        The image to be rebinned.
-    binning_factor : int, optional
-        The binning factor. The default is 0
-    rdim : bool
-        If toggled, returns the dimension
-
-    Returns
-    -------
-    rebinned_image : numpy.ndarray
-        The rebinned image.
-    dimension : int, optional
-        The new dimension of the image.
-    """
-    if binning_factor is None:
-        return image, image.shape[-1] if rdim else image
-
-    new_dim = int(image.shape[-1] * 2**-binning_factor)
-    binned_shape = (
-        new_dim,
-        int(image.shape[-1] / new_dim),
-        new_dim,
-        int(image.shape[-1] / new_dim),
-    )
-    if len(image.shape) == 4:
-        shape = (image.shape[0], image.shape[1], *binned_shape)
-    else:
-        shape = binned_shape
-    if rdim:
-        return image.reshape(shape).mean(-1).mean(-2), new_dim
-    return image.reshape(shape).mean(-1).mean(-2)
-
-
 # TODO: Should the median here be replaced with the circmean?
 def _rebin(
     array: ArrayLike, binsize: int, median: bool = True, circular: bool = False
@@ -1903,9 +1801,9 @@ def _rebin(
     binsize : int, optiona
         The bin size.
     median : bool, optional
-        If True return the median.
+        If True return the median. Defaults to True.
     circular : bool, optional
-        Treats the data as periodic if toggled.
+        Treats the data as periodic if toggled. Defaults to False.
 
     Returns
     -------
@@ -1941,7 +1839,7 @@ def _rebinHDU(
     binsize : int
         The bin size.
     exception : list of str
-        The exceptions.
+        The exceptions. Defaults to [].
 
     Returns
     -------
@@ -2000,9 +1898,9 @@ def binWavelength(
     oifits : astropy.io.fits.HDUList
         An oifits file structure already opened with astropy.io.fits.
     binsize : int, optional
-        The bin size.
+        The bin size. Defaults to None.
     normalizeError : bool, optional
-        If True normalize the error.
+        If True normalize the error. Defaults to True.
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
@@ -2020,7 +1918,11 @@ def binWavelength(
 
 
 def oifitsFlagWithExpression(
-    data, arr, extver0, expr, keepOldFlag: bool = False
+    data,
+    arr: str | list[str],
+    extver0: int,
+    expr: str,
+    keepOldFlag: bool = False,
 ):
     """Flag the data with an expression.
 
@@ -2034,8 +1936,8 @@ def oifitsFlagWithExpression(
         The extension version.
     expr : str
         The expression to evaluate.
-    keepOldFlag : bool
-        If True keep the old flag.
+    keepOldFlag : bool, optional
+        If True keep the old flag. Defaults to True.
 
     Returns
     -------
@@ -2118,7 +2020,11 @@ def oifitsFlagWithExpression(
 
 
 def oifitsKeepBaselines(
-    data, arr, baselines_to_keep, extver=None, keepOldFlag: bool = True
+    data,
+    arr: str | list[str],
+    baselines_to_keep: list[str],
+    extver: int | None = None,
+    keepOldFlag: bool = True,
 ):
 
     if arr == "all" or arr == ["all"] or arr is []:
@@ -2128,7 +2034,7 @@ def oifitsKeepBaselines(
 
     for arri in arr:
         try:
-            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            baselines = getBaselineName(data, arr=arri, extver=extver)
             baselines_to_keep_ordered = []
             for Bi in baselines_to_keep:
                 Bi = Bi.split("-")
@@ -2159,7 +2065,11 @@ def oifitsKeepBaselines(
 
 
 def oifitsRemoveBaselines(
-    data, arr, baselines_to_remove, extver=None, keepOldFlag: bool = True
+    data,
+    arr: str | list[str],
+    baselines_to_remove: list[str],
+    extver: int | None = None,
+    keepOldFlag: bool = True,
 ):
 
     if arr == "all" or arr == ["all"] or arr is []:
@@ -2169,7 +2079,7 @@ def oifitsRemoveBaselines(
 
     for arri in arr:
         try:
-            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            baselines = getBaselineName(data, arr=arri, extver=extver)
             baselines_to_remove_ordered = []
             for Bi in baselines_to_remove:
                 Bi = Bi.split("-")
@@ -2200,7 +2110,11 @@ def oifitsRemoveBaselines(
 
 
 def oifitsKeepTelescopes(
-    data, arr, telescopes_to_keep, extver=None, keepOldFlag: bool = True
+    data,
+    arr: str | list[str],
+    telescopes_to_keep: list[str],
+    extver: int | None = None,
+    keepOldFlag: bool = True,
 ):
 
     if arr == "all" or arr == ["all"] or arr is []:
@@ -2210,7 +2124,7 @@ def oifitsKeepTelescopes(
 
     for arri in arr:
         try:
-            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            baselines = getBaselineName(data, arr=arri, extver=extver)
 
             baselines = np.array(baselines)
             telescopes_to_keep = np.array(telescopes_to_keep)
@@ -2231,7 +2145,11 @@ def oifitsKeepTelescopes(
 
 
 def oifitsRemoveTelescopes(
-    data, arr, telescopes_to_remove, extver=None, keepOldFlag: bool = True
+    data,
+    arr: str | list[str],
+    telescopes_to_remove: list[str],
+    extver: int | None = None,
+    keepOldFlag: bool = True,
 ):
 
     if arr == "all" or arr == ["all"] or arr is []:
@@ -2241,7 +2159,7 @@ def oifitsRemoveTelescopes(
 
     for arri in arr:
         try:
-            baselines = getBaselineName(data, hduname=arri, extver=extver)
+            baselines = getBaselineName(data, arr=arri, extver=extver)
 
             baselines = np.array(baselines)
             telescopes_to_remove = np.array(telescopes_to_remove)
@@ -2276,15 +2194,15 @@ def computeDifferentialError(
     oifits : astropy.io.fits.HDUList
         An oifits file structure already opened with astropy.io.fits.
     ranges : list of int, optional
-        The ranges to compute the differential error. The default is [[0, 5]].
+        The ranges to compute the differential error. Defaults to [[0, 5]].
     excludeRange : bool, optional
-        If True exclude the range. The default is False.
+        If True exclude the range. Defaults to False.
     rangeType : str, optional
-        The range type. The default is "index".
+        The range type. Defaults to "index".
     dataType : str, optional
-        The data type. The default is "VISPHI".
+        The data type. Defaults to "VISPHI".
     extver : list of int, optional
-        The extension version. The default is [None].
+        The extension version. Defaults to [None].
     """
     if rangeType == "index":
         dtype = "int64"
@@ -2363,7 +2281,7 @@ def setMinimumError(
     values : float or list of float
         The minimum error value.
     extver : int or list of int, optional
-        The extension version. The default is None.
+        The extension version. Defaults to None.
     """
     if type(oifits) == type(""):
         data = fits.open(oifits)
@@ -2575,25 +2493,6 @@ def listParamInterpolators(details: bool = False, save2csv: bool = False):
     return res
 
 
-def windowed_linspace(start: float, end: float, window: float) -> np.ndarray:
-    """Creates bins centred around points with half-window spacing on each side.
-
-    Parameters
-    ----------
-    start : float
-        Centre of the first bin.
-    end : float
-        Centre of the last bin.
-    window : float
-        Total width of each bin.
-
-    Returns
-    -------
-    bin_array : array_like
-    """
-    return np.linspace(start, end, int((end - start) // (window)) + 1)
-
-
 # %%
 class _terminalColor:
 
@@ -2634,11 +2533,11 @@ class _terminalColor:
     def __init__(self):
         pass
 
-    def getCode(self, text):
+    def getCode(self, text: str):
         return getattr(self, text.upper())
 
 
-def colorPrint(text, color):
+def colorPrint(text: str, color) -> None:
     tcol = oim.oimUtils._terminalColor()
     col_text = tcol.getCode(color)
     reset = "\033[0m"
@@ -2647,7 +2546,7 @@ def colorPrint(text, color):
 
 
 # %%
-def oimWarning(myclass, warningName, text, color="red"):
+def oimWarning(myclass, warningName, text: str, color: str = "red") -> None:
     if myclass._firstInit and oimOptions.general.warning:
         BOLD = "\033[1m"
         colorPrint(
@@ -2659,7 +2558,7 @@ def oimWarning(myclass, warningName, text, color="red"):
 
 
 # %%
-def oimAckWarning(myclass, text):
+def oimAckWarning(myclass, text: str) -> None:
     text += (
         "\nCheck the oimodeler page for proper refrence and acknowledgment : \n"
         "https://oimodeler.readthedocs.io/en/latest/ackn.html#acknowledgment"

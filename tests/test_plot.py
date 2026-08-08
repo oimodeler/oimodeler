@@ -22,7 +22,7 @@ from oimodeler.oimPlots import oimWlTemplatePlots
 from oimodeler.oimSimulator import oimSimulator
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def data(global_data_dir: Path) -> oimData:
     """Read-in dataset."""
     return oimData(list((global_data_dir / "ASPRO_MATISSE2").glob("*.fits")))
