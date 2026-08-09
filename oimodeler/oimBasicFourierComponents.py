@@ -1181,6 +1181,8 @@ class oimConvolutor(oimComponentFourier):
                     f"c{index}_pa"
                 ].unit.to(u.rad)
                 co, si = np.cos(pa_rad), np.sin(pa_rad)
+
+                # TODO: Make cosi/flat work here, too.
                 fxpt = (fxp * co - fyp * si) / self.params[f"c{index}_elong"](
                     wl, t
                 )

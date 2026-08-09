@@ -1,3 +1,7 @@
+"""
+Tests for the oimodeler.oimData module.
+"""
+
 from pathlib import Path
 
 import oimodeler as oim

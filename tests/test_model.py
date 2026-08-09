@@ -1,3 +1,7 @@
+"""
+Tests for the oimodeler.oimModel module.
+"""
+
 import pytest
 
 from oimodeler.oimBasicFourierComponents import oimIRing, oimPt

@@ -1,3 +1,7 @@
+"""
+Helper functions shared by all tests.
+"""
+
 import copy
 
 import numpy as np

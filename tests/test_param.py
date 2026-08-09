@@ -1,3 +1,7 @@
+"""
+Tests for the oimodeler.oimParam module.
+"""
+
 import copy
 import warnings
 

@@ -1,3 +1,7 @@
+"""
+Tests for the oimodeler.oimBasicFourierComponents module.
+"""
+
 import numpy as np
 import pytest
 
@@ -22,162 +26,160 @@ def test_oimPt_visFunction(uvcoord: np.ndarray, baselines: np.ndarray) -> None:
     assert oimFComp.oimPt()._visFunction(*uvcoord, baselines, None, None) == 1
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimBackground_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimBackground class."""
-    bg = oimFComp.oimBackground()
+    oimFComp.oimBackground()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimUD_visFunction(uvcoord: np.ndarray, baselines: np.ndarray) -> None:
     """Test the visFunction of the oimUD class."""
-    ud = oimFComp.oimUD()
+    oimFComp.oimUD()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimEllipse_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimEllipse class."""
-    ellipse = oimFComp.oimEllipse()
+    oimFComp.oimEllipse()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimGauss_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimGaussian class."""
-    gaussian = oimFComp.oimGauss()
+    oimFComp.oimGauss()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimEGauss_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimEGaussian class."""
-    egaussian = oimFComp.oimEGauss()
+    oimFComp.oimEGauss()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimIRing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimIRing class."""
-    ir = oimFComp.oimIRing()
+    oimFComp.oimIRing()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimEIring_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimEIring class."""
-    eir = oimFComp.oimEIRing()
+    oimFComp.oimEIRing()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimRing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimRing class."""
-    ring = oimFComp.oimRing()
+    oimFComp.oimRing()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimRing2_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimRing2 class."""
-    ring2 = oimFComp.oimRing2()
+    oimFComp.oimRing2()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimERing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimERing class."""
-    ering = oimFComp.oimERing()
+    oimFComp.oimERing()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimERing2_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimERing2 class."""
-    ...
-    # ering2 = oimFComp.oimERing2()
-    # visibility = ering2._visFunction(vis, radius, None, None)
+    oimFComp.oimERing2()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimESKIRing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimESKIRing class."""
-    esk = oimFComp.oimESKIRing()
+    oimFComp.oimESKIRing()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimESKRing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimESKRing class."""
-    esk = oimFComp.oimESKRing()
+    oimFComp.oimESKRing()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimLorentz_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimLorentz class."""
-    lorentz = oimFComp.oimLorentz()
+    oimFComp.oimLorentz()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimELorentz_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimELorentz class."""
-    elorentz = oimFComp.oimELorentz()
+    oimFComp.oimELorentz()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimLinearLDD_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimLinearLDD class."""
-    ldd = oimFComp.oimLinearLDD()
+    oimFComp.oimLinearLDD()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimQuadLDD_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimQuadLDD class."""
-    qld = oimFComp.oimQuadLDD()
+    oimFComp.oimQuadLDD()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimPowerLawLDD_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimPowerLawLDD class."""
-    pldd = oimFComp.oimPowerLawLDD()
+    oimFComp.oimPowerLawLDD()
 
 
-# TODO: Finish this test
+@pytest.mark.skip(reason="Test not yet finished.")
 def test_oimSqrtLDD_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
     """Test the visFunction of the oimSqrtLDD class."""
-    sld = oimFComp.oimSqrtLDD()
+    oimFComp.oimSqrtLDD()
 
 
-@pytest.mark.parametrize(
-    "pa1, elong1, pa2, elong2",
-    [(0, 1, 0, 1), (33, 2, 45, 1.5)],
-)
+@pytest.mark.parametrize("pa1", (0, 33))
+@pytest.mark.parametrize("elong1", (1, 2))
+@pytest.mark.parametrize("pa2", (0, 45))
+@pytest.mark.parametrize("elong2", (1, 1.5))
 def test_oimConvolutor_visFunction(
     uvcoord: np.ndarray,
     pa1: int,
