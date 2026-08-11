@@ -1,2 +1,5 @@
+include README.md
+include LICENSE
+include TESTING.md
 include oimodeler/config/*.toml
 include oimodeler/extlaws/*
