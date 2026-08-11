@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Data filtering/modifying"""
 
+from __future__ import annotations
+
+import warnings
 from fnmatch import fnmatch
 
 import numpy as np
@@ -26,13 +29,28 @@ from .oimUtils import (
 
 
 class oimDataFilterComponent:
-    """Base class for data filter"""
+    """Base class for data filter.
+
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Can be `"all"` or a
+        list of indices corresponding to the list of input data. Defaults to `"all"`.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
 
     name = "Generic Filter"
     shortname = "Genfilt"
     description = "This is the class from which all filters derived"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self.params = {}
 
         self.params["targets"] = "all"
@@ -40,15 +58,18 @@ class oimDataFilterComponent:
 
         self._eval(**kwargs)
 
-    def _eval(self, **kwargs):
+    def _eval(self, **kwargs) -> None:
+        """Evaluates the ``kwargs`` and passes them to the ``self.params``
+        dictionary if they exist in it."""
         for key, value in kwargs.items():
-            if key in self.params.keys():
+            if key in self.params:
                 self.params[key] = value
 
-    def _filteringFunction(self, data):
-        pass
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
 
-    def applyFilter(self, data):
+    def applyFilter(self, data) -> None:
+        """Applies the filter to the data."""
         if type(self.params["targets"]) != type([]):
             self.params["targets"] = [self.params["targets"]]
 
@@ -63,40 +84,62 @@ class oimDataFilterComponent:
         for datai in [data[i] for i in idx]:
             self._filteringFunction(datai)
 
-    def __str__(self):
+    def __str__(self) -> str:
         txt = self.name
         for key, value in self.params.items():
             txt += "\n"
             txt += f"{key}:".ljust(10)
             txt += f"{value}"
+
         return txt
 
 
 class oimDataFilter:
-    """Class for data filter stack"""
+    """Class for data filter stack."""
 
-    def __init__(self, filters=[]):
+    def __init__(
+        self,
+        filters: oimDataFilterComponent | list[oimDataFilterComponent] = [],
+    ) -> None:
         if isinstance(filters, oimDataFilterComponent):
             filters = [filters]
+
         self.filters = filters
 
-    def applyFilter(self, data):
+    def applyFilter(self, data) -> None:
+        """Applies all filters in ``self.filters`` to the data."""
         for filt in self.filters:
             filt.applyFilter(data)
 
 
 class oimRemoveArrayFilter(oimDataFilterComponent):
-    """Simple filter removing arrays by type"""
+    """Filter that removes array(s)/table(s) from OIFITS file by name.
 
-    name = "Remove array by type Filter"
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Remove Array Filter"
     shortname = "RemArrFilt"
-    description = "Removing arrays by type: OI_VIS2, OI_T3..."
+    description = "Removing array(s)/table(s) by name: OI_VIS2, OI_T3..."
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         for arri in self.params["arr"]:
             while (
                 len(np.where(np.array([t.name for t in data]) == arri)[0]) != 0
@@ -105,23 +148,41 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
 
 
 class oimRemoveInsnameFilter(oimDataFilterComponent):
-    """Simple filter removing arrays by type"""
+    """Filter that removes arrays/tables from OIFITS file by ``"INSNAME"``.
 
-    name = "Remove arrays by insname Filter"
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    insname : str or list of str
+        One or more `"INSNAME"` that is/are to be removed. Defaults to `None`.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Remove Insname Filter"
     shortname = "RemInsFilt"
-    description = "Remove array by insname"
+    description = "Remove arrays/tables by insname(s)"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["insname"] = None
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         to_remove = []
         insnameToRemove = self.params["insname"]
         if type(insnameToRemove) != type([]):
             insnameToRemove = [insnameToRemove]
-        # print(insnameToRemove)
+
         for di in data:
             if "INSNAME" in di.header:
                 for insnamei in insnameToRemove:
@@ -132,21 +193,201 @@ class oimRemoveInsnameFilter(oimDataFilterComponent):
             data.pop(di)
 
 
+class oimDataTypeFilter(oimDataFilterComponent):
+    """Filter that sets column values to ``0`` by column name(s).
+
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    dataType : str or list of str
+        The OIFITS datatypes(s)/column(s) to be removed.  Defaults to `[]`.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Data Type Filter"
+    shortname = "DTFilt"
+    description = (
+        "Sets column names to 0 by colum name(s) : VIS2DATA, VISAMP..."
+    )
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.params["dataType"] = []
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
+        if type(self.params["dataType"]) != type([]):
+            self.params["dataType"] = [self.params["dataType"]]
+
+        for dtype in self.params["dataType"]:
+            idx = np.where(np.array(_oimDataType) == dtype)[0]
+            if idx.size == 1:
+                dtypearr = _oimDataTypeArr[idx[0]]
+
+                for datai in data:
+                    if datai.name == dtypearr:
+                        datai.data[dtype] *= 0
+
+
+class oimKeepDataTypeFilter(oimDataFilterComponent):
+    """Filter that removes all columns except those specified by name.
+
+    If no data columns remain in array(s)/table(s) after filtering and
+    ``removeArrIfPossible=True` then they are removed as well.
+
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    dataType : str or list of str
+        The OIFITS datatype(s)/column(s) to be kept. Defaults to `[]`.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Keep Datatype filter"
+    shortname = "KeepDTFilt"
+    description = "Keep columns that are specified: VIS2DATA, VISAMP..."
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.params["dataType"] = []
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
+        if type(self.params["dataType"]) != type([]):
+            self.params["dataType"] = [self.params["dataType"]]
+
+        dataType = self.params["dataType"]
+        arr0 = np.array(["PRIMARY", "OI_ARRAY", "OI_WAVELENGTH", "OI_TARGET"])
+        arr2Keep = np.unique(
+            np.array([getDataArrname(dti) for dti in dataType])
+        )
+
+        hduname = [hdu.name for hdu in data]
+
+        arr2remove = []
+        for ihdu, hdunamei in enumerate(hduname):
+            if not (hdunamei in arr0 or hdunamei in arr2Keep):
+                extver = data[ihdu].header.get("EXTVER", 1)
+                arr2remove.append((hdunamei, extver))
+            elif hdunamei in arr2Keep:
+                dataTypesi = getDataType(hdunamei)
+                for dataTypeij in dataTypesi:
+                    if dataTypeij not in dataType:
+                        data[ihdu].data[dataTypeij][:] = 0
+
+        for arr2removei in arr2remove:
+            data.pop(arr2removei)
+
+
+class oimFlagWithExpressionFilter(oimDataFilterComponent):
+    """Filter that flags based on an expression.
+
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    expr : str
+        The expression to be applied. Defaults to `""`.
+    keepOldFlag : bool, optional
+        If `True`, the old flag(s) are kept. Defaults to `True`.
+
+    See Also
+    --------
+    oimUtils.oifitsFlagWithExpression : Flag data with an expression.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Flag With Expression filter"
+    shortname = "FlagWExprFilt"
+    description = "Flags based on boolean expressions"
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.params["expr"] = ""
+        self.params["keepOldFlag"] = True
+        self._eval(**kwargs)
+
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
+        oifitsFlagWithExpression(
+            data,
+            self.params["arr"],
+            None,
+            self.params["expr"],
+            keepOldFlag=self.params["keepOldFlag"],
+        )
+
+
 class oimWavelengthRangeFilter(oimDataFilterComponent):
-    """Filter for cutting wavelength range"""
+    """Filter that cuts the wavelength range(s) of all data.
 
-    name = "Wavelength range Filter"
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    wlRange : list of float
+        The wavelength range after filtering. Defaults to `[]`.
+    addCut : list of float, optional
+    method : str, optional
+        The method for . If `method="cut"`, the `.oimUtils.cutWavelengthRange` function
+        is used, otherwise the `.oimUtils.oimFlagWithExpression`. Defaults to `"cut"`.
+
+    See Also
+    --------
+    oimUtils.cutWavelengthRange : Cut the wavelength range of an OIFITS file.
+    oimUtils.oifitsFlagWithExpression : Flag data with an expression.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Wavelength Range Filter"
     shortname = "WlRgFilt"
-    description = "Cutting wavelength range(s)"
+    description = "Cuts the wavelength range(s)"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["wlRange"] = []
         self.params["addCut"] = []
         self.params["method"] = "cut"
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         if self.params["method"] == "cut":
             cutWavelengthRange(
                 data,
@@ -169,102 +410,82 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
             )
 
 
-class oimDataTypeFilter(oimDataFilterComponent):
-    """ """
-
-    name = "Filtering by datatype"
-    shortname = "DTFilt"
-    description = "Filtering by datatype(s) : VIS2DATA, VISAMP..."
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.params["dataType"] = []
-        self._eval(**kwargs)
-
-    def _filteringFunction(self, data):
-        if type(self.params["dataType"]) != type([]):
-            self.params["dataType"] = [self.params["dataType"]]
-
-        for dtype in self.params["dataType"]:
-            idx = np.where(np.array(_oimDataType) == dtype)[0]
-            if idx.size == 1:
-                dtypearr = _oimDataTypeArr[idx[0]]
-
-                for datai in data:
-                    if datai.name == dtypearr:
-                        datai.data[dtype] *= 0
-
-
-class oimKeepDataType(oimDataFilterComponent):
-    """ """
-
-    name = "Keep datatype filter"
-    shortname = "KeepDTFilt"
-    description = "Keep atatype that are listed: VIS2DATA, VISAMP..."
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.params["dataType"] = []
-        self.params["removeArrIfPossible"] = True
-        self._eval(**kwargs)
-
-    def _filteringFunction(self, data):
-        if type(self.params["dataType"]) != type([]):
-            self.params["dataType"] = [self.params["dataType"]]
-
-        dataType = self.params["dataType"]
-        # dataType=["VISAMP","VISPHI","T3PHI"]
-        arr0 = np.array(["PRIMARY", "OI_ARRAY", "OI_WAVELENGTH", "OI_TARGET"])
-        arr2Keep = np.unique(
-            np.array([getDataArrname(dti) for dti in dataType])
-        )
-
-        hduname = [hdu.name for hdu in data]
-
-        arr2remove = []
-        for ihdu, hdunamei in enumerate(hduname):
-            if not (hdunamei in arr0 or hdunamei in arr2Keep):
-                extver = data[ihdu].header.get("EXTVER", 1)
-                arr2remove.append((hdunamei, extver))
-            elif hdunamei in arr2Keep:
-                dataTypesi = getDataType(hdunamei)
-                for dataTypeij in dataTypesi:
-                    if dataTypeij not in dataType:
-                        data[ihdu].data[dataTypeij][:] = 0
-        for arr2removei in arr2remove:
-            data.pop(arr2removei)
-
-
 class oimWavelengthShiftFilter(oimDataFilterComponent):
-    """Filter for shifting wavelength"""
+    """Filter that shifts the wavelength table.
 
-    name = "Shift Wavelength Filter"
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    wlShift : float
+        The amount the wavelenght is shifted by. Defaults to `0`.
+
+    See Also
+    --------
+    oimUtils.shiftWavelength : Shift the wavelength of an OIFITS file.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Wavelength Shift Filter"
     shortname = "WlShFilt"
-    description = "Shifting wavelength table"
+    description = "Shifts the wavelength table"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["wlShift"] = 0
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         shiftWavelength(data, self.params["wlShift"])
 
 
 class oimWavelengthSmoothingFilter(oimDataFilterComponent):
-    """Filter for Smoothing wavelength"""
+    """Filter for Smoothing wavelength.
+
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    smoothPix : int, optional
+        The kernel size of the smoothing. Defaults to `2`.
+    normalizeError : bool, optional
+        If `True`, the errors are normalised by the kernel size. Defaults to `True`.
+
+    See Also
+    --------
+    oimUtils.spectralSmoothing : Smooth the spectral data of an OIFITS file.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
 
     name = "Wavelength Smoothing Filter"
     shortname = "WlSmFilt"
     description = "Spectral smoothing "
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["smoothPix"] = 2
         self.params["normalizeError"] = True
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         spectralSmoothing(
             data,
             self.params["smoothPix"],
@@ -274,52 +495,88 @@ class oimWavelengthSmoothingFilter(oimDataFilterComponent):
 
 
 class oimWavelengthBinningFilter(oimDataFilterComponent):
-    """Filter for binning wavelength"""
+    """Filter for binning wavelength.
 
-    name = "Wavelength binning Filter"
+    Other Parameters
+    ----------------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    bin : int
+        The bin size. Defaults to `None`.
+    normalizeError : bool, optional
+        If `True`, the errors are normalised by the bin size. Defaults to `True`.
+
+    See Also
+    --------
+    oimUtils.binWavelength : Bin the wavelength of an OIFITS file.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Wavelength Binning Filter"
     shortname = "WlBinFilt"
     description = "Spectral Binning"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["bin"] = None
-        self.params["binGrid"] = None
         self.params["normalizeError"] = True
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         binWavelength(
             data,
-            binsize=self.params["bin"],
+            binSize=self.params["bin"],
             normalizeError=self.params["normalizeError"],
         )
 
 
 class oimWavelengthIntpBinFilter(oimDataFilterComponent):
-    """Filter that bins the wavelength to a specified grid.
-    It also interpolates at the edges of the bins, to ensure a minimum
-    number of elements.
+    """Filter that bins the wavelength to a specified grid. It also interpolates
+    at the edges of the bins, ensuring a minimum number of elements.
 
-    Parameters
+    Other Parameters
     ----------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
     binGrid : array_like
-        The grid to bin to.
+        The grid that is to be achieved/binned to.
     binWindow : array_like, optional
-        The bin windows that correspond to the binGrid elements.
-        If None, computes the bin windows from the distance between two
-        elements in the binGrid. Default is None.
+        The bin windows that correspond to the `binGrid`. If `None`, the
+        bin windows are computed from the distance between two elements in the
+        `binGrid`. Defaults to `None`.
     resetFlags : bool, optional
-        If True, resets the flags after binning. Default is True.
+        If `True`, resets all flags to `False` after binning. Defaults to `True`.
     averageError : bool, optional
-        If True, forgoes error propagation and simply averages the errors
-        for each bin. Default is False.
-    spectralChannels : int, optional
-        The number of channels of the set bin resolution. Will be used to
-        calculate the divisor within the error propagation. Default is 1.0.
+        If `True`, forgoes the error propagation and simply averages the errors
+        for each bin. Defaults to `False`.
+    nSpecChannels : float, optional
+        The number of spectral channels determined by the spectral resolution.
+        Will be used to calculate the divisor within the error propagation.
+        Defaults to `1.0`.
 
         .. math:: divisor = bin_elements / spectralChannels
 
+    See Also
+    --------
+    oimUtils.intpBinWavelength : Bin the wavelength of an OIFITS file to a specified binGrid.
 
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
     """
 
     name = "Wavelength Interpolation Binning Filter"
@@ -328,63 +585,72 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
         "Binning to wavelength grid with interpolation at window edges."
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["binGrid"] = None
         self.params["binWindow"] = None
         self.params["resetFlags"] = True
         self.params["averageError"] = False
-        self.params["spectralChannels"] = 1
+        self.params["nSpecChannels"] = 1.0
+
+        # TODO: Remove this eventually. Just in place due to breaking change
+        # after v0.9.8 and before next version release.
+        warnings.warn(
+            "The kwarg 'spectralChannels' was renamed to 'nSpecChannels'."
+        )
+
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         intpBinWavelength(
             data,
             self.params["binGrid"],
             binWindow=self.params["binWindow"],
             resetFlags=self.params["resetFlags"],
             averageError=self.params["averageError"],
-            spectralChannels=self.params["spectralChannels"],
-        )
-
-
-class oimFlagWithExpressionFilter(oimDataFilterComponent):
-    """Flaging based on expression"""
-
-    name = "Flag With Expression filter"
-    shortname = "FlagExprFilt"
-    description = "Flagging based on boolean expressions"
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.params["expr"] = ""
-        self.params["keepOldFlag"] = True
-        self._eval(**kwargs)
-
-    def _filteringFunction(self, data):
-        oifitsFlagWithExpression(
-            data,
-            self.params["arr"],
-            None,
-            self.params["expr"],
-            keepOldFlag=self.params["keepOldFlag"],
+            nSpecChannels=self.params["nSpecChannels"],
         )
 
 
 class oimKeepBaselinesFilter(oimDataFilterComponent):
-    """Select baselines to keep"""
+    """Filter that removes all baselines except those specified by name.
 
-    name = "Baseline selection filter"
-    shortname = "KeepBaselinesFilt"
-    description = "Selection based on baseline name(s)"
+    Other Parameters
+    ----------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    baselines : str or list of str
+        The baseline(s) to be kept. Defaults to `""`.
+    keepOldFlag : bool, optional
+        If `True`, the old flag(s) are kept. Defaults to `True`.
 
-    def __init__(self, **kwargs):
+    See Also
+    --------
+    oimUtils.oifitsKeepBaselines : Remove all baselines except those specified by name.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Keep Baseline Filter"
+    shortname = "KeepBaseFilt"
+    description = "Keeps baseline(s) specified by name"
+
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["baselines"] = ""
         self.params["keepOldFlag"] = True
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         for arri in self.params["arr"]:
             oifitsKeepBaselines(
                 data,
@@ -395,19 +661,43 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
 
 
 class oimRemoveBaselinesFilter(oimDataFilterComponent):
-    """Select baselines to remove"""
+    """Filter that removes all baselines specified by name.
 
-    name = "Baseline selection filter"
-    shortname = "RemoveBAselineFilt"
-    description = "Selection based on baseline name(s)"
+    Other Parameters
+    ----------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    baselines : str or list of str
+        The baseline(s) to be removed. Defaults to `""`.
+    keepOldFlag : bool, optional
+        If `True`, the old flag(s) are kept. Defaults to `True`.
 
-    def __init__(self, **kwargs):
+    See Also
+    --------
+    oimUtils.oifitsRemoveBaselines : Remove all baselines specified by name.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Remove Baselines filter"
+    shortname = "RemBaseFilt"
+    description = "Removes baseline(s) specified by name"
+
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["baselines"] = ""
         self.params["keepOldFlag"] = True
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         for arri in self.params["arr"]:
             oifitsRemoveBaselines(
                 data,
@@ -418,19 +708,43 @@ class oimRemoveBaselinesFilter(oimDataFilterComponent):
 
 
 class oimKeepTelescopesFilter(oimDataFilterComponent):
-    """Select telescopes to keep"""
+    """Filter that removes all telescopes except those specified by name.
 
-    name = "Telescopes selection filter"
-    shortname = "KeepTelescopesFilt"
-    description = "Selection based on telescope name(s)"
+    Other Parameters
+    ----------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    telescopes : str or list of str
+        The telescopes(s) to be kept. Defaults to `""`.
+    keepOldFlag : bool, optional
+        If `True`, the old flag(s) are kept. Defaults to `True`.
 
-    def __init__(self, **kwargs):
+    See Also
+    --------
+    oimUtils.oifitsKeepTelescopes : Remove all telescopes except those specified by name.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Keep Telescopes Filter"
+    shortname = "KeepTelFilt"
+    description = "Keeps telescope(s) specified by name"
+
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["telescopes"] = ""
         self.params["keepOldFlag"] = True
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         for arri in self.params["arr"]:
             oifitsKeepTelescopes(
                 data,
@@ -441,19 +755,43 @@ class oimKeepTelescopesFilter(oimDataFilterComponent):
 
 
 class oimRemoveTelescopesFilter(oimDataFilterComponent):
-    """Select telescopes to remove"""
+    """Filter that removes all telescopes specified by name.
 
-    name = "Telescope selection filter"
-    shortname = "RemoveTelescopeFilt"
-    description = "Selection based on telescope name(s)"
+    Other Parameters
+    ----------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    telescopes : str or list of str
+        The telescopes(s) to be removed. Defaults to `""`.
+    keepOldFlag : bool, optional
+        If `True`, the old flag(s) are kept. Defaults to `True`.
 
-    def __init__(self, **kwargs):
+    See Also
+    --------
+    oimUtils.oifitsRemoveTelescopes : Remove all telescopes specified by name.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Remove Telescopes Filter"
+    shortname = "RemTelFilt"
+    description = "Removes telescope(s) specified by name"
+
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["telescopes"] = ""
         self.params["keepOldFlag"] = True
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         for arri in self.params["arr"]:
             oifitsRemoveTelescopes(
                 data,
@@ -463,25 +801,73 @@ class oimRemoveTelescopesFilter(oimDataFilterComponent):
             )
 
 
-class oimResetFlags(oimDataFilterComponent):
-    """Unflag all data"""
+class oimResetFlagsFilter(oimDataFilterComponent):
+    """Filter that unflags all data (i.e. sets flags to `False`).
 
-    name = "Reset flags filter"
+    Other Parameters
+    ----------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+
+    See Also
+    --------
+    oimUtils.oifitsFlagWithExpression : Flag data with an expression.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
+
+    name = "Reset Flags Filter"
     shortname = "ResFlagsFilt"
-    description = "Set all the flags to False"
+    description = "Sets all flags to `False`"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         oifitsFlagWithExpression(
             data, self.params["arr"], None, "False", keepOldFlag=False
         )
 
 
+# TODO: Finish this function's documentation.
 class oimDiffErrFilter(oimDataFilterComponent):
-    """Compute differential error from std of signal inside or outside a range"""
+    """Compute differential error from std of signal inside or outside a range.
+
+    Other Parameters
+    ----------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    ranges : list of list of float, optional
+        Defaults to `[[0, 5]]`.
+    rangeType : str, optional
+        Defaults to `"index"`.
+    excludeRange : bool, optional
+        Defaults to `False`.
+    dataType : str or list of str, optional
+        The OIFITS datatype(s)/column(s) to be kept. Defaults to `"VISPHI"`.
+
+    See Also
+    --------
+    oimUtils.computeDifferentialError : Compute the differential error.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
 
     name = "Differential Error Filter"
     shortname = "DiffErrFilt"
@@ -489,7 +875,7 @@ class oimDiffErrFilter(oimDataFilterComponent):
         "Compute differential error from std inside or outside a range"
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["ranges"] = [[0, 5]]
         self.params["rangeType"] = "index"
@@ -497,7 +883,8 @@ class oimDiffErrFilter(oimDataFilterComponent):
         self.params["dataType"] = "VISPHI"
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         computeDifferentialError(
             data,
             ranges=self.params["ranges"],
@@ -509,19 +896,43 @@ class oimDiffErrFilter(oimDataFilterComponent):
 
 
 class oimSetMinErrFilter(oimDataFilterComponent):
-    """Set minimum error on data in % for vis ans deg for phases"""
+    """Set minimum error on data in % for vis and deg for phases.
+
+    Other Parameters
+    ----------
+    targets : str or list of int, optional
+        The targets that this filter is applied to. Either ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
+    arr : str or list of str, optional
+        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
+        string or list of strings with (a) table name(s). Defaults to `"all"`.
+    values : float or list of float
+        The minimum error values corresponding to the column(s)/datatype(s). Defaults to `5`.
+    dataType : str or list of str, optional
+        The OIFITS datatype(s)/column(s) to be kept. Defaults to `"VISPHI"`.
+
+    See Also
+    --------
+    oimUtils.setMinimumError : Set the minimum error of a given data type to a given value.
+
+    Notes
+    -----
+    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    to pass it to the underlying filter class/function.
+    """
 
     name = "Differential Error Filter"
     shortname = "DiffErrFilt"
-    description = "Set minimum error on data in % for vis ans deg for phases"
+    description = "Set minimum error on data in % for vis and deg for phases"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.params["values"] = 5
         self.params["dataType"] = "VISPHI"
         self._eval(**kwargs)
 
-    def _filteringFunction(self, data):
+    def _filteringFunction(self, data) -> None:
+        """The filter applied to the data."""
         setMinimumError(
             data, self.params["dataType"], self.params["values"], extver=None
         )

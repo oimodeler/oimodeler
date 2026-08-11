@@ -84,7 +84,7 @@ New Features
 - added kwargs options from the corner.py module in the :func:`oimFitterEmcee.cornerPlot <oimodeler.oimFitter.oimFitterEmcee.cornerPlot>` method
 
 - added many data filters/modifiers : 
-    - :func:`oimKeepDataType <oimodeler.oimDataFilter.oimKeepDataType>` : specifying which data type to keep : VIS2DATA, VISPHI, ...
+    - :func:`oimKeepDataTypeFilter <oimodeler.oimDataFilter.oimKeepDataTypeFilter>` : specifying which data type to keep : VIS2DATA, VISPHI, ...
     - :func:`oimWavelengthShiftFilter <oimodeler.oimDataFilter.oimWavelengthShiftFilter>` : shifting wavelengths 
     - :func:`oimWavelengthSmoothingFilter <oimodeler.oimDataFilter.oimWavelengthSmoothingFilter>` : "Smoothing" data by convolution on x walvength-pixels
     - :func:`oimWavelengthBinningFilter  <oimodeler.oimDataFilter.oimWavelengthBinningFilter>`: binning data in wavelength 

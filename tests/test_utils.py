@@ -4,7 +4,6 @@ Tests for the oimodeler.oimUtils module.
 
 from __future__ import annotations
 
-from ast import Assert
 import copy
 from collections.abc import Callable, Iterable
 from itertools import permutations
@@ -560,53 +559,3 @@ class TestOIFITSOperations:
 
     @pytest.mark.skip(reason="Test not yet finished.")
     def test_createOiTargetFromSimbad(self) -> None: ...
-
-
-class TestFilterHelpers:
-    """Tests functions that aid in filtering of oimData contained in the
-    oimUtils module."""
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_cutWavelengthRange(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_shiftWavelength(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_spectralSmoothing(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test__intpBinning(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test__interpolateBinHDU(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_intpBinWavelength(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test__rebin(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test__rebinHDU(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_binWavelength(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_oifitsFlagWithExpression(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_oifitsKeepBaselines(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_oifitsKeepTelescopes(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_oifitsRemoveTelescopes(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_computeDifferentialError(self) -> None: ...
-
-    @pytest.mark.skip(reason="Test not yet finished.")
-    def test_setMinimumError(self) -> None: ...

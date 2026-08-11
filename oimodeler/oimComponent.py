@@ -386,6 +386,8 @@ class oimComponentFourier(oimComponent):
                 self.params[extarg] = oimParam(
                     **_standardParameters.get(extarg, {"name": extarg})
                 )
+        # TODO: Remove this eventually. Just in place due to breaking change
+        # after v0.9.8 and before next version release.
         elif "A_V" in kwargs:
             raise NotImplementedError(
                 "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
@@ -571,6 +573,8 @@ class oimComponentImage(oimComponent):
                 self.params[extarg] = oimParam(
                     **_standardParameters.get(extarg, {"name": extarg})
                 )
+        # TODO: Remove this eventually. Just in place due to breaking change
+        # after v0.9.8 and before next version release.
         elif "A_V" in kwargs:
             raise NotImplementedError(
                 "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
@@ -858,6 +862,8 @@ class oimComponentRadialProfile(oimComponent):
                 self.params[extarg] = oimParam(
                     **_standardParameters.get(extarg, {"name": extarg})
                 )
+        # TODO: Remove this eventually. Just in place due to breaking change
+        # after v0.9.8 and before next version release.
         elif "A_V" in kwargs:
             raise NotImplementedError(
                 "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
