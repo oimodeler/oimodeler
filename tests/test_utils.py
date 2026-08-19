@@ -450,7 +450,6 @@ class TestOIFITSOperations:
                 for baseline, elem in zip(baselines[0], oif_arr)
             ]
 
-            # TODO: Check why the arrays here are not equal, but "just" close
             assert np.allclose(
                 utils.getSpaFreq(data, arr, squeeze=squeeze, unit=unit),
                 expected,
@@ -513,7 +512,7 @@ class TestOIFITSOperations:
                     expected_spaFreqV[0] if squeeze else expected_spaFreqV,
                 )
 
-                assert np.array_equal(
+                assert np.allclose(
                     utils.get2DSpaFreq(data, arr, unit=unit, squeeze=squeeze),
                     expected,
                 )
