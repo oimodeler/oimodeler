@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import warnings
 from fnmatch import fnmatch
 
 import numpy as np
@@ -595,9 +594,10 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
 
         # TODO: Remove this eventually. Just in place due to breaking change
         # after v0.9.8 and before next version release.
-        warnings.warn(
-            "The kwarg 'spectralChannels' was renamed to 'nSpecChannels'."
-        )
+        if "spectralChannels" in kwargs:
+            raise ValueError(
+                "The kwarg 'spectralChannels' was renamed to 'nSpecChannels'."
+            )
 
         self._eval(**kwargs)
 
