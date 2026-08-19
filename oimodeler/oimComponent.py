@@ -33,7 +33,6 @@ from .oimUtils import (
     attach_methods,
     getWlFromFitsImageCube,
     pad_image,
-    rebin_image,
 )
 
 
@@ -387,6 +386,8 @@ class oimComponentFourier(oimComponent):
                 self.params[extarg] = oimParam(
                     **_standardParameters.get(extarg, {"name": extarg})
                 )
+        # TODO: Remove this eventually. Just in place due to breaking change
+        # after v0.9.8 and before next version release.
         elif "A_V" in kwargs:
             raise NotImplementedError(
                 "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
@@ -572,6 +573,8 @@ class oimComponentImage(oimComponent):
                 self.params[extarg] = oimParam(
                     **_standardParameters.get(extarg, {"name": extarg})
                 )
+        # TODO: Remove this eventually. Just in place due to breaking change
+        # after v0.9.8 and before next version release.
         elif "A_V" in kwargs:
             raise NotImplementedError(
                 "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
@@ -592,10 +595,6 @@ class oimComponentImage(oimComponent):
             t = ucoord * 0
 
         im = self.getInternalImage(wl, t)
-
-        if oimOptions.ft.binning is not None:
-            im = rebin_image(im, oimOptions.ft.binning)
-
         im = pad_image(im)
 
         if self._pixSize != 0:
@@ -863,6 +862,8 @@ class oimComponentRadialProfile(oimComponent):
                 self.params[extarg] = oimParam(
                     **_standardParameters.get(extarg, {"name": extarg})
                 )
+        # TODO: Remove this eventually. Just in place due to breaking change
+        # after v0.9.8 and before next version release.
         elif "A_V" in kwargs:
             raise NotImplementedError(
                 "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"

@@ -99,7 +99,7 @@ models = [mPt, mUD, mG, mR, mUDPt]
 mNames = [
     "Point Source",
     "Uniform Disk",
-    "Gausian",
+    "Gaussian",
     "Ring",
     "Uniform Disk + Point Source",
 ]

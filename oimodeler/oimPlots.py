@@ -1446,7 +1446,7 @@ class oimWlTemplatePlots(Figure):
                         except:
                             pass
                         BASELINE = getBaselineName(
-                            self.data[0][k], hduname=getDataArrname(dataType)
+                            self.data[0][k], arr=getDataArrname(dataType)
                         )
 
                         text = text0

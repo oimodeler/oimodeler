@@ -1,6 +1,12 @@
+"""
+Tests for the oimodeler.oimData module.
+"""
+
 from pathlib import Path
 
 import oimodeler as oim
+
+# TODO: Add more tests for oimodeler.oimData.oimData here
 
 
 def test_load_gravity(real_data_dir: Path) -> None:

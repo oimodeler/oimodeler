@@ -7,7 +7,7 @@ from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import constants as const
 from ..oimOptions import oimOptions
 from ..oimParam import oimParam
-from ..oimUtils import blackbody, linear_to_angular
+from ..oimUtils import blackbody
 
 
 class oimTempGrad(oimComponentRadialProfile):
@@ -158,8 +158,7 @@ class oimTempGrad(oimComponentRadialProfile):
         """Gets the radial profile (mas)."""
         rin, rout = self.rin.value, self.rout.value
         dim, dist = self.dim.value, self.dist.value
-        rin = linear_to_angular(rin, dist) * 1e3
-        rout = linear_to_angular(rout, dist) * 1e3
+        rin, rout = rin / dist * 1e3, rout / dist * 1e3
         if oimOptions.model.grid.type == "linear":
             return np.linspace(rin, rout, dim)
 
@@ -175,15 +174,15 @@ class oimTempGrad(oimComponentRadialProfile):
     @property
     def Tin(self) -> float:
         """Gets the temperature at the inner radius."""
-        r0_mas = linear_to_angular(self.r0.value, self.dist.value) * 1e3
-        rin_mas = linear_to_angular(self.rin.value, self.dist.value) * 1e3
+        r0_mas = self.r0.value / self.dist.value * 1e3
+        rin_mas = self.rin.value / self.dist.value * 1e3
         return self.T0.value * (rin_mas / r0_mas) ** self.q.value
 
     @Tin.setter
     def Tin(self, value: Any) -> None:
         """Sets the reference temperature from that at the inner radius."""
-        r0_mas = linear_to_angular(self.r0.value, self.dist.value) * 1e3
-        rin_mas = linear_to_angular(self.rin.value, self.dist.value) * 1e3
+        r0_mas = self.r0.value / self.dist.value * 1e3
+        rin_mas = self.rin.value / self.dist.value * 1e3
         self.T0.value = value * (rin_mas / r0_mas) ** -self.q.value
 
     def _radialProfileFunction(
@@ -223,12 +222,12 @@ class oimTempGrad(oimComponentRadialProfile):
         # HACK: Adding the correct dimensions to the radial grid, wavelength array and opacity table
         if len(r.shape) == 3:
             r = r[0, 0][np.newaxis, np.newaxis, :]
-            wl, kappa_abs = map(
-                lambda x: x[np.newaxis, :, np.newaxis], [wl, kappa_abs]
-            )
+            wl = wl[np.newaxis, :, np.newaxis]
+            kappa_abs = kappa_abs[np.newaxis, :, np.newaxis]
         else:
-            wl, kappa_abs = map(lambda x: x[:, np.newaxis], [wl, kappa_abs])
             r = r[np.newaxis, :]
+            wl = wl[:, np.newaxis]
+            kappa_abs = kappa_abs[:, np.newaxis]
 
         rin, rout, r0 = self.rin(wl, t), self.rout(wl, t), self.r0(wl, t)
         p = self.p(wl, t)
@@ -247,7 +246,7 @@ class oimTempGrad(oimComponentRadialProfile):
         else:
             sigma0 = 10 ** self.log_sigma0(wl, t)
 
-        r0_mas = linear_to_angular(r0, dist) * 1e3
+        r0_mas = r0 / dist * 1e3
         sigma = sigma0 * (r / r0_mas) ** p
         emissivity = 1 - np.exp(-sigma * kappa_abs * elong)
 
@@ -255,9 +254,7 @@ class oimTempGrad(oimComponentRadialProfile):
         spectral_density = (
             blackbody(temp, const.c / wl) * emissivity * (1 / elong)
         )
-        rin_mas, rout_mas = map(
-            lambda x: linear_to_angular(x, dist) * 1e3, [rin, rout]
-        )
+        rin_mas, rout_mas = rin / dist * 1e3, rout / dist * 1e3
         image = ((r > rin_mas) & (r < rout_mas)).astype(int) * spectral_density
         if len(r.shape) == 3:
             return image

@@ -4,6 +4,7 @@ Created on Tue Nov 23 15:26:42 2021
 
 @author: Ame
 """
+
 import inspect
 from os.path import split
 from pathlib import Path
@@ -16,9 +17,9 @@ from .oimComponent import *
 from .oimCustomComponents import *
 from .oimData import *
 from .oimDataFilter import *
-from .oimFTBackends import *
 from .oimFitter import *
 from .oimFluxData import *
+from .oimFTBackends import *
 from .oimModel import *
 from .oimOptions import oimOptions
 from .oimParam import *

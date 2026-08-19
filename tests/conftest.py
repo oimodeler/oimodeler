@@ -1,3 +1,7 @@
+"""
+Configuration for the tests.
+"""
+
 from pathlib import Path
 
 import pytest
@@ -6,12 +10,18 @@ import pytest
 
 
 @pytest.fixture(scope="session")
-def global_data_dir():
+def package_dir() -> Path:
     """Return the global data directory."""
-    return Path(__file__).parent.parent / "data"
+    return Path(__file__).parent.parent
 
 
 @pytest.fixture(scope="session")
-def real_data_dir(global_data_dir: Path):
+def global_data_dir(package_dir: Path) -> Path:
+    """Return the global data directory."""
+    return package_dir / "data"
+
+
+@pytest.fixture(scope="session")
+def real_data_dir(global_data_dir: Path) -> Path:
     """Return the global data directory."""
     return global_data_dir / "RealData"

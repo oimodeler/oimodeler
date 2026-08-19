@@ -24,7 +24,7 @@ data = oim.oimData(filenames)
 
 # %%
 Bname = oim.getBaselineName(data.data[0], length=True, angle=True)
-CPname = oim.getBaselineName(data.data[0], hduname="OI_T3")
+CPname = oim.getBaselineName(data.data[0], arr="OI_T3")
 confname = oim.getConfigName(data.data[0])
 B, PA = oim.getBaselineLengthAndPA(data.data[0])
 u, v = oim.get2DSpaFreq(data.data[0])

@@ -19,7 +19,7 @@ filt_bin_L = oim.oimWavelengthBinningFilter(
 filt_bin_N = oim.oimWavelengthBinningFilter(
     targets=1, bin=7, normalizeError=False
 )
-f2 = oim.oimKeepDataType(dataType=["FLUXDATA", "VISAMP"])
+f2 = oim.oimKeepDataTypeFilter(dataType=["FLUXDATA", "VISAMP"])
 data.setFilter(oim.oimDataFilter([f1, f2, filt_bin_L, filt_bin_N]))
 wave_data = np.unique(data.vect_wl)
 

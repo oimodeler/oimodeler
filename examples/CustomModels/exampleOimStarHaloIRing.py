@@ -53,8 +53,8 @@ f2 = oim.oimRemoveArrayFilter(targets="all", arr=["OI_VIS", "OI_FLUX"])
 f3 = oim.oimDataTypeFilter(targets="all", dataType=["T3AMP"])
 data.setFilter(oim.oimDataFilter([f1, f2, f3]))
 
-# NOTE: The calculation of the photometric slope from the star's effective temperature
-wl, ks = oim.compute_photometric_slope(data, 6500)
+# NOTE: The computation of the spectral index (slope), using the star's effective temperature
+wl, ks = oim.spectral_index(data, 6500)
 ks = oim.oimInterp("wl", values=ks, wl=wl, kind="linear", extrapolate=False)
 
 # NOTE: Specifying the parameter space (best-fit parameters from Lazareff+2017)

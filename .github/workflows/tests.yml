@@ -19,9 +19,5 @@ jobs:
       - name: Install Python 3.9
         run: uv python pin 3.9
 
-      - name: Sync dependencies
-        run: uv sync --all-groups
-
       - name: Run tests
-        working-directory: tests
-        run: uv run pytest
+        run: uvx --refresh --with .[test] pytest
