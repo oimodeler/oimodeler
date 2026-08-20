@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import base64
 import csv
+import importlib
 import io
 import pickle
 from collections.abc import Callable, Iterable
@@ -340,6 +342,23 @@ def _unpickle(cls, f: Path | io.TextIOWrapper, **kwargs) -> object:
         file.close()
 
     return restored_object
+
+
+def _serialize_function(fn: Callable) -> str:
+    """Serialises a function JSON safe."""
+    payload = f"{fn.__module__}|{fn.__qualname__}".encode()
+    return f"fn::{base64.urlsafe_b64encode(payload).decode()}"
+
+
+def _deserialize_function(value: str) -> Callable:
+    """Deserialises a function JSON safe."""
+    payload = base64.urlsafe_b64decode(value.removeprefix("fn::")).decode()
+    module_name, qualname = payload.split("|", 1)
+    obj = importlib.import_module(module_name)
+    for part in qualname.split("."):
+        obj = getattr(obj, part)
+
+    return obj
 
 
 def load_toml(toml_file: Path) -> dict[str, Any]:

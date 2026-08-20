@@ -3,9 +3,12 @@
 
 from __future__ import annotations
 
+import base64
 import copy
+import importlib
 import inspect
 import warnings
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -28,7 +31,9 @@ from .oimParam import (
     oimParamNorm,
 )
 from .oimUtils import (
+    _deserialize_function,
     _pickle,
+    _serialize_function,
     _unpickle,
     attach_methods,
     getWlFromFitsImageCube,
@@ -285,7 +290,7 @@ class oimComponent:
             Sub-level deepcopies (e.g. oimParam) are skipped by default.
             Default is False.
         """
-        ser = dict(params={}, other={})
+        ser = {"params": {}, "other": {}}
         params = self.params
         if not skip_copy:
             params = copy.deepcopy(params)
@@ -294,21 +299,24 @@ class oimComponent:
             ser["params"][name] = param.serialize(skip_copy=True)
 
         # TODO: Does this also need a deepcopy?
-        for key, value in {**self.__class__.__dict__, **vars(self)}.items():
-            # TODO: This might not work for SubSubComponents
+        ser["other"] = {
+            k: v
+            for k, v in self.__class__.__dict__.items()
+            if not (k.startswith("_") or isinstance(v, (property, Callable)))
+        }
+
+        for key, value in vars(self).items():
+            # TODO: This might not work for sub-sub components.
+            # HACK: Solution for Python renaming private (e.g. __wl) components
+            # with the prefix of the class they are private in.
             key = key.replace("_oimComponent_", "")
-            if (
-                (key.startswith("_") and key.endswith("_"))
-                or key == "params"
-                or isinstance(value, (property, classmethod, staticmethod))
-                or callable(value)
-            ):
+            if key == "params":
                 continue
 
-            try:
+            if isinstance(value, np.ndarray):
                 value = value.tolist()
-            except AttributeError:
-                pass
+            elif isinstance(value, Callable):
+                value = _serialize_function(value)
 
             ser["other"][key] = value
 
@@ -328,8 +336,10 @@ class oimComponent:
             setattr(cls, key, value)
 
         comp = cls()
-        # TODO: Rewrite this to remove this or the above loop
+        # TODO: Merge this and the above loop if possible?
         for key, value in ser["other"].items():
+            if isinstance(value, str) and value.startswith("fn::"):
+                value = _deserialize_function(value)
             if isinstance(value, list):
                 value = np.array(value)
 
@@ -377,7 +387,7 @@ class oimComponentFourier(oimComponent):
             self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
-        if ("extlaw" in kwargs) or (kwargs.get("extincted", False)):
+        if "extlaw" in kwargs or kwargs.get("extincted", False):
             self.extincted = True
             self.extargs, self.extlaw = [], kwargs.get("extlaw", extlaw)
 
@@ -564,7 +574,7 @@ class oimComponentImage(oimComponent):
                 self.params["elong"] = oimParam(**_standardParameters["elong"])
 
         # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
-        if ("extlaw" in kwargs) or (kwargs.get("extincted", False)):
+        if "extlaw" in kwargs or kwargs.get("extincted", False):
             self.extincted = True
             self.extargs, self.extlaw = [], kwargs.get("extlaw", extlaw)
 
@@ -853,7 +863,7 @@ class oimComponentRadialProfile(oimComponent):
                 )
 
         # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
-        if ("extlaw" in kwargs) or (kwargs.get("extincted", False)):
+        if "extlaw" in kwargs or kwargs.get("extincted", False):
             self.extincted = True
             self.extargs, self.extlaw = [], kwargs.get("extlaw", extlaw)
 

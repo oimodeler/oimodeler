@@ -10,7 +10,7 @@ from oimodeler.oimParam import oimInterp, oimParam, oimParamInterpolator
 from .helpers import assert_component_equal
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_getFourierComponents(): ...
 
 
@@ -24,7 +24,7 @@ class TestOimComponent:
     @pytest.fixture
     def fourier_component(self) -> oimComponentFourier:
         """oimFourierComponent with oimParam adding kwarg."""
-        return oimComponentFourier(elliptic=True)
+        return oimComponentFourier(elliptic=True, extincted=True, A_V=0.9)
 
     class TestEval:
         """Test the oimComponent's __init__ and _eval method."""
@@ -59,6 +59,11 @@ class TestOimComponent:
             assert fourier_component.elliptic
             assert "pa" in fourier_component.params
             assert "elong" in fourier_component.params
+
+            assert fourier_component.extincted
+            assert hasattr(fourier_component, "extargs")
+            assert hasattr(fourier_component, "extlaw")
+            assert "A_V" in fourier_component.params
 
         def test_interpolator(self) -> None:
             """Test __init__/_eval with oimInterp for an oimParam value."""
@@ -99,15 +104,15 @@ class TestOimComponent:
         assert component._directTranslate(10, 10, wl=None, t=None) == (5, 0)
         assert component._directTranslate(0, 0, wl=None, t=None) == (-5, -10)
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_ftTranslateFactor(self, component: oimComponent) -> None:
         """Test oimComponent's fourier space spatial translation."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_getComplexCoherentFlux(self, component: oimComponent) -> None:
         """Test oimComponent's complex coherent flux calculation."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_getImage(self, component: oimComponent) -> None:
         """Test oimComponent class."""
 
@@ -115,7 +120,7 @@ class TestOimComponent:
         """Test serialisation of oimComponent."""
 
         def test_roundtrip(
-            self, fourier_component: oimComponent, cycles: int = 5
+            self, fourier_component: oimComponentFourier, cycles: int = 5
         ) -> None:
             current = fourier_component
             for _ in range(cycles):

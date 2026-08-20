@@ -251,11 +251,11 @@ def test_oimKeepDataTypeFilter(data: oimData, dataType: list[str]) -> None:
 class TestFlagWithExpressionFilter:
     """Tests all functionality related to the expression-based filtering."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oifitsFlagWithExpression(self) -> None:
         """Tests the oimUtils.oifitsFlagWithExpression function."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oimFlagWithExpressionFilter(self) -> None:
         """Tests the oimDataFilter.oimFlagWithExpressionFilter class."""
 
@@ -324,19 +324,19 @@ class TestWavelengthFilters:
                         & (column_filt.wavelength.eff_wave <= wlRange[-1])
                     )
 
-        @pytest.mark.skip(reason="Doesn't currently work?")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_shiftWavelength(self) -> None:
             """Tests the oimUtils.shiftWavelength function."""
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_oimWavelengthShiftFilter(self) -> None:
             """Tests the oimDataFilter.oimWavelengthShiftFilter class."""
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_spectralSmoothing(self) -> None:
             """Tests the oimUtils.spectralSmoothing function."""
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_oimWavelengthSmoothingFilter(self) -> None:
             """Tests the oimDataFilter.oimWavelengthSmoothingFilter class."""
 
@@ -384,17 +384,17 @@ class TestWavelengthFilters:
 
         # NOTE: Currently kind="mean" and kind="circular" are identical.
         # Change test parameters when the underlying function changes.
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test__rebinHDU(
             self, hdu: fits.BinTableHDU, binSize: int, exception: list[str]
         ) -> None:
             """Tests the oimUtils._rebinHDU function."""
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_binWavelength(self) -> None:
             """Tests the oimUtils.binWavelength function."""
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_oimWavelengthBinninFilter(self) -> None:
             """Tests the oimDataFilter.oimWavelengthBinningFilter class."""
 
@@ -497,11 +497,11 @@ class TestWavelengthFilters:
                     assert res_col.shape != orig_col.shape
                     assert res_col.shape == (orig_col.shape[0], binGrid.size)
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_intpBinWavelength(self, data: oimData) -> None:
             """Tests the oimUtils.intpBinWavelength function."""
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_oimWavelengthIntpBinFilter(self, data: oimData) -> None:
             """Tests the oimUtils.oimWavelengthIntpBinFilter class."""
 
@@ -509,19 +509,19 @@ class TestWavelengthFilters:
 class TestBaselinesFilters:
     """Tests all functionality related to the baseline filtering."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oifitsKeepBaselines(self) -> None:
         """Tests the oimUtils.oifitsKeepBaselines function."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oimKeepBaselinesFilter(self) -> None:
         """Tests the oimDataFilter.test_oimKeepBaselinesFilter function."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oifitsRemoveBaselines(self) -> None:
         """Tests the oimUtils.oifitsKeepBaselines function."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oimRemoveBaselinesFilter(self) -> None:
         """Tests the oimDataFilter.test_oimRemoveBaselinesFilter function."""
 
@@ -529,19 +529,19 @@ class TestBaselinesFilters:
 class TestTelescopesFilters:
     """Tests all functionality related to the telescope filtering."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oifitsKeepTelescopes(self) -> None:
         """Tests the oimUtils.oifitsKeepTelescopes function."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oimKeepTelescopesFilter(self) -> None:
         """Tests the oimDataFilter.oimKeepTelescopesFilter class."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oifitsRemoveTelescopes(self) -> None:
         """Tests the oimUtils.oifitsRemoveTelescopes function."""
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_oimRemoveTelescopesFilter(self) -> None:
         """Tests the oimDataFilter.oimRemoveTelescopesFilter class."""
 
@@ -578,11 +578,11 @@ class TestErrorFilters:
         """Tests all functionality related to the
         oimDataFilter.oimDiffErrFilter class."""
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_computeDifferentialError(self) -> None:
             """Tests the oimUtils.computeDifferentialError function."""
 
-        @pytest.mark.skip(reason="Test not yet finished.")
+        @pytest.mark.skip(reason="Test not yet implemented.")
         def test_oimDiffErrFilter(self) -> None:
             """Tests the oimUtils.oimDiffErrFilter class."""
 

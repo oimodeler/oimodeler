@@ -68,6 +68,26 @@ def toml_file(tmp_path_factory: Path) -> Path:
     return toml_path
 
 
+@pytest.mark.skip(reason="Test not yet implemented.")
+def test__pickle() -> None:
+    """Tests the oimUtils._pickel function."""
+
+
+@pytest.mark.skip(reason="Test not yet implemented.")
+def test__unpickle() -> None:
+    """Tests the oimUtils._unpickel function."""
+
+
+@pytest.mark.skip(reason="Test not yet implemented.")
+def test__serialize_function() -> None:
+    """Tests the oimUtils._serialize_function function."""
+
+
+@pytest.mark.skip(reason="Test not yet implemented.")
+def test__deserialize_function() -> None:
+    """Tests the oimUtils._deserialize_function function."""
+
+
 def test_load_toml(toml_file: Path) -> None:
     """Tests the oimUtils.load_toml function."""
     param_dict = utils.load_toml(toml_file)
@@ -547,14 +567,15 @@ class TestOIFITSOperations:
 
             assert np.array_equal(wavelength, expected_wavelength)
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_getWlFromFitsImageCube(self) -> None: ...
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    # TODO: Is this even needed or would copy.deepcopy suffice?
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_hdulistDeepCopy(self) -> None: ...
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test__createOiTab(self) -> None: ...
 
-    @pytest.mark.skip(reason="Test not yet finished.")
+    @pytest.mark.skip(reason="Test not yet implemented.")
     def test_createOiTargetFromSimbad(self) -> None: ...

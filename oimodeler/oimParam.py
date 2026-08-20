@@ -373,6 +373,8 @@ class oimParamNorm:
             ser[key] = value
 
         ser["params"] = [v.serialize(skip_copy=True) for v in ser["params"]]
+
+        # TODO: Maybe rename this key? Is this JSON safe?
         ser["class"] = type(self).__name__
         return ser
 

@@ -26,7 +26,7 @@ def test_oimPt_visFunction(uvcoord: np.ndarray, baselines: np.ndarray) -> None:
     assert oimFComp.oimPt()._visFunction(*uvcoord, baselines, None, None) == 1
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not implemented.")
 def test_oimBackground_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -34,13 +34,13 @@ def test_oimBackground_visFunction(
     oimFComp.oimBackground()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not implemented.")
 def test_oimUD_visFunction(uvcoord: np.ndarray, baselines: np.ndarray) -> None:
     """Test the visFunction of the oimUD class."""
     oimFComp.oimUD()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimEllipse_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -48,7 +48,7 @@ def test_oimEllipse_visFunction(
     oimFComp.oimEllipse()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimGauss_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -56,7 +56,7 @@ def test_oimGauss_visFunction(
     oimFComp.oimGauss()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimEGauss_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -64,7 +64,7 @@ def test_oimEGauss_visFunction(
     oimFComp.oimEGauss()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimIRing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -72,7 +72,7 @@ def test_oimIRing_visFunction(
     oimFComp.oimIRing()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimEIring_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -80,7 +80,7 @@ def test_oimEIring_visFunction(
     oimFComp.oimEIRing()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimRing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -88,7 +88,7 @@ def test_oimRing_visFunction(
     oimFComp.oimRing()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimRing2_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -96,7 +96,7 @@ def test_oimRing2_visFunction(
     oimFComp.oimRing2()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimERing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -104,7 +104,7 @@ def test_oimERing_visFunction(
     oimFComp.oimERing()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimERing2_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -112,7 +112,7 @@ def test_oimERing2_visFunction(
     oimFComp.oimERing2()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimESKIRing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -120,7 +120,7 @@ def test_oimESKIRing_visFunction(
     oimFComp.oimESKIRing()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimESKRing_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -128,7 +128,7 @@ def test_oimESKRing_visFunction(
     oimFComp.oimESKRing()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimLorentz_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -136,7 +136,7 @@ def test_oimLorentz_visFunction(
     oimFComp.oimLorentz()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimELorentz_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -144,7 +144,7 @@ def test_oimELorentz_visFunction(
     oimFComp.oimELorentz()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimLinearLDD_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -152,7 +152,7 @@ def test_oimLinearLDD_visFunction(
     oimFComp.oimLinearLDD()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimQuadLDD_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -160,7 +160,7 @@ def test_oimQuadLDD_visFunction(
     oimFComp.oimQuadLDD()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimPowerLawLDD_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
@@ -168,7 +168,7 @@ def test_oimPowerLawLDD_visFunction(
     oimFComp.oimPowerLawLDD()
 
 
-@pytest.mark.skip(reason="Test not yet finished.")
+@pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimSqrtLDD_visFunction(
     uvcoord: np.ndarray, baselines: np.ndarray
 ) -> None:
