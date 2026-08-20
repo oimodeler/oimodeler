@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 
 import astropy.units as u
@@ -23,28 +24,18 @@ from .oimPlots import (
 )
 from .oimUtils import hdulistDeepCopy
 
-oimDataArrDict = {}
-oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
-oimDataArrDict["OI_VIS"] = dict(
-    data=["VISAMP", "VISPHI"], err=["VISAMPERR", "VISPHIERR"]
-)
-oimDataArrDict["OI_T3"] = dict(
-    data=["T3AMP", "T3PHI"], err=["T3AMPERR", "T3PHIERR"]
-)
-oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
-oimDataArrDict["OI_FLUX"] = dict(data=["FLUXDATA"], err=["FLUXERR"])
-
-
-oimDataArrDict = {}
-oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
-oimDataArrDict["OI_VIS"] = dict(
-    data=["VISAMP", "VISPHI"], err=["VISAMPERR", "VISPHIERR"]
-)
-oimDataArrDict["OI_T3"] = dict(
-    data=["T3AMP", "T3PHI"], err=["T3AMPERR", "T3PHIERR"]
-)
-oimDataArrDict["OI_VIS2"] = dict(data=["VIS2DATA"], err=["VIS2ERR"])
-oimDataArrDict["OI_FLUX"] = dict(data=["FLUXDATA"], err=["FLUXERR"])
+oimDataArrDict = {
+    "OI_FLUX": {"data": ["FLUXDATA"], "err": ["FLUXERR"]},
+    "OI_T3": {
+        "data": ["T3AMP", "T3PHI"],
+        "err": ["T3AMPERR", "T3PHIERR"],
+    },
+    "OI_VIS": {
+        "data": ["VISAMP", "VISPHI"],
+        "err": ["VISAMPERR", "VISPHIERR"],
+    },
+    "OI_VIS2": {"data": ["VIS2DATA"], "err": ["VIS2ERR"]},
+}
 
 
 def corrFlux2Vis2(vcompl):
@@ -310,7 +301,7 @@ class oimSimulator:
                                                 1j * np.deg2rad(dataVal[ival])
                                             )
                                             * np.exp(
-                                                -1j * np.deg2rad((val[ival]))
+                                                -1j * np.deg2rad(val[ival])
                                             )
                                         )
                                     )
@@ -393,8 +384,8 @@ class oimSimulator:
         kwargsSimulatedData: dict = {},
         **kwargs,
     ):
-        kwargsData0 = dict(color="tab:red", alpha=0.5)
-        kwargsSimulatedData0 = dict(color="tab:blue", lw=2, alpha=0.7)
+        kwargsData0 = {"color": "tab:red", "alpha": 0.5}
+        kwargsSimulatedData0 = {"color": "tab:blue", "lw": 2, "alpha": 0.7}
         kwargsData = {**kwargsData0, **kwargsData}
         kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
 
@@ -437,43 +428,46 @@ class oimSimulator:
         arr : str or list of str
             The name(s) of the OIFITS column(s) to be plotted.
         simulated : bool, optional
-            If True, simulated data are plotted. Default is True.
+            If `True`, simulated data are plotted. Default is `True`.
         savefig : str or pathlib.Path, optional
-            Saves the plot. Default is None.
+            Saves the plot. Default is `None`.
         visLog : bool, optional
-            If True, sets the y-scale to logarithmic. Default is False.
+            If `True`, sets the y-scale to logarithmic. Default is `False`.
         xaxis : str, optional
-            OIFITS information plotted on the x-axis. Default is "SPAFREQ".
+            OIFITS information plotted on the x-axis. Default is `"SPAFREQ"`.
         xunit : str, optional
-            Unit of the x-axis. Default is "cycle/rad".
+            Unit of the x-axis. Default is `"cycle/rad"`.
         cname : str, optional
-            OIFITS information plotted on the colorbar. Default is "EFF_WAVE".
+            OIFITS information plotted on the colorbar. Default is `"EFF_WAVE"`.
         cunit : str, optional
-            Unit of the colorbar. Default is "micron".
+            Unit of the colorbar. Default is `"micron"`.
         cmap : str, optional
-            Name of the colormap. Default is "plasma".
+            Name of the colormap. Default is `"plasma"`.
         colorbar : bool, optional
-            If True, plots a colorbar. Default is True.
+            If `True`, plots a colorbar. Default is `True`.
         kwargsData : dict, optional
-            Keyword arguments passed to the data `oiplot`. Default is {}.
+            Data keyword arguments passed to the `oiplot` method. Default is `{}`.
         kwargsSimulatedData : dict, optional
-            Keyword arguments passed to the simulated data `oiplot`. Default is {}.
+            Simulated data keyword arguments passed to `oiplot` method. Default is `{}`.
         fig : matplotlib.figure.Figure, optional
-            Figure used for the plotting. Default is None.
+            Figure used for the plotting. Default is `None`.
         axe : matplotlib.axes.Axes, optional
-            Axes used for the plotting. Default is None.
+            Axes used for the plotting. Default is `None`.
         """
-        # NOTE: Plotting  data and simulated data
-        kwargsData0 = dict(
-            cname=cname,
-            cunit=cunit,
-            lw=2,
-            cmap=cmap,
-            errorbar=True,
-            label="data",
-        )
-
-        kwargsSimulatedData0 = dict(color="k", ls=":", lw=1, label="model")
+        kwargsData0 = {
+            "cname": cname,
+            "cunit": cunit,
+            "lw": 2,
+            "cmap": cmap,
+            "errorbar": True,
+            "label": "data",
+        }
+        kwargsSimulatedData0 = {
+            "color": "k",
+            "ls": ":",
+            "lw": 1,
+            "label": "model",
+        }
         kwargsData = {**kwargsData0, **kwargsData}
         kwargsData["cunit"] = u.Unit(kwargsData["cunit"])
 
@@ -493,7 +487,7 @@ class oimSimulator:
                 1,
                 sharex=True,
                 figsize=(8, 6),
-                subplot_kw=dict(projection="oimAxes"),
+                subplot_kw={"projection": "oimAxes"},
             )
 
         if len(arr) == 1:
@@ -531,20 +525,6 @@ class oimSimulator:
             axi.autolim()
             axi.margins(x=0)
 
-        xmin = 1e99
-        xmax = -1e99
-        for axi in axe:
-            for li in axi.get_lines():
-                x = li.get_xdata()
-                xmini = np.min(x)
-                xmaxi = np.max(x)
-                if xmini < xmin:
-                    xmin = xmini
-                if xmaxi > xmax:
-                    xmax = xmaxi
-
-        axe[0].set_xlim(xmin, xmax)
-
         if colorbar:
             idxC = np.where(oimPlotParamName == kwargsData["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
@@ -558,12 +538,14 @@ class oimSimulator:
 
         return fig, axe
 
+    # TODO: Make it possible to select if the residuals should
+    # be divided by the error or not? Perhaps with another kwarg?
     def plotResiduals(
         self,
         arr,
         xaxis: str = "SPAFREQ",
         xunit: str = "cycle/rad",
-        savefig=None,
+        savefig: str | Path | None = None,
         visLog: bool = False,
         cname: str = "EFF_WAVE",
         cunit: str = "micron",
@@ -574,37 +556,38 @@ class oimSimulator:
         fig: Figure | None = None,
         axe: Axes | None = None,
         **kwargs,
-    ):
-        """Plots the residuals of the data and the simulatedData.
+    ) -> tuple[Figure, Axes]:
+        """Plots the residuals computed from the data subtracted by the simulatedData
+        divided by the errors on the data.
 
         Parameters
         ----------
         arr : str or list of str
             The name(s) of the OIFITS column(s) to be plotted.
         xaxis : str, optional
-            OIFITS information plotted on the x-axis. Default is "SPAFREQ".
+            OIFITS information plotted on the x-axis. Default is `"SPAFREQ"`.
         xunit : str, optional
-            Unit of the x-axis. Default is "cycle/rad".
+            Unit of the x-axis. Default is `"cycle/rad"`.
         savefig : str or pathlib.Path, optional
-            Saves the plot. Default is None.
+            Saves the plot. Default is `None`.
         visLog : bool, optional
-            If True, sets the y-scale to logarithmic. Default is False.
+            If `True`, sets the y-scale to logarithmic. Default is `False`.
         cname : str, optional
-            OIFITS information plotted on the colorbar. Default is "EFF_WAVE".
+            OIFITS information plotted on the colorbar. Default is `"EFF_WAVE"`.
         cunit : str, optional
-            Unit of the colorbar. Default is "micron".
+            Unit of the colorbar. Default is `"micron"`.
         cmap : str, optional
-            Name of the colormap. Default is "plasma".
+            Name of the colormap. Default is `"plasma"`.
         colorbar : bool, optional
-            If True, plots a colorbar. Default is True.
+            If `True`, plots a colorbar. Default is `True`.
         marker : str, optional
-            The marker of the residuals. Default is ".".
+            The marker of the residuals. Default is `"."`.
         levels : list of int, optional
-            Marks residual levels with horizontal lines.
+            Marks residual levels with horizontal lines. Default is `[1, 2, 3]`.
         fig : matplotlib.figure.Figure, optional
-            Figure used for the plotting. Default is None.
+            Figure used for the plotting. Default is `None`.
         axe : matplotlib.axes.Axes, optional
-            Axes used for the plotting. Default is None.
+            Axes used for the plotting. Default is `None`.
         """
         kwargs = {
             "cname": cname,
@@ -716,35 +699,74 @@ class oimSimulator:
         self,
         arr,
         simulated: bool = True,
-        savefig=None,
+        savefig: str | Path | None = None,
         visLog: bool = False,
         xaxis: str = "SPAFREQ",
         xunit: str = "cycle/rad",
         cname: str = "EFF_WAVE",
         cunit: str = "micron",
         cmap: str = "plasma",
+        colorbar: bool = True,
         kwargsData: dict = {},
         kwargsSimulatedData: dict = {},
         kwargsResiduals: dict = {},
         levels: list[int] = [1, 2, 3],
-    ):
+        fig: Figure | None = None,
+        axe: Axes | None = None,
+    ) -> tuple[Figure, Axes]:
+        """Plots the data and in a seperate plot underneath, the residuals
+        computed from the data subtracted by the simulatedData.
+
+        Parameters
+        ----------
+        arr : str or list of str
+            The name(s) of the OIFITS column(s) to be plotted.
+        xaxis : str, optional
+            OIFITS information plotted on the x-axis. Default is `"SPAFREQ"`.
+        xunit : str, optional
+            Unit of the x-axis. Default is `"cycle/rad"`.
+        savefig : str or pathlib.Path, optional
+            Saves the plot. Default is `None`.
+        visLog : bool, optional
+            If `True`, sets the y-scale to logarithmic. Default is `False`.
+        cname : str, optional
+            OIFITS information plotted on the colorbar. Default is `"EFF_WAVE"`.
+        cunit : str, optional
+            Unit of the colorbar. Default is `"micron"`.
+        cmap : str, optional
+            Name of the colormap. Default is `"plasma"`.
+        colorbar : bool, optional
+            If `True`, plots a colorbar. Default is `True`.
+        marker : str, optional
+            The marker of the residuals. Default is `"."`.
+        levels : list of int, optional
+            Marks residual levels with horizontal lines. Default is `[1, 2, 3]`.
+        fig : matplotlib.figure.Figure, optional
+            Figure used for the plotting. Default is `None`.
+        axe : matplotlib.axes.Axes, optional
+            Axes used for the plotting. Default is `None`.
+        """
 
         # NOTE: Plotting  data and simulated data
-        kwargsData0 = dict(
-            cname=cname,
-            cunit=cunit,
-            lw=2,
-            cmap=cmap,
-            errorbar=True,
-            label="data",
-        )
+        kwargsData0 = {
+            "cname": cname,
+            "cunit": cunit,
+            "lw": 2,
+            "cmap": cmap,
+            "errorbar": True,
+            "label": "data",
+        }
         kwargsData = {**kwargsData0, **kwargsData}
         kwargsData["cunit"] = u.Unit(kwargsData["cunit"])
 
-        kwargsSimulatedData0 = dict(color="k", ls=":", lw=1, label="model")
+        kwargsSimulatedData0 = {
+            "color": "k",
+            "ls": ":",
+            "lw": 1,
+            "label": "model",
+        }
         kwargsSimulatedData = {**kwargsSimulatedData0, **kwargsSimulatedData}
-
-        kwargsResiduals0 = dict(cname=cname, cunit=cunit, cmap=cmap)
+        kwargsResiduals0 = {"cname": cname, "cunit": cunit, "cmap": cmap}
 
         kwargsResiduals = {**kwargsResiduals0, **kwargsResiduals}
         kwargsResiduals["cunit"] = u.Unit(cunit)
@@ -763,7 +785,7 @@ class oimSimulator:
             kwargsResiduals.pop("cunit")
             kwargsResiduals["color"] = kwargsData["color"]
 
-        if type(arr) != type([]):
+        if isinstance(arr, str) or not isinstance(arr, Iterable):
             arr = [arr]
 
         residuals_data = oimData()
@@ -776,6 +798,9 @@ class oimSimulator:
                 idx_p = np.where(oimPlotParamName == param)[0][0]
                 p_arr = oimPlotParamArr[idx_p]
                 p_err = oimPlotParamError[idx_p]
+
+                if p_arr not in dat:
+                    continue
 
                 if param in ["T3PHI", "VISPHI"]:
                     res_ph = (
@@ -799,16 +824,19 @@ class oimSimulator:
         # NOTE: Set the projection to oimAxes for all subplots to use oimodeler
         # custom plots
         nplots = len(arr)
-
         height_ratios = np.arange(1, nplots * 2 + 1) % 2 * 2 + 1
-        fig, ax = plt.subplots(
-            len(arr) * 2,
-            1,
-            sharex=True,
-            figsize=(8, 6),
-            subplot_kw=dict(projection="oimAxes"),
-            height_ratios=height_ratios,
-        )
+
+        if fig is None or axe is None:
+            fig, axe = plt.subplots(
+                len(arr) * 2,
+                1,
+                sharex=True,
+                figsize=(8, 6),
+                subplot_kw={"projection": "oimAxes"},
+                height_ratios=height_ratios,
+            )
+        else:
+            axe = np.array(axe)
 
         plt.subplots_adjust(left=0.09, top=0.98, right=0.98, hspace=0.14)
 
@@ -816,7 +844,7 @@ class oimSimulator:
         for i in range(nplots):
             # NOTE: Plotting the data with wavelength colorscale + errorbars vs
             # spatial frequencies
-            scale = ax[2 * i].oiplot(
+            scale = axe[2 * i].oiplot(
                 self.data.data,
                 xaxis,
                 arr[i],
@@ -827,7 +855,7 @@ class oimSimulator:
 
             # NOTE: Over-plotting the simulated data as a dotted line vs spatial
             # frequencies
-            ax[2 * i].oiplot(
+            axe[2 * i].oiplot(
                 self.simulatedData.data,
                 xaxis,
                 arr[i],
@@ -835,22 +863,22 @@ class oimSimulator:
                 **kwargsSimulatedData,
             )
 
-            if ax[2 * i] != ax[-1]:
-                ax[2 * i].get_xaxis().set_visible(False)
-            if ax[2 * i] == ax[0]:
-                ax[2 * i].legend()
+            if axe[2 * i] != axe[-1]:
+                axe[2 * i].get_xaxis().set_visible(False)
+            if axe[2 * i] == axe[0]:
+                axe[2 * i].legend()
 
             # NOTE: Automatic ylim => 0-1 for visibilties, -180,180 for phases
             if arr[i] in ["VIS2DATA", "VISAMP"] and visLog == True:
-                ax[2 * i].set_yscale("log")
+                axe[2 * i].set_yscale("log")
 
-            ax[2 * i].autolim()
-            ax[2 * i].margins(x=0)
+            axe[2 * i].autolim()
+            axe[2 * i].margins(x=0)
 
         # NOTE: Plotting loop: Plotting residuals
         for i in range(nplots):
 
-            scale = ax[2 * i + 1].oiplot(
+            scale = axe[2 * i + 1].oiplot(
                 residuals_data,
                 xaxis,
                 arr[i],
@@ -859,51 +887,37 @@ class oimSimulator:
                 **kwargsResiduals,
             )
 
-            xlim = ax[0].get_xlim()
-
-            if type(levels) != type(None):
+            if levels is not None:
                 alpha = np.linspace(1, 0.2, num=len(levels))
-                ax[2 * i + 1].plot(xlim, [0, 0], ls="-", color="grey")
+                axe[2 * i + 1].axhline(0, ls="-", color="grey")
                 for j, leveli in enumerate(levels):
                     for k in range(2):
-                        y = np.array([1, 1]) * (2 * k - 1) * (leveli)
-                        ax[2 * i + 1].plot(
-                            xlim, y, ls="--", color="grey", alpha=alpha[j]
+                        axe[2 * i + 1].axhline(
+                            (2 * k - 1) * leveli,
+                            ls="--",
+                            color="grey",
+                            alpha=alpha[j],
                         )
 
-            ax[2 * i + 1].set_ylabel(r"($\sigma$)")
-            ax[2 * i + 1].margins(x=0)
+            axe[2 * i + 1].set_ylabel(r"$(\sigma)$")
+            axe[2 * i + 1].margins(x=0)
 
-            ymax = np.max(np.abs(ax[2 * i + 1].get_ylim()))
-            ax[2 * i + 1].set_ylim(-ymax, ymax)
+            ymax = np.max(np.abs(axe[2 * i + 1].get_ylim()))
+            axe[2 * i + 1].set_ylim(-ymax, ymax)
 
-            if ax[i] != ax[-1]:
-                ax[i].get_xaxis().set_visible(False)
-
-        xmin = 1e99
-        xmax = -1e99
-        for axi in ax:
-            for li in axi.get_lines():
-                x = li.get_xdata()
-                xmini = np.min(x)
-                xmaxi = np.max(x)
-                if xmini < xmin:
-                    xmin = xmini
-                if xmaxi > xmax:
-                    xmax = xmaxi
-
-        ax[0].set_xlim(xmin, xmax)
+            if axe[i] != axe[-1]:
+                axe[i].get_xaxis().set_visible(False)
 
         # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
-        if "cname" in kwargsData:
+        if colorbar:
             idxC = np.where(oimPlotParamName == kwargsData["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargsData['cunit']:latex_inline}"
             fig.colorbar(
-                scale, ax=ax.ravel().tolist(), label=f"{xlabel} ({cunittext})"
+                scale, ax=axe.ravel().tolist(), label=f"{xlabel} ({cunittext})"
             )
 
         if savefig != None:
             plt.savefig(savefig)
 
-        return fig, ax
+        return fig, axe

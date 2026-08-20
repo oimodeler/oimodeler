@@ -169,7 +169,6 @@ class oimTempGrad(oimComponentRadialProfile):
     @_r.setter
     def _r(self, value: Any) -> None:
         """Sets the radial profile [mas]."""
-        return None
 
     @property
     def Tin(self) -> float:
