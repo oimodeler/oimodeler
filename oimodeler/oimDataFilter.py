@@ -47,7 +47,7 @@ class oimDataFilterComponent:
 
     name = "Generic Filter"
     shortname = "Genfilt"
-    description = "This is the class from which all filters derived"
+    description = "All filters are derived from this class"
 
     def __init__(self, **kwargs) -> None:
         self.params = {}
@@ -215,7 +215,7 @@ class oimDataTypeFilter(oimDataFilterComponent):
     name = "Data Type Filter"
     shortname = "DTFilt"
     description = (
-        "Sets column names to 0 by colum name(s) : VIS2DATA, VISAMP..."
+        "Sets column values to 0 by colum name(s) : VIS2DATA, VISAMP..."
     )
 
     def __init__(self, **kwargs) -> None:
@@ -521,7 +521,7 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
     name = "Wavelength Binning Filter"
     shortname = "WlBinFilt"
-    description = "Spectral Binning"
+    description = "Spectral binning"
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -825,7 +825,7 @@ class oimResetFlagsFilter(oimDataFilterComponent):
 
     name = "Reset Flags Filter"
     shortname = "ResFlagsFilt"
-    description = "Sets all flags to `False`"
+    description = "Unflag data (i.e. set flags to `False`)"
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -923,7 +923,7 @@ class oimSetMinErrFilter(oimDataFilterComponent):
 
     name = "Differential Error Filter"
     shortname = "DiffErrFilt"
-    description = "Set minimum error on data in % for vis and deg for phases"
+    description = "Set minimum error on data. (%) for vis and (deg) for phases"
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
