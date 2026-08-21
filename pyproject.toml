@@ -41,15 +41,20 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "pytest >= 7.2.1",
-  "pytest-cov >= 4.0.0",
   "sphinx == 5.3",
   "sphinx-autobuild == 2021.3.14",
   "sphinx-autodoc-typehints == 1.23",
   "sphinx_rtd_theme == 1.2.0",
   "numpydoc==1.5.0",
 ]
-test = ["ipykernel>=6.31.0", "oifits==0.6.1", "papermill>=2.6.0"]
+test = [
+  "pytest >= 7.2.1",
+  "pytest-cov >= 4.0.0",
+  "pytest-xdist>=3.8.0,<4",
+  "ipykernel>=6.31.0",
+  "oifits==0.6.1",
+  "papermill>=2.6.0",
+]
 
 [project.readme]
 file = "README.md"
@@ -77,10 +82,24 @@ version = { attr = "oimodeler.__version__" }
 [tool.black]
 line-length = 79
 
-[tool.mypy]
-python_version = 3.9
-ignore_missing_imports = true
-warn_unused_configs = true
-warn_unused_ignores = true
-warn_unreachable = true
-show_error_context = true
+[tool.pytest.ini_options]
+markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+oimodeler = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+
+[tool.pixi.feature.test.tasks]
+test = "pytest -m 'not slow'"
+test-cov = "pytest -m 'not slow' --cov=your_package"
+test-slow = "pytest"
+test-slow-parallel = "pytest -n auto"
+test-parallel = "pytest -m 'not slow' -n auto"

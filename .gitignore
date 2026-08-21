@@ -156,10 +156,11 @@ docs/source/other/~$diagram.pptx
 .vscode/settings.json
 oimodelerTODO.txt
 
-# Lock
-uv.lock
-
 # Dotenv
 .envrc
 examples/BasicExamples/anaconda_projects/db/project_filebrowser.db
 anaconda_projects/db/project_filebrowser.db
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
