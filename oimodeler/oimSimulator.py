@@ -555,6 +555,7 @@ class oimSimulator:
         levels: list[int] | None = [1, 2, 3],
         fig: Figure | None = None,
         axe: Axes | None = None,
+        ls: str = "",
         **kwargs,
     ) -> tuple[Figure, Axes]:
         """Plots the residuals computed from the data subtracted by the simulatedData
@@ -593,6 +594,7 @@ class oimSimulator:
             "cname": cname,
             "cunit": cunit,
             "cmap": cmap,
+            "ls": ls,
             **kwargs,
         }
         kwargs["cunit"] = u.Unit(kwargs["cunit"])
