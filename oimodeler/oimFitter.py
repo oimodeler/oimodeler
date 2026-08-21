@@ -289,7 +289,7 @@ class oimFitterEmcee(oimFitter):
             fontsize=8,
             title_kwargs={"fontsize": 8},
             use_math_text=True,
-            color="blue",
+            color="darkblue",
             truth_color="black",
         )
         kwargs = {**kwargs0, **kwargs}
@@ -315,6 +315,7 @@ class oimFitterEmcee(oimFitter):
                 "values of your priors may be switched."
             )
 
+        #TODO: for some reason these lines create a bug for single free parameter plot
         #kwargs["truths"] = kwargs.get("truths", truths)
         #print(kwargs["truths"])
         fig = corner.corner(chain, labels=labels, **kwargs)
