@@ -13,7 +13,8 @@ import numpy as np
 from astropy.io import fits
 from matplotlib import gridspec, patches
 from matplotlib.axes import Axes
-from matplotlib.collections import Collection, LineCollection
+from matplotlib.colors import Normalize
+from matplotlib.collections import  LineCollection
 from matplotlib.figure import Figure
 from matplotlib.legend_handler import HandlerLineCollection
 
@@ -148,9 +149,10 @@ oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 oimPlotParamColorCycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-
 # NOTE: might be useful as unit cycles is not defined but cycle is
-# u.add_enabled_units(u.def_unit("cycles",u.cycle))
+u.add_enabled_units(u.def_unit("cycles",u.cycle))
+
+
 def _errorplot(
     axe,
     x: np.ndarray,
@@ -180,7 +182,10 @@ def _errorplot(
 
     if "color" not in kwargs:
         kwargs["color"] = "grey"
-
+        
+    if "lw" not in kwargs:
+        kwargs["lw"] = 0.1
+        
     if smooth != 1:
         ker = np.ones(smooth) / smooth
         ys = np.convolve(y, ker, mode="same")  # [smooth//2:-smooth//2-1]
@@ -188,91 +193,345 @@ def _errorplot(
     axe.fill_between(x, ys - dy, ys + dy, **kwargs)
 
 
-def _colorPlot(
-    axe,
-    x: np.ndarray,
-    y: np.ndarray,
-    z: np.ndarray,
-    flag: np.ndarray = None,
-    setlim: bool = False,
+def _plotc(
+    x,
+    y=None,
+    z=None,
+    *,
+    cmap="plasma",
+    norm=None,
+    ax=None,
+    zorder=2,
     **kwargs,
-) -> Collection:
-    """Creates a plot of the x and y data with the z data as color.
+):
+    """
+    Plot a line with a color that varies according to z.
+
+    The color normalization is shared between all calls to ``plotc``
+    made on the same Axes. When ``norm`` is not explicitly provided,
+    the normalization is automatically updated to include the z
+    values of all previously plotted curves.
 
     Parameters
     ----------
-    axe : matplotlib.axes.Axes
-        The axes to plot on.
-    x : np.ndarray
-        The x data.
-    y : numpy.ndarray
-        The y data.
-    z : numpy.ndarray
-        The colorbar data.
-    flag : None or numpy.ndarray, optional
-        Flagging of bad data (not to be plotted). The default is None.
-    setlim : bool, optional
-        Automatically sets the plot's limit. The default is False.
+    x, y : array-like
+        X and Y coordinates. If ``y`` is None, ``x`` is interpreted
+        as Y coordinates and X is set to ``np.arange(len(y))``.
+
+    z : array-like
+        Values used to determine the color of the line and markers.
+        Must have the same shape as ``x`` and ``y``.
+
+    cmap : str or matplotlib.colors.Colormap, default="viridis"
+        Colormap used to map ``z`` to colors.
+
+    norm : matplotlib.colors.Normalize, optional
+        Explicit normalization for the color scale. If None, the
+        normalization is automatically computed from all curves
+        previously plotted with ``plotc`` on the same Axes.
+
+    ax : matplotlib.axes.Axes, optional
+        Axes on which to draw the plot. If None, the current axes
+        are used.
+
+    **kwargs
+        Line and marker properties.
+
+        Supported line properties:
+            linewidth / lw
+            linestyle / ls
+            alpha
+            label
+            zorder
+
+        Supported marker properties:
+            marker
+            markersize / ms
+            markeredgecolor / mec
+            markeredgewidth / mew
+            markerfacecolor / mfc
 
     Returns
     -------
-    res : matplotlib.collections.Collection
-        The collection of the plot.
+    line : matplotlib.collections.LineCollection
+        The LineCollection used to draw the colored line.
+
+    scatter : matplotlib.collections.PathCollection or None
+        The scatter collection used to draw the markers.
     """
-    noline = False
-    if "ls" in kwargs:
-        if kwargs["ls"] is None or kwargs["ls"] == "":
-            noline = True
-    if "linestyle" in kwargs:
-        if kwargs["linestyle"] is None or kwargs["linestyle"] == "":
-            noline = True
 
-    if "cmap" not in kwargs:
-        kwargs["cmap"] = "plasma"
+    if ax is None:
+        ax = plt.gca()
 
-    mini, maxi = [np.min(z)], [np.max(z)]
-    for ci in axe.collections:
-        maxii = np.max(ci.get_array())
-        minii = np.min(ci.get_array())
-        if maxii is not None and minii is not None:
-            maxi.append(maxii)
-            mini.append(minii)
+    # ------------------------------------------------------------------
+    # Handle plot(y) and plot(x, y)
+    # ------------------------------------------------------------------
+    if y is None:
+        y = x
+        x = np.arange(len(y))
 
-    mini, maxi = np.min(mini), np.max(maxi)
-    if type(flag) == type(None):
-        flag = (0 * x).astype(bool)
+    if z is None:
+        raise TypeError("z must be provided")
 
-    yma = np.ma.masked_where(flag, y)
-    if "norm" not in kwargs:
-        norm = plt.Normalize(mini, maxi)
-    else:
-        norm = kwargs["norm"]
+    # ------------------------------------------------------------------
+    # Convert to masked arrays
+    # ------------------------------------------------------------------
+    x = np.ma.asarray(x)
+    y = np.ma.asarray(y)
+    z = np.ma.asarray(z)
 
-    res = None
-    if x.size == 1 or "marker" in kwargs:
-        res = axe.scatter(x, yma, c=z, **kwargs)
-    if x.size > 1 and not noline:
-        points = np.array([x, y]).T.reshape(-1, 1, 2)
-        segments = np.concatenate([points[:-1], points[1:]], axis=1)
-        flag_seg = flag[1:] | flag[0:-1]
-        segments_flagged = segments[np.logical_not(flag_seg), :, :]
-        z_seg = np.mean(np.array([z[:-1], z[1:]]), axis=0)
-        z_flagged = z_seg[np.logical_not(flag_seg)]
+    if x.shape != y.shape or x.shape != z.shape:
+        raise ValueError("x, y and z must have the same shape")
 
-        if "marker" in kwargs:
-            kwargs.pop("marker")
+    if x.ndim != 1:
+        raise ValueError("x, y and z must be one-dimensional")
 
-        lc = LineCollection(segments_flagged, **kwargs)
-        lc.set_array(z_flagged)
-        res = axe.add_collection(lc)
+    # Combine masks.
+    mask = (
+        np.ma.getmaskarray(x)
+        | np.ma.getmaskarray(y)
+        | np.ma.getmaskarray(z)
+    )
 
-    for ci in axe.collections:
-        ci.set_norm(norm)
+    xd = np.asarray(np.ma.getdata(x), dtype=float)
+    yd = np.asarray(np.ma.getdata(y), dtype=float)
+    zd = np.asarray(np.ma.getdata(z), dtype=float)
 
-    if setlim:
-        axe.autoscale_view()
+    # NaN and Inf are also considered invalid.
+    valid = (
+        ~mask
+        & np.isfinite(xd)
+        & np.isfinite(yd)
+        & np.isfinite(zd)
+    )
 
+    # ------------------------------------------------------------------
+    # Extract line properties
+    # ------------------------------------------------------------------
+    linewidth = kwargs.pop(
+        "linewidth",
+        kwargs.pop("lw", None),
+    )
+
+    linestyle = kwargs.pop(
+        "linestyle",
+        kwargs.pop("ls", None),
+    )
+
+    alpha = kwargs.pop("alpha", None)
+    label = kwargs.pop("label", None)
+    zorder = kwargs.pop("zorder", None)
+
+    # ------------------------------------------------------------------
+    # Extract marker properties
+    # ------------------------------------------------------------------
+    marker = kwargs.pop("marker", None)
+
+    markersize = kwargs.pop(
+        "markersize",
+        kwargs.pop("ms", None),
+    )
+
+    markeredgecolor = kwargs.pop(
+        "markeredgecolor",
+        kwargs.pop("mec", None),
+    )
+
+    markeredgewidth = kwargs.pop(
+        "markeredgewidth",
+        kwargs.pop("mew", None),
+    )
+
+    markerfacecolor = kwargs.pop(
+        "markerfacecolor",
+        kwargs.pop("mfc", None),
+    )
+
+    if kwargs:
+        names = ", ".join(kwargs.keys())
+        raise TypeError(
+            f"Unsupported argument(s) for plotc: {names}"
+        )
+
+    # ------------------------------------------------------------------
+    # Get the color scale associated with this Axes
+    # ------------------------------------------------------------------
+    state = getattr(ax, "_plotc_state", None)
+
+    if state is None:
+        state = {
+            "z_values": [],
+            "norm": None,
+            "artists": [],
+        }
+        ax._plotc_state = state
+
+    # ------------------------------------------------------------------
+    # Determine normalization
+    # ------------------------------------------------------------------
+    if valid.any():
+        new_z = zd[valid]
+
+        if norm is not None:
+            # An explicit norm takes precedence.
+            state["norm"] = norm
+
+        else:
+            # Add the new values to the values already plotted.
+            state["z_values"].append(new_z.copy())
+
+            all_z = np.concatenate(state["z_values"])
+
+            vmin = np.min(all_z)
+            vmax = np.max(all_z)
+
+            # Avoid a zero-width normalization.
+            if vmin == vmax:
+                delta = 0.5 if vmin == 0 else abs(vmin) * 0.01
+                vmin -= delta
+                vmax += delta
+
+            if state["norm"] is None:
+                state["norm"] = Normalize(
+                    vmin=vmin,
+                    vmax=vmax,
+                )
+            else:
+                state["norm"].vmin = vmin
+                state["norm"].vmax = vmax
+
+    if state["norm"] is None:
+        state["norm"] = Normalize(0, 1)
+
+    norm = state["norm"]
+
+    # ------------------------------------------------------------------
+    # Build line segments
+    # ------------------------------------------------------------------
+    segments = []
+    segment_z = []
+
+    for i in range(len(xd) - 1):
+
+        if valid[i] and valid[i + 1]:
+
+            segments.append([
+                [xd[i], yd[i]],
+                [xd[i + 1], yd[i + 1]],
+            ])
+
+            # Interpolate z at the center of the segment.
+            segment_z.append(
+                0.5 * (zd[i] + zd[i + 1])
+            )
+
+    # ------------------------------------------------------------------
+    # Create LineCollection
+    # ------------------------------------------------------------------
+    if linestyle!="":
+        line = LineCollection(
+            segments,
+            cmap=cmap,
+            norm=norm,
+        )
+    
+        if segment_z:
+            line.set_array(np.asarray(segment_z))
+    
+        if linewidth is not None:
+            line.set_linewidth(linewidth)
+    
+        if linestyle is not None:
+            line.set_linestyle(linestyle)
+    
+        if alpha is not None:
+            line.set_alpha(alpha)
+    
+        if zorder is not None:
+            line.set_zorder(zorder)
+    
+        if label is not None:
+            line.set_label(label)
+    
+        ax.add_collection(line)
+
+    # ------------------------------------------------------------------
+    # Create markers
+    # ------------------------------------------------------------------
+    scatter = None
+
+    if marker is not None and marker != "None":
+
+        marker_mask = valid
+
+        scatter_kwargs = {
+            "marker": marker,
+            "c": zd[marker_mask],
+            "cmap": cmap,
+            "norm": norm,
+        }
+
+        if markersize is not None:
+            scatter_kwargs["s"] = markersize ** 2
+
+        if markeredgecolor is not None:
+            scatter_kwargs["edgecolors"] = markeredgecolor
+
+        if markeredgewidth is not None:
+            scatter_kwargs["linewidths"] = markeredgewidth
+
+        if markerfacecolor is not None:
+            scatter_kwargs["facecolors"] = markerfacecolor
+
+        if alpha is not None:
+            scatter_kwargs["alpha"] = alpha
+
+        if zorder is not None:
+            scatter_kwargs["zorder"] = zorder + 0.01
+
+        scatter = ax.scatter(
+            xd[marker_mask],
+            yd[marker_mask],
+            **scatter_kwargs,
+        )
+
+    # ------------------------------------------------------------------
+    # Store artists
+    # ------------------------------------------------------------------
+    if linestyle!="" :
+        state["artists"].append(line)
+
+    if scatter is not None:
+        state["artists"].append(scatter)
+
+    # ------------------------------------------------------------------
+    # Update the normalization of all previously plotted artists
+    # ------------------------------------------------------------------
+    for artist in state["artists"]:
+
+        if hasattr(artist, "set_norm"):
+            artist.set_norm(norm)
+
+    # ------------------------------------------------------------------
+    # Autoscale
+    # ------------------------------------------------------------------
+    if valid.any():
+
+        ax.update_datalim(
+            np.column_stack(
+                (xd[valid], yd[valid])
+            )
+        )
+
+        ax.autoscale_view()
+    
+    try:
+        res = line
+    except:
+        res = scatter
     return res
+
+
 
 
 def uvPlot(
@@ -453,21 +712,19 @@ def uvPlot(
             spfv = vi / wli * u.Unit("cycle/rad").to(unit)
 
             if color is None:
-                res = _colorPlot(
-                    axe,
+                res = _plotc(
                     spfu,
                     spfv,
                     wli * u.m.to(cunit),
                     label=label0,
-                    setlim=True,
+                    ax=axe,
                     **kwargs,
                 )
-                _colorPlot(
-                    axe,
+                _plotc(
                     -spfu,
                     -spfv,
                     wli * u.m.to(cunit),
-                    setlim=True,
+                    ax=axe,
                     **kwargs,
                 )
 
@@ -604,6 +861,17 @@ def getColorIndices(
                     iarr = len(names)
                     names.append(array)
                 idxi.append(np.zeros(nB, dtype=int) + iarr)
+                
+            
+            
+            elif color == "byInsname":
+                array = datai[jdata].header["INSNAME"]
+                if array in names:
+                    iarr = names.index(array)
+                else:
+                    iarr = len(names)
+                    names.append(array)
+                idxi.append(np.zeros(nB, dtype=int) + iarr)
 
             elif color == "byBaseline":
                 bnames = getBaselineName(datai, yarr, squeeze=False)[j]
@@ -641,6 +909,7 @@ def getColorIndices(
         idx = idxf
 
     return idx, names
+
 
 
 def oimPlot(
@@ -990,120 +1259,84 @@ def oimPlot(
 
             # NOTE: Separate multiples baselines
             for iB in range(shapex[0]):
-                if not showFlagged:
-                    flags = np.reshape(yflag[idata], shapey)[iB, :]
-                    nflags, flag0, ilam0 = len(flags), True, 0
-                    for ilam, flagi in enumerate(flags):
-                        doPlot = False
-                        flagi = (
-                            True if np.isnan(ydata[idata][iB, ilam]) else flagi
-                        )
-                        if flag0 != flagi:
-                            if not flagi:
-                                ilam0 = ilam
-                            else:
-                                doPlot = True
-                                ilam1 = ilam
 
-                            flag0 = flagi
-                        if ilam == (nflags - 1) and not flagi:
-                            doPlot = True
-                            ilam1 = ilam + 1
-
-                        if doPlot:
-                            labeli = (
-                                label
-                                + " "
-                                + ColorNames[colorIdx[ifile][idata][iB]]
-                            )
-
-                            if cname is None:
-                                if xdata[idata][iB, ilam0:ilam1].size == 1:
-                                    axe.scatter(
-                                        xdata[idata][iB, ilam0:ilam1],
-                                        ydata[idata][iB, ilam0:ilam1],
-                                        color=colorTab[
-                                            colorIdx[ifile][idata][iB] % ncol
-                                        ],
-                                        label=labeli,
-                                        **kwargs,
-                                    )
-                                else:
-                                    axe.plot(
-                                        xdata[idata][iB, ilam0:ilam1],
-                                        ydata[idata][iB, ilam0:ilam1],
-                                        color=colorTab[
-                                            colorIdx[ifile][idata][iB] % ncol
-                                        ],
-                                        label=labeli,
-                                        **kwargs,
-                                    )
-                                    if errorbar:
-                                        if "color" not in kwargs_error:
-                                            kwargs_errori = kwargs_error.copy()
-                                            kwargs_errori["color"] = colorTab[
-                                                colorIdx[ifile][idata][iB]
-                                                % ncol
-                                            ]
-
-                                        _errorplot(
-                                            axe,
-                                            xdata[idata][iB, ilam0:ilam1],
-                                            ydata[idata][iB, ilam0:ilam1],
-                                            ydataerr[idata][iB, ilam0:ilam1],
-                                            **kwargs_errori,
-                                        )
-
-                            else:
-                                # NOTE: dummy plot with alpha=0 as _colorPLot works
-                                # with collections thus not updating the xlim and ylim
-                                # automatically
-                                axe.plot(
-                                    xdata[idata][iB, ilam0:ilam1],
-                                    ydata[idata][iB, ilam0:ilam1],
-                                    color="k",
-                                    alpha=0,
-                                )
-
-                                res = _colorPlot(
-                                    axe,
-                                    xdata[idata][iB, ilam0:ilam1],
-                                    ydata[idata][iB, ilam0:ilam1],
-                                    cdata[idata][iB, ilam0:ilam1],
-                                    label=labeli,
-                                    setlim=False,
-                                    **kwargs,
-                                )
-
-                                if errorbar:
-                                    _errorplot(
-                                        axe,
-                                        xdata[idata][iB, ilam0:ilam1],
-                                        ydata[idata][iB, ilam0:ilam1],
-                                        ydataerr[idata][iB, ilam0:ilam1],
-                                        **kwargs_error,
-                                    )
-
-                else:
-                    labeli = (
-                        label + " " + ColorNames[colorIdx[ifile][idata][iB]]
-                    )
-                    axe.plot(
-                        xdata[idata][iB, :],
-                        ydata[idata][iB, :],
-                        color=colorTab[colorIdx[ifile][idata][iB] % ncol],
-                        label=labeli,
-                        **kwargs,
-                    )
+                flags = np.reshape(yflag[idata], shapey)[iB, :]
+                if showFlagged:
+                    flags = (flags*0).astype(bool)
+              
+                yplot = np.ma.masked_where(flags,ydata[idata][iB,:])
+                
+                labeli = (label + " " + 
+                         ColorNames[colorIdx[ifile][idata][iB]])
+                
+                #plots without colorscale <=> colors == baselines, files... 
+                if cname is None:
                     if errorbar:
-                        _errorplot(
+                        kwargs_errori = kwargs_error.copy()
+                        kwargs_errori["zorder"]=0
+                        if "color" not in kwargs_error:
+                            kwargs_errori["color"] = colorTab[
+                                colorIdx[ifile][idata][iB]
+                                % ncol]
+                            
+                            
+                        if errorbar == "classic":
+                            axe.errorbar(xdata[idata][iB, :],
+                                         yplot,
+                                         ydataerr[idata][iB, :],
+                                         ls="", marker="", 
+                                         **kwargs_errori)
+                            
+                        else:
+                            _errorplot(
                             axe,
                             xdata[idata][iB, :],
-                            ydata[idata][iB, :],
+                            yplot,
                             ydataerr[idata][iB, :],
-                            color=colorTab[colorIdx[ifile][idata][iB] % ncol],
-                            **kwargs_error,
-                        )
+                            **kwargs_errori
+                            )
+                    
+                    axe.plot(xdata[idata][iB,:], yplot,
+                             color=colorTab[colorIdx[ifile][idata][iB] % ncol],
+                             label=labeli,
+                             **kwargs
+                    )
+    
+                #plots with colorscale (cname!=None) using the function _plotc 
+                else:
+                    if errorbar:
+                        kwargs_errori = kwargs_error.copy()
+                        kwargs_errori["zorder"]=0
+                        if "color" not in kwargs_error:
+                            kwargs_errori["color"] = "grey"
+                       
+                        if errorbar == "classic":
+                            if "alpha" not in kwargs_error:    
+                                kwargs_errori["alpha"] = 0.3
+                            axe.errorbar(xdata[idata][iB, :],
+                                         yplot,
+                                         ydataerr[idata][iB, :],
+                                         ls="", marker="",
+                                         **kwargs_errori)    
+                        else:
+                            _errorplot(
+                            axe,
+                            xdata[idata][iB, :],
+                            yplot,
+                            ydataerr[idata][iB, :],
+                            **kwargs_errori)
+                            
+                    res = _plotc(xdata[idata][iB,:],
+                                yplot,cdata[idata][iB,:],
+                                label=labeli,
+                                ax=axe,
+                                **kwargs)
+                    
+    if legend == True:    
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+               
 
     if yscale is not None:
         axe.set_yscale(yscale)
@@ -1120,11 +1353,9 @@ def oimPlot(
     axe.set_xlabel(xlabel)
     axe.set_ylabel(ylabel)
 
+ 
     if cname and showColorbar:
         plt.colorbar(res, ax=axe, label=clabel)
-
-    if legend:
-        axe.legend()
 
     return res
 
