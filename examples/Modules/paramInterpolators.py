@@ -212,10 +212,10 @@ plt.savefig(save_dir / "interp5.png")
 
 # %%
 star1 = oim.oimUD(
-    f=oim.oimInterp("starWl", temp=10000, radius=2.5, dist=100)
+    f=oim.oimInterp("starWl", T=10000, R=2.5, dist=100)
 )  # A0V
 star2 = oim.oimUD(
-    f=oim.oimInterp("starWl", temp=5000, radius=17, dist=100)
+    f=oim.oimInterp("starWl", T=5000, R=17, dist=100)
 )  # K1III
 
 wl = np.logspace(-7, -4, num=50)
