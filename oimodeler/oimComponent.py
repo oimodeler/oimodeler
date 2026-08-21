@@ -354,7 +354,36 @@ class oimComponent:
             setattr(type(comp), key, prop)
 
         return comp
+    
+    
+    def _fov(self,wl=None,t=None):
+        return 0
 
+
+    def getFOV(self,wl=None,t=None):
+
+        fov0 = np.array(self._fov(wl,t)).max()
+ 
+        
+        fovX=np.array([-fov0/2,fov0/2])
+        fovY=np.array([-fov0/2,fov0/2])
+
+        fovX+=self.params["x"].value
+        fovY+=self.params["y"].value
+        
+        return [*fovX,*fovY]
+
+    def _solidAngle(self,wl=None,t=None):
+        return None
+
+    def getSolidAngle(self,wl=None,t=None):
+        sa = self._solidAngle(wl,t)
+        try:
+            return sa
+        except:
+            raise NotImplementedError(f"getSolidAngle not implement for Class {self.__class__.__name__}")
+         
+    
 
 class oimComponentFourier(oimComponent):
     """Class for all component analytically defined in the Fourier plan.
@@ -554,6 +583,8 @@ class oimComponentImage(oimComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        
+        self.interpFillValue = 0
 
         # NOTE: In rad
         self._pixSize = 0
@@ -723,7 +754,8 @@ class oimComponentImage(oimComponent):
             coord = np.transpose(np.array([t_arr, wl_arr, x_arr, y_arr]))
 
             im = interpolate.interpn(
-                grid, im0, coord, bounds_error=False, fill_value=0
+                grid, im0, coord, bounds_error=False, 
+                fill_value=self.interpFillValue
             )
             f0 = np.sum(im0)
             f = np.sum(im)
@@ -821,6 +853,8 @@ class oimComponentImage(oimComponent):
             "setPixelSize Method not implemented" " while self._pixSize = None"
         )
 
+    def _fov(self,wl=None,t=None):
+        return self.getPixelSize()*u.rad.to(u.mas)*self.params["dim"].value
 
 class oimComponentRadialProfile(oimComponent):
     """Base class for components define by their radial profile"""

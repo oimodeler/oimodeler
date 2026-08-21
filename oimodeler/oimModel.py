@@ -645,6 +645,11 @@ class oimModel:
             )
 
         return fig, axe, im
+    
+    
+    
+
+    
 
     def showFourier(
         self,
@@ -890,3 +895,18 @@ class oimModel:
                 fluxes.append(compi.params["f"])
 
         comp.params["f"] = oimParamNorm(fluxes)
+        
+    def getFOV(self,wl=None,t=None):
+        ncomp=len(self.components)
+        fovs=np.zeros((4,ncomp))
+        
+        for i,component in enumerate(self.components):
+            fovs[:,i] = component.getFOV(wl,t)
+        
+        maxi = np.max(fovs,axis=1)
+        mini = np.min(fovs,axis=1)
+        
+        
+        return np.array([mini[0],maxi[1],mini[2],maxi[3]])
+            
+        

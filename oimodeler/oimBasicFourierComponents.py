@@ -53,7 +53,7 @@ class oimPt(oimComponentFourier):
             return image
         else:
             return (xx == 0) & (yy == 0)
-
+        
 
 class oimBackground(oimComponentFourier):
     """Background component defined in the fourier space
@@ -123,7 +123,12 @@ class oimUD(oimComponentFourier):
         return (
             (xx**2 + yy**2) <= (self.params["d"](wl, t) / 2) ** 2
         ).astype(float)
+    
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)
 
+    def _solidAngle(self,wl=None,t=None):
+        return self.params["d"](wl,t)**2/4*np.pi
 
 class oimEllipse(oimUD):
     """Uniform Ellipse component defined in the fourier space
@@ -195,6 +200,8 @@ class oimGauss(oimComponentFourier):
             * np.exp(-4 * np.log(2) * r2 / self.params["fwhm"](wl, t) ** 2)
         )
 
+    def _fov(self,wl,t):
+        return self.params["fwhm"](wl,t)*3
 
 class oimEGauss(oimGauss):
     """Elliptical Gaussian component defined in the fourier space
@@ -270,6 +277,9 @@ class oimIRing(oimComponentFourier):
             & (r2 >= (self.params["d"](wl, t) / 2) ** 2)
         ).astype(float)
 
+
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)
 
 class oimEIRing(oimIRing):
     """Infinitesimal Elliptical Ring component defined in the fourier space
@@ -359,6 +369,9 @@ class oimRing(oimComponentFourier):
         ).astype(float)
 
 
+    def _fov(self,wl,t):
+        return self.params["dout"](wl,t)
+
 class oimRing2(oimComponentFourier):
     """Ring component defined in the fourier space
 
@@ -418,6 +431,9 @@ class oimRing2(oimComponentFourier):
             )
         ).astype(float)
 
+
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)+self.params["w"](wl,t)
 
 class oimERing(oimRing):
     """Elliptical Ring component defined in the fourier space
@@ -552,6 +568,9 @@ class oimESKIRing(oimComponentFourier):
             & (r2 >= (self.params["d"](wl, t) / 2 - dx / 2) ** 2)
         ).astype(float) * F
 
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)
+
 
 class oimESKGRing(oimComponentFourier):
     """Skewed Elliptical Gaussian Ring component defined in the fourier space
@@ -611,6 +630,9 @@ class oimESKGRing(oimComponentFourier):
         )
 
         return res
+
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)+self.params["fwhm"](wl,t)*3
 
 
 class oimESKRing(oimComponentFourier):
@@ -686,6 +708,8 @@ class oimESKRing(oimComponentFourier):
     # return ((r2 <= (self.params["dout"](wl, t)/2)**2) &
     #         (r2 >= (self.params["din"](wl, t)/2)**2)).astype(float)*F
 
+    def _fov(self,wl,t):
+        return self.params["dout"](wl,t)
 
 # TODO
 class oimLorentz(oimComponentFourier):
@@ -735,6 +759,8 @@ class oimLorentz(oimComponentFourier):
         )
         return a / (2 * np.pi * 3**0.5) * (a**2 / 3 + r2) ** (-1.5)
 
+    def _fov(self,wl,t):
+        return self.params["fwhm"](wl,t)*3
 
 class oimELorentz(oimLorentz):
     """Elliptical-Lorentzian component defined in the fourier space
@@ -820,6 +846,9 @@ class oimLinearLDD(oimComponentFourier):
         return np.nan_to_num((1 - a) * c1 + a * c2, nan=1)
 
 
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)
+    
 class oimQuadLDD(oimComponentFourier):
     """Quadratic Limb Darkened Disk component defined in the fourier space
 
@@ -887,6 +916,9 @@ class oimQuadLDD(oimComponentFourier):
             ((1 - a1 - a2) * c1 + (a1 + 2 * a2) * c2 - a2 * c3) / s, nan=1
         )
 
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)
+    
 
 class oimPowerLawLDD(oimComponentFourier):
     """Power Law Limb Darkened Disk component defined in the fourier space
@@ -943,6 +975,9 @@ class oimPowerLawLDD(oimComponentFourier):
             nu * gamma(nu) * 2**nu * jn(nu, xx) / xx**nu, nan=1
         )
 
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)
+    
 
 class oimSqrtLDD(oimComponentFourier):
     """Square-root Limb Darkened Disk component defined in the fourier space
@@ -1013,6 +1048,9 @@ class oimSqrtLDD(oimComponentFourier):
         )
 
 
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)
+    
 class oim4CLDD(oimComponentFourier):
     """4 Coefficients Limb Darkened Disk component defined in the fourier space
 
@@ -1126,6 +1164,10 @@ class oim4CLDD(oimComponentFourier):
         )
 
 
+    def _fov(self,wl,t):
+        return self.params["d"](wl,t)
+    
+    
 class oimConvolutor(oimComponentFourier):
     """Convolves two components.
 
@@ -1233,7 +1275,7 @@ class oimConvolutor(oimComponentFourier):
             if component.elliptic:
                 pa_rad = (
                     self.params[f"c{index}_pa"](wl_arr, t_arr)
-                ) * self.params[f"c{index}_pa"].unit.to(units.rad)
+                ) * self.params[f"c{index}_pa"].unit.to(u.rad)
 
                 co, si = np.cos(pa_rad), np.sin(pa_rad)
                 xpt = (xp * co - yp * si) * self.params[f"c{index}_elong"](
