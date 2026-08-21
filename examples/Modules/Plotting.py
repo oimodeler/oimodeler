@@ -13,6 +13,7 @@ import oimodeler as oim
 
 path = Path(__file__).parent.parent.parent
 data_dir = path / "data" / "RealData" / "GRAVITY" / "HD58647"
+data_dir = path / "data" / "ASPRO_MATISSE2"
 files = list(data_dir.glob("*.fits"))
 data = oim.oimData(files)
 
