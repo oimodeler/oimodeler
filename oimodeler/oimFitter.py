@@ -315,7 +315,8 @@ class oimFitterEmcee(oimFitter):
                 "values of your priors may be switched."
             )
 
-        kwargs["truths"] = kwargs.get("truths", truths)
+        #kwargs["truths"] = kwargs.get("truths", truths)
+        #print(kwargs["truths"])
         fig = corner.corner(chain, labels=labels, **kwargs)
         if savefig is not None:
             plt.savefig(savefig)
@@ -356,9 +357,10 @@ class oimFitterEmcee(oimFitter):
         chi2max = chi2limfact * chi2min
         chi2bins = np.linspace(chi2max, chi2min, ncolors)
         if "cmap" in kwargs:
-            cmap = cm.get_cmap(kwargs.pop("cmap"), ncolors)
+            cmap = mpl.colormaps.get_cmap(kwargs.pop("cmap")).resampled(ncolors)
         else:
-            cmap = cm.get_cmap(mpl.rcParams["image.cmap"], ncolors)
+            cmap = mpl.colormaps.get_cmap(mpl.rcParams["image.cmap"]).resampled(ncolors)
+
 
         for i in range(self.nfree):
             for icol in range(ncolors):
