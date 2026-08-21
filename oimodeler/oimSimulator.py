@@ -909,7 +909,8 @@ class oimSimulator:
                 axe[i].get_xaxis().set_visible(False)
 
         # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
-        if colorbar:
+       
+        if colorbar and cname in kwargsData:
             idxC = np.where(oimPlotParamName == kwargsData["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargsData['cunit']:latex_inline}"
