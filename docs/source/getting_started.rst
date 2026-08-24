@@ -229,12 +229,131 @@ The initial parameters are stored in ``fit.initialParams``:
 
     pprint(fit.initialParams)
 
-
+   
 .. code-block::
 
     ... [[30.26628081  26.02405335   7.23061417  19.19829182]
         [ 23.12647935  44.07636861   3.39149131  17.29408761]
         [ -9.311772    47.50156564   9.49185499   4.79198633]
-        [-24.05134905 -12
+        [-24.05134905 -12.45653228   5.36560382   0.29631924]
+        [-28.13992968 -25.25330839   9.64101194   6.21004462]
+        [  5.13551292  25.3735599    4.82365667   0.53696176]
+        [  3.6240551  -41.03297919   4.79235224   7.12035193]
+        [-10.57430397 -40.19561341   6.0687408   11.22285079]
+        [ 12.76468252  16.83390367   4.40925502   5.64248841]
+        [ 29.12590452  -0.20420277   4.21541399  13.16022251]]
 
 
+Now we run the fit on 2000 steps. It will compute 20000  models (i.e., ``nsteps`` x
+``nwalkers``).
+
+.. code-block:: python
+
+    fit.run(nsteps=2000, progress=True)
+
+    
+.. code-block:: 
+
+    ... 17%|█        | 349/2000 [00:10<00:48, 34.29it/s]
+
+
+After the run we can plot the values of the 4 free-parameters for the 10 walkers
+as a function of the steps of the mcmc run.
+
+.. code-block:: python
+
+    figWalkers, axeWalkers = fit.walkersPlot()
+    
+    
+.. image:: ../../images/gettingStarted_Walkers.png
+  :alt: Alternative text   
+  
+  
+After a few hundred steps most walkers converge to the same position having a
+good :math:`\chi^2_r`. However, from that figure will clearly see that:
+
+- Not all walkers have converged after 2000 steps.
+- Some walkers converge to a solution that gives significantly worse :math:`\chi^2`.
+
+In optical interferometry there are often local minima in the :math:`\chi^2` and it
+seems that some of our walkers are locked there.
+In our case, this minima are due to the fact that object is close be symmetrical if not
+for the fact than one of the component is resolved.
+Neverless, the :math:`\chi^2` of the local minimum is about 20 times worse than the one
+of the global minimum.
+
+We can plot the `famous` corner plot with the 1D and 2D density distributions.
+For this purpose, the ``oimodeler`` package uses the `corner <https://corner.readthedocs.io/en/latest/>`_
+package.
+We will discard the 1000 first steps as most of the walkers have
+converged after that. By default, the corner plot also removes the data with a
+:math:`\chi^2` greater than 20 times those of the best model.
+This option can be changed using the ``chi2limfact`` keyword in the
+:func:`oimFitterEmcee.cornerPlot <oimodler.oimFitter.oimFitterEmcee.cornerPlot>` method.
+
+.. code-block:: python
+
+    figCorner, axeCorner = fit.cornerPlot(discard=1000)
+    
+
+.. image:: ../../images/gettingStarted_corner.png
+  :alt: Alternative text    
+    
+
+We now can retrieve the result of our fit. 
+The :func:`oimFitterEmcee <oimodeler.oimFitter.oimFitterEmcee>` fitter can either
+return the ``"best"``, the ``"mean"`` or the ``"median"`` model. It also returns
+uncertainties estimated from the density distribution (see emcee's
+`documentation <https://emcee.readthedocs.io/en/stable/>`_ for more details on the
+statistics). 
+
+.. code-block:: python
+    
+    median, err_l, err_u, err = fit.getResults(mode='median', discard=1000)
+
+
+To compute the median and mean models we use the
+:func:`oimFitterEmcee.getResults <oimodler.oimFitter.oimFitterEmcee.cornerPlot>` method
+and remove, as in the corner plot, the walkers that didn't converge within the limit
+set by the ``chi2limitfact`` keyword (default is 20).
+Furthermore, we also remove the steps of the burn-in phase with the ``discard`` keyword.
+
+When procuring the fit's results, the simulated data with these values are also produced
+simultaneously in the fitter's internal simulator.
+We can plot the data/model and compute the final :math:`\chi^2_r`.
+
+.. code-block:: python 
+    
+    figSim, axSim = fit.simulator.plot(["VIS2DATA", "T3PHI"])
+    pprint("Chi2r = {}".format(fit.simulator.chi2r))
+
+
+.. code-block:: 
+
+    ... Chi2r = 1.0833528313932081
+
+    
+.. image:: ../../images/gettingStarted_modelFinal.png
+  :alt: Alternative text       
+
+
+That's better.
+
+Finally, let's plot an image of the model with the best parameters. Here, we generate
+a ``512x512`` image with a 0.1 mas pixel size and a 0.1 power-law colorscale:
+
+.. code-block:: python 
+
+    figImg, axImg, im=model.showModel(512, 0.1, normPow=0.1)
+
+       
+.. image:: ../../images/gettingStarted_modelImage.png
+  :alt: Alternative text 
+
+
+Here is our nice binary! 
+
+That's all for this short introduction. 
+
+If you want to go further you can have a look at the :ref:`examples` or
+:ref:`api` sections.
