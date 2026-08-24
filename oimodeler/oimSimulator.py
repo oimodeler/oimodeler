@@ -525,7 +525,7 @@ class oimSimulator:
             axi.autolim()
             axi.margins(x=0)
 
-        if colorbar:
+        if colorbar and "cname" in kwargsData:
             idxC = np.where(oimPlotParamName == kwargsData["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargsData['cunit']:latex_inline}"
@@ -683,7 +683,7 @@ class oimSimulator:
             if axi != axe[-1]:
                 axi.get_xaxis().set_visible(False)
 
-        if colorbar:
+        if colorbar and "cname" in kwargs:
             idxC = np.where(oimPlotParamName == kwargs["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargs['cunit']:latex_inline}"
@@ -911,8 +911,7 @@ class oimSimulator:
                 axe[i].get_xaxis().set_visible(False)
 
         # NOTE: Create a colorbar for the data plotted with wavelength colorscale option
-       
-        if colorbar and cname in kwargsData:
+        if colorbar and "cname" in kwargsData:
             idxC = np.where(oimPlotParamName == kwargsData["cname"])[0][0]
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargsData['cunit']:latex_inline}"
