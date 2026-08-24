@@ -2020,7 +2020,7 @@ def oifitsFlagWithExpression(
 
                 PA = np.tile(pa[:, None], (1, nwl))
                 SPAFREQ = LENGTH / EFF_WAVE
-
+                
                 for colname in data[arri].columns:
                     coldata = data[arri].data[colname.name]
                     s = coldata.shape
@@ -2029,7 +2029,9 @@ def oifitsFlagWithExpression(
                         coldata = np.tile(length[:, None], (1, nwl))
 
                     # TODO: Remove exec here as it is can be security liability
-                    exec(f"{colname.name}=coldata")
+                    #exec(f"{colname.name}=coldata")
+                    globals()[f"{colname.name}"]=coldata
+
 
                 # TODO: Remove eval here as it is can be security liability
                 flags = eval(expr)
@@ -2039,7 +2041,7 @@ def oifitsFlagWithExpression(
                     )
                 else:
                     data[iarr].data["FLAG"] = flags
-
+               
             except:
                 raise Warning(
                     f"oifitsFlagWithExpression: "
