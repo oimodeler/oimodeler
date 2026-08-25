@@ -2027,9 +2027,8 @@ def oifitsFlagWithExpression(
 
                     if len(s) == 1 and s[0] == nB:
                         coldata = np.tile(length[:, None], (1, nwl))
-
-                    # TODO: Remove exec here as it is can be security liability
-                    #exec(f"{colname.name}=coldata")
+                    
+                    #TODO: replace globals by a dict
                     globals()[f"{colname.name}"]=coldata
 
 
