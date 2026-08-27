@@ -107,9 +107,9 @@ class oimParam:
 
             if locals()[k] is not None:
                 v = locals()[k]
-                # TODO: Extend this for error, mini, and maxi?
+                # TODO: Extend this for error, mini, and maxi, too?
                 if k == "value" and isinstance(v, u.Quantity):
-                    setattr(self, "unit", v.unit)
+                    self.unit = v.unit
                     v, skip_unit = v.value, True
 
             elif k in defaults:
@@ -167,7 +167,7 @@ class oimParam:
             try:
                 self.__dict__[key] = value
             except NameError:
-                print("Note valid parameter : {}".format(value))
+                print(f"Note valid parameter : {value}")
 
     def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParam/oimParamInterpolator.
@@ -182,8 +182,13 @@ class oimParam:
             ser = copy.deepcopy(ser)
 
         for key, value in ser.items():
-            if key in ["value", "error", "min", "max"]:
-                value = float(value) if np.isfinite(value) else str(value)
+            if value is None:
+                pass
+            elif key in ["value", "error", "min", "max"]:
+                if isinstance(value, (int, np.integer)):
+                    value = int(value)
+                if isinstance(value, np.floating):
+                    value = float(value) if np.isfinite(value) else str(value)
             elif key == "unit":
                 value = value.to_string()
 
@@ -223,8 +228,8 @@ class oimParam:
                     value = [oimParam.deserialize(v) for v in value]
                 except AttributeError:
                     pass
-            elif key in ["value", "error", "min", "max"]:
-                value = np.float64(value)
+            elif key in ["min", "max"] and value in ["-inf", "inf", "nan"]:
+                value = np.float16(value)
             elif key == "unit":
                 value = u.Unit(value)
 

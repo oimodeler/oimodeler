@@ -375,11 +375,8 @@ def load_toml(toml_file: Path) -> dict[str, Any]:
             else:
                 value["unit"] = u.Unit(value["unit"])
 
-        if "mini" in value:
-            value["mini"] = np.float32(value["mini"])
-
-        if "maxi" in value:
-            value["maxi"] = np.float32(value["maxi"])
+        value["mini"] = np.float16(value.get("mini", "-inf"))
+        value["maxi"] = np.float16(value.get("maxi", "inf"))
 
     return dictionary
 
@@ -2020,17 +2017,16 @@ def oifitsFlagWithExpression(
 
                 PA = np.tile(pa[:, None], (1, nwl))
                 SPAFREQ = LENGTH / EFF_WAVE
-                
+
                 for colname in data[arri].columns:
                     coldata = data[arri].data[colname.name]
                     s = coldata.shape
 
                     if len(s) == 1 and s[0] == nB:
                         coldata = np.tile(length[:, None], (1, nwl))
-                    
-                    #TODO: replace globals by a dict
-                    globals()[f"{colname.name}"]=coldata
 
+                    # TODO: replace globals by a dict
+                    globals()[f"{colname.name}"] = coldata
 
                 # TODO: Remove eval here as it is can be security liability
                 flags = eval(expr)
@@ -2040,7 +2036,7 @@ def oifitsFlagWithExpression(
                     )
                 else:
                     data[iarr].data["FLAG"] = flags
-               
+
             except:
                 raise Warning(
                     f"oifitsFlagWithExpression: "
