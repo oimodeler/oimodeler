@@ -177,10 +177,19 @@ class oimParam:
         skip_copy : bool, optional
             If "True" skips the top-level deepcopy of oimParam. Default is False.
         """
-        if skip_copy:
-            return self.__dict__
+        ser = self.__dict__
+        if not skip_copy:
+            ser = copy.deepcopy(ser)
 
-        return copy.deepcopy(self.__dict__)
+        for key, value in ser.items():
+            if key in ["value", "error", "min", "max"]:
+                value = float(value) if np.isfinite(value) else str(value)
+            elif key == "unit":
+                value = value.to_string()
+
+            ser[key] = value
+
+        return ser
 
     # TODO: Remove this method from this class and implement it in all oimParam... classes?
     # TODO: Make the oimParamNorm link to the correct parameter
@@ -214,6 +223,10 @@ class oimParam:
                     value = [oimParam.deserialize(v) for v in value]
                 except AttributeError:
                     pass
+            elif key in ["value", "error", "min", "max"]:
+                value = np.float64(value)
+            elif key == "unit":
+                value = u.Unit(value)
 
             param.__dict__[key] = value
 
