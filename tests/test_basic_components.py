@@ -4,45 +4,52 @@ Tests for the oimodeler.oimBasicFourierComponents module.
 
 import numpy as np
 import pytest
+from numpy.typing import ArrayLike, NDArray
 
 from oimodeler import oimBasicFourierComponents as oimFComp
 
+# TODO: Test the computation of the flat component etc. as well
+
 
 @pytest.fixture
-def uvcoord() -> np.ndarray:
+def uvcoord() -> ArrayLike:
     """Create a meshgrid of uv coordinates."""
-    ucoord = np.linspace(0, 100, 25)
+    ucoord = np.linspace(0, 100, 25, dtype=np.float32)
     return np.meshgrid(ucoord, ucoord)
 
 
 @pytest.fixture
-def baselines(uvcoord: np.ndarray) -> np.ndarray:
+def baselines(uvcoord: ArrayLike) -> NDArray[np.float32]:
     """Create a baseline grid."""
     return np.hypot(*uvcoord)
 
 
-def test_oimPt_visFunction(uvcoord: np.ndarray, baselines: np.ndarray) -> None:
+def test_oimPt_visFunction(
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
+) -> None:
     """Test the visFunction of the oimPt class."""
     assert oimFComp.oimPt()._visFunction(*uvcoord, baselines, None, None) == 1
 
 
 @pytest.mark.skip(reason="Test not implemented.")
 def test_oimBackground_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimBackground class."""
     oimFComp.oimBackground()
 
 
 @pytest.mark.skip(reason="Test not implemented.")
-def test_oimUD_visFunction(uvcoord: np.ndarray, baselines: np.ndarray) -> None:
+def test_oimUD_visFunction(
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
+) -> None:
     """Test the visFunction of the oimUD class."""
     oimFComp.oimUD()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimEllipse_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimEllipse class."""
     oimFComp.oimEllipse()
@@ -50,7 +57,7 @@ def test_oimEllipse_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimGauss_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimGaussian class."""
     oimFComp.oimGauss()
@@ -58,7 +65,7 @@ def test_oimGauss_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimEGauss_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimEGaussian class."""
     oimFComp.oimEGauss()
@@ -66,7 +73,7 @@ def test_oimEGauss_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimIRing_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimIRing class."""
     oimFComp.oimIRing()
@@ -74,7 +81,7 @@ def test_oimIRing_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimEIring_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimEIring class."""
     oimFComp.oimEIRing()
@@ -82,7 +89,7 @@ def test_oimEIring_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimRing_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimRing class."""
     oimFComp.oimRing()
@@ -90,7 +97,7 @@ def test_oimRing_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimRing2_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimRing2 class."""
     oimFComp.oimRing2()
@@ -98,7 +105,7 @@ def test_oimRing2_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimERing_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimERing class."""
     oimFComp.oimERing()
@@ -106,7 +113,7 @@ def test_oimERing_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimERing2_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimERing2 class."""
     oimFComp.oimERing2()
@@ -114,7 +121,7 @@ def test_oimERing2_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimESKIRing_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimESKIRing class."""
     oimFComp.oimESKIRing()
@@ -122,7 +129,7 @@ def test_oimESKIRing_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimESKRing_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimESKRing class."""
     oimFComp.oimESKRing()
@@ -130,7 +137,7 @@ def test_oimESKRing_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimLorentz_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimLorentz class."""
     oimFComp.oimLorentz()
@@ -138,7 +145,7 @@ def test_oimLorentz_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimELorentz_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimELorentz class."""
     oimFComp.oimELorentz()
@@ -146,7 +153,7 @@ def test_oimELorentz_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimLinearLDD_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimLinearLDD class."""
     oimFComp.oimLinearLDD()
@@ -154,7 +161,7 @@ def test_oimLinearLDD_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimQuadLDD_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimQuadLDD class."""
     oimFComp.oimQuadLDD()
@@ -162,7 +169,7 @@ def test_oimQuadLDD_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimPowerLawLDD_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimPowerLawLDD class."""
     oimFComp.oimPowerLawLDD()
@@ -170,7 +177,7 @@ def test_oimPowerLawLDD_visFunction(
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimSqrtLDD_visFunction(
-    uvcoord: np.ndarray, baselines: np.ndarray
+    uvcoord: ArrayLike, baselines: NDArray[np.float32]
 ) -> None:
     """Test the visFunction of the oimSqrtLDD class."""
     oimFComp.oimSqrtLDD()
@@ -181,7 +188,7 @@ def test_oimSqrtLDD_visFunction(
 @pytest.mark.parametrize("pa2", (0, 45))
 @pytest.mark.parametrize("elong2", (1, 1.5))
 def test_oimConvolutor_visFunction(
-    uvcoord: np.ndarray,
+    uvcoord: ArrayLike,
     pa1: int,
     elong1: float,
     pa2: int,

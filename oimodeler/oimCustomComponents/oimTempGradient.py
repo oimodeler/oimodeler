@@ -17,53 +17,52 @@ class oimTempGrad(oimComponentRadialProfile):
     Parameters
     ----------
     rin : float
-        Inner radius of the disk [au].
+        Inner radius of the disk (au).
     rout : float
-        Outer radius of the disk [au].
+        Outer radius of the disk (au).
     r0 : float
-        Reference radius for power-laws [au].
+        Reference radius for power-laws (au).
     T0 : float
-        Temperature at reference radius r0 [K].
+        Temperature at reference radius r0 (K).
     sigma0 : float
-         Dust surface density at reference radius r0 [M_sun].
+         Dust surface density at reference radius r0 (M_sun).
     Mdust : float
-         Mass of the dusty disk [M_sun].
+         Mass of the dusty disk (M_sun).
     q : float
         Power-law exponent of the temperature profile.
     p : float
         Power-law exponent of the dust surface density profile.
-
     dist : float
-        Distance of the star [pc].
+        Distance of the star (pc).
 
     Attributes
     ----------
     params : dict with keys of str and values of oimParam
         Dictionary of parameters.
     rin : oimParam
-        Inner radius of the disk [au].
+        Inner radius of the disk (au).
     rout : oimParam
-        Outer radius of the disk [au].
+        Outer radius of the disk (au).
     r0 : oimParam
-        Reference radius for power-laws [au].
+        Reference radius for power-laws (au).
     T0 : oimParam
-        Temperature at reference radius r0 [K].
+        Temperature at reference radius r0 (K).
     Tin : float
-        Temperature at inner radius rin [K].
+        Temperature at inner radius rin (K).
     sigma0 : oimParam
-         Dust surface density at reference radius r0 [M_sun].
+         Dust surface density at reference radius r0 (M_sun).
     Mdust : oimParam
-         Mass of the dusty disk [M_sun].
+         Mass of the dusty disk (M_sun).
     q : oimParam
         Power-law exponent of the temperature profile.
     p : oimParam
         Power-law exponent of the dust surface density profile.
     _r : numpy.ndarray
-        Radii [mas].
+        Radii (mas).
     _wl : numpy.ndarray
-        Wavelengths [micron].
+        Wavelengths (m).
     _t : numpy.ndarray
-        Times [second].
+        Times (second).
 
     Methods
     -------
