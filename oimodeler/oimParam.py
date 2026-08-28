@@ -189,7 +189,7 @@ class oimParam:
                     value = int(value)
                 if isinstance(value, np.floating):
                     value = float(value) if np.isfinite(value) else str(value)
-            elif key == "unit":
+            elif key == "unit" and isinstance(value, u.Unit):
                 value = value.to_string()
 
             ser[key] = value
