@@ -59,7 +59,7 @@ def toml_file(tmp_path_factory: Path) -> Path:
         mini = "-inf"
         maxi = "inf"
         description = ""
-        unit = "one"
+        unit = ""
         free = true
         error = 0
         """,

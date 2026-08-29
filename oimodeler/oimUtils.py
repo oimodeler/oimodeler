@@ -369,12 +369,7 @@ def load_toml(toml_file: Path) -> dict[str, Any]:
         dictionary = toml.load(file)
 
     for value in dictionary.values():
-        if "unit" in value:
-            if value["unit"] == "one":
-                value["unit"] = u.one
-            else:
-                value["unit"] = u.Unit(value["unit"])
-
+        value["unit"] = u.Unit(value.get("unit", ""))
         value["mini"] = np.float16(value.get("mini", "-inf"))
         value["maxi"] = np.float16(value.get("maxi", "inf"))
 

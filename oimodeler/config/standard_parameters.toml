@@ -40,7 +40,7 @@ value = 0
 mini = "-inf"
 maxi = "inf"
 description = ""
-unit = "one"
+unit = ""
 free = true
 error = 0
 

@@ -189,8 +189,11 @@ class oimParam:
                     value = int(value)
                 if isinstance(value, np.floating):
                     value = float(value) if np.isfinite(value) else str(value)
-            elif key == "unit" and isinstance(value, u.Unit):
-                value = value.to_string()
+            elif key == "unit":
+                try:
+                    value = value.to_string()
+                except AttributeError:
+                    pass
 
             ser[key] = value
 
@@ -515,7 +518,7 @@ class oimParamInterpolator(oimParam):
 
         for key, value in ser.items():
             if isinstance(value, (list, tuple, np.ndarray)):
-                ser[key] = [
+                value = [
                     v.serialize(skip_copy=True)
                     for v in value
                     if (
@@ -524,8 +527,16 @@ class oimParamInterpolator(oimParam):
                     )
                 ]
             elif isinstance(value, oimParam):
-                ser[key] = value.serialize(skip_copy=True)
+                value = value.serialize(skip_copy=True)
+            elif key == "unit":
+                try:
+                    value = value.to_string()
+                except AttributeError:
+                    pass
 
+            ser[key] = value
+
+        # TODO: Maybe rename this key? Is this JSON safe?
         ser["class"] = type(self).__name__
         return ser
 
