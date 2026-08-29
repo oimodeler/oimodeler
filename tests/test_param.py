@@ -94,6 +94,8 @@ class TestOimParam:
         """Test serialisation of oimParam."""
 
         def test_roundtrip(self, param: oimParam, cycles: int = 5) -> None:
+            """Tests serialisation and deserialisation of the same object
+            for multiple cycles."""
             current = param
             for _ in range(cycles):
                 serialised = current.serialize()
@@ -103,36 +105,54 @@ class TestOimParam:
             assert_param_equal(param, current)
 
         def test_deepcopy(self, param: oimParam) -> None:
+            """Tests serialisation of a deepcopy."""
             serialised = param.serialize()
             serialised["name"] = "modified"
             assert param.name != "modified"
 
         def test_shallow_copy(self, param: oimParam) -> None:
+            """Tests serialisation of a shallow copy."""
             serialised = param.serialize(skip_copy=True)
             serialised["name"] = "modified"
             assert param.name == "modified"
 
 
-# TODO: Finish
 class TestOimParamLinker:
+    """Test serialisation of oimParamLinker."""
 
     class TestSerialisation:
-        def test_roundtrip(self) -> None: ...
 
-        def test_deepcopy(self) -> None: ...
+        @pytest.mark.skip(reason="Test not yet implemented.")
+        def test_roundtrip(self) -> None:
+            """Tests serialisation and deserialisation of the same object
+            for multiple cycles."""
 
-        def test_shallow_copy(self) -> None: ...
+        @pytest.mark.skip(reason="Test not yet implemented.")
+        def test_deepcopy(self) -> None:
+            """Tests serialisation of a deepcopy."""
+
+        @pytest.mark.skip(reason="Test not yet implemented.")
+        def test_shallow_copy(self) -> None:
+            """Tests serialisation of a shallow copy."""
 
 
-# TODO: Finish
 class TestOimParamNorm:
+    """Test serialisation of oimParamNorm."""
 
     class TestSerialisation:
-        def test_roundtrip(self) -> None: ...
 
-        def test_deepcopy(self) -> None: ...
+        @pytest.mark.skip(reason="Test not yet implemented.")
+        def test_roundtrip(self) -> None:
+            """Tests serialisation and deserialisation of the same object
+            for multiple cycles."""
 
-        def test_shallow_copy(self) -> None: ...
+        @pytest.mark.skip(reason="Test not yet implemented.")
+        def test_deepcopy(self) -> None:
+            """Tests serialisation of a deepcopy."""
+
+        @pytest.mark.skip(reason="Test not yet implemented.")
+        def test_shallow_copy(self) -> None:
+            """Tests serialisation of a shallow copy."""
 
 
 class TestOimParamInterpolator:
@@ -163,6 +183,8 @@ class TestOimParamInterpolator:
             star_intp: oimParamInterpolator,
             cycles: int = 5,
         ) -> None:
+            """Tests serialisation and deserialisation of the same object
+            for multiple cycles."""
             for intp in [wl_intp, star_intp]:
                 current = intp
                 for _ in range(cycles):
@@ -177,17 +199,19 @@ class TestOimParamInterpolator:
             star_kwargs: dict[str, float],
             star_intp: oimParamInterpolator,
         ) -> None:
+            """Tests serialisation of a deepcopy."""
             star_intp = copy.deepcopy(star_intp)
             star_intp.serialize()
-            for p_key, value in star_kwargs.items():
-                assert isinstance(star_intp.__dict__[p_key], oimParam)
+            for key in star_kwargs:
+                assert isinstance(star_intp.__dict__[key], oimParam)
 
         def test_shallow_copy(
             self,
             star_kwargs: dict[str, float],
             star_intp: oimParamInterpolator,
         ) -> None:
+            """Tests serialisation of a shallow copy."""
             star_intp = copy.deepcopy(star_intp)
             star_intp.serialize(skip_copy=True)
-            for p_key, value in star_kwargs.items():
-                assert isinstance(star_intp.__dict__[p_key], dict)
+            for key in star_kwargs:
+                assert isinstance(star_intp.__dict__[key], dict)

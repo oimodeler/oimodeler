@@ -122,6 +122,8 @@ class TestOimComponent:
         def test_roundtrip(
             self, fourier_component: oimComponentFourier, cycles: int = 5
         ) -> None:
+            """Tests serialisation and deserialisation of the same object
+            for multiple cycles."""
             current = fourier_component
             for _ in range(cycles):
                 serialised = current.serialize()
@@ -129,6 +131,7 @@ class TestOimComponent:
                 assert_component_equal(fourier_component, current)
 
         def test_deepcopy(self, fourier_component: oimComponent) -> None:
+            """Tests serialisation of a deepcopy."""
             serialised = fourier_component.serialize()
 
             serialised["params"]["x"]["value"] = 999
@@ -139,6 +142,7 @@ class TestOimComponent:
             assert fourier_component.elliptic
 
         def test_shallow_copy(self, fourier_component: oimComponent) -> None:
+            """Tests serialisation of a shallow copy."""
             serialised = fourier_component.serialize(skip_copy=True)
 
             serialised["params"]["x"]["value"] = 999
