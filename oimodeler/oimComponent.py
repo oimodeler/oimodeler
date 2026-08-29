@@ -3,9 +3,7 @@
 
 from __future__ import annotations
 
-import base64
 import copy
-import importlib
 import inspect
 import warnings
 from collections.abc import Callable
@@ -354,36 +352,34 @@ class oimComponent:
             setattr(type(comp), key, prop)
 
         return comp
-    
-    
-    def _fov(self,wl=None,t=None):
+
+    def _fov(self, wl=None, t=None):
         return 0
 
+    def getFOV(self, wl=None, t=None):
 
-    def getFOV(self,wl=None,t=None):
+        fov0 = np.array(self._fov(wl, t)).max()
 
-        fov0 = np.array(self._fov(wl,t)).max()
- 
-        
-        fovX=np.array([-fov0/2,fov0/2])
-        fovY=np.array([-fov0/2,fov0/2])
+        fovX = np.array([-fov0 / 2, fov0 / 2])
+        fovY = np.array([-fov0 / 2, fov0 / 2])
 
-        fovX+=self.params["x"].value
-        fovY+=self.params["y"].value
-        
-        return [*fovX,*fovY]
+        fovX += self.params["x"].value
+        fovY += self.params["y"].value
 
-    def _solidAngle(self,wl=None,t=None):
+        return [*fovX, *fovY]
+
+    def _solidAngle(self, wl=None, t=None):
         return None
 
-    def getSolidAngle(self,wl=None,t=None):
-        sa = self._solidAngle(wl,t)
+    def getSolidAngle(self, wl=None, t=None):
+        sa = self._solidAngle(wl, t)
         try:
             return sa
         except:
-            raise NotImplementedError(f"getSolidAngle not implement for Class {self.__class__.__name__}")
-         
-    
+            raise NotImplementedError(
+                f"getSolidAngle not implement for Class {self.__class__.__name__}"
+            )
+
 
 class oimComponentFourier(oimComponent):
     """Class for all component analytically defined in the Fourier plan.
@@ -583,7 +579,7 @@ class oimComponentImage(oimComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
         self.interpFillValue = 0
 
         # NOTE: In rad
@@ -754,8 +750,11 @@ class oimComponentImage(oimComponent):
             coord = np.transpose(np.array([t_arr, wl_arr, x_arr, y_arr]))
 
             im = interpolate.interpn(
-                grid, im0, coord, bounds_error=False, 
-                fill_value=self.interpFillValue
+                grid,
+                im0,
+                coord,
+                bounds_error=False,
+                fill_value=self.interpFillValue,
             )
             f0 = np.sum(im0)
             f = np.sum(im)
@@ -853,8 +852,9 @@ class oimComponentImage(oimComponent):
             "setPixelSize Method not implemented" " while self._pixSize = None"
         )
 
-    def _fov(self,wl=None,t=None):
-        return self.getPixelSize()*u.rad.to(u.mas)*self.params["dim"].value
+    def _fov(self, wl=None, t=None):
+        return self.getPixelSize() * u.rad.to(u.mas) * self.params["dim"].value
+
 
 class oimComponentRadialProfile(oimComponent):
     """Base class for components define by their radial profile"""
@@ -887,6 +887,7 @@ class oimComponentRadialProfile(oimComponent):
             self.params["pa"] = oimParam(**_standardParameters["pa"])
 
         # NOTE: Add asymmetry
+        # TODO: Properly implement this
         if kwargs.pop("asymmetric", self.asymmetric):
             for i in range(
                 1, kwargs.pop("modulation_order", self.modulation_order) + 1
@@ -963,60 +964,6 @@ class oimComponentRadialProfile(oimComponent):
             res = self._radialProfileFunction(r_arr, wl_arr, t_arr)
         return res
 
-    # TODO: Re-implement this version of the hankel transform
-    # @staticmethod
-    # def fht(Ir, r, wlin, tin, sfreq, wl, t):
-    #     nfreq, nwl = len(sfreq), len(wlin)
-    #     r, Ir = (
-    #         r[np.newaxis, np.newaxis, :, np.newaxis],
-    #         Ir[:, :, :, np.newaxis],
-    #     )
-    #     sfreq = sfreq.reshape(nfreq // nwl, nwl).T[
-    #         np.newaxis, :, np.newaxis, :
-    #     ]
-    #     num_hankel = (
-    #         2.0
-    #         * np.pi
-    #         * integrate.trapezoid(
-    #             r * Ir * j0(2 * np.pi * r * sfreq), r, axis=2
-    #         )
-    #     )
-    #     norm = integrate.trapezoid(2 * np.pi * r * Ir, r, axis=2)
-    #     return (num_hankel / norm).T.reshape(nfreq).astype(complex)
-
-    # TODO: Convert this to non-statimethod for the asymmetric case
-    @staticmethod
-    def hankel(Ir, r, wlin, tin, sfreq, wl, t, precision=None):
-        if precision is None:
-            sfreq0 = np.unique(sfreq)
-        else:
-            sfreq0 = np.linspace(0, np.max(sfreq), num=precision)
-
-        r1D = r[np.newaxis, np.newaxis, :]
-        r2D = r[np.newaxis, np.newaxis, :, np.newaxis]
-        Ir2D = Ir[:, :, :, np.newaxis]
-        sf2D = sfreq0[np.newaxis, np.newaxis, np.newaxis, :]
-
-        res0 = integrate.trapezoid(
-            2.0 * np.pi * r2D * Ir2D * j0(2.0 * np.pi * r2D * sf2D),
-            r2D,
-            axis=2,
-        )
-        flux = 2.0 * np.pi * integrate.trapezoid(r1D * Ir, r1D, axis=2)
-        flux_r = flux[:, :, np.newaxis]
-        res0 = np.nan_to_num(res0 / flux_r, nan=0)
-
-        grid = (tin, wlin, sfreq0)
-        coord = np.transpose([t, wl, sfreq])
-
-        real = interpolate.interpn(
-            grid, np.real(res0), coord, bounds_error=False, fill_value=None
-        )
-        imag = interpolate.interpn(
-            grid, np.imag(res0), coord, bounds_error=False, fill_value=None
-        )
-        return real + imag * 1j, flux
-
     def getImage(self, dim, pixSize, wl=None, t=None):
         wl, t = 0 if wl is None else wl, 0 if t is None else t
         t, wl = np.array(t).flatten(), np.array(wl).flatten()
@@ -1062,11 +1009,8 @@ class oimComponentRadialProfile(oimComponent):
 
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
-
         im = np.nan_to_num(
-            im.reshape(dims)
-            * extfactor[np.newaxis, :, np.newaxis, np.newaxis],
-            nan=0,
+            im.reshape(dims) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
         )
 
         if self.normalizeImage:
@@ -1082,6 +1026,37 @@ class oimComponentRadialProfile(oimComponent):
                         )
 
         return im
+
+    # TODO: Remove non-staticmethod for asymmetric case
+    # TODO: Find a way to have fast computation that computes
+    # directly on the spatial frequencies
+    @staticmethod
+    def hankel(Ir, r, wlin, tin, sfreq, wl, t, precision=None):
+        if precision is None:
+            sfreq0 = np.unique(sfreq)
+        else:
+            sfreq0 = np.linspace(0, np.max(sfreq), num=precision)
+
+        r2D = r[np.newaxis, np.newaxis, :, np.newaxis]
+        Ir2D = Ir[:, :, :, np.newaxis]
+        sf2D = sfreq0[np.newaxis, np.newaxis, np.newaxis, :]
+
+        # HACK: Remove the 0j as soon as this formula is adapted
+        # for non-axissymmetric case
+        res0 = (
+            integrate.trapezoid(
+                2.0 * np.pi * r2D * Ir2D * j0(2.0 * np.pi * r2D * sf2D),
+                r2D,
+                axis=2,
+            )
+            * 1e23
+        ) + 0j
+
+        grid = (tin, wlin, sfreq0)
+        coord = np.transpose([t, wl, sfreq])
+        return interpolate.interpn(
+            grid, res0, coord, bounds_error=False, fill_value=None
+        )
 
     # TODO: Make this work generally with any radial function and a Hankel transform
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
@@ -1112,44 +1087,24 @@ class oimComponentRadialProfile(oimComponent):
                 )
             )
 
-        spf = np.hypot(fxp, fyp)
-
-        # TODO: Implement this for asymmetric models
-        psi = np.arctan2(fyp, fxp) if self.asymmetric else None
-
         wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
         t0 = np.sort(np.unique(t)) if self._t is None else self._t
-
-        Ir = self.getInternalRadialProfile(wl0, t0)
-        vc, ftot = self.hankel(
-            Ir,
+        vc = self.hankel(
+            self.getInternalRadialProfile(wl0, t0),
             self._r * units.mas.to(units.rad),
             wl0,
             t0,
-            spf,
+            np.hypot(fxp, fyp),
             wl,
             t,
             precision=self.precision,
         )
-        nwl0 = np.size(wl0)
-        ftot = ftot.reshape(nwl0)
-        ftot_Jy_interp = np.interp(wl, wl0, ftot * 1e23)
-
-        # HACK: Corrects this for the TempGrad model
-        if "TempGrad" in self.shortname:
-            return (
-                vc
-                * self._ftTranslateFactor(fxp, fyp, wl, t)
-                * ftot_Jy_interp
-                * extfactor
-            )
-        else:
-            return (
-                vc
-                * self._ftTranslateFactor(fxp, fyp, wl, t)
-                * self.params["f"](wl, t)
-                * extfactor
-            )
+        return (
+            vc
+            * self._ftTranslateFactor(fxp, fyp, wl, t)
+            * self.params["f"](wl, t)
+            * extfactor
+        )
 
 
 class oimComponentFitsImage(oimComponentImage):

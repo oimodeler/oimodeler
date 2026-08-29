@@ -16,7 +16,7 @@ from .helpers import assert_model_equal
 class TestSerialisation:
     """Test serialisation of oimModel."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def model(self) -> oimModel:
         """A simple model."""
         return oimModel([oimPt(), oimIRing(d=2)])

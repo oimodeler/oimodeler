@@ -16,12 +16,12 @@ def test_getFourierComponents(): ...
 
 class TestOimComponent:
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def component(self) -> oimComponent:
         """oimComponent with some values."""
         return oimComponent(x=5, y=10, f=0.5)
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def fourier_component(self) -> oimComponentFourier:
         """oimFourierComponent with oimParam adding kwarg."""
         return oimComponentFourier(elliptic=True, extincted=True, A_V=0.9)

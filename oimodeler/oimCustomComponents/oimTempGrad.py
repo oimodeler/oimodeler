@@ -11,8 +11,8 @@ from ..oimUtils import blackbody
 
 
 class oimTempGrad(oimComponentRadialProfile):
-    """A ring defined by a radial temperature profile in r^q and a radial dust
-    surface density profile in r^p.
+    """A ring defined by a radial temperature profile in `r^q` and a radial dust
+    surface density profile in `r^p`.
 
     Parameters
     ----------
@@ -62,7 +62,7 @@ class oimTempGrad(oimComponentRadialProfile):
     _wl : numpy.ndarray
         Wavelengths (m).
     _t : numpy.ndarray
-        Times (second).
+        Times (s).
 
     Methods
     -------
@@ -104,7 +104,6 @@ class oimTempGrad(oimComponentRadialProfile):
                 value=-2,
                 mini=-5,
                 maxi=0,
-                unit=u.one,
                 description="Logarithmic dust surface density at reference radius",
             )
         else:
@@ -119,12 +118,16 @@ class oimTempGrad(oimComponentRadialProfile):
         self.params["q"] = oimParam(
             name="q",
             description="Power-law exponent for the temperature",
-            base="p",
+            mini=-1,
+            maxi=0,
+            base="amp",
         )
         self.params["p"] = oimParam(
             name="p",
             description="Power-law exponent for the dust surface density",
-            base="p",
+            mini=-1,
+            maxi=0,
+            base="amp",
         )
         self.params["kappa_abs"] = oimParam(
             name="kappa_abs",
@@ -133,7 +136,7 @@ class oimTempGrad(oimComponentRadialProfile):
             free=False,
         )
 
-        # TODO: Potentially generalise this for many different contributions
+        # TODO: Potentially generalise this for many different contributions.
         if "kappa_cont" in kwargs:
             self.params["kappa_cont"] = oimParam(
                 name="kappa_cont",
@@ -161,13 +164,14 @@ class oimTempGrad(oimComponentRadialProfile):
         if oimOptions.model.grid.type == "linear":
             return np.linspace(rin, rout, dim)
 
-        return np.logspace(
-            0.0 if rin == 0 else np.log10(rin), np.log10(rout), dim
-        )
+        if rin <= 0:
+            raise ValueError("Logarithmic grid requires rin > 0.")
+
+        return np.logspace(np.log10(rin), np.log10(rout), dim)
 
     @_r.setter
     def _r(self, value: Any) -> None:
-        """Sets the radial profile [mas]."""
+        """Sets the radial profile (mas)."""
 
     @property
     def Tin(self) -> float:
@@ -192,18 +196,18 @@ class oimTempGrad(oimComponentRadialProfile):
         Parameters
         ----------
         r : numpy.ndarray
-            Radial grid [mas].
+            Radial grid (mas).
         wl : numpy.ndarray
-            Wavelengths [m].
+            Wavelengths (m).
         t : numpy.ndarray
-            Times [second].
+            Times (s).
 
         Results
         -------
         radial_profile : numpy.ndarray
         """
-        # HACK: Sets the multi wavelength coordinates properly.
-        # WARNING: Does not account for time, improves computation time.
+        # HACK: Sets the multi wavelength coordinates properly and improves computation time.
+        # WARNING: Does not account for the time dimension.
         wl = np.unique(wl)
         dist = self.dist.value
         kappa_abs = self.kappa_abs(wl, t)
@@ -212,10 +216,7 @@ class oimTempGrad(oimComponentRadialProfile):
             kappa_cont = self.kappa_cont(wl, t)
             kappa_abs = (1 - ratio) * kappa_abs + ratio * kappa_cont
 
-        if self.flat:
-            elong = 1 / self.cosi.value
-        else:
-            elong = self.elong.value
+        elong = 1 / self.cosi.value if self.flat else self.elong.value
 
         # HACK: Adding the correct dimensions to the radial grid, wavelength array and opacity table
         if len(r.shape) == 3:
@@ -234,6 +235,8 @@ class oimTempGrad(oimComponentRadialProfile):
             rout_cm = self.rout.qty(wl, t).to(u.cm).value
             r0_cm = self.r0.qty(wl, t).to(u.cm).value
             dust_mass = self.Mdust.qty(wl, t).to(u.g).value
+
+            # TODO: Check if the np.isclose is actually correct?
             if np.isclose(p, -2, rtol=1e-2):
                 sigma0 = dust_mass / (
                     2.0 * np.pi * np.log(rout_cm / rin_cm) * r0_cm**2
@@ -253,7 +256,9 @@ class oimTempGrad(oimComponentRadialProfile):
             blackbody(temp, const.c / wl) * emissivity * (1 / elong)
         )
         rin_mas, rout_mas = rin / dist * 1e3, rout / dist * 1e3
-        image = ((r > rin_mas) & (r < rout_mas)).astype(int) * spectral_density
+        image = ((r >= rin_mas) & (r <= rout_mas)).astype(
+            int
+        ) * spectral_density
         if len(r.shape) == 3:
             return image
 

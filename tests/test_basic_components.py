@@ -11,14 +11,14 @@ from oimodeler import oimBasicFourierComponents as oimFComp
 # TODO: Test the computation of the flat component etc. as well
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def uvcoord() -> ArrayLike:
     """Create a meshgrid of uv coordinates."""
     ucoord = np.linspace(0, 100, 25, dtype=np.float32)
     return np.meshgrid(ucoord, ucoord)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def baselines(uvcoord: ArrayLike) -> NDArray[np.float32]:
     """Create a baseline grid."""
     return np.hypot(*uvcoord)

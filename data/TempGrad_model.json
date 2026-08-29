@@ -130,23 +130,23 @@
      },
      "elong": {
       "name": "elong",
-      "value": 2.5117382707232916,
+      "value": 2.5123019579326464,
       "min": 1,
       "max": 5,
       "description": "Elongation Ratio",
       "unit": "",
       "free": true,
-      "error": 0.08642986150311716
+      "error": 0.08735257719042555
      },
      "pa": {
       "name": "pa",
-      "value": 72.50045548626969,
+      "value": 72.52114779136605,
       "min": 0,
       "max": 180,
       "description": "Major-axis Position angle",
       "unit": "deg",
       "free": true,
-      "error": 0.6279360497879622
+      "error": 0.6226153807451098
      },
      "dim": {
       "name": "dim",
@@ -200,33 +200,33 @@
      },
      "Mdust": {
       "name": "Mdust",
-      "value": 3.3954611282470453e-08,
+      "value": 3.412703968363078e-08,
       "min": 6e-09,
       "max": 6e-08,
       "description": "Mass of the dusty disk",
       "unit": "solMass",
       "free": true,
-      "error": 1.8846893682255776e-09
+      "error": 1.950554856049334e-09
      },
      "q": {
       "name": "q",
-      "value": -0.4491623662780261,
+      "value": -0.4493209018837913,
       "min": -1,
       "max": 0,
       "description": "Power-law exponent for the temperature",
       "unit": "",
       "free": true,
-      "error": 0.0029943250031587154
+      "error": 0.0030372815172059198
      },
      "p": {
       "name": "p",
-      "value": -0.5862271641151426,
+      "value": -0.5841548005057318,
       "min": -1.5,
       "max": -0.5,
       "description": "Power-law exponent for the dust surface density",
       "unit": "",
       "free": true,
-      "error": 0.015565204182819425
+      "error": 0.015974559623383677
      },
      "kappa_abs": {
       "name": "kappa_abs",

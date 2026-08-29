@@ -46,7 +46,7 @@ def data(oifits_files: list[Path]) -> oimData:
     return oimData(oifits_files)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def toml_file(tmp_path_factory: Path) -> Path:
     """Create a temp TOML file that gets cleaned up automatically."""
     tmp_dir = tmp_path_factory.mktemp("data")
@@ -149,7 +149,7 @@ class TestComputations:
 class TestImageOperations:
     """Tests image altering functions of the oimUtils module."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def image(self) -> np.ndarray:
         """An image with only "hot" pixels."""
         return np.ones((1, 1, 8, 8))
@@ -192,7 +192,7 @@ class TestImageOperations:
 class TestOIFITSOperations:
     """Tests readout functions contained in the oimUtils module."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def oifits_inputs(
         self, oifits_files: list[Path], data: oimData
     ) -> list[Path | fits.HDUList]:

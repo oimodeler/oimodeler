@@ -111,12 +111,6 @@ name = "mjd"
 description = "MJD"
 unit = "day"
 
-[p]
-name = "pow"
-description = "Power exponent"
-mini = -1
-maxi = 0
-
 [pa]
 name = "pa"
 description = "Major-axis Position angle"

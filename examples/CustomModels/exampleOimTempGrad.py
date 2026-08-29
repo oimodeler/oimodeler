@@ -115,7 +115,8 @@ data.info()
 
 # %%
 
-# NOTE: Radial grid of the model can be set to 'linear' or 'logarithmic'
+# NOTE: Radial grid of the model can be set to 'linear' or 'logarithmic'.
+# The default is "logarithmic".
 oim.oimOptions.model.grid.type = "logarithmic"
 
 # NOTE: The padding of the 1D-grid can be set (Multiplies to outer radius at
@@ -275,17 +276,19 @@ fit.run(nsteps=5000, progress=True)
 best, err_l, err_u, err = fit.getResults(
     mode="median", discard=2000, chi2limfact=3
 )
-fit.printResults(mode="best", format=".2e", discard=2000)
+fit.printResults(mode="median", format=".2e", discard=2000)
 
 with open(path / "data" / "TempGrad_model.json", "w") as f:
     json.dump(model.serialize(), f, indent=True)
 
 # NOTE: Plot the walkers path and make the corner plot
-figWalkers, axeWalkers = fit.walkersPlot(savefig="ExampleTempGrad_walkers.png")
+figWalkers, axeWalkers = fit.walkersPlot(
+    savefig=save_dir / "ExampleTempGrad_walkers.png"
+)
 figCorner, axeCorner = fit.cornerPlot(
     discard=2000,
     chi2limfact=3,
-    savefig="ExampleTempGrad_corner.png",
+    savefig=save_dir / "ExampleTempGrad_corner.png",
 )
 plt.close()
 
@@ -351,5 +354,7 @@ model.showModel(
 ax[1].get_yaxis().set_visible(False)
 ax[0].set_title(r"$\lambda = 3.5~\mu$m")
 ax[1].set_title(r"$\lambda = 10.5~\mu$m")
-plt.savefig(save_dir / "ExampleTempGrad_model.png", format="png", dpi=300)
+plt.savefig(
+    save_dir / "ExampleTempGrad_model_fitted.png", format="png", dpi=300
+)
 plt.close()
