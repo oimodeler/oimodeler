@@ -864,7 +864,7 @@ class oimComponentRadialProfile(oimComponent):
     elliptic = False
     extincted = False
     flat = False
-    modulation_order = 1
+    modulation_order = 0
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -872,7 +872,8 @@ class oimComponentRadialProfile(oimComponent):
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._t = [0]  # This component is static
         self.normalizeImage = True
-        self.precision = None  # Precision for the Hankel transform
+
+        self.params["dim"] = oimParam(base="dim")
 
         # NOTE: Add ellipticity if either elong or pa is specified in kwargs
         if any(x in kwargs for x in ["cosi", "elong", "pa"]) or kwargs.pop(
@@ -881,22 +882,22 @@ class oimComponentRadialProfile(oimComponent):
             self.elliptic = True
             if "cosi" in kwargs or kwargs.pop("flat", self.flat):
                 self.flat = True
-                self.params["cosi"] = oimParam(**_standardParameters["cosi"])
+                self.params["cosi"] = oimParam(base="cosi")
             else:
-                self.params["elong"] = oimParam(**_standardParameters["elong"])
+                self.params["elong"] = oimParam(base="elong")
 
-            self.params["pa"] = oimParam(**_standardParameters["pa"])
+            self.params["pa"] = oimParam(base="pa")
 
         # NOTE: Add asymmetry
-        # TODO: Properly implement this
-        if kwargs.pop("asymmetric", self.asymmetric):
-            for i in range(
-                1, kwargs.pop("modulation_order", self.modulation_order) + 1
-            ):
-                self.params[f"skw{i}"] = oimParam(**_standardParameters["skw"])
-                self.params[f"skwPa{i}"] = oimParam(
-                    **_standardParameters["skwPa"]
-                )
+        if (
+            kwargs.pop("asymmetric", self.asymmetric)
+            or "modulation_order" in kwargs
+        ):
+            self.asymmetric = True
+            self.modulation_order = kwargs.pop("modulation_order", 1)
+            for i in range(1, self.modulation_order + 1):
+                self.params[f"skw{i}"] = oimParam(base="skw")
+                self.params[f"skwPa{i}"] = oimParam(base="skwPa")
 
         # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
         if "extlaw" in kwargs or kwargs.get("extincted", False):
@@ -915,7 +916,6 @@ class oimComponentRadialProfile(oimComponent):
                 "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
             )
 
-        self.params["dim"] = oimParam(**_standardParameters["dim"])
         self._eval(**kwargs, checkParam=False)
 
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
@@ -1028,94 +1028,66 @@ class oimComponentRadialProfile(oimComponent):
 
         return im
 
-    # TODO: Remove non-staticmethod for asymmetric case
-    # TODO: Improve computation speed.
-    # TODO: Directly compute on the spatial frequencies for
-    # greater accuracy. Becomes important in multi-component
-    # case
-    @staticmethod
     def hankel(
-        Ir: NDArray[np.float64],
+        self,
         r: NDArray[np.float64],
-        wlin: NDArray[np.float64],
-        tin: NDArray[np.float64],
-        sfreq: NDArray[np.float64],
         wl: NDArray[np.float64],
         t: NDArray[np.float64],
-        precision: int | None = None,
-    ):
-        """Compute the zeroth-order Hankel transform of the radial intensity.
-
-        The transform is evaluated as
-
-            H(f) = ∫ 2π r I(r) J₀(2π r f) dr,
-
-        where ``J₀`` is the zeroth-order Bessel function of the first kind.
-        The result is then interpolated from the input ``(tin, wlin, sfreq)``
-        grid to the requested ``(t, wl, sfreq)`` coordinates.
+        ucoord: NDArray[np.float64],
+        vcoord: NDArray[np.float64],
+    ) -> NDArray[np.complex128]:
+        """Computes the nth-order Hankel transform of the radial intensity.
 
         Parameters
         ----------
-        Ir : NDArray[np.float64]
-            Radial intensity values with shape ``(nt, nwl, nr)``, sampled on
-            the ``(tin, wlin, r)`` grid.
         r : NDArray[np.float64]
-            Radial coordinate values with shape ``(nr)``. Used as the
-            integration coordinate for the Hankel transform.
-        wlin : NDArray[np.float64]
-            Wavelength values of the input grid with shape ``(nwl)``.
-        tin : NDArray[np.float64]
-            Time values of the input grid with shape ``(nt)``.
-        sfreq : NDArray[np.float64]
-            Spatial frequencies at which the result is requested. Duplicate
-            values are evaluated only once. If ``precision`` is specified,
-            the transform is instead evaluated on a uniformly spaced spatial
-            frequency grid.
+            Radius (mas).
         wl : NDArray[np.float64]
-            Wavelength values at which the result is requested.
+            Wavelength (m).
         t : NDArray[np.float64]
-            Time values at which the result is requested.
-        precision : int or None, optional
-            Number of uniformly spaced spatial-frequency samples used for the
-            Hankel transform. If ``None``, the transform is evaluated at the
-            unique values in ``sfreq``. Defaults to ``None``.
+            Time (s).
+        ucoord : NDArray[np.float64]
+            The u coord.
+        vcoord : NDArray[np.float64]
+            The v coord.
 
         Returns
         -------
         NDArray[np.complex128]
-            Hankel-transformed intensity evaluated at the requested
-            ``(t, wl, sfreq)`` coordinates.
+            The complex coherent flux.
 
         Notes
         -----
-        The input radial grid ``r`` may be non-uniform. Integration is
-        performed using a manual implementation of the trapezoidal rule
-        to enable matrix multiplication for faster computation.
-
-        The output is scaled by ``1e23`` to return complex coherent flux.
+        Integration is performed using a manual implementation of
+        the trapezoidal rule to enable matrix multiplication.
+        This improves performance.
         """
-        if precision is None:
-            sfreq0 = np.unique(sfreq)
-        else:
-            sfreq0 = np.linspace(0, np.max(sfreq), num=precision)
+        # TODO: Move the below 3-4 lines into ``oimData`` to avoid
+        # continued computation?
+        wl0, wl_idx = np.unique(wl, return_inverse=True)
+        t0, t_idx = np.unique(t, return_inverse=True)
+        sfreq0, sfreq_idx = np.unique(
+            np.hypot(ucoord, vcoord), return_inverse=True
+        )
 
-        # TODO: Check if this is correct for multiple t dimensions
-        (nt, nwl, nr), dr = Ir.shape, np.diff(r)
+        Ir0 = self.getInternalRadialProfile(wl0, t0)
+        nt0, dr = Ir0.shape[0], np.diff(r)
+
         w = np.array([dr[0], *(dr[1:] + dr[:-1]), dr[-1]]) / 2.0
-        kernel = (2.0 * np.pi * r * w)[:, None] * j0(
-            2.0 * np.pi * r[:, None] * sfreq0[None, :]
-        )
-        res0 = (Ir.reshape(nt * nwl, nr) @ kernel).reshape(nt, nwl, -1)
 
-        # HACK: Remove the 0j as soon as this formula is adapted
-        # for non-axissymmetric case
-        res0 = res0 * 1e23 + 0j
+        kr = 2.0 * np.pi * r[:, np.newaxis] * sfreq0[np.newaxis, :]
+        kernel = (2.0 * np.pi * r * w)[:, np.newaxis] * j0(kr) + 0j
 
-        grid = (tin, wlin, sfreq0)
-        coord = np.transpose([t, wl, sfreq])
-        return interpolate.interpn(
-            grid, res0, coord, bounds_error=False, fill_value=None
-        )
+        # TODO: Grid is overcomputed: (nwl * nuv) > (nwl * nsfreq)
+        res0 = Ir0 @ kernel
+
+        if nt0 == 1:
+            res = res0[0, wl_idx, sfreq_idx]
+        else:
+            # FIXME: Check if this is correct for ``nt0 != 1``
+            res = res0[t_idx, wl_idx, sfreq_idx]
+
+        return res * 1e23
 
     # TODO: Make this work generally with any radial function and a Hankel transform
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
@@ -1146,20 +1118,8 @@ class oimComponentRadialProfile(oimComponent):
                 )
             )
 
-        wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
-        t0 = np.sort(np.unique(t)) if self._t is None else self._t
-        vc = self.hankel(
-            self.getInternalRadialProfile(wl0, t0),
-            self._r * units.mas.to(units.rad),
-            wl0,
-            t0,
-            np.hypot(fxp, fyp),
-            wl,
-            t,
-            precision=self.precision,
-        )
         return (
-            vc
+            self.hankel(self._r * units.mas.to(units.rad), wl, t, fxp, fyp)
             * self._ftTranslateFactor(fxp, fyp, wl, t)
             * self.params["f"](wl, t)
             * extfactor

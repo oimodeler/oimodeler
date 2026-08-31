@@ -2,6 +2,7 @@ from typing import Any
 
 import astropy.units as u
 import numpy as np
+from numpy.typing import NDArray
 
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import constants as const
@@ -181,15 +182,18 @@ class oimTempGrad(oimComponentRadialProfile):
         return self.T0.value * (rin_mas / r0_mas) ** self.q.value
 
     @Tin.setter
-    def Tin(self, value: Any) -> None:
+    def Tin(self, value: float) -> None:
         """Sets the reference temperature from that at the inner radius."""
         r0_mas = self.r0.value / self.dist.value * 1e3
         rin_mas = self.rin.value / self.dist.value * 1e3
         self.T0.value = value * (rin_mas / r0_mas) ** -self.q.value
 
     def _radialProfileFunction(
-        self, r: np.ndarray, wl: np.ndarray, t: np.ndarray
-    ) -> np.ndarray:
+        self,
+        r: NDArray[np.float64],
+        wl: NDArray[np.float64],
+        t: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
         """Calculates a radial temperature gradient profile via a dust-surface
         density- and temperature profile.
 
@@ -205,31 +209,20 @@ class oimTempGrad(oimComponentRadialProfile):
         Results
         -------
         radial_profile : numpy.ndarray
+
+        Notes
+        -----
+        This ``radialProfile`` is time independent.
         """
-        # HACK: Sets the multi wavelength coordinates properly and improves computation time.
-        # WARNING: Does not account for the time dimension.
-        wl = np.unique(wl)
         dist = self.dist.value
-        kappa_abs = self.kappa_abs(wl, t)
+        kappa_abs, p = self.kappa_abs(wl, t), self.p(wl, t)
         if "kappa_cont" in self.params:
             ratio = self.kappa_ratio.value
             kappa_cont = self.kappa_cont(wl, t)
             kappa_abs = (1 - ratio) * kappa_abs + ratio * kappa_cont
 
         elong = 1 / self.cosi.value if self.flat else self.elong.value
-
-        # HACK: Adding the correct dimensions to the radial grid, wavelength array and opacity table
-        if len(r.shape) == 3:
-            r = r[0, 0][np.newaxis, np.newaxis, :]
-            wl = wl[np.newaxis, :, np.newaxis]
-            kappa_abs = kappa_abs[np.newaxis, :, np.newaxis]
-        else:
-            r = r[np.newaxis, :]
-            wl = wl[:, np.newaxis]
-            kappa_abs = kappa_abs[:, np.newaxis]
-
         rin, rout, r0 = self.rin(wl, t), self.rout(wl, t), self.r0(wl, t)
-        p = self.p(wl, t)
         if self.compute_sigma0:
             rin_cm = self.rin.qty(wl, t).to(u.cm).value
             rout_cm = self.rout.qty(wl, t).to(u.cm).value
@@ -256,10 +249,4 @@ class oimTempGrad(oimComponentRadialProfile):
             blackbody(temp, const.c / wl) * emissivity * (1 / elong)
         )
         rin_mas, rout_mas = rin / dist * 1e3, rout / dist * 1e3
-        image = ((r >= rin_mas) & (r <= rout_mas)).astype(
-            int
-        ) * spectral_density
-        if len(r.shape) == 3:
-            return image
-
-        return image
+        return ((r >= rin_mas) & (r <= rout_mas)) * spectral_density

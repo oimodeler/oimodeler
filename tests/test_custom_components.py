@@ -163,8 +163,6 @@ class TestOimTempGrad:
         assert np.allclose(vis_temp_grad, vis)
 
     # NOTE: For more than one disc, dim of >= 2**10 is required
-    # NOTE: This dataset contains ~260 datapoints, so precision of
-    # 256 is sufficient
     @pytest.mark.slow
     @pytest.mark.parametrize("dim", (1024, 2048))
     @pytest.mark.parametrize(
@@ -192,7 +190,6 @@ class TestOimTempGrad:
             flat=True,
             **comp_kwargs,
         )
-        tg.precision = 256
         tg.rin.free = tg.rout.free = tg.T0.free = False
         model = oimModel([star, tg])
 

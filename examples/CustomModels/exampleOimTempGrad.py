@@ -157,14 +157,6 @@ Tin = tg.Tin
 tg.Tin = Tin
 print(f"Tin: {Tin} K")
 
-# NOTE: Set the number of spatial frequency elements at which the Hankel transform will be computed.
-# If not specified, the Hankel Transform will be computed for all the spatial frequencies of the data (usually slower).
-tg.precision = 256
-
-# NOTE: (OPTIONAL) Uncomment the following two lines if you want to set manually the model wavelengths to be fitted (to speed up fitting process).
-# tg._wl = np.array([3.0e-6,3.5e-6,4.0e-6,8.0e-6,10.e-6,13e-6])
-# s._wl = tg._wl
-
 # NOTE: Model creation
 model = oim.oimModel([s, tg])
 
