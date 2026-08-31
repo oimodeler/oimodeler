@@ -15,8 +15,8 @@ import numpy as np
 from astropy import units
 from astropy.io import fits
 from numpy.typing import NDArray
-from scipy import integrate, interpolate
-from scipy.special import j0
+from scipy import interpolate
+from scipy.special import j0, jv
 
 from . import __dict__ as oimDict
 from .oimExtinction import extlaw_FitzIndeb as extlaw
@@ -38,6 +38,19 @@ from .oimUtils import (
     getWlFromFitsImageCube,
     pad_image,
 )
+
+EXEMPTED_KEYS: list[str] = [
+    "asymmetric",
+    "compute_sigma0",
+    "cosi",
+    "elliptic",
+    "elong",
+    "extlaw",
+    "extincted",
+    "flat",
+    "modulation",
+    "pa",
+]
 
 
 # TODO: Move somewhere else
@@ -192,19 +205,8 @@ class oimComponent:
                         self.params[key].value = value.value
                         self.params[key].unit = value.unit
 
-            elif checkParam:
-                if key not in [
-                    "pa",
-                    "elong",
-                    "cosi",
-                    "elliptic",
-                    "flat",
-                    "extlaw",
-                    "extincted",
-                ]:
-                    warnings.warn(
-                        f"{key} not a parameter of {self.name}: ignored"
-                    )
+            elif checkParam and key not in EXEMPTED_KEYS:
+                warnings.warn(f"{key} not a parameter of {self.name}: ignored")
 
         for key in self.params.keys():
             prop = property(
@@ -864,7 +866,6 @@ class oimComponentRadialProfile(oimComponent):
     elliptic = False
     extincted = False
     flat = False
-    modulation_order = 0
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -889,13 +890,10 @@ class oimComponentRadialProfile(oimComponent):
             self.params["pa"] = oimParam(base="pa")
 
         # NOTE: Add asymmetry
-        if (
-            kwargs.pop("asymmetric", self.asymmetric)
-            or "modulation_order" in kwargs
-        ):
+        if kwargs.pop("asymmetric", self.asymmetric) or "modulation" in kwargs:
             self.asymmetric = True
-            self.modulation_order = kwargs.pop("modulation_order", 1)
-            for i in range(1, self.modulation_order + 1):
+            self.modulation = kwargs.pop("modulation", 1)
+            for i in range(1, self.modulation + 1):
                 self.params[f"skw{i}"] = oimParam(base="skw")
                 self.params[f"skwPa{i}"] = oimParam(base="skwPa")
 
@@ -925,12 +923,7 @@ class oimComponentRadialProfile(oimComponent):
 
         if self._r is None:
             pix = self._pixSize * units.rad.to(units.mas)
-            r = (
-                np.linspace(
-                    0, self.params["dim"].value - 1, self.params["dim"].value
-                )
-                * pix
-            )
+            r = np.linspace(0, self.dim.value - 1, self.dim.value) * pix
         else:
             r = self._r
 
@@ -986,18 +979,15 @@ class oimComponentRadialProfile(oimComponent):
 
         x_arr, y_arr = self._directTranslate(x_arr, y_arr, wl_arr, t_arr)
         if self.elliptic:
-            pa_rad = (self.params["pa"](wl_arr, t_arr)) * self.params[
-                "pa"
-            ].unit.to(units.rad)
-
+            pa_rad = self.pa.qty(wl_arr, t_arr).to(units.rad).value
             xp = x_arr * np.cos(pa_rad) - y_arr * np.sin(pa_rad)
             yp = x_arr * np.sin(pa_rad) + y_arr * np.cos(pa_rad)
 
             y_arr = yp
             if self.flat:
-                x_arr = xp / self.params["cosi"](wl_arr, t_arr)
+                x_arr = xp / self.cosi(wl_arr, t_arr)
             else:
-                x_arr = xp * self.params["elong"](wl_arr, t_arr)
+                x_arr = xp * self.elong(wl_arr, t_arr)
 
         extfactor = np.array([1.0])
         if self.extincted:
@@ -1021,9 +1011,7 @@ class oimComponentRadialProfile(oimComponent):
                 for iwl, wli in enumerate(wl):
                     if tot[it, iwl] != 0:
                         im[it, iwl, :, :] = (
-                            im[it, iwl, :, :]
-                            / tot[it, iwl]
-                            * self.params["f"](wli, ti)
+                            im[it, iwl, :, :] / tot[it, iwl] * self.f(wli, ti)
                         )
 
         return im
@@ -1041,15 +1029,15 @@ class oimComponentRadialProfile(oimComponent):
         Parameters
         ----------
         r : NDArray[np.float64]
-            Radius (mas).
+            Radius (rad).
         wl : NDArray[np.float64]
             Wavelength (m).
         t : NDArray[np.float64]
             Time (s).
         ucoord : NDArray[np.float64]
-            The u coord.
+            The u coord (Mλ).
         vcoord : NDArray[np.float64]
-            The v coord.
+            The v coord (Mλ).
 
         Returns
         -------
@@ -1062,32 +1050,40 @@ class oimComponentRadialProfile(oimComponent):
         the trapezoidal rule to enable matrix multiplication.
         This improves performance.
         """
-        # TODO: Move the below 3-4 lines into ``oimData`` to avoid
-        # continued computation?
+        # TODO: Performance: Move the `np.unique` lines into ``oimData``
         wl0, wl_idx = np.unique(wl, return_inverse=True)
         t0, t_idx = np.unique(t, return_inverse=True)
-        sfreq0, sfreq_idx = np.unique(
-            np.hypot(ucoord, vcoord), return_inverse=True
+        sfreq0, sfreq0_idx, sfreq_idx = np.unique(
+            np.hypot(ucoord, vcoord),
+            return_index=True,
+            return_inverse=True,
         )
 
         Ir0 = self.getInternalRadialProfile(wl0, t0)
-        nt0, dr = Ir0.shape[0], np.diff(r)
-
-        w = np.array([dr[0], *(dr[1:] + dr[:-1]), dr[-1]]) / 2.0
-
         kr = 2.0 * np.pi * r[:, np.newaxis] * sfreq0[np.newaxis, :]
-        kernel = (2.0 * np.pi * r * w)[:, np.newaxis] * j0(kr) + 0j
+        kernel = j0(kr)
+
+        # FIXME: Not yet tested
+        if self.asymmetric:
+            psi = np.arctan2(ucoord[sfreq0_idx], vcoord[sfreq0_idx])
+            for i in range(1, self.modulation + 1):
+                skwi = getattr(self, f"skw{i}")(wl, t)
+                skwPai = getattr(self, f"skwPa{i}").qty(wl, t).to(u.rad).value
+                kernel += (
+                    (-1j) ** i * skwi * np.cos(i * (psi - skwPai)) * jv(i, kr)
+                )
+
+        kernel *= 2 * np.pi * (r * np.gradient(r))[:, np.newaxis]
 
         # TODO: Grid is overcomputed: (nwl * nuv) > (nwl * nsfreq)
         res0 = Ir0 @ kernel
-
-        if nt0 == 1:
+        if Ir0.shape[0] == 1:
             res = res0[0, wl_idx, sfreq_idx]
+        # FIXME: Test if correct for ``(Ir0.shape[0] = nt0) != 1``
         else:
-            # FIXME: Check if this is correct for ``nt0 != 1``
             res = res0[t_idx, wl_idx, sfreq_idx]
 
-        return res * 1e23
+        return res * 1e23 + 0j
 
     # TODO: Make this work generally with any radial function and a Hankel transform
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
@@ -1097,17 +1093,15 @@ class oimComponentRadialProfile(oimComponent):
 
         fxp, fyp = ucoord, vcoord
         if self.elliptic:
-            pa_rad = (self.params["pa"](wl, t)) * self.params["pa"].unit.to(
-                units.rad
-            )
+            pa_rad = self.pa.qty(wl, t).to(units.rad).value
             co, si = np.cos(pa_rad), np.sin(pa_rad)
             fxp = ucoord * co - vcoord * si
             fyp = ucoord * si + vcoord * co
 
             if self.flat:
-                fxp *= self.params["cosi"](wl, t)
+                fxp *= self.cosi(wl, t)
             else:
-                fxp /= self.params["elong"](wl, t)
+                fxp /= self.elong(wl, t)
 
         extfactor = 1.0
         if self.extincted:
@@ -1121,7 +1115,7 @@ class oimComponentRadialProfile(oimComponent):
         return (
             self.hankel(self._r * units.mas.to(units.rad), wl, t, fxp, fyp)
             * self._ftTranslateFactor(fxp, fyp, wl, t)
-            * self.params["f"](wl, t)
+            * self.f(wl, t)
             * extfactor
         )
 

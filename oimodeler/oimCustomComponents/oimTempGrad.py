@@ -229,7 +229,7 @@ class oimTempGrad(oimComponentRadialProfile):
             r0_cm = self.r0.qty(wl, t).to(u.cm).value
             dust_mass = self.Mdust.qty(wl, t).to(u.g).value
 
-            # TODO: Check if the np.isclose is actually correct?
+            # FIXME: Check if the np.isclose is actually correct?
             if np.isclose(p, -2, rtol=1e-2):
                 sigma0 = dust_mass / (
                     2.0 * np.pi * np.log(rout_cm / rin_cm) * r0_cm**2

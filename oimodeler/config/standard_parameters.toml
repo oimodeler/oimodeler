@@ -144,6 +144,7 @@ mini = 0
 
 [skw]
 name = "skw"
+value = 1
 description = "Skewedness"
 mini = 0
 maxi = 1

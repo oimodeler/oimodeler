@@ -22,7 +22,6 @@ def assert_param_equal(original: oimParam, restored: oimParam) -> bool:
         if key in ["value", "error"]:
             value_res = pytest.approx(value_res)
 
-        breakpoint()
         results.append(value_org == value_res)
 
     result = all(results)

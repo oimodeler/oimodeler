@@ -2,6 +2,7 @@
 Tests for the oimodeler.oimModel module.
 """
 
+import copy
 import json
 from pathlib import Path
 
@@ -37,9 +38,10 @@ class TestSerialisation:
 
     def test_shallow_copy(self, model: oimModel) -> None:
         """Tests serialisation of a shallow copy."""
-        serialised = model.serialize(skip_copy=True)
+        tmp_model = copy.deepcopy(model)
+        serialised = tmp_model.serialize(skip_copy=True)
         serialised["components"][0][1]["params"]["x"]["value"] = 999
-        assert model.components[0].x.value == 999
+        assert tmp_model.components[0].x.value == 999
 
     def test_json_serialisation(
         self, model: oimModel, tmp_path_factory: Path
