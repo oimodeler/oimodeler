@@ -4,6 +4,7 @@ Tests for the oimodeler.oimDataFilter module.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 import copy
 from pathlib import Path
 
@@ -591,22 +592,22 @@ class TestErrorFilters:
         oimDataFilter.oimSetMinErrFilter class."""
 
         @pytest.mark.parametrize(
-            "dataTypes,values",
+            "dataTypes,values,threshold",
             (
-                [["VISAMP"], [5]],
-                [["VISAMP"], [10]],
-                [["VISPHI"], [5]],
-                [["VISPHI"], [10]],
-                [["VIS2DATA"], [5]],
-                [["VIS2DATA"], [10]],
-                [["T3PHI"], [5]],
-                [["T3PHI"], [10]],
-                [["VISAMP", "T3PHI"], [5, 5]],
-                [["VISAMP", "T3PHI"], [10, 10]],
-                [["T3AMP"], [5]],
-                [["T3AMP"], [10]],
-                [["T3PHI", "T3AMP"], [5, 5]],
-                [["T3PHI", "T3AMP"], [10, 10]],
+                [["VISAMP"], [5], None],
+                [["VISAMP"], [10], [None]],
+                [["VISPHI"], [5], None],
+                [["VISPHI"], [10], None],
+                [["VIS2DATA"], [5], None],
+                [["VIS2DATA"], [10], None],
+                [["T3PHI"], [5], None],
+                [["T3PHI"], [10], None],
+                [["VISAMP", "T3PHI"], [5, 5], None],
+                [["VISAMP", "T3PHI"], [10, 10], [0.2, None]],
+                [["T3AMP"], [5], None],
+                [["T3AMP"], [10], None],
+                [["T3PHI", "T3AMP"], [5, 5], [None, None]],
+                [["T3PHI", "T3AMP"], [10, 10], None],
             ),
         )
         def test_setMinimumError(
@@ -614,77 +615,105 @@ class TestErrorFilters:
             data: oimData,
             dataTypes: list[str],
             values: list[float],
+            threshold: float | list[float | None] | None,
         ) -> None:
             """Tests the oimUtils.oimSetMiniumError function."""
+            if not isinstance(threshold, Iterable):
+                limits = [threshold]
+            else:
+                limits = threshold.copy()
+
+            if limits is None or limits == [None]:
+                limits = [None] * len(dataTypes)
+
             for hdul in copy.deepcopy(data).data:
-                utils.setMinimumError(hdul, dataTypes, values)
+                utils.setMinimumError(hdul, dataTypes, values, threshold)
                 oif = oifits.open(copy.deepcopy(hdul), quiet=True)
-                for column, value in zip(dataTypes, values):
+                for column, value, limit in zip(dataTypes, values, limits):
                     table = COLUMN_TO_TABLE[column].split("_")[-1].lower()
                     err_name = COLUMN_TO_ERROR[column].lower()
 
                     for elem in getattr(oif, table):
+                        dat = getattr(elem, column.lower()).data
                         err = getattr(elem, err_name).data
-                        fraction = np.abs(
-                            err / getattr(elem, column.lower()).data
-                        )
                         if "PHI" in column:
                             assert np.all(
                                 (err >= value) | np.isclose(err, value)
                             )
                         else:
-                            assert np.all(
-                                (fraction >= (value / 100))
-                                | np.isclose(fraction, value / 100)
+                            fraction, value = np.abs(err / dat), value / 100
+                            result = (fraction >= value) | np.isclose(
+                                fraction, value
                             )
+                            if limit is not None:
+                                result |= dat <= limit
+
+                            assert np.all(result)
 
         @pytest.mark.parametrize(
-            "dataTypes,values",
+            "dataTypes,values,threshold",
             (
-                [["VISAMP"], [5]],
-                [["VISAMP"], [10]],
-                [["VISPHI"], [5]],
-                [["VISPHI"], [10]],
-                [["VIS2DATA"], [5]],
-                [["VIS2DATA"], [10]],
-                [["T3PHI"], [5]],
-                [["T3PHI"], [10]],
-                [["VISAMP", "T3PHI"], [5, 5]],
-                [["VISAMP", "T3PHI"], [10, 10]],
-                [["T3AMP"], [5]],
-                [["T3AMP"], [10]],
-                [["T3PHI", "T3AMP"], [5, 5]],
-                [["T3PHI", "T3AMP"], [10, 10]],
+                [["VISAMP"], [5], None],
+                [["VISAMP"], [10], [None]],
+                [["VISPHI"], [5], None],
+                [["VISPHI"], [10], None],
+                [["VIS2DATA"], [5], None],
+                [["VIS2DATA"], [10], None],
+                [["T3PHI"], [5], None],
+                [["T3PHI"], [10], None],
+                [["VISAMP", "T3PHI"], [5, 5], None],
+                [["VISAMP", "T3PHI"], [10, 10], [0.2, None]],
+                [["T3AMP"], [5], None],
+                [["T3AMP"], [10], None],
+                [["T3PHI", "T3AMP"], [5, 5], [None, None]],
+                [["T3PHI", "T3AMP"], [10, 10], None],
             ),
         )
         def test_oimSetMinErr(
-            self, data: oimData, dataTypes: list[str], values: list[float]
+            self,
+            data: oimData,
+            dataTypes: list[str],
+            values: list[float],
+            threshold: float | list[float | None] | None,
         ) -> None:
             """Tests the oimDataFilter.setMinErrFilter class."""
+            if not isinstance(threshold, Iterable):
+                limits = [threshold]
+            else:
+                limits = threshold.copy()
+
+            if limits is None or limits == [None]:
+                limits = [None] * len(dataTypes)
+
             data = copy.deepcopy(data)
             data.setFilter(
                 oimSetMinErrFilter(
-                    targets="all", dataType=dataTypes, values=values
+                    targets="all",
+                    dataType=dataTypes,
+                    values=values,
+                    relThreshold=threshold,
                 )
             )
 
             for hdul in data.data:
                 oif = oifits.open(copy.deepcopy(hdul), quiet=True)
-                for column, value in zip(dataTypes, values):
+                for column, value, limit in zip(dataTypes, values, limits):
                     table = COLUMN_TO_TABLE[column].split("_")[-1].lower()
                     err_name = COLUMN_TO_ERROR[column].lower()
 
                     for elem in getattr(oif, table):
+                        dat = getattr(elem, column.lower()).data
                         err = getattr(elem, err_name).data
-                        fraction = np.abs(
-                            err / getattr(elem, column.lower()).data
-                        )
                         if "PHI" in column:
                             assert np.all(
                                 (err >= value) | np.isclose(err, value)
                             )
                         else:
-                            assert np.all(
-                                (fraction >= (value / 100))
-                                | np.isclose(fraction, value / 100)
+                            fraction, value = np.abs(err / dat), value / 100
+                            result = (fraction >= value) | np.isclose(
+                                fraction, value
                             )
+                            if limit is not None:
+                                result |= dat <= limit
+
+                            assert np.all(result)

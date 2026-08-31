@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import base64
+import copy
 import csv
 import importlib
 import io
@@ -2297,6 +2298,7 @@ def setMinimumError(
     data: str | Path | fits.HDUList,
     dataTypes: str | list[str],
     values: float | list[float],
+    relThreshold: float | list[float | None] | None = None,
     extver: int | list[int] | None = None,
 ) -> None:
     """Set the minimum error of a given data type to a given value.
@@ -2308,9 +2310,17 @@ def setMinimumError(
     dataTypes : str or list of str
         The data types.
     values : float or list of float
-        The minimum error value.
+        The minimum error value. If passed as a `list`, must have the
+        same length as `dataType`.
     extver : int or list of int, optional
         The extension/table version. Defaults to `None`.
+    relThreshold : float or list of float, optional
+        Can be used for `dataType in ["VISAMP", "VIS2DATA"]`. Switches from the
+        scheme where the errors are compared/computed relatively to the values of the
+        datapoints to one where this is only done if they are above the `relThreshold`.
+        This can be, for instance, useful to avoid extremly small errors for correlated
+        fluxes < 1. If passed as `list`, must have the same length as `dataType`.
+        Defaults to `None`.
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -2320,42 +2330,42 @@ def setMinimumError(
 
     values = [values] if not isinstance(values, Iterable) else values
     extver = [extver] if not isinstance(extver, Iterable) else extver
+    if not isinstance(relThreshold, Iterable):
+        relThreshold = [relThreshold]
+
+    if relThreshold == [None]:
+        relThreshold *= len(dataTypes)
 
     extnames = np.unique([getDataArrname(dti) for dti in dataTypes])
     for datai in data[1:]:
-        if datai.name in extnames:
-            if datai.header.get("EXTVER", 1) in extver or extver == [None]:
-
-                for dataTypei in getDataType(datai.name):
-                    if dataTypei in dataTypes:
-                        dataTypeiErr = _oimDataTypeErr[
-                            _oimDataType.index(dataTypei)
+        if datai.name in extnames and (
+            datai.header.get("EXTVER", 1) in extver or extver == [None]
+        ):
+            for dataTypei in getDataType(datai.name):
+                if dataTypei in dataTypes:
+                    dataTypeiErr = _oimDataTypeErr[
+                        _oimDataType.index(dataTypei)
+                    ]
+                    vali = values[dataTypes.index(dataTypei)]
+                    if getDataTypeIsAnalysisComplex(dataTypei):
+                        datai.data[dataTypeiErr] = np.maximum(
+                            datai.data[dataTypeiErr], vali
+                        )
+                    else:
+                        vali /= 100
+                        relThresholdi = relThreshold[
+                            dataTypes.index(dataTypei)
                         ]
-                        vali = values[dataTypes.index(dataTypei)]
+                        mask = (
+                            datai.data[dataTypeiErr] / datai.data[dataTypei]
+                        ) < vali
 
-                        if getDataTypeIsAnalysisComplex(dataTypei):
-                            # TODO: Could the astype here be changed to ``int`` or ``bool``?
-                            mask = (datai.data[dataTypeiErr] < vali).astype(
-                                datai.data[dataTypeiErr].dtype
-                            )
+                        if relThresholdi is not None:
+                            mask &= datai.data[dataTypei] >= relThresholdi
 
-                            datai.data[dataTypeiErr] = (
-                                datai.data[dataTypeiErr] * (1 - mask)
-                                + mask * vali
-                            )
-                        else:
-                            vali = vali / 100
-                            mask = (
-                                (
-                                    datai.data[dataTypeiErr]
-                                    / datai.data[dataTypei]
-                                )
-                                < vali
-                            ).astype(datai.data[dataTypeiErr].dtype)
-                            datai.data[dataTypeiErr] = (
-                                datai.data[dataTypeiErr] * (1 - mask)
-                                + mask * vali * datai.data[dataTypei]
-                            )
+                        datai.data[dataTypeiErr][mask] = (
+                            vali * datai.data[dataTypei][mask]
+                        )
 
 
 def _listFeatures(

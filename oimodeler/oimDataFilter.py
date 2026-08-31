@@ -907,9 +907,17 @@ class oimSetMinErrFilter(oimDataFilterComponent):
         The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
         string or list of strings with (a) table name(s). Defaults to `"all"`.
     values : float or list of float
-        The minimum error values corresponding to the column(s)/datatype(s). Defaults to `5`.
+        The minimum error values corresponding to the column(s)/datatype(s).
+        If passed as `list`, must have the same length as `dataType`. Defaults to `5`.
     dataType : str or list of str, optional
         The OIFITS datatype(s)/column(s) to be kept. Defaults to `"VISPHI"`.
+    relThreshold : float or list of float, optional
+        Can be used for `dataType in ["VISAMP", "VIS2DATA"]`. Switches from the
+        scheme where the errors are compared/computed relatively to the values of the
+        datapoints to one where this is only done if they are above the `relThreshold`.
+        This can be, for instance, useful to avoid extremly small errors for correlated
+        fluxes with value under `1`. If passed as `list`, must have the same length as
+        `dataType`. Defaults to `None`.
 
     See Also
     --------
@@ -929,10 +937,15 @@ class oimSetMinErrFilter(oimDataFilterComponent):
         super().__init__(**kwargs)
         self.params["values"] = 5
         self.params["dataType"] = "VISPHI"
+        self.params["relThreshold"] = None
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
         """The filter applied to the data."""
         setMinimumError(
-            data, self.params["dataType"], self.params["values"], extver=None
+            data,
+            self.params["dataType"],
+            self.params["values"],
+            self.params["relThreshold"],
+            extver=None,
         )
