@@ -14,6 +14,7 @@ import astropy.units as u
 import numpy as np
 from astropy import units
 from astropy.io import fits
+from numpy.typing import NDArray
 from scipy import integrate, interpolate
 from scipy.special import j0
 
@@ -1028,29 +1029,87 @@ class oimComponentRadialProfile(oimComponent):
         return im
 
     # TODO: Remove non-staticmethod for asymmetric case
-    # TODO: Find a way to have fast computation that computes
-    # directly on the spatial frequencies
+    # TODO: Improve computation speed.
+    # TODO: Directly compute on the spatial frequencies for
+    # greater accuracy. Becomes important in multi-component
+    # case
     @staticmethod
-    def hankel(Ir, r, wlin, tin, sfreq, wl, t, precision=None):
+    def hankel(
+        Ir: NDArray[np.float64],
+        r: NDArray[np.float64],
+        wlin: NDArray[np.float64],
+        tin: NDArray[np.float64],
+        sfreq: NDArray[np.float64],
+        wl: NDArray[np.float64],
+        t: NDArray[np.float64],
+        precision: int | None = None,
+    ):
+        """Compute the zeroth-order Hankel transform of the radial intensity.
+
+        The transform is evaluated as
+
+            H(f) = ∫ 2π r I(r) J₀(2π r f) dr,
+
+        where ``J₀`` is the zeroth-order Bessel function of the first kind.
+        The result is then interpolated from the input ``(tin, wlin, sfreq)``
+        grid to the requested ``(t, wl, sfreq)`` coordinates.
+
+        Parameters
+        ----------
+        Ir : NDArray[np.float64]
+            Radial intensity values with shape ``(nt, nwl, nr)``, sampled on
+            the ``(tin, wlin, r)`` grid.
+        r : NDArray[np.float64]
+            Radial coordinate values with shape ``(nr)``. Used as the
+            integration coordinate for the Hankel transform.
+        wlin : NDArray[np.float64]
+            Wavelength values of the input grid with shape ``(nwl)``.
+        tin : NDArray[np.float64]
+            Time values of the input grid with shape ``(nt)``.
+        sfreq : NDArray[np.float64]
+            Spatial frequencies at which the result is requested. Duplicate
+            values are evaluated only once. If ``precision`` is specified,
+            the transform is instead evaluated on a uniformly spaced spatial
+            frequency grid.
+        wl : NDArray[np.float64]
+            Wavelength values at which the result is requested.
+        t : NDArray[np.float64]
+            Time values at which the result is requested.
+        precision : int or None, optional
+            Number of uniformly spaced spatial-frequency samples used for the
+            Hankel transform. If ``None``, the transform is evaluated at the
+            unique values in ``sfreq``. Defaults to ``None``.
+
+        Returns
+        -------
+        NDArray[np.complex128]
+            Hankel-transformed intensity evaluated at the requested
+            ``(t, wl, sfreq)`` coordinates.
+
+        Notes
+        -----
+        The input radial grid ``r`` may be non-uniform. Integration is
+        performed using a manual implementation of the trapezoidal rule
+        to enable matrix multiplication for faster computation.
+
+        The output is scaled by ``1e23`` to return complex coherent flux.
+        """
         if precision is None:
             sfreq0 = np.unique(sfreq)
         else:
             sfreq0 = np.linspace(0, np.max(sfreq), num=precision)
 
-        r2D = r[np.newaxis, np.newaxis, :, np.newaxis]
-        Ir2D = Ir[:, :, :, np.newaxis]
-        sf2D = sfreq0[np.newaxis, np.newaxis, np.newaxis, :]
+        # TODO: Check if this is correct for multiple t dimensions
+        (nt, nwl, nr), dr = Ir.shape, np.diff(r)
+        w = np.array([dr[0], *(dr[1:] + dr[:-1]), dr[-1]]) / 2.0
+        kernel = (2.0 * np.pi * r * w)[:, None] * j0(
+            2.0 * np.pi * r[:, None] * sfreq0[None, :]
+        )
+        res0 = (Ir.reshape(nt * nwl, nr) @ kernel).reshape(nt, nwl, -1)
 
         # HACK: Remove the 0j as soon as this formula is adapted
         # for non-axissymmetric case
-        res0 = (
-            integrate.trapezoid(
-                2.0 * np.pi * r2D * Ir2D * j0(2.0 * np.pi * r2D * sf2D),
-                r2D,
-                axis=2,
-            )
-            * 1e23
-        ) + 0j
+        res0 = res0 * 1e23 + 0j
 
         grid = (tin, wlin, sfreq0)
         coord = np.transpose([t, wl, sfreq])
