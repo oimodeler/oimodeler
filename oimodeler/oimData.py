@@ -634,7 +634,7 @@ class oimData:
             try:
                 datai.writeto(filenamei, overwrite=overwrite)
             except:
-                raise TypeError("Can't save the data!")
+                raise TypeError(f"Can't save the data at {filenamei}")
 
     def plot(
         self,
