@@ -2,6 +2,7 @@ from typing import Any
 
 import astropy.units as u
 import numpy as np
+from numpy.typing import NDArray
 
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import constants as const
@@ -11,59 +12,58 @@ from ..oimUtils import blackbody
 
 
 class oimTempGrad(oimComponentRadialProfile):
-    """A ring defined by a radial temperature profile in r^q and a radial dust
-    surface density profile in r^p.
+    """A ring defined by a radial temperature profile in `r^q` and a radial dust
+    surface density profile in `r^p`.
 
     Parameters
     ----------
     rin : float
-        Inner radius of the disk [au].
+        Inner radius of the disk (au).
     rout : float
-        Outer radius of the disk [au].
+        Outer radius of the disk (au).
     r0 : float
-        Reference radius for power-laws [au].
+        Reference radius for power-laws (au).
     T0 : float
-        Temperature at reference radius r0 [K].
+        Temperature at reference radius r0 (K).
     sigma0 : float
-         Dust surface density at reference radius r0 [M_sun].
+         Dust surface density at reference radius r0 (M_sun).
     Mdust : float
-         Mass of the dusty disk [M_sun].
+         Mass of the dusty disk (M_sun).
     q : float
         Power-law exponent of the temperature profile.
     p : float
         Power-law exponent of the dust surface density profile.
-
     dist : float
-        Distance of the star [pc].
+        Distance of the star (pc).
 
     Attributes
     ----------
     params : dict with keys of str and values of oimParam
         Dictionary of parameters.
     rin : oimParam
-        Inner radius of the disk [au].
+        Inner radius of the disk (au).
     rout : oimParam
-        Outer radius of the disk [au].
+        Outer radius of the disk (au).
     r0 : oimParam
-        Reference radius for power-laws [au].
+        Reference radius for power-laws (au).
     T0 : oimParam
-        Temperature at reference radius r0 [K].
+        Temperature at reference radius r0 (K).
     Tin : float
-        Temperature at inner radius rin [K].
+        Temperature at inner radius rin (K).
     sigma0 : oimParam
-         Dust surface density at reference radius r0 [M_sun].
+         Dust surface density at reference radius r0 (M_sun).
     Mdust : oimParam
-         Mass of the dusty disk [M_sun].
+         Mass of the dusty disk (M_sun).
     q : oimParam
         Power-law exponent of the temperature profile.
     p : oimParam
         Power-law exponent of the dust surface density profile.
     _r : numpy.ndarray
-        Radii [mas].
+        Radii (mas).
     _wl : numpy.ndarray
-        Wavelengths [micron].
+        Wavelengths (m).
     _t : numpy.ndarray
-        Times [second].
+        Times (s).
 
     Methods
     -------
@@ -105,7 +105,6 @@ class oimTempGrad(oimComponentRadialProfile):
                 value=-2,
                 mini=-5,
                 maxi=0,
-                unit=u.one,
                 description="Logarithmic dust surface density at reference radius",
             )
         else:
@@ -120,12 +119,16 @@ class oimTempGrad(oimComponentRadialProfile):
         self.params["q"] = oimParam(
             name="q",
             description="Power-law exponent for the temperature",
-            base="p",
+            mini=-1,
+            maxi=0,
+            base="amp",
         )
         self.params["p"] = oimParam(
             name="p",
             description="Power-law exponent for the dust surface density",
-            base="p",
+            mini=-1,
+            maxi=0,
+            base="amp",
         )
         self.params["kappa_abs"] = oimParam(
             name="kappa_abs",
@@ -134,7 +137,7 @@ class oimTempGrad(oimComponentRadialProfile):
             free=False,
         )
 
-        # TODO: Potentially generalise this for many different contributions
+        # TODO: Potentially generalise this for many different contributions.
         if "kappa_cont" in kwargs:
             self.params["kappa_cont"] = oimParam(
                 name="kappa_cont",
@@ -151,24 +154,32 @@ class oimTempGrad(oimComponentRadialProfile):
         self.params["dist"] = oimParam(base="dist")
         self.params["f"].free = False
         self._wl, self._t = None, [0]
+        self._r_cache, self._r_cache_key = None, None
         self._eval(**kwargs)
 
     @property
-    def _r(self):
+    def _r(self) -> NDArray[np.float64]:
         """Gets the radial profile (mas)."""
         rin, rout = self.rin.value, self.rout.value
         dim, dist = self.dim.value, self.dist.value
+        grid_type = oimOptions.model.grid.type
+
+        key = (rin, rout, dim, dist, grid_type)
+        if key == self._r_cache_key:
+            return self._r_cache
+
         rin, rout = rin / dist * 1e3, rout / dist * 1e3
-        if oimOptions.model.grid.type == "linear":
-            return np.linspace(rin, rout, dim)
+        if grid_type == "linear":
+            r = np.linspace(rin, rout, dim)
+        else:
+            if rin <= 0:
+                raise ValueError("Logarithmic grid requires rin > 0.")
 
-        return np.logspace(
-            0.0 if rin == 0 else np.log10(rin), np.log10(rout), dim
-        )
+            r = np.logspace(np.log10(rin), np.log10(rout), dim)
 
-    @_r.setter
-    def _r(self, value: Any) -> None:
-        """Sets the radial profile [mas]."""
+        self._r_cache_key = key
+        self._r_cache = r
+        return r
 
     @property
     def Tin(self) -> float:
@@ -178,63 +189,54 @@ class oimTempGrad(oimComponentRadialProfile):
         return self.T0.value * (rin_mas / r0_mas) ** self.q.value
 
     @Tin.setter
-    def Tin(self, value: Any) -> None:
+    def Tin(self, value: float) -> None:
         """Sets the reference temperature from that at the inner radius."""
         r0_mas = self.r0.value / self.dist.value * 1e3
         rin_mas = self.rin.value / self.dist.value * 1e3
         self.T0.value = value * (rin_mas / r0_mas) ** -self.q.value
 
     def _radialProfileFunction(
-        self, r: np.ndarray, wl: np.ndarray, t: np.ndarray
-    ) -> np.ndarray:
+        self,
+        r: NDArray[np.float64],
+        wl: NDArray[np.float64],
+        t: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
         """Calculates a radial temperature gradient profile via a dust-surface
         density- and temperature profile.
 
         Parameters
         ----------
         r : numpy.ndarray
-            Radial grid [mas].
+            Radial grid (mas).
         wl : numpy.ndarray
-            Wavelengths [m].
+            Wavelengths (m).
         t : numpy.ndarray
-            Times [second].
+            Times (s).
 
         Results
         -------
         radial_profile : numpy.ndarray
+
+        Notes
+        -----
+        This ``radialProfile`` is time independent.
         """
-        # HACK: Sets the multi wavelength coordinates properly.
-        # WARNING: Does not account for time, improves computation time.
-        wl = np.unique(wl)
         dist = self.dist.value
-        kappa_abs = self.kappa_abs(wl, t)
+        kappa_abs, p = self.kappa_abs(wl, t), self.p(wl, t)
         if "kappa_cont" in self.params:
             ratio = self.kappa_ratio.value
             kappa_cont = self.kappa_cont(wl, t)
             kappa_abs = (1 - ratio) * kappa_abs + ratio * kappa_cont
 
-        if self.flat:
-            elong = 1 / self.cosi.value
-        else:
-            elong = self.elong.value
-
-        # HACK: Adding the correct dimensions to the radial grid, wavelength array and opacity table
-        if len(r.shape) == 3:
-            r = r[0, 0][np.newaxis, np.newaxis, :]
-            wl = wl[np.newaxis, :, np.newaxis]
-            kappa_abs = kappa_abs[np.newaxis, :, np.newaxis]
-        else:
-            r = r[np.newaxis, :]
-            wl = wl[:, np.newaxis]
-            kappa_abs = kappa_abs[:, np.newaxis]
-
+        elong = 1 / self.cosi.value if self.flat else self.elong.value
         rin, rout, r0 = self.rin(wl, t), self.rout(wl, t), self.r0(wl, t)
-        p = self.p(wl, t)
         if self.compute_sigma0:
             rin_cm = self.rin.qty(wl, t).to(u.cm).value
             rout_cm = self.rout.qty(wl, t).to(u.cm).value
             r0_cm = self.r0.qty(wl, t).to(u.cm).value
             dust_mass = self.Mdust.qty(wl, t).to(u.g).value
+
+            # FIXME: Check if the np.isclose is actually correct?
             if np.isclose(p, -2, rtol=1e-2):
                 sigma0 = dust_mass / (
                     2.0 * np.pi * np.log(rout_cm / rin_cm) * r0_cm**2
@@ -254,8 +256,4 @@ class oimTempGrad(oimComponentRadialProfile):
             blackbody(temp, const.c / wl) * emissivity * (1 / elong)
         )
         rin_mas, rout_mas = rin / dist * 1e3, rout / dist * 1e3
-        image = ((r > rin_mas) & (r < rout_mas)).astype(int) * spectral_density
-        if len(r.shape) == 3:
-            return image
-
-        return image
+        return ((r >= rin_mas) & (r <= rout_mas)) * spectral_density

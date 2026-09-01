@@ -21,11 +21,6 @@ def assert_param_equal(original: oimParam, restored: oimParam) -> bool:
 
         if key in ["value", "error"]:
             value_res = pytest.approx(value_res)
-        elif key == "unit":
-            value_org, value_res = (
-                value_org.to_string(),
-                value_res.to_string(),
-            )
 
         results.append(value_org == value_res)
 

@@ -28,13 +28,13 @@ def data(global_data_dir: Path) -> oimData:
     return oimData(list((global_data_dir / "ASPRO_MATISSE2").glob("*.fits")))
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def wl() -> float:
     """Wavelength."""
     return 3.5e-6
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def spf(wl: float) -> np.ndarray:
     """Spatial frequencies."""
     B = np.linspace(0.0, 300, num=200)
@@ -44,7 +44,7 @@ def spf(wl: float) -> np.ndarray:
 class TestOimModel:
     """Tests the plotting methods of the oimModel class."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def components(self) -> list[oimComponent]:
         """List of basic components."""
         return [
@@ -54,7 +54,7 @@ class TestOimModel:
             oimIRing(d=5, f=0.5),
         ]
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def models(self, components: list[oimComponent]) -> list[oimModel]:
         """List of models containing basic components."""
         return [oimModel(c) for c in components]

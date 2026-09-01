@@ -111,12 +111,6 @@ name = "mjd"
 description = "MJD"
 unit = "day"
 
-[p]
-name = "pow"
-description = "Power exponent"
-mini = -1
-maxi = 0
-
 [pa]
 name = "pa"
 description = "Major-axis Position angle"
@@ -150,6 +144,7 @@ mini = 0
 
 [skw]
 name = "skw"
+value = 1
 description = "Skewedness"
 mini = 0
 maxi = 1

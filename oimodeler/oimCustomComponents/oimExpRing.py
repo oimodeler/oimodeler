@@ -26,7 +26,6 @@ class oimExpRing(oimComponentRadialProfile):
 
         self._t = np.array([0])  # constant value <=> static model
         self._wl = None  # np.array([0.5,1])*1e-6
-        # self._r = np.arange(0, self._dim)*pixSize
 
         # Finally call the _eval function that allow the parameters to be processed
         self._eval(**kwargs)
@@ -51,7 +50,3 @@ class oimExpRing(oimComponentRadialProfile):
             r0_max = self.params["d"](1e99)
         rmax = r0_max + 8 * fwhm_max
         return np.linspace(0, 1, self.params["dim"].value) * rmax
-
-    @_r.setter
-    def _r(self, r):
-        pass

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ import oimodeler as oim
 
 # NOTE: Load MATISSE data of AS209 (YSO) into an oimData object
 path = Path(__file__).parent.parent.parent
+save_dir = path / "images"
 files = sorted((path / "data" / "AS209_MATISSE").glob("*.fits"))
 data = oim.oimData(files)
 
@@ -21,7 +23,6 @@ filt_bin_N = oim.oimWavelengthBinningFilter(
 )
 f2 = oim.oimKeepDataTypeFilter(dataType=["FLUXDATA", "VISAMP"])
 data.setFilter(oim.oimDataFilter([f1, f2, filt_bin_L, filt_bin_N]))
-wave_data = np.unique(data.vect_wl)
 
 # NOTE: plot the unfiltered and filtered data (VISAMP)
 fig = plt.figure()
@@ -35,6 +36,8 @@ ax.set_xlabel("Spatial frequency (rad$^{-1}$)", fontsize=22)
 ax.tick_params(axis="both", labelsize="20")
 ax.legend(fontsize=16)
 ax.autolim()
+plt.savefig(save_dir / "ExampleTempGrad_visamp.png", format="png", dpi=300)
+plt.close()
 
 fig = plt.figure()
 ax = plt.subplot(projection="oimAxes")
@@ -63,7 +66,10 @@ ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize=22)
 ax.tick_params(axis="both", labelsize="20")
 ax.legend(fontsize=16)
 ax.autolim()
-
+plt.savefig(
+    save_dir / "ExampleTempGrad_fluxdata_filtered.png", format="png", dpi=300
+)
+plt.close()
 
 # NOTE: Plot the unfiltered and filtered data (FLUXDATA)
 # figFlux,axFlux =plt.subplots(figsize=(15,5),subplot_kw=dict(projection="oimAxes"))
@@ -109,7 +115,8 @@ data.info()
 
 # %%
 
-# NOTE: Radial grid of the model can be set to 'linear' or 'logarithmic'
+# NOTE: Radial grid of the model can be set to 'linear' or 'logarithmic'.
+# The default is "logarithmic".
 oim.oimOptions.model.grid.type = "logarithmic"
 
 # NOTE: The padding of the 1D-grid can be set (Multiplies to outer radius at
@@ -127,7 +134,8 @@ op_wl, op = np.loadtxt(opac_file, usecols=[0, 1], unpack=True)
 plt.figure()
 plt.plot(op_wl, op)
 plt.xlim(3, 13)
-plt.show()
+plt.savefig(save_dir / "ExampleTempGrad_opacities.png", format="png", dpi=300)
+plt.close()
 
 # NOTE: Define a first instance of the temperature gradient model for the circumstellar emission
 tg = oim.oimTempGrad(
@@ -149,14 +157,6 @@ Tin = tg.Tin
 tg.Tin = Tin
 print(f"Tin: {Tin} K")
 
-# NOTE: Set the number of spatial frequency elements at which the Hankel transform will be computed.
-# If not specified, the Hankel Transform will be computed for all the spatial frequencies of the data (usually slower).
-tg.precision = 256
-
-# NOTE: (OPTIONAL) Uncomment the following two lines if you want to set manually the model wavelengths to be fitted (to speed up fitting process).
-# tg._wl = np.array([3.0e-6,3.5e-6,4.0e-6,8.0e-6,10.e-6,13e-6])
-# s._wl = tg._wl
-
 # NOTE: Model creation
 model = oim.oimModel([s, tg])
 
@@ -167,6 +167,11 @@ print(f"Chi2r = {sim.chi2r}")
 
 # NOTE: plot the model observables and data (without SED)
 fig0, ax0 = sim.plot(["VISAMP"])
+plt.savefig(
+    save_dir / "ExampleTempGrad_visamp_simulated.png", format="png", dpi=300
+)
+plt.close()
+
 fig3 = plt.figure()
 ax3 = plt.subplot(projection="oimAxes")
 ax3.oiplot(
@@ -191,6 +196,10 @@ ax3.set_ylabel("Flux density (Jy)", fontsize=25)
 ax3.set_xlabel(r"Wavelength ($\mu$m)", fontsize=25)
 ax3.tick_params(axis="both", labelsize="25")
 ax3.legend(fontsize=18)
+plt.savefig(
+    save_dir / "ExampleTempGrad_fluxdata_simulated.png", format="png", dpi=300
+)
+plt.close()
 
 # NOTE: (OPTIONAL) Uncomment the following lines if you want to plot the model observables and data (with SED)
 # fig0, ax0 = sim.plot(["VISAMP",])
@@ -232,7 +241,8 @@ model.showModel(
 ax[1].get_yaxis().set_visible(False)
 ax[0].set_title(r"$\lambda = 3.5~\mu$m")
 ax[1].set_title(r"$\lambda = 10.5~\mu$m")
-plt.show()
+plt.savefig(save_dir / "ExampleTempGrad_model.png", format="png", dpi=300)
+plt.close()
 
 # %%
 # NOTE: Specifying the parameter space for the fit
@@ -251,29 +261,49 @@ fit = oim.oimFitterEmcee(
 )
 fit.prepare(init="random")
 print(fit.initialParams)
+
 fit.run(nsteps=5000, progress=True)
 
-# NOTE: Plot the walkers path and make the corner plot
-figWalkers, axeWalkers = fit.walkersPlot()
-figCorner, axeCorner = fit.cornerPlot(discard=2000, chi2limfact=3)
-
-# NOTE: Get the best-fit values (here the mode of the parameters posterior distribution) and print them
+# NOTE: Get the best-fit values, print them, and serialize the model
 best, err_l, err_u, err = fit.getResults(
-    mode="best", discard=2000, chi2limfact=3
+    mode="median", discard=2000, chi2limfact=3
 )
-fit.printResults(mode="best", format=".2e", discard=2000)
+fit.printResults(mode="median", format=".2e", discard=2000)
+
+with open(path / "data" / "TempGrad_model.json", "w") as f:
+    json.dump(model.serialize(), f, indent=True)
+
+# NOTE: Plot the walkers path and make the corner plot
+figWalkers, axeWalkers = fit.walkersPlot(
+    savefig=save_dir / "ExampleTempGrad_walkers.png"
+)
+figCorner, axeCorner = fit.cornerPlot(
+    discard=2000,
+    chi2limfact=3,
+    savefig=save_dir / "ExampleTempGrad_corner.png",
+)
+plt.close()
 
 # NOTE: Plot the data and best-fit model (without SED)
 fig0, ax0 = fit.simulator.plot(
-    ["VISAMP"], kwargsSimulatedData=dict(ls="none", marker=".", lw=3)
+    ["VISAMP"], kwargsSimulatedData={"ls": "none", "marker": ".", "lw": 3}
 )
+plt.savefig(
+    save_dir / "ExampleTempGrad_visamp_fitted.png", format="png", dpi=300
+)
+plt.close()
+
 fig1, ax1 = fit.simulator.plot(
     ["FLUXDATA"],
     xaxis="EFF_WAVE",
     xunit="micron",
-    kwargsData=dict(color="blue"),
-    kwargsSimulatedData=dict(ls="none", marker=".", lw=3, color="red"),
+    kwargsData={"color": "blue"},
+    kwargsSimulatedData={"ls": "none", "marker": ".", "lw": 3, "color": "red"},
 )
+plt.savefig(
+    save_dir / "ExampleTempGrad_fluxdata_fitted.png", format="png", dpi=300
+)
+plt.close()
 
 
 # %%
@@ -293,26 +323,9 @@ fig1, ax1 = fit.simulator.plot(
 # ax3.tick_params(axis='both',labelsize='25')
 # ax3.legend(fontsize=18)
 
-# NOTE: Setup model
-tg_bestfit = oim.oimTempGrad(
-    dim=128,
-    dist=121.0,
-    T0=350,
-    rin=0.1,
-    rout=30,
-    p=best[4],
-    q=best[3],
-    Mdust=best[2],
-    pa=best[1],
-    elong=best[0],
-    kappa_abs=oim.oimInterp("wl", wl=op_wl * 1e-6, values=op),
-)
-
-model_bestfit = oim.oimModel([s, tg_bestfit])
-
 # NOTE: Best-fit model images at two wavelengths
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-model_bestfit.showModel(
+model.showModel(
     512,
     0.15,
     wl=[3.5e-6],
@@ -321,7 +334,7 @@ model_bestfit.showModel(
     axe=ax[0],
     colorbar=False,
 )
-model_bestfit.showModel(
+model.showModel(
     512,
     0.15,
     wl=[10.5e-6],
@@ -333,4 +346,7 @@ model_bestfit.showModel(
 ax[1].get_yaxis().set_visible(False)
 ax[0].set_title(r"$\lambda = 3.5~\mu$m")
 ax[1].set_title(r"$\lambda = 10.5~\mu$m")
-plt.show()
+plt.savefig(
+    save_dir / "ExampleTempGrad_model_fitted.png", format="png", dpi=300
+)
+plt.close()
