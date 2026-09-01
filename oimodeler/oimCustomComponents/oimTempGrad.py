@@ -154,25 +154,32 @@ class oimTempGrad(oimComponentRadialProfile):
         self.params["dist"] = oimParam(base="dist")
         self.params["f"].free = False
         self._wl, self._t = None, [0]
+        self._r_cache, self._r_cache_key = None, None
         self._eval(**kwargs)
 
     @property
-    def _r(self):
+    def _r(self) -> NDArray[np.float64]:
         """Gets the radial profile (mas)."""
         rin, rout = self.rin.value, self.rout.value
         dim, dist = self.dim.value, self.dist.value
+        grid_type = oimOptions.model.grid.type
+
+        key = (rin, rout, dim, dist, grid_type)
+        if key == self._r_cache_key:
+            return self._r_cache
+
         rin, rout = rin / dist * 1e3, rout / dist * 1e3
-        if oimOptions.model.grid.type == "linear":
-            return np.linspace(rin, rout, dim)
+        if grid_type == "linear":
+            r = np.linspace(rin, rout, dim)
+        else:
+            if rin <= 0:
+                raise ValueError("Logarithmic grid requires rin > 0.")
 
-        if rin <= 0:
-            raise ValueError("Logarithmic grid requires rin > 0.")
+            r = np.logspace(np.log10(rin), np.log10(rout), dim)
 
-        return np.logspace(np.log10(rin), np.log10(rout), dim)
-
-    @_r.setter
-    def _r(self, value: Any) -> None:
-        """Sets the radial profile (mas)."""
+        self._r_cache_key = key
+        self._r_cache = r
+        return r
 
     @property
     def Tin(self) -> float:

@@ -660,12 +660,12 @@ class oimComponentImage(oimComponent):
                     fxp /= self.params["elong"](wl, t)
 
         if self._wl is None:
-            wl0 = np.sort(np.unique(wl))
+            wl0 = np.unique(wl)
         else:
             wl0 = self._wl
 
         if self._t is None:
-            t0 = np.sort(np.unique(t))
+            t0 = np.unique(t)
         else:
             t0 = self._t
 
@@ -808,12 +808,12 @@ class oimComponentImage(oimComponent):
 
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
         if self._wl is None:
-            wl0 = np.sort(np.unique(wl))
+            wl0 = np.unique(wl)
         else:
             wl0 = self._wl
 
         if self._t is None:
-            t0 = np.sort(np.unique(t))
+            t0 = np.unique(t)
         else:
             t0 = self._t
 
@@ -869,7 +869,6 @@ class oimComponentRadialProfile(oimComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._r = None
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._t = [0]  # This component is static
         self.normalizeImage = True
@@ -916,16 +915,19 @@ class oimComponentRadialProfile(oimComponent):
 
         self._eval(**kwargs, checkParam=False)
 
+    @property
+    def _r(self) -> None | NDArray[np.float64]:
+        """Gets the radial profile (mas)."""
+        return None
+
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
+        wl0 = np.unique(wl) if self._wl is None else self._wl
+        t0 = np.unique(t) if self._t is None else self._t
 
-        wl0 = np.sort(np.unique(wl)) if self._wl is None else self._wl
-        t0 = np.sort(np.unique(t)) if self._t is None else self._t
-
+        r = self._r
         if self._r is None:
             pix = self._pixSize * units.rad.to(units.mas)
             r = np.linspace(0, self.dim.value - 1, self.dim.value) * pix
-        else:
-            r = self._r
 
         if simple:
             return r, wl, t
@@ -1063,7 +1065,7 @@ class oimComponentRadialProfile(oimComponent):
         kr = 2.0 * np.pi * r[:, np.newaxis] * sfreq0[np.newaxis, :]
         kernel = j0(kr)
 
-        # FIXME: Not yet tested
+        # FIXME: Not yet tested for correct output values.
         if self.asymmetric:
             psi = np.arctan2(ucoord[sfreq0_idx], vcoord[sfreq0_idx])
             for i in range(1, self.modulation + 1):
