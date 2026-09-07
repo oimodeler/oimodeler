@@ -6,10 +6,9 @@ Created on Fri Oct 21 12:27:15 2022
 """
 
 import numpy as np
-from astropy import units
 
 from ..oimComponent import oimComponentRadialProfile
-from ..oimParam import _standardParameters, oimParam
+from ..oimParam import oimParam
 
 
 class oimExpRing(oimComponentRadialProfile):
@@ -20,33 +19,23 @@ class oimExpRing(oimComponentRadialProfile):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"] = oimParam(**(_standardParameters["d"]))
-        self.params["fwhm"] = oimParam(**(_standardParameters["fwhm"]))
-        self.params["dim"] = oimParam(**(_standardParameters["dim"]))
-
-        self._t = np.array([0])  # constant value <=> static model
-        self._wl = None  # np.array([0.5,1])*1e-6
-
-        # Finally call the _eval function that allow the parameters to be processed
+        self.params["d"] = oimParam(base="d")
+        self.params["fwhm"] = oimParam(base="fwhm")
+        self.params["dim"] = oimParam(base="dim")
         self._eval(**kwargs)
 
-    def _radialProfileFunction(self, r, wl, t):
-
-        r0 = self.params["d"](wl, t) / 2
-        fwhm = self.params["fwhm"](wl, t)
-        I = np.nan_to_num(
-            (r > r0).astype(float) * np.exp(-0.692 * np.divide(r - r0, fwhm)),
-            nan=0,
-        )
-        return I
-
     @property
-    def _r(self):
+    def r(self):
         if False:
-            fwhm_max = np.max(self.params["fwhm"](self._wl, self._t))
-            r0_max = np.max(self.params["d"](self._wl, self._t)) / 2
+            fwhm_max = np.max(self.fwhm(self._wl, self._t))
+            r0_max = np.max(self.d(self._wl, self._t)) / 2
         else:
-            fwhm_max = self.params["fwhm"](1e99)
-            r0_max = self.params["d"](1e99)
+            fwhm_max, r0_max = self.fwhm(1e99), self.d(1e99)
+
         rmax = r0_max + 8 * fwhm_max
-        return np.linspace(0, 1, self.params["dim"].value) * rmax
+        self._r = np.linspace(0, 1, self.dim.value) * rmax
+        return self._r
+
+    def _radialProfileFunction(self, r, wl, t):
+        r0, fwhm = self.d(wl, t) / 2, self.fwhm(wl, t)
+        return (r > r0) * np.exp(-0.692 * np.divide(r - r0, fwhm))

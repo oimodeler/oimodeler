@@ -419,14 +419,14 @@ def blackbody(
 
     .. math::
 
-        B_ν(λ,T)=2hc²/λ³ 1/(exp(hc/(λk_B T))-1)
+        B_ν(λ,T)=2hc/λ³ 1/(exp(hc/(λk_B T))-1)
 
     This custom variant is implemented for a more efficient computation (i.e. to
     avoid the overhead of similar implementations like the astropy's
     `astropy.modeling.physical_models.BlackBody`).
     """
     x = const.cgs.h * const.cgs.c / (wl * 1e2 * const.cgs.kB * T)
-    return  2 * const.cgs.h * const.cgs.c / (wl * 1e2)**3 / np.expm1(x)
+    return 2 * const.cgs.h * const.cgs.c / (wl * 1e2) ** 3 / np.expm1(x)
 
 
 def spectral_index(
