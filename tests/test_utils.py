@@ -137,7 +137,7 @@ class TestComputations:
     ) -> None:
         """Tests the oimUtils.blackbody function."""
         expected = BlackBody(T * u.K)(wl * u.m).value
-        assert expected == pytest.approx(utils.blackbody(T, const.c / wl))
+        assert expected == pytest.approx(utils.blackbody(T, wl))
 
     # FIXME: Currently only tests if there are errors in function
     # execution. Needs to actually test something more.

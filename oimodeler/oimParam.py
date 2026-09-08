@@ -1329,7 +1329,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
             solid_angle = self.solid_angle
 
         return (
-            blackbody(self.T(wl, t), const.c / wl)
+            blackbody(self.T(wl, t), wl)
             / u.rad.to(u.mas) ** 2
             * solid_angle
             * 1e23
@@ -1429,16 +1429,16 @@ class oimParamLinearStarWl(oimParamInterpolator):
             The star's flux (Jy).
         """
         if self.compute_radius:
-            luminosity = self.L.value * self.L.unit.to(u.W)
+            luminosity = self.L.qty().to(u.W).value
             stellar_radius = np.sqrt(
                 luminosity / (4 * np.pi * const.sigma_sb * self.T.value**4)
             ) * u.m.to(u.au)
         else:
-            stellar_radius = self.R.value * self.R.unit.to(u.au)
+            stellar_radius = self.R.qty().to(u.au).value
 
         angular_radius = stellar_radius / self.dist.value * 1e3
         return (
-            blackbody(self.T(wl, t), const.c / wl)
+            blackbody(self.T(wl, t), wl)
             / u.rad.to(u.mas) ** 2
             * np.pi
             * angular_radius**2

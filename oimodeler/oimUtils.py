@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import base64
-import copy
 import csv
 import importlib
 import io
@@ -19,7 +18,7 @@ import toml
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import circstd
 
 import oimodeler as oim
@@ -396,24 +395,23 @@ def attach_methods(
     return decorator
 
 
-# TODO: Think of splitting into ν/λ variants to save computation time by
-# avoiding divisions outside of this function
 def blackbody(
-    T: float | np.ndarray, nu: float | np.ndarray
-) -> float | np.ndarray:
+    T: float | NDArray[np.float64],
+    wl: float | NDArray[np.float64],
+) -> float | NDArray[np.float64]:
     r"""Computes Planck's law.
 
     Parameters
     ----------
-    T: float or numpy.ndarray
+    T: float or numpy.typing.NDArray[np.float64]
         The temperature (K).
-    nu : float or numpy.ndarray
-        The frequency (Hz).
+    wl : float or numpy.typing.NDArray[np.float64]
+        The wavelength (m).
 
     Returns
     -------
-    blackbody : float or np.ndarray
-        The blackbody (erg / (cm² s Hz sr)).
+    blackbody : float or numpy.typing.NDArray[np.float64]
+        The blackbody (erg / (s sr cm² Hz)).
 
     Notes
     -----
@@ -421,19 +419,14 @@ def blackbody(
 
     .. math::
 
-        B_\nu(\nu,T)=\frac{2h\nu^3}{c^2}\frac{1}{\exp\left(\frac{h\nu}{k_\text{B}T}\right)-1}
+        B_ν(λ,T)=2hc²/λ³ 1/(exp(hc/(λk_B T))-1)
 
     This custom variant is implemented for a more efficient computation (i.e. to
     avoid the overhead of similar implementations like the astropy's
     `astropy.modeling.physical_models.BlackBody`).
     """
-    return (
-        2
-        * const.cgs.h
-        * nu**3
-        / const.cgs.c**2
-        / (np.exp(const.cgs.h * nu / (const.cgs.kB * T)) - 1)
-    )
+    x = const.cgs.h * const.cgs.c / (wl * 1e2 * const.cgs.kB * T)
+    return  2 * const.cgs.h * const.cgs.c / (wl * 1e2)**3 / np.expm1(x)
 
 
 def spectral_index(

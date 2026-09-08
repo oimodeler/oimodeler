@@ -1,5 +1,3 @@
-from typing import Any
-
 import astropy.units as u
 import numpy as np
 from numpy.typing import NDArray
@@ -252,8 +250,6 @@ class oimTempGrad(oimComponentRadialProfile):
         emissivity = 1 - np.exp(-sigma * kappa_abs * elong)
 
         temp = self.T0(wl, t) * (r / r0_mas) ** self.q(wl, t)
-        spectral_density = (
-            blackbody(temp, const.c / wl) * emissivity * (1 / elong)
-        )
+        spectral_density = blackbody(temp, wl) * emissivity * (1 / elong)
         rin_mas, rout_mas = rin / dist * 1e3, rout / dist * 1e3
         return ((r >= rin_mas) & (r <= rout_mas)) * spectral_density
