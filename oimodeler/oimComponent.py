@@ -1030,44 +1030,44 @@ class oimComponentRadialProfile(oimComponent):
         wl = ucoord * 0 if wl is None else wl
         t = ucoord * 0 if t is None else t
 
-        fxp, fyp = ucoord, vcoord
-        if self.elliptic:
-            pa_rad = self.pa.qty(wl, t).to(units.rad).value
-            co, si = np.cos(pa_rad), np.sin(pa_rad)
-            fxp = ucoord * co - vcoord * si
-            fyp = ucoord * si + vcoord * co
-            fxp /= 1 / self.cosi(wl, t) if self.flat else self.elong(wl, t)
-
         # TODO: Performance: Move the `np.unique` lines into ``oimData``
-        wl0, wl_idx = np.unique(wl, return_inverse=True)
-        t0, t_idx = np.unique(t, return_inverse=True)
-
-        # TODO: Check if these unique ``sfreq`` actually cover
-        # all baseline angles as well.
-        sfreq0, sfreq0_idx, sfreq_idx = np.unique(
-            np.hypot(fxp, fyp),
-            return_index=True,
-            return_inverse=True,
+        wl0, idx_wl = np.unique(wl, return_inverse=True)
+        t0, idx_t = np.unique(t, return_inverse=True)
+        uvcoord0, idx_uvcoord = np.unique(
+            np.vstack((ucoord, vcoord)), return_inverse=True, axis=1
         )
+
+        # TODO: Make this into a matrix multiplication (no need for rearranging)
+        fxp0, fyp0 = uvcoord0
+        if self.elliptic:
+            pa_rad = self.pa.qty(wl0, t0).to(units.rad).value
+            co, si = np.cos(pa_rad), np.sin(pa_rad)
+            fxp0, fyp0 = fxp0 * co - fyp0 * si, fxp0 * si + fyp0 * co
+            fxp0 /= 1 / self.cosi(wl0, t0) if self.flat else self.elong(wl, t0)
 
         extfactor = 1.0
         if self.extincted:
             extfactor = 10 ** (
                 -0.4
                 * self.extlaw(
-                    wl, *[self.params[extarg].value for extarg in self.extargs]
+                    wl0,
+                    *[self.params[extarg].value for extarg in self.extargs],
                 )
             )
 
         Ir0 = self.getInternalRadialProfile(wl0, t0)
         r = self.r * units.mas.to(units.rad)
-        kr = 2.0 * np.pi * r[:, np.newaxis] * sfreq0[np.newaxis, :]
+        kr = (
+            2.0
+            * np.pi
+            * r[:, np.newaxis]
+            * np.hypot(fxp0, fyp0)[np.newaxis, :]
+        )
         kernel = j0(kr)
 
         # FIXME: Not yet tested for correct output values.
-        # TODO: Make wl and t here unique as well.
         if self.asymmetric:
-            psi = np.arctan2(fxp[sfreq0_idx], fyp[sfreq0_idx])
+            psi = np.arctan2(fxp0, fyp0)
             for i in range(1, self.modulation + 1):
                 skwi = getattr(self, f"skw{i}")(wl, t)
                 skwPai = getattr(self, f"skwPa{i}").qty(wl, t).to(u.rad).value
@@ -1078,18 +1078,16 @@ class oimComponentRadialProfile(oimComponent):
         dr = self.dr * units.mas.to(units.rad)
         kernel *= (2 * np.pi * r * dr)[:, np.newaxis]
 
-        # TODO: Grid is overcomputed: (nwl * nuv) < (nwl * nsfreq)
+        # TODO: Grid is overcomputed: (nwl * nuv[m]) < (nwl * nuv[cycle/rad])
         vc0 = Ir0 @ kernel * 1e23 + 0j
-
-        # FIXME: Test if correct for ``(Ir0.shape[0] = nt0) != 1``
-        vc = vc0[t_idx if Ir0.shape[0] != 1 else 0, wl_idx, sfreq_idx]
-
-        return (
-            vc
-            * self._ftTranslateFactor(fxp, fyp, wl, t)
-            * self.f(wl, t)
+        vc0 *= (
+            self._ftTranslateFactor(fxp0, fyp0, wl0, t0)
+            * self.f(wl0, t0)
             * extfactor
         )
+
+        # FIXME: Test if correct for ``(Ir0.shape[0] = nt0) != 1``
+        return vc0[idx_t if Ir0.shape[0] != 1 else 0, idx_wl, idx_uvcoord]
 
 
 class oimComponentFitsImage(oimComponentImage):
