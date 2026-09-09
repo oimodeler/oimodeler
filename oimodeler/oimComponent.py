@@ -215,7 +215,9 @@ class oimComponent:
             )
             setattr(type(self), key, prop)
 
-    def getComplexCoherentFlux(self, u, v, wl=None, t=None) -> np.ndarray:
+    def getComplexCoherentFlux(
+        self, u, v, wl=None, t=None, **kwargs
+    ) -> np.ndarray:
         """Compute and return the complex coherent flux for an array of u,v
         (and optionally wavelength and time ) coordinates
 
@@ -433,7 +435,9 @@ class oimComponentFourier(oimComponent):
 
         self._eval(**kwargs, checkParam=False)
 
-    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+    def getComplexCoherentFlux(
+        self, ucoord, vcoord, wl=None, t=None, **kwargs
+    ):
         fxp, fyp = ucoord, vcoord
         if self.elliptic:
             pa_rad = (self.params["pa"](wl, t)) * self.params["pa"].unit.to(
@@ -628,7 +632,9 @@ class oimComponentImage(oimComponent):
         self.FTBackendData = None
         self._eval(**kwargs, checkParam=False)
 
-    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+    def getComplexCoherentFlux(
+        self, ucoord, vcoord, wl=None, t=None, **kwargs
+    ):
         if wl is None:
             wl = ucoord * 0
         if t is None:
@@ -1026,19 +1032,26 @@ class oimComponentRadialProfile(oimComponent):
 
         return im
 
-    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-        wl = ucoord * 0 if wl is None else wl
-        t = ucoord * 0 if t is None else t
+    def getComplexCoherentFlux(
+        self, ucoord, vcoord, wl=None, t=None, **kwargs
+    ):
+        if "uv0" in kwargs:
+            (fxp0, fyp0), idx_uv = kwargs["uv0"], kwargs["idx_uv"]
+            wl0, idx_wl = kwargs["wl0"], kwargs["idx_wl"]
+            t0, idx_t = kwargs["t0"], kwargs["idx_t"]
+        else:
+            wl0, idx_wl = np.unique(wl, return_inverse=True)
+            t0, idx_t = np.unique(t, return_inverse=True)
+            (fxp0, fyp0), idx_uv = np.unique(
+                np.vstack((ucoord, vcoord)), return_inverse=True, axis=1
+            )
 
-        # TODO: Performance: Move the `np.unique` lines into ``oimData``
-        wl0, idx_wl = np.unique(wl, return_inverse=True)
-        t0, idx_t = np.unique(t, return_inverse=True)
-        uvcoord0, idx_uvcoord = np.unique(
-            np.vstack((ucoord, vcoord)), return_inverse=True, axis=1
-        )
+        if wl0 is None:
+            wl0 = np.zeros_like(fxp0)
+        if t0 is None:
+            t0 = np.zeros_like(fxp0)
 
         # TODO: Make this into a matrix multiplication (no need for rearranging)
-        fxp0, fyp0 = uvcoord0
         if self.elliptic:
             pa_rad = self.pa.qty(wl0, t0).to(units.rad).value
             co, si = np.cos(pa_rad), np.sin(pa_rad)
@@ -1068,6 +1081,8 @@ class oimComponentRadialProfile(oimComponent):
         # FIXME: Not yet tested for correct output values.
         if self.asymmetric:
             psi = np.arctan2(fxp0, fyp0)
+
+            # TODO: Vectorise this for more efficient computation
             for i in range(1, self.modulation + 1):
                 skwi = getattr(self, f"skw{i}")(wl, t)
                 skwPai = getattr(self, f"skwPa{i}").qty(wl, t).to(u.rad).value
@@ -1079,7 +1094,7 @@ class oimComponentRadialProfile(oimComponent):
         kernel *= (2 * np.pi * r * dr)[:, np.newaxis]
 
         # TODO: Grid is overcomputed: (nwl * nuv[m]) < (nwl * nuv[cycle/rad])
-        vc0 = Ir0 @ kernel * 1e23 + 0j
+        vc0 = (Ir0 @ kernel).astype(np.complex128) * 1e23
         vc0 *= (
             self._ftTranslateFactor(fxp0, fyp0, wl0, t0)
             * self.f(wl0, t0)
@@ -1087,7 +1102,7 @@ class oimComponentRadialProfile(oimComponent):
         )
 
         # FIXME: Test if correct for ``(Ir0.shape[0] = nt0) != 1``
-        return vc0[idx_t if Ir0.shape[0] != 1 else 0, idx_wl, idx_uvcoord]
+        return vc0[idx_t if Ir0.shape[0] != 1 else 0, idx_wl, idx_uv]
 
 
 class oimComponentFitsImage(oimComponentImage):

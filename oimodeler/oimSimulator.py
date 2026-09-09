@@ -191,6 +191,12 @@ class oimSimulator:
             self.data.vect_v,
             self.data.vect_wl,
             self.data.vect_mjd,
+            wl0=self.data.vect_wl0,
+            idx_wl=self.data.vect_idx_wl,
+            t0=self.data.vect_t0,
+            idx_t=self.data.vect_idx_t,
+            uv0=self.data.vect_uv0,
+            idx_uv=self.data.vect_idx_uv,
         )
 
         nelChi2 = 0
