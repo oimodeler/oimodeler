@@ -872,8 +872,8 @@ class oimComponentRadialProfile(oimComponent):
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._t = [0]  # This component is static
         self.normalizeImage = True
-
         self.params["dim"] = oimParam(base="dim")
+        self._r, self._dr = None, None
 
         # NOTE: Add ellipticity if either elong or pa is specified in kwargs
         if any(x in kwargs for x in ["cosi", "elong", "pa"]) or kwargs.pop(
@@ -916,16 +916,24 @@ class oimComponentRadialProfile(oimComponent):
         self._eval(**kwargs, checkParam=False)
 
     @property
-    def _r(self) -> None | NDArray[np.float64]:
+    def r(self) -> None | NDArray[np.float64]:
         """Gets the radial profile (mas)."""
-        return None
+        return self._r
+
+    @property
+    def dr(self) -> None | NDArray[np.float64]:
+        """Gets the integration weights (mas)."""
+        if self._dr is None:
+            self._dr = np.gradient(self.r)
+
+        return self._dr
 
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
         wl0 = np.unique(wl) if self._wl is None else self._wl
         t0 = np.unique(t) if self._t is None else self._t
 
-        r = self._r
-        if self._r is None:
+        r = self.r
+        if r is None:
             pix = self._pixSize * units.rad.to(units.mas)
             r = np.linspace(0, self.dim.value - 1, self.dim.value) * pix
 
@@ -1018,56 +1026,48 @@ class oimComponentRadialProfile(oimComponent):
 
         return im
 
-    def hankel(
-        self,
-        r: NDArray[np.float64],
-        wl: NDArray[np.float64],
-        t: NDArray[np.float64],
-        ucoord: NDArray[np.float64],
-        vcoord: NDArray[np.float64],
-    ) -> NDArray[np.complex128]:
-        """Computes the nth-order Hankel transform of the radial intensity.
+    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+        wl = ucoord * 0 if wl is None else wl
+        t = ucoord * 0 if t is None else t
 
-        Parameters
-        ----------
-        r : NDArray[np.float64]
-            Radius (rad).
-        wl : NDArray[np.float64]
-            Wavelength (m).
-        t : NDArray[np.float64]
-            Time (s).
-        ucoord : NDArray[np.float64]
-            The u coord (Mλ).
-        vcoord : NDArray[np.float64]
-            The v coord (Mλ).
-
-        Returns
-        -------
-        NDArray[np.complex128]
-            The complex coherent flux.
-
-        Notes
-        -----
-        Integration is performed using a manual implementation of
-        the trapezoidal rule to enable matrix multiplication.
-        This improves performance.
-        """
         # TODO: Performance: Move the `np.unique` lines into ``oimData``
-        wl0, wl_idx = np.unique(wl, return_inverse=True)
-        t0, t_idx = np.unique(t, return_inverse=True)
-        sfreq0, sfreq0_idx, sfreq_idx = np.unique(
-            np.hypot(ucoord, vcoord),
-            return_index=True,
-            return_inverse=True,
+        wl0, idx_wl = np.unique(wl, return_inverse=True)
+        t0, idx_t = np.unique(t, return_inverse=True)
+        uvcoord0, idx_uvcoord = np.unique(
+            np.vstack((ucoord, vcoord)), return_inverse=True, axis=1
         )
 
+        # TODO: Make this into a matrix multiplication (no need for rearranging)
+        fxp0, fyp0 = uvcoord0
+        if self.elliptic:
+            pa_rad = self.pa.qty(wl0, t0).to(units.rad).value
+            co, si = np.cos(pa_rad), np.sin(pa_rad)
+            fxp0, fyp0 = fxp0 * co - fyp0 * si, fxp0 * si + fyp0 * co
+            fxp0 /= 1 / self.cosi(wl0, t0) if self.flat else self.elong(wl, t0)
+
+        extfactor = 1.0
+        if self.extincted:
+            extfactor = 10 ** (
+                -0.4
+                * self.extlaw(
+                    wl0,
+                    *[self.params[extarg].value for extarg in self.extargs],
+                )
+            )
+
         Ir0 = self.getInternalRadialProfile(wl0, t0)
-        kr = 2.0 * np.pi * r[:, np.newaxis] * sfreq0[np.newaxis, :]
+        r = self.r * units.mas.to(units.rad)
+        kr = (
+            2.0
+            * np.pi
+            * r[:, np.newaxis]
+            * np.hypot(fxp0, fyp0)[np.newaxis, :]
+        )
         kernel = j0(kr)
 
         # FIXME: Not yet tested for correct output values.
         if self.asymmetric:
-            psi = np.arctan2(ucoord[sfreq0_idx], vcoord[sfreq0_idx])
+            psi = np.arctan2(fxp0, fyp0)
             for i in range(1, self.modulation + 1):
                 skwi = getattr(self, f"skw{i}")(wl, t)
                 skwPai = getattr(self, f"skwPa{i}").qty(wl, t).to(u.rad).value
@@ -1075,51 +1075,19 @@ class oimComponentRadialProfile(oimComponent):
                     (-1j) ** i * skwi * np.cos(i * (psi - skwPai)) * jv(i, kr)
                 )
 
-        kernel *= 2 * np.pi * (r * np.gradient(r))[:, np.newaxis]
+        dr = self.dr * units.mas.to(units.rad)
+        kernel *= (2 * np.pi * r * dr)[:, np.newaxis]
 
-        # TODO: Grid is overcomputed: (nwl * nuv) > (nwl * nsfreq)
-        res0 = Ir0 @ kernel
-        if Ir0.shape[0] == 1:
-            res = res0[0, wl_idx, sfreq_idx]
-        # FIXME: Test if correct for ``(Ir0.shape[0] = nt0) != 1``
-        else:
-            res = res0[t_idx, wl_idx, sfreq_idx]
-
-        return res * 1e23 + 0j
-
-    # TODO: Make this work generally with any radial function and a Hankel transform
-    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-
-        wl = ucoord * 0 if wl is None else wl
-        t = ucoord * 0 if t is None else t
-
-        fxp, fyp = ucoord, vcoord
-        if self.elliptic:
-            pa_rad = self.pa.qty(wl, t).to(units.rad).value
-            co, si = np.cos(pa_rad), np.sin(pa_rad)
-            fxp = ucoord * co - vcoord * si
-            fyp = ucoord * si + vcoord * co
-
-            if self.flat:
-                fxp *= self.cosi(wl, t)
-            else:
-                fxp /= self.elong(wl, t)
-
-        extfactor = 1.0
-        if self.extincted:
-            extfactor = 10 ** (
-                -0.4
-                * self.extlaw(
-                    wl, *[self.params[extarg].value for extarg in self.extargs]
-                )
-            )
-
-        return (
-            self.hankel(self._r * units.mas.to(units.rad), wl, t, fxp, fyp)
-            * self._ftTranslateFactor(fxp, fyp, wl, t)
-            * self.f(wl, t)
+        # TODO: Grid is overcomputed: (nwl * nuv[m]) < (nwl * nuv[cycle/rad])
+        vc0 = Ir0 @ kernel * 1e23 + 0j
+        vc0 *= (
+            self._ftTranslateFactor(fxp0, fyp0, wl0, t0)
+            * self.f(wl0, t0)
             * extfactor
         )
+
+        # FIXME: Test if correct for ``(Ir0.shape[0] = nt0) != 1``
+        return vc0[idx_t if Ir0.shape[0] != 1 else 0, idx_wl, idx_uvcoord]
 
 
 class oimComponentFitsImage(oimComponentImage):

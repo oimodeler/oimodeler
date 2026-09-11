@@ -2,7 +2,7 @@ import numpy as np
 
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import oimOptions
-from ..oimParam import _standardParameters, oimParam
+from ..oimParam import oimParam
 
 
 class oimRadialRing2(oimComponentRadialProfile):
@@ -49,13 +49,29 @@ class oimRadialRing2(oimComponentRadialProfile):
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
-        self.params["din"] = oimParam(**_standardParameters["din"])
-        self.params["w"] = oimParam(**_standardParameters["w"])
-        self.params["p"] = oimParam(**_standardParameters["p"])
-
-        self._t = np.array([0])  # constant value <=> static model
-        self._wl = None
+        self.params["din"] = oimParam(base="din")
+        self.params["w"] = oimParam(base="w")
+        self.params["p"] = oimParam(base="p")
         self._eval(**kwargs)
+
+    @property
+    def r(self):
+        """Gets the radial profile [mas]."""
+        rin = self.din.value / 2
+        rout = rin + self.w.value
+        dim, dist = self.dim.value, self.dist.value
+        grid_type = oimOptions.model.grid.type
+
+        rin, rout = rin / dist * 1e3, rout / dist * 1e3
+        if grid_type == "linear":
+            self._r = np.linspace(rin, rout, dim)
+        else:
+            if rin <= 0:
+                raise ValueError("Logarithmic grid requires rin > 0.")
+
+            self._r = np.logspace(np.log10(rin), np.log10(rout), dim)
+
+        return self._r
 
     def _radialProfileFunction(
         self, r: np.ndarray, wl: np.ndarray, t: np.ndarray
@@ -75,37 +91,7 @@ class oimRadialRing2(oimComponentRadialProfile):
         -------
         radial_profile : numpy.ndarray
         """
-        # HACK: Sets the multi wavelength coordinates properly. Does not account for time, improves computation time.
-        wl, p = np.unique(wl), self.params["p"](wl, t)
-        rin = self.params["din"](wl, t) / 2
-        rout = rin + self.params["w"](wl, t)
-
-        if len(r.shape) == 3:
-            r = r[0, 0][np.newaxis, np.newaxis, :]
-            wl = wl[np.newaxis, :, np.newaxis]
-        else:
-            r, wl = r[np.newaxis, :], wl[np.newaxis, :]
-
-        image = np.nan_to_num(
-            np.logical_and(r > rin, r < rout).astype(int) * (r / rin) ** p,
-            nan=0,
-        )
+        rin = self.din(wl, t) / 2
+        rout = rin + self.w(wl, t)
+        image = ((r >= rin) & (r <= rout)) * (r / rin) ** self.p(wl, t)
         return image * np.ones_like(wl)
-
-    @property
-    def _r(self):
-        """Gets the radial profile [mas]."""
-        rin = self.params["din"].value / 2
-        rout = rin + self.params["w"].value
-        if oimOptions.model.grid.type == "linear":
-            return np.linspace(rin, rout, self.params["dim"].value)
-        return np.logspace(
-            0.0 if rin == 0 else np.log10(rin),
-            np.log10(rout),
-            self.params["dim"].value,
-        )
-
-    @_r.setter
-    def _r(self, r: np.ndarray):
-        """Sets the radius."""
-        pass
