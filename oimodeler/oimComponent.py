@@ -1037,13 +1037,16 @@ class oimComponentRadialProfile(oimComponent):
             np.vstack((ucoord, vcoord)), return_inverse=True, axis=1
         )
 
-        # TODO: Make this into a matrix multiplication (no need for rearranging)
-        fxp0, fyp0 = uvcoord0
         if self.elliptic:
             pa_rad = self.pa.qty(wl0, t0).to(units.rad).value
             co, si = np.cos(pa_rad), np.sin(pa_rad)
-            fxp0, fyp0 = fxp0 * co - fyp0 * si, fxp0 * si + fyp0 * co
-            fxp0 /= 1 / self.cosi(wl0, t0) if self.flat else self.elong(wl, t0)
+            elong = (
+                1 / self.cosi(wl0, t0) if self.flat else self.elong(wl0, t0)
+            )
+            M = np.empty(co.shape + (2, 2))
+            M[..., 0] = np.stack((co / elong, si), axis=-1)
+            M[..., 1] = np.stack((-si / elong, co), axis=-1)
+            uvcoord0 = np.einsum("...ij,jk->...ik", M, uvcoord0)
 
         extfactor = 1.0
         if self.extincted:
@@ -1058,16 +1061,13 @@ class oimComponentRadialProfile(oimComponent):
         Ir0 = self.getInternalRadialProfile(wl0, t0)
         r = self.r * units.mas.to(units.rad)
         kr = (
-            2.0
-            * np.pi
-            * r[:, np.newaxis]
-            * np.hypot(fxp0, fyp0)[np.newaxis, :]
+            2.0 * np.pi * r[:, np.newaxis] * np.hypot(*uvcoord0)[np.newaxis, :]
         )
         kernel = j0(kr)
 
         # FIXME: Not yet tested for correct output values.
         if self.asymmetric:
-            psi = np.arctan2(fxp0, fyp0)
+            psi = np.arctan2(*uvcoord0)
             for i in range(1, self.modulation + 1):
                 skwi = getattr(self, f"skw{i}")(wl, t)
                 skwPai = getattr(self, f"skwPa{i}").qty(wl, t).to(u.rad).value
@@ -1081,7 +1081,7 @@ class oimComponentRadialProfile(oimComponent):
         # TODO: Grid is overcomputed: (nwl * nuv[m]) < (nwl * nuv[cycle/rad])
         vc0 = Ir0 @ kernel * 1e23 + 0j
         vc0 *= (
-            self._ftTranslateFactor(fxp0, fyp0, wl0, t0)
+            self._ftTranslateFactor(*uvcoord0, wl0, t0)
             * self.f(wl0, t0)
             * extfactor
         )
