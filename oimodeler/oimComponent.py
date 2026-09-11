@@ -20,7 +20,7 @@ from scipy.special import j0, jv
 
 from . import __dict__ as oimDict
 from .oimExtinction import extlaw_FitzIndeb as extlaw
-from .oimOptions import oimOptions
+from .oimOptions import MAS2RAD, RAD2MAS, oimOptions
 from .oimParam import (
     _standardParameters,
     oimInterp,
@@ -819,9 +819,9 @@ class oimComponentImage(oimComponent):
 
         dim = self.params["dim"](wl, t)
         if self._pixSize != 0:
-            pix = self._pixSize * units.rad.to(units.mas)
+            pix = self._pixSize * RAD2MAS
         else:
-            pix = self.getPixelSize() * units.rad.to(units.mas)
+            pix = self.getPixelSize() * RAD2MAS
 
         v = np.linspace(-0.5, 0.5, dim)
         xy = v * pix * dim
@@ -856,7 +856,7 @@ class oimComponentImage(oimComponent):
         )
 
     def _fov(self, wl=None, t=None):
-        return self.getPixelSize() * u.rad.to(u.mas) * self.params["dim"].value
+        return self.getPixelSize() * RAD2MAS * self.params["dim"].value
 
 
 class oimComponentRadialProfile(oimComponent):
@@ -934,7 +934,7 @@ class oimComponentRadialProfile(oimComponent):
 
         r = self.r
         if r is None:
-            pix = self._pixSize * units.rad.to(units.mas)
+            pix = self._pixSize * RAD2MAS
             r = np.linspace(0, self.dim.value - 1, self.dim.value) * pix
 
         if simple:
@@ -1059,7 +1059,7 @@ class oimComponentRadialProfile(oimComponent):
             )
 
         Ir0 = self.getInternalRadialProfile(wl0, t0)
-        r = self.r * units.mas.to(units.rad)
+        r = self.r * MAS2RAD
         kr = (
             2.0 * np.pi * r[:, np.newaxis] * np.hypot(*uvcoord0)[np.newaxis, :]
         )
@@ -1075,8 +1075,7 @@ class oimComponentRadialProfile(oimComponent):
                     (-1j) ** i * skwi * np.cos(i * (psi - skwPai)) * jv(i, kr)
                 )
 
-        dr = self.dr * units.mas.to(units.rad)
-        kernel *= (2 * np.pi * r * dr)[:, np.newaxis]
+        kernel *= (2 * np.pi * r * self.dr * MAS2RAD)[:, np.newaxis]
 
         # TODO: Grid is overcomputed: (nwl * nuv[m]) < (nwl * nuv[cycle/rad])
         vc0 = Ir0 @ kernel * 1e23 + 0j
@@ -1106,11 +1105,12 @@ class oimComponentFitsImage(oimComponentImage):
         self._eval(**kwargs)
 
     def loadImage(self, fitsImage, useinternalPA=False):
-        if isinstance(fitsImage, str) or isinstance(fitsImage, Path):
+        if isinstance(fitsImage, (str, Path)):
             try:
                 im = fits.open(fitsImage)[0]
             except:
                 raise TypeError("Not a valid fits file")
+
         elif isinstance(fitsImage, fits.hdu.hdulist.HDUList):
             im = fitsImage[0]
         elif isinstance(fitsImage, fits.hdu.image.PrimaryHDU):
@@ -1172,5 +1172,4 @@ class oimComponentFitsImage(oimComponentImage):
 
     def getPixelSize(self, mas=False):
         self._pixSize = self._pixSize0 * self.params["scale"].value
-        fact = u.rad.to(u.mas) * float(mas) + float(not (mas))
-        return self._pixSize * fact
+        return self._pixSize * (RAD2MAS * mas + (not mas))

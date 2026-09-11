@@ -21,7 +21,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
-from .oimOptions import constants as const
+from .oimOptions import M2AU, RAD2MAS, SI
 from .oimUtils import (
     _pickle,
     _unpickle,
@@ -1328,12 +1328,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         else:
             solid_angle = self.solid_angle
 
-        return (
-            blackbody(self.T(wl, t), wl)
-            / u.rad.to(u.mas) ** 2
-            * solid_angle
-            * 1e23
-        )
+        return blackbody(self.T(wl, t), wl) / RAD2MAS**2 * solid_angle * 1e23
 
 
 class oimParamLinearStarWl(oimParamInterpolator):
@@ -1430,16 +1425,17 @@ class oimParamLinearStarWl(oimParamInterpolator):
         """
         if self.compute_radius:
             luminosity = self.L.qty().to(u.W).value
-            stellar_radius = np.sqrt(
-                luminosity / (4 * np.pi * const.sigma_sb * self.T.value**4)
-            ) * u.m.to(u.au)
+            stellar_radius = (
+                np.sqrt(luminosity / (4 * np.pi * SI.SIGMA_SB * self.T() ** 4))
+                * M2AU
+            )
         else:
             stellar_radius = self.R.qty().to(u.au).value
 
         angular_radius = stellar_radius / self.dist.value * 1e3
         return (
             blackbody(self.T(wl, t), wl)
-            / u.rad.to(u.mas) ** 2
+            / RAD2MAS**2
             * np.pi
             * angular_radius**2
             * 1e23
@@ -1468,7 +1464,7 @@ class oimParamUserFunc(oimParamInterpolator):
             args = inspect.getfullargspec(userfunc).args
         else:
             raise NotImplementedError(
-                'No support for interpolation along "%s"' % self.dependence
+                f'No support for interpolation along "{self.dependence}"'
             )
 
         # NOTE: This is done to match the behavior of other oimInterp instances,

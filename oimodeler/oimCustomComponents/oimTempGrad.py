@@ -3,7 +3,6 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ..oimComponent import oimComponentRadialProfile
-from ..oimOptions import constants as const
 from ..oimOptions import oimOptions
 from ..oimParam import oimParam
 from ..oimUtils import blackbody
@@ -174,7 +173,9 @@ class oimTempGrad(oimComponentRadialProfile):
 
             self._r = np.logspace(np.log10(rin), np.log10(rout), dim)
         else:
-            raise ValueError(f"Selected gridtype '{grid_type}' does not exist!")
+            raise ValueError(
+                f"Selected gridtype '{grid_type}' does not exist!"
+            )
 
         self._dr = np.gradient(self._r)
         self._cache_key = key

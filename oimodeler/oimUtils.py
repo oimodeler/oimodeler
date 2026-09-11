@@ -23,8 +23,7 @@ from scipy.stats import circstd
 
 import oimodeler as oim
 
-from .oimOptions import constants as const
-from .oimOptions import oimOptions
+from .oimOptions import ARCSEC2RAD, CGS, MAS2RAD, SI, oimOptions
 
 # TODO: Should this (global variables) be moved into a configuration file?
 _oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
@@ -425,8 +424,8 @@ def blackbody(
     avoid the overhead of similar implementations like the astropy's
     `astropy.modeling.physical_models.BlackBody`).
     """
-    x = const.cgs.h * const.cgs.c / (wl * 1e2 * const.cgs.kB * T)
-    return 2 * const.cgs.h * const.cgs.c / (wl * 1e2) ** 3 / np.expm1(x)
+    x = CGS.H * CGS.C / (wl * 1e2 * CGS.K_B * T)
+    return 2 * CGS.H * CGS.C / (wl * 1e2) ** 3 / np.expm1(x)
 
 
 def spectral_index(
@@ -459,7 +458,7 @@ def spectral_index(
     wl = np.unique(
         np.hstack([item for sublist in data.struct_wl for item in sublist])
     )
-    nu = const.c / wl
+    nu = SI.C / wl
     return wl, np.gradient(np.log(blackbody(T, nu)), np.log(nu))
 
 
@@ -860,9 +859,9 @@ def getSpaFreq(
     wl_insnames = np.array([data[i].header["INSNAME"] for i in idx_wlarr])
 
     if unit == "cycles/mas":
-        mult = u.mas.to(u.rad)
+        mult = MAS2RAD
     elif unit == "cycles/arcsec":
-        mult = u.arcsec.to(u.rad)
+        mult = ARCSEC2RAD
     elif unit == "Mlam":
         mult = 1 / (1e6)
     else:
@@ -943,9 +942,9 @@ def get2DSpaFreq(
     wl_insnames = np.array([data[i].header["INSNAME"] for i in idx_wlarr])
 
     if unit == "cycles/mas":
-        mult = u.mas.to(u.rad)
+        mult = MAS2RAD
     elif unit == "cycles/arcsec":
-        mult = u.arcsec.to(u.rad)
+        mult = ARCSEC2RAD
     elif unit == "Mlam":
         mult = 1 / (1e6)
     else:

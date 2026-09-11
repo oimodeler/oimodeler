@@ -19,7 +19,6 @@ from astropy.modeling.physical_models import BlackBody
 
 import oimodeler.oimUtils as utils
 from oimodeler.oimData import oimData
-from oimodeler.oimOptions import constants as const
 
 
 def generic_method(self=None) -> str:
