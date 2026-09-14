@@ -20,6 +20,7 @@ from matplotlib.ticker import ScalarFormatter
 from numpy.typing import ArrayLike
 
 from .oimComponent import oimComponent
+from .oimOptions import ARCSEC2RAD, MAS2RAD
 from .oimParam import (
     oimParam,
     oimParamInterpolator,
@@ -645,11 +646,6 @@ class oimModel:
             )
 
         return fig, axe, im
-    
-    
-    
-
-    
 
     def showFourier(
         self,
@@ -723,9 +719,9 @@ class oimModel:
 
         mult = 1
         if unit == "cycle/mas":
-            mult = u.mas.to(u.rad)
+            mult = MAS2RAD
         elif unit == "cycle/arcsec":
-            mult = u.arcsec.to(u.rad)
+            mult = ARCSEC2RAD
         elif unit == "Mlam":
             mult = 1e-6
 
@@ -751,7 +747,7 @@ class oimModel:
             ]
         ):
             spfx_arr, spfy_arr = map(
-                lambda x: (x / pixSize / u.mas.to(u.rad) * mult).flatten(),
+                lambda x: (x / pixSize / MAS2RAD * mult).flatten(),
                 [vx_arr, vy_arr],
             )
         else:
@@ -895,18 +891,15 @@ class oimModel:
                 fluxes.append(compi.params["f"])
 
         comp.params["f"] = oimParamNorm(fluxes)
-        
-    def getFOV(self,wl=None,t=None):
-        ncomp=len(self.components)
-        fovs=np.zeros((4,ncomp))
-        
-        for i,component in enumerate(self.components):
-            fovs[:,i] = component.getFOV(wl,t)
-        
-        maxi = np.max(fovs,axis=1)
-        mini = np.min(fovs,axis=1)
-        
-        
-        return np.array([mini[0],maxi[1],mini[2],maxi[3]])
-            
-        
+
+    def getFOV(self, wl=None, t=None):
+        ncomp = len(self.components)
+        fovs = np.zeros((4, ncomp))
+
+        for i, component in enumerate(self.components):
+            fovs[:, i] = component.getFOV(wl, t)
+
+        maxi = np.max(fovs, axis=1)
+        mini = np.min(fovs, axis=1)
+
+        return np.array([mini[0], maxi[1], mini[2], maxi[3]])

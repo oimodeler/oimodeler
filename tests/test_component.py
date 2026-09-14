@@ -16,12 +16,12 @@ def test_getFourierComponents(): ...
 
 class TestOimComponent:
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def component(self) -> oimComponent:
         """oimComponent with some values."""
         return oimComponent(x=5, y=10, f=0.5)
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def fourier_component(self) -> oimComponentFourier:
         """oimFourierComponent with oimParam adding kwarg."""
         return oimComponentFourier(elliptic=True, extincted=True, A_V=0.9)
@@ -122,6 +122,8 @@ class TestOimComponent:
         def test_roundtrip(
             self, fourier_component: oimComponentFourier, cycles: int = 5
         ) -> None:
+            """Tests serialisation and deserialisation of the same object
+            for multiple cycles."""
             current = fourier_component
             for _ in range(cycles):
                 serialised = current.serialize()
@@ -129,6 +131,7 @@ class TestOimComponent:
                 assert_component_equal(fourier_component, current)
 
         def test_deepcopy(self, fourier_component: oimComponent) -> None:
+            """Tests serialisation of a deepcopy."""
             serialised = fourier_component.serialize()
 
             serialised["params"]["x"]["value"] = 999
@@ -139,6 +142,7 @@ class TestOimComponent:
             assert fourier_component.elliptic
 
         def test_shallow_copy(self, fourier_component: oimComponent) -> None:
+            """Tests serialisation of a shallow copy."""
             serialised = fourier_component.serialize(skip_copy=True)
 
             serialised["params"]["x"]["value"] = 999

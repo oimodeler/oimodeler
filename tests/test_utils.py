@@ -19,7 +19,6 @@ from astropy.modeling.physical_models import BlackBody
 
 import oimodeler.oimUtils as utils
 from oimodeler.oimData import oimData
-from oimodeler.oimOptions import constants as const
 
 
 def generic_method(self=None) -> str:
@@ -46,7 +45,7 @@ def data(oifits_files: list[Path]) -> oimData:
     return oimData(oifits_files)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def toml_file(tmp_path_factory: Path) -> Path:
     """Create a temp TOML file that gets cleaned up automatically."""
     tmp_dir = tmp_path_factory.mktemp("data")
@@ -59,7 +58,7 @@ def toml_file(tmp_path_factory: Path) -> Path:
         mini = "-inf"
         maxi = "inf"
         description = ""
-        unit = "one"
+        unit = ""
         free = true
         error = 0
         """,
@@ -137,7 +136,7 @@ class TestComputations:
     ) -> None:
         """Tests the oimUtils.blackbody function."""
         expected = BlackBody(T * u.K)(wl * u.m).value
-        assert expected == pytest.approx(utils.blackbody(T, const.c / wl))
+        assert expected == pytest.approx(utils.blackbody(T, wl))
 
     # FIXME: Currently only tests if there are errors in function
     # execution. Needs to actually test something more.
@@ -149,7 +148,7 @@ class TestComputations:
 class TestImageOperations:
     """Tests image altering functions of the oimUtils module."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def image(self) -> np.ndarray:
         """An image with only "hot" pixels."""
         return np.ones((1, 1, 8, 8))
@@ -192,7 +191,7 @@ class TestImageOperations:
 class TestOIFITSOperations:
     """Tests readout functions contained in the oimUtils module."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def oifits_inputs(
         self, oifits_files: list[Path], data: oimData
     ) -> list[Path | fits.HDUList]:

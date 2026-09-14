@@ -173,7 +173,7 @@ class oimSimulator:
         computeChi2: bool = False,
         computeSimulatedData: bool = False,
         checkSimulatedData: bool = True,
-        dataTypes=None,
+        dataTypes: list[str] | None = None,
         cprior=None,
     ):
         if dataTypes is None:
@@ -198,8 +198,8 @@ class oimSimulator:
         chi2List = []
         residuals = []
 
-        if computeSimulatedData == True and (
-            checkSimulatedData == True or self.simulatedData == None
+        if computeSimulatedData and (
+            checkSimulatedData or self.simulatedData is None
         ):
             self.simulatedData = oimData()
             for datai in self.data.data:
@@ -207,7 +207,7 @@ class oimSimulator:
 
         data = self.data
 
-        if (computeChi2 == True) | (computeSimulatedData == True):
+        if computeChi2 or computeSimulatedData:
             idx = 0
             nfiles = len(data.struct_u)
             for ifile in range(nfiles):
@@ -284,7 +284,7 @@ class oimSimulator:
                                 ] = np.squeeze(val[ival])
 
                     # NOTE: Computing the chi2
-                    if computeChi2 == True:
+                    if computeChi2:
                         for ival in range(len(val)):
 
                             if nwl == 1 and len(dataVal[ival].shape) == 1:
@@ -324,8 +324,7 @@ class oimSimulator:
                                     (dataErr[ival] != 0)
                                     * np.logical_not(flag[ival])
                                 )
-                                chi2 += np.sum(np.nan_to_num(chi2i, nan=0))
-
+                                chi2 += np.sum(np.nan_to_num(chi2i))
                                 chi2List.append(chi2i)
                                 residuals.append(resi)
         if computeChi2:

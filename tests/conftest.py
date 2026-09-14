@@ -16,6 +16,12 @@ def package_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
+def test_data_dir() -> Path:
+    """Return the global data directory."""
+    return Path(__file__).parent / "data"
+
+
+@pytest.fixture(scope="session")
 def global_data_dir(package_dir: Path) -> Path:
     """Return the global data directory."""
     return package_dir / "data"

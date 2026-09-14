@@ -21,7 +21,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
-from .oimOptions import constants as const
+from .oimOptions import M2AU, RAD2MAS, SI
 from .oimUtils import (
     _pickle,
     _unpickle,
@@ -107,9 +107,9 @@ class oimParam:
 
             if locals()[k] is not None:
                 v = locals()[k]
-                # TODO: Extend this for error, mini, and maxi?
+                # TODO: Extend this for error, mini, and maxi, too?
                 if k == "value" and isinstance(v, u.Quantity):
-                    setattr(self, "unit", v.unit)
+                    self.unit = v.unit
                     v, skip_unit = v.value, True
 
             elif k in defaults:
@@ -167,7 +167,7 @@ class oimParam:
             try:
                 self.__dict__[key] = value
             except NameError:
-                print("Note valid parameter : {}".format(value))
+                print(f"Note valid parameter : {value}")
 
     def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
         """Serializes the oimParam/oimParamInterpolator.
@@ -177,10 +177,27 @@ class oimParam:
         skip_copy : bool, optional
             If "True" skips the top-level deepcopy of oimParam. Default is False.
         """
-        if skip_copy:
-            return self.__dict__
+        ser = self.__dict__
+        if not skip_copy:
+            ser = copy.deepcopy(ser)
 
-        return copy.deepcopy(self.__dict__)
+        for key, value in ser.items():
+            if value is None:
+                pass
+            elif key in ["value", "error", "min", "max"]:
+                if isinstance(value, (int, np.integer)):
+                    value = int(value)
+                if isinstance(value, np.floating):
+                    value = float(value) if np.isfinite(value) else str(value)
+            elif key == "unit":
+                try:
+                    value = value.to_string()
+                except AttributeError:
+                    pass
+
+            ser[key] = value
+
+        return ser
 
     # TODO: Remove this method from this class and implement it in all oimParam... classes?
     # TODO: Make the oimParamNorm link to the correct parameter
@@ -214,6 +231,10 @@ class oimParam:
                     value = [oimParam.deserialize(v) for v in value]
                 except AttributeError:
                     pass
+            elif key in ["min", "max"] and value in ["-inf", "inf", "nan"]:
+                value = np.float16(value)
+            elif key == "unit":
+                value = u.Unit(value)
 
             param.__dict__[key] = value
 
@@ -497,7 +518,7 @@ class oimParamInterpolator(oimParam):
 
         for key, value in ser.items():
             if isinstance(value, (list, tuple, np.ndarray)):
-                ser[key] = [
+                value = [
                     v.serialize(skip_copy=True)
                     for v in value
                     if (
@@ -506,8 +527,16 @@ class oimParamInterpolator(oimParam):
                     )
                 ]
             elif isinstance(value, oimParam):
-                ser[key] = value.serialize(skip_copy=True)
+                value = value.serialize(skip_copy=True)
+            elif key == "unit":
+                try:
+                    value = value.to_string()
+                except AttributeError:
+                    pass
 
+            ser[key] = value
+
+        # TODO: Maybe rename this key? Is this JSON safe?
         ser["class"] = type(self).__name__
         return ser
 
@@ -1299,12 +1328,7 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         else:
             solid_angle = self.solid_angle
 
-        return (
-            blackbody(self.T(wl, t), const.c / wl)
-            / u.rad.to(u.mas) ** 2
-            * solid_angle
-            * 1e23
-        )
+        return blackbody(self.T(wl, t), wl) / RAD2MAS**2 * solid_angle * 1e23
 
 
 class oimParamLinearStarWl(oimParamInterpolator):
@@ -1400,17 +1424,18 @@ class oimParamLinearStarWl(oimParamInterpolator):
             The star's flux (Jy).
         """
         if self.compute_radius:
-            luminosity = self.L.value * self.L.unit.to(u.W)
-            stellar_radius = np.sqrt(
-                luminosity / (4 * np.pi * const.sigma_sb * self.T.value**4)
-            ) * u.m.to(u.au)
+            luminosity = self.L.qty().to(u.W).value
+            stellar_radius = (
+                np.sqrt(luminosity / (4 * np.pi * SI.SIGMA_SB * self.T() ** 4))
+                * M2AU
+            )
         else:
-            stellar_radius = self.R.value * self.R.unit.to(u.au)
+            stellar_radius = self.R.qty().to(u.au).value
 
         angular_radius = stellar_radius / self.dist.value * 1e3
         return (
-            blackbody(self.T(wl, t), const.c / wl)
-            / u.rad.to(u.mas) ** 2
+            blackbody(self.T(wl, t), wl)
+            / RAD2MAS**2
             * np.pi
             * angular_radius**2
             * 1e23
@@ -1439,7 +1464,7 @@ class oimParamUserFunc(oimParamInterpolator):
             args = inspect.getfullargspec(userfunc).args
         else:
             raise NotImplementedError(
-                'No support for interpolation along "%s"' % self.dependence
+                f'No support for interpolation along "{self.dependence}"'
             )
 
         # NOTE: This is done to match the behavior of other oimInterp instances,

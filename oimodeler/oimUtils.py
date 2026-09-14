@@ -18,13 +18,12 @@ import toml
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astroquery.simbad import Simbad
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import circstd
 
 import oimodeler as oim
 
-from .oimOptions import constants as const
-from .oimOptions import oimOptions
+from .oimOptions import ARCSEC2RAD, CGS, MAS2RAD, SI, oimOptions
 
 # TODO: Should this (global variables) be moved into a configuration file?
 _oimDataType = ["VIS2DATA", "VISAMP", "VISPHI", "T3AMP", "T3PHI", "FLUXDATA"]
@@ -369,17 +368,9 @@ def load_toml(toml_file: Path) -> dict[str, Any]:
         dictionary = toml.load(file)
 
     for value in dictionary.values():
-        if "unit" in value:
-            if value["unit"] == "one":
-                value["unit"] = u.one
-            else:
-                value["unit"] = u.Unit(value["unit"])
-
-        if "mini" in value:
-            value["mini"] = np.float32(value["mini"])
-
-        if "maxi" in value:
-            value["maxi"] = np.float32(value["maxi"])
+        value["unit"] = u.Unit(value.get("unit", ""))
+        value["mini"] = np.float16(value.get("mini", "-inf"))
+        value["maxi"] = np.float16(value.get("maxi", "inf"))
 
     return dictionary
 
@@ -403,24 +394,23 @@ def attach_methods(
     return decorator
 
 
-# TODO: Think of splitting into ν/λ variants to save computation time by
-# avoiding divisions outside of this function
 def blackbody(
-    T: float | np.ndarray, nu: float | np.ndarray
-) -> float | np.ndarray:
+    T: float | NDArray[np.float64],
+    wl: float | NDArray[np.float64],
+) -> float | NDArray[np.float64]:
     r"""Computes Planck's law.
 
     Parameters
     ----------
-    T: float or numpy.ndarray
+    T: float or numpy.typing.NDArray[np.float64]
         The temperature (K).
-    nu : float or numpy.ndarray
-        The frequency (Hz).
+    wl : float or numpy.typing.NDArray[np.float64]
+        The wavelength (m).
 
     Returns
     -------
-    blackbody : float or np.ndarray
-        The blackbody (erg / (cm² s Hz sr)).
+    blackbody : float or numpy.typing.NDArray[np.float64]
+        The blackbody (erg / (s sr cm² Hz)).
 
     Notes
     -----
@@ -428,19 +418,14 @@ def blackbody(
 
     .. math::
 
-        B_\nu(\nu,T)=\frac{2h\nu^3}{c^2}\frac{1}{\exp\left(\frac{h\nu}{k_\text{B}T}\right)-1}
+        B_ν(λ,T)=2hc/λ³ 1/(exp(hc/(λk_B T))-1)
 
     This custom variant is implemented for a more efficient computation (i.e. to
     avoid the overhead of similar implementations like the astropy's
     `astropy.modeling.physical_models.BlackBody`).
     """
-    return (
-        2
-        * const.cgs.h
-        * nu**3
-        / const.cgs.c**2
-        / (np.exp(const.cgs.h * nu / (const.cgs.kB * T)) - 1)
-    )
+    x = CGS.H * CGS.C / (wl * 1e2 * CGS.K_B * T)
+    return 2 * CGS.H * CGS.C / (wl * 1e2) ** 3 / np.expm1(x)
 
 
 def spectral_index(
@@ -473,7 +458,7 @@ def spectral_index(
     wl = np.unique(
         np.hstack([item for sublist in data.struct_wl for item in sublist])
     )
-    nu = const.c / wl
+    nu = SI.C / wl
     return wl, np.gradient(np.log(blackbody(T, nu)), np.log(nu))
 
 
@@ -874,9 +859,9 @@ def getSpaFreq(
     wl_insnames = np.array([data[i].header["INSNAME"] for i in idx_wlarr])
 
     if unit == "cycles/mas":
-        mult = u.mas.to(u.rad)
+        mult = MAS2RAD
     elif unit == "cycles/arcsec":
-        mult = u.arcsec.to(u.rad)
+        mult = ARCSEC2RAD
     elif unit == "Mlam":
         mult = 1 / (1e6)
     else:
@@ -957,9 +942,9 @@ def get2DSpaFreq(
     wl_insnames = np.array([data[i].header["INSNAME"] for i in idx_wlarr])
 
     if unit == "cycles/mas":
-        mult = u.mas.to(u.rad)
+        mult = MAS2RAD
     elif unit == "cycles/arcsec":
-        mult = u.arcsec.to(u.rad)
+        mult = ARCSEC2RAD
     elif unit == "Mlam":
         mult = 1 / (1e6)
     else:
@@ -2020,17 +2005,16 @@ def oifitsFlagWithExpression(
 
                 PA = np.tile(pa[:, None], (1, nwl))
                 SPAFREQ = LENGTH / EFF_WAVE
-                
+
                 for colname in data[arri].columns:
                     coldata = data[arri].data[colname.name]
                     s = coldata.shape
 
                     if len(s) == 1 and s[0] == nB:
                         coldata = np.tile(length[:, None], (1, nwl))
-                    
-                    #TODO: replace globals by a dict
-                    globals()[f"{colname.name}"]=coldata
 
+                    # TODO: replace globals by a dict
+                    globals()[f"{colname.name}"] = coldata
 
                 # TODO: Remove eval here as it is can be security liability
                 flags = eval(expr)
@@ -2040,7 +2024,7 @@ def oifitsFlagWithExpression(
                     )
                 else:
                     data[iarr].data["FLAG"] = flags
-               
+
             except:
                 raise Warning(
                     f"oifitsFlagWithExpression: "
@@ -2306,6 +2290,7 @@ def setMinimumError(
     data: str | Path | fits.HDUList,
     dataTypes: str | list[str],
     values: float | list[float],
+    relThreshold: float | list[float | None] | None = None,
     extver: int | list[int] | None = None,
 ) -> None:
     """Set the minimum error of a given data type to a given value.
@@ -2317,9 +2302,17 @@ def setMinimumError(
     dataTypes : str or list of str
         The data types.
     values : float or list of float
-        The minimum error value.
+        The minimum error value. If passed as a `list`, must have the
+        same length as `dataType`.
     extver : int or list of int, optional
         The extension/table version. Defaults to `None`.
+    relThreshold : float or list of float, optional
+        Can be used for `dataType in ["VISAMP", "VIS2DATA"]`. Switches from the
+        scheme where the errors are compared/computed relatively to the values of the
+        datapoints to one where this is only done if they are above the `relThreshold`.
+        This can be, for instance, useful to avoid extremly small errors for correlated
+        fluxes < 1. If passed as `list`, must have the same length as `dataType`.
+        Defaults to `None`.
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -2329,42 +2322,42 @@ def setMinimumError(
 
     values = [values] if not isinstance(values, Iterable) else values
     extver = [extver] if not isinstance(extver, Iterable) else extver
+    if not isinstance(relThreshold, Iterable):
+        relThreshold = [relThreshold]
+
+    if relThreshold == [None]:
+        relThreshold *= len(dataTypes)
 
     extnames = np.unique([getDataArrname(dti) for dti in dataTypes])
     for datai in data[1:]:
-        if datai.name in extnames:
-            if datai.header.get("EXTVER", 1) in extver or extver == [None]:
-
-                for dataTypei in getDataType(datai.name):
-                    if dataTypei in dataTypes:
-                        dataTypeiErr = _oimDataTypeErr[
-                            _oimDataType.index(dataTypei)
+        if datai.name in extnames and (
+            datai.header.get("EXTVER", 1) in extver or extver == [None]
+        ):
+            for dataTypei in getDataType(datai.name):
+                if dataTypei in dataTypes:
+                    dataTypeiErr = _oimDataTypeErr[
+                        _oimDataType.index(dataTypei)
+                    ]
+                    vali = values[dataTypes.index(dataTypei)]
+                    if getDataTypeIsAnalysisComplex(dataTypei):
+                        datai.data[dataTypeiErr] = np.maximum(
+                            datai.data[dataTypeiErr], vali
+                        )
+                    else:
+                        vali /= 100
+                        relThresholdi = relThreshold[
+                            dataTypes.index(dataTypei)
                         ]
-                        vali = values[dataTypes.index(dataTypei)]
+                        mask = (
+                            datai.data[dataTypeiErr] / datai.data[dataTypei]
+                        ) < vali
 
-                        if getDataTypeIsAnalysisComplex(dataTypei):
-                            # TODO: Could the astype here be changed to ``int`` or ``bool``?
-                            mask = (datai.data[dataTypeiErr] < vali).astype(
-                                datai.data[dataTypeiErr].dtype
-                            )
+                        if relThresholdi is not None:
+                            mask &= datai.data[dataTypei] >= relThresholdi
 
-                            datai.data[dataTypeiErr] = (
-                                datai.data[dataTypeiErr] * (1 - mask)
-                                + mask * vali
-                            )
-                        else:
-                            vali = vali / 100
-                            mask = (
-                                (
-                                    datai.data[dataTypeiErr]
-                                    / datai.data[dataTypei]
-                                )
-                                < vali
-                            ).astype(datai.data[dataTypeiErr].dtype)
-                            datai.data[dataTypeiErr] = (
-                                datai.data[dataTypeiErr] * (1 - mask)
-                                + mask * vali * datai.data[dataTypei]
-                            )
+                        datai.data[dataTypeiErr][mask] = (
+                            vali * datai.data[dataTypei][mask]
+                        )
 
 
 def _listFeatures(
