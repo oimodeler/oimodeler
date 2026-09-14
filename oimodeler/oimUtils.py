@@ -2206,6 +2206,45 @@ def oifitsRemoveTelescopes(
             pass
 
 
+
+def scaleSpatialFrequencies(
+    data: str | Path | fits.HDUList,
+    arr: str | list[str],
+    scale: float = 1,
+    
+    extver: list[int | None] = [None],
+) -> None:
+    """Scale spatial frequencies
+    """
+    
+    if isinstance(data, (str, Path)):
+        data = fits.open(data)
+
+    if arr == "all" or arr == ["all"] or not arr:
+        arr = ["OI_VIS", "OI_VIS2", "OI_T3"]
+    
+    if isinstance(arr, str) or not isinstance(arr, Iterable):
+        arr = [arr]
+    
+    
+    for datai in data:
+        if datai.name in arr:
+            if datai.name!= "OI_T3":
+                datai.data["UCOORD"]*=scale
+                datai.data["VCOORD"]*=scale  
+            else:
+                datai.data["U1COORD"]*=scale
+                datai.data["V1COORD"]*=scale                  
+                datai.data["U2COORD"]*=scale
+                datai.data["V2COORD"]*=scale 
+                 
+            if "UVSCALE" in  datai.header:
+                datai.header["UVSCALE"]*=scale
+            else:
+                datai.header["UVSCALE"]=scale
+                
+            
+
 def computeDifferentialError(
     data: str | Path | fits.HDUList,
     ranges: list[list[float]] = [[0, 5]],
