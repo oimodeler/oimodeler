@@ -7,6 +7,7 @@ Created on Thu Mar 26 11:52:59 2026
 
 import numpy as np
 from astropy import units
+import astropy.units as u
 
 from oimodeler.oimComponent import oimComponentImage
 from oimodeler.oimParam import _standardParameters, oimParam
@@ -216,3 +217,8 @@ class oimBipolar(oimComponentImage):
         self._wl = wl
 
         return im
+
+    def getPixelSize(self, mas=False):
+        self._internalImage()
+        fact = u.rad.to(u.mas) * float(mas) + float(not (mas))
+        return self._pixSize * fact
