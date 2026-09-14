@@ -480,7 +480,7 @@ class oimSimulator:
         if type(arr) != type([]):
             arr = [arr]
 
-        if fig is None or axe is None:
+        if fig is None and axe is None:
             fig, axe = plt.subplots(
                 len(arr),
                 1,
