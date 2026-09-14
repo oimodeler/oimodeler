@@ -229,6 +229,8 @@ class oimModel:
                     elif isinstance(param, oimParamLinker):
                         pass
                     elif isinstance(param, oimParamLinkerFunction):
+                        pass
+                        """
                         for iparam, parami in enumerate(param.params):
                             if parami.free or not free:
                                 params[
@@ -238,6 +240,7 @@ class oimModel:
                                         parami.name,
                                     )
                                 ] = parami
+                        """
                     else:
                         if param.free or not free:
                             params[
@@ -275,6 +278,7 @@ class oimModel:
         padFact: int = 1,
         squeeze: bool = True,
         normalize: bool = False,
+        clean: bool = True,
     ) -> np.ndarray | PrimaryHDU:
         """Compute and return an image or and image cube (if wavelength and time
         are given).
@@ -307,6 +311,8 @@ class oimModel:
             The default is True.
         normalize: bool, optional
             If True normalizes the image.
+        clean: bool, optional
+            It True (default) multiply the FFT by a Sinc*UD before computing
 
         Returns
         -------
@@ -329,6 +335,19 @@ class oimModel:
         dimpad = dim * padFact
         dimspad = (nt, nwl, dimpad, dimpad)
         if fromFT:
+            
+            if clean:
+                xy = np.linspace(-1,1,num=dim)
+                xx,yy = np.meshgrid(xy,xy)
+                rr = np.sqrt( xx**2+yy**2)
+                mask = np.sinc(rr)*(rr<1)
+                mask = mask[np.newaxis,np.newaxis,:,:]
+            else:
+                mask=1
+            
+            
+
+            
             v = np.linspace(-0.5 * padFact, 0.5 * padFact, dimpad)
             vx, vy = np.meshgrid(v, v)
 
@@ -343,7 +362,7 @@ class oimModel:
 
             ft = self.getComplexCoherentFlux(
                 spfx_arr, spfy_arr, wl_arr, t_arr
-            ).reshape(dimspad)
+            ).reshape(dimspad)*mask
             image = np.abs(
                 np.fft.fftshift(
                     np.fft.ifft2(
@@ -427,6 +446,7 @@ class oimModel:
         t: int | ArrayLike | None = None,
         fromFT: bool = False,
         normalize: bool = False,
+        clean: bool = True,
     ) -> np.ndarray | PrimaryHDU:
         """Save the model image
 
@@ -447,7 +467,9 @@ class oimModel:
             The default is False.
         normalize: bool, optional
             If True normalizes the image.
-
+        clean: bool, optional
+            It True (default) multiply the FFT by a Sinc*UD before computing
+            
         Returns
         -------
         numpy.ndarray or astropy.io.fits.hdu
@@ -462,6 +484,7 @@ class oimModel:
             toFits=True,
             fromFT=fromFT,
             normalize=normalize,
+            clean=clean,
         )
 
         im.writeto(filename, overwrite=True)
@@ -484,6 +507,7 @@ class oimModel:
         swapAxes: bool = True,
         kwargs_legend: dict = {},
         normalize: bool = False,
+        clean: bool = True,
         **kwargs: dict,
     ) -> tuple[Figure, Axes, np.ndarray]:
         """Show the mode Image or image-Cube
@@ -525,6 +549,8 @@ class oimModel:
         kwargs_legend: dict, optional
         normalize : bool, optional
             If True normalizes the image.
+        clean: bool, optional
+            It True (default) multiply the FFT by a Sinc*UD before computing            
         **kwargs : dict
             Arguments to be passed to the plt.imshow function.
 
@@ -546,6 +572,7 @@ class oimModel:
             padFact=padFact,
             squeeze=False,
             normalize=normalize,
+            clean=clean,
         )
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
 
@@ -646,11 +673,125 @@ class oimModel:
             )
 
         return fig, axe, im
+    
+    def getFourierImage(
+        self,
+        dim: int,
+        spfmax: float,
+        wl: float | ArrayLike | None = None,
+        t: int | float | ArrayLike | None = None,
+        unit: str = "cycle/rad",
+        unit_format: str = "latex_inline",
+        swapAxes: bool = True,
+        normalize: bool = False,
+        splitAmpAndPhase = False,
+        returnSpaFreq = False,
+        ):
+        """Get the amplitude and phase of the Fourier space
+
+        Parameters
+        ----------
+        dim : int
+            Image x & y dimension in pixels.
+        spfmax : float
+            Maximal spatial frequency in in cycle/rad unless uinit is specified
+        wl : float or array_like, optional
+            Wavelength(s) in meter. The default is None.
+        t :  int, float or array_like, optional
+            Time(s) in s (mjd). The default is None.
+        swapAxes : bool, optional
+            If True swaps the axes of the wavelength and time.
+            Default is True.
+            Default is "amp".
+        normalize : bool, optional
+            If True normalizes the image.
+        splitAmpAndPhase, optional
+            If True return (amp,phase) instead of the complex Fourier Transform
+            Default is False
+        returnSpaFreq     
+            if True add the spatial frequencies arrays (spafreqX, spaFreqY) to
+            the result returned (default is False)
+        Returns
+        -------
+        Either 
+            im,spafreqX, spaFreqY
+            amp,phase
+            amp,phase,spafreqX, spaFreqY
+        Depending on the value of splitAmpAndPhase & returnSpaFreq
+        """
+        if wl is None:
+            wl = 0
+    
+        if t is None:
+            t = 0
+    
+        mult = 1
+        if unit == "cycle/mas":
+            mult = u.mas.to(u.rad)
+        elif unit == "cycle/arcsec":
+            mult = u.arcsec.to(u.rad)
+        elif unit == "Mlam":
+            mult = 1e-6
+    
+        t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
+       
+        if swapAxes:
+            t, wl = wl, t
+    
+        nt, nwl = t.size, wl.size
+        dims = (nt, nwl, dim, dim)
+    
+        v = np.linspace(-0.5, 0.5, dim, endpoint=False) * dim
+        vx, vy = np.meshgrid(v, v)
+    
+        vx_arr = np.tile(vx[None, None, ...], (nt, nwl, 1, 1))*spfmax*2/dim
+        vy_arr = np.tile(vy[None, None, ...], (nt, nwl, 1, 1))*spfmax*2/dim
+        wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
+        t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
+    
+    
+    
+        if not swapAxes:
+            spfx_arr, spfy_arr = map(
+           lambda x: (x / mult).flatten(), [vx_arr, vy_arr]
+        )
+        else:
+            spfx_arr, spfy_arr = map(
+                lambda x: (x / mult).flatten(), [vx_arr, vy_arr]
+            )
+    
+        wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
+       
+    
+        if not swapAxes:
+            vc = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr)
+        else:
+            vc = self.getComplexCoherentFlux(spfx_arr, spfy_arr, t_arr, wl_arr)
+    
+        vc = vc.reshape(dims)
+       
+        if normalize:
+            for it in range(nt):
+                for iwl in range(nwl):
+                    vc[it, iwl] /= np.max(np.abs(vc[it, iwl]))
+               
+
+        if splitAmpAndPhase:
+            if returnSpaFreq:
+                return np.abs(vc),np.angle(vc),spfx_arr,spfy_arr
+            else: 
+                return np.abs(vc),np.angle(vc)
+        else:
+            if returnSpaFreq:
+                return  vc,spfx_arr,spfy_arr
+            else:
+                return vc
+
 
     def showFourier(
         self,
         dim: int,
-        pixSize: float,
+        spfmax: float,
         wl: float | ArrayLike | None = None,
         t: int | float | ArrayLike | None = None,
         unit: str = "cycle/rad",
@@ -672,8 +813,8 @@ class oimModel:
         ----------
         dim : int
             Image x & y dimension in pixels.
-        pixSize : float
-            Pixel angular size in mas.
+        spfmax : float
+            Maximal spatial frequency in in cycle/rad unless uinit is specified
         wl : float or array_like, optional
             Wavelength(s) in meter. The default is None.
         t :  int, float or array_like, optional
@@ -711,6 +852,12 @@ class oimModel:
         im  : numpy.ndarray
             The image(s).
         """
+        
+        amp, phase, spfx_arr, spfy_arr = self.getFourierImage(dim, spfmax, wl,
+                        t, unit, unit_format,swapAxes,normalize,
+                        splitAmpAndPhase = True, returnSpaFreq=True)
+        
+        
         if wl is None:
             wl = 0
 
@@ -726,63 +873,24 @@ class oimModel:
             mult = 1e-6
 
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
+        
         if swapAxes:
             t, wl = wl, t
 
         nt, nwl = t.size, wl.size
-        dims = (nt, nwl, dim, dim)
 
-        v = np.linspace(-0.5, 0.5, dim, endpoint=False) * dim
-        vx, vy = np.meshgrid(v, v)
+        spfx_extent = spfx_arr.max()*mult
 
-        vx_arr = np.tile(vx[None, None, ...], (nt, nwl, 1, 1))
-        vy_arr = np.tile(vy[None, None, ...], (nt, nwl, 1, 1))
-        wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
-        t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
 
-        if all(
-            [
-                np.array_equal(wl, np.array([0])),
-                np.array_equal(t, np.array([0])),
-            ]
-        ):
-            spfx_arr, spfy_arr = map(
-                lambda x: (x / pixSize / MAS2RAD * mult).flatten(),
-                [vx_arr, vy_arr],
-            )
-        else:
-            if not swapAxes:
-                spfx_arr, spfy_arr = map(
-                    lambda x: (x / wl_arr * mult).flatten(), [vx_arr, vy_arr]
-                )
-            else:
-                spfx_arr, spfy_arr = map(
-                    lambda x: (x / t_arr * mult).flatten(), [vx_arr, vy_arr]
-                )
-
-        wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
-        spfx_extent = spfx_arr.max()
-
-        if not swapAxes:
-            vc = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr)
-        else:
-            vc = self.getComplexCoherentFlux(spfx_arr, spfy_arr, t_arr, wl_arr)
-
-        vc = vc.reshape(dims)
         if display == "amp":
-            im = np.abs(vc)
+            im = amp
         elif display == "phase":
-            im = np.angle(vc, deg=True)
+            im = np.rad2deg(phase)
         else:
             raise ValueError(
                 "Only 'amp' and 'phase' are valid"
                 " choices for the display parameter!"
             )
-
-        if normalize:
-            for it in range(nt):
-                for iwl in range(nwl):
-                    im[it, iwl] /= np.max(im[it, iwl])
 
         if axe is None:
             fig, axe = plt.subplots(
@@ -814,6 +922,7 @@ class oimModel:
                         origin="lower",
                         **kwargs,
                     )
+                    axe[iwl, it].set_xlim(spfx_extent,-spfx_extent)
                 else:
                     cb = axe[iwl, it].imshow(
                         im[iwl, it],
@@ -826,6 +935,7 @@ class oimModel:
                         origin="lower",
                         **kwargs,
                     )
+                    axe[iwl, it].set_xlim(spfx_extent,-spfx_extent)
 
                 if iwl == nwl - 1:
                     axe[iwl, it].set_xlabel(
@@ -855,7 +965,7 @@ class oimModel:
 
                     axe[iwl, it].text(
                         0,
-                        0.95 * dim / 2 * pixSize,
+                        0.95 * spfmax,
                         txt,
                         va="top",
                         ha="center",
@@ -879,6 +989,7 @@ class oimModel:
             )
 
         return fig, axe, im
+    
 
     def normalizeFlux(self, comp=None):
         """Normalises the flux."""
