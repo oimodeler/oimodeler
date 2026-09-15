@@ -164,3 +164,4 @@ anaconda_projects/db/project_filebrowser.db
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+oimodelerTODO2.txt
