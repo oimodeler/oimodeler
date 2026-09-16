@@ -345,9 +345,6 @@ class oimModel:
             else:
                 mask=1
             
-            
-
-            
             v = np.linspace(-0.5 * padFact, 0.5 * padFact, dimpad)
             vx, vy = np.meshgrid(v, v)
 
@@ -1016,10 +1013,11 @@ class oimModel:
         return np.array([mini[0], maxi[1], mini[2], maxi[3]])
 
 
-    def plotVis(self,B,wl,PA=0,PA_names=None,axe=None,
+    def plotVis(self,B,wl=None,PA=0,
+                PA_names=None,axe=None,
                 xunit="cycle/rad",
                 wlunit="micron",
-                kwargs={}):
+                **kwargs):
         
         
         figsize=kwargs.pop("figsize",(5,4))
@@ -1063,8 +1061,7 @@ class oimModel:
             except:
                 fig = axe.flatten()[0].get_figure()
             
-        
-        
+    
         if nwl==1:
             
             spf = B/wl
@@ -1094,11 +1091,14 @@ class oimModel:
         else:
             if nPA==1:
                 axe=np.array([axe])
+            
+            
+                
+            kwargsi=dict(s=0.2, cmap="plasma")
+            for name,val in  kwargs.items():
+                kwargsi[name] = val
             for iPA,PAi in enumerate(PA):
-                kwargs0=dict(s=0.2, cmap="plasma")
-                for name,val in  kwargs0.items():
-                    if not(name in kwargs):
-                        kwargs[name] = val
+                
                 
                 Bs = np.tile(B, (nwl, 1)).flatten()
                 wls = np.transpose(np.tile(wl, (nB, 1))).flatten()
@@ -1111,7 +1111,7 @@ class oimModel:
                     spfx, spfy, wls)).reshape(len(wl), len(B))
                 vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
                 
-                sc = axe[iPA].scatter(spf*xunit_mult, vis, c=wls*wlunit_mult, **kwargs)
+                sc = axe[iPA].scatter(spf*xunit_mult, vis, c=wls*wlunit_mult, **kwargsi)
                 axe[iPA].set_xlabel(f"spatial frequency ({xunit_text})")
                 
                 if nPA!=1:
@@ -1124,14 +1124,11 @@ class oimModel:
                         label=PA_names[iPA]         
                     axe[iPA].set_title(label)
 
-            
-            
-            
                 
             axe[0].set_ylabel("Visbility")    
             if nlegend != 0:
                 axe[0].legend()
 
-            fig.tight_layout(rect=(0,0,0.95,1))
+            fig.tight_layout(rect=(0,0,0.99,1))
             if sc:
                 fig.colorbar(sc, ax=axe,label=f"$\\lambda$ {wlunit_text}")
