@@ -1014,3 +1014,124 @@ class oimModel:
         mini = np.min(fovs, axis=1)
 
         return np.array([mini[0], maxi[1], mini[2], maxi[3]])
+
+
+    def plotVis(self,B,wl,PA=0,PA_names=None,axe=None,
+                xunit="cycle/rad",
+                wlunit="micron",
+                kwargs={}):
+        
+        
+        figsize=kwargs.pop("figsize",(5,4))
+        
+        wlunit_text = u.Unit(wlunit).to_string("latex_inline")
+        xunit_text  = u.Unit(xunit).to_string("latex_inline")
+    
+
+        B= np.array(B)
+        wl=np.array(wl)
+        PA=np.array(PA)
+        if len(PA.shape) == 0:
+            PA=np.array([PA])
+            
+    
+        
+        nwl = wl.size
+        nB  = B.size
+        nPA = PA.size
+        
+        if nPA==2:
+            if PA[0]==0 and PA[1]==90 and PA_names==None:
+                PA_names=["North-South","East-West"]
+    
+        xunit_mult   = u.Unit("cycle/rad").to(xunit)
+        wlunit_mult  = u.Unit("m").to(wlunit)
+        
+        nlegend = 0
+        
+        sc = None
+        if axe is None:
+            if nwl==1 or nPA==1:
+                fig, axe = plt.subplots(nrows=1, ncols=1,
+                                      figsize=figsize)
+            else:
+                fig, axe = plt.subplots(nrows=1, ncols=nPA,
+                        figsize=(figsize[0]*nPA,figsize[1]))
+        else:
+            try:
+                fig = axe.get_figure()
+            except:
+                fig = axe.flatten()[0].get_figure()
+            
+        
+        
+        if nwl==1:
+            
+            spf = B/wl
+            for iPA,PAi in enumerate(PA):
+                spfx = np.cos(np.deg2rad(PAi))*spf
+                spfy = -np.sin(np.deg2rad(PAi))*spf
+                
+                ccf = self.getComplexCoherentFlux(spfx, spfy)
+                v = np.abs(ccf)
+                v = v/v.max()
+                
+                if PA_names == None:
+                    if nPA == 1:
+                        label = None
+                    else:
+                        label = f"PA = {PAi}$^o$"
+                else:
+                    label=PA_names[iPA]
+                if label != None:
+                    nlegend += 1
+                axe.plot(spf*xunit_mult, v,label=label,**kwargs)
+            if nlegend != 0:
+                axe.legend() 
+            axe.set_xlabel(f"spatial frequency ({xunit_text})")
+            axe.set_ylabel("Visbility")  
+
+        else:
+            if nPA==1:
+                axe=np.array([axe])
+            for iPA,PAi in enumerate(PA):
+                kwargs0=dict(s=0.2, cmap="plasma")
+                for name,val in  kwargs0.items():
+                    if not(name in kwargs):
+                        kwargs[name] = val
+                
+                Bs = np.tile(B, (nwl, 1)).flatten()
+                wls = np.transpose(np.tile(wl, (nB, 1))).flatten()
+                spf = Bs/wls
+                
+                spfx = np.cos(np.deg2rad(PAi))*spf
+                spfy = -np.sin(np.deg2rad(PAi))*spf
+                        
+                vis = np.abs(self.getComplexCoherentFlux(
+                    spfx, spfy, wls)).reshape(len(wl), len(B))
+                vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
+                
+                sc = axe[iPA].scatter(spf*xunit_mult, vis, c=wls*wlunit_mult, **kwargs)
+                axe[iPA].set_xlabel(f"spatial frequency ({xunit_text})")
+                
+                if nPA!=1:
+                    if PA_names == None:
+                        if nPA == 1:
+                            label = None
+                        else:
+                            label = f"PA = {PAi}$^o$"
+                    else:
+                        label=PA_names[iPA]         
+                    axe[iPA].set_title(label)
+
+            
+            
+            
+                
+            axe[0].set_ylabel("Visbility")    
+            if nlegend != 0:
+                axe[0].legend()
+
+            fig.tight_layout(rect=(0,0,0.95,1))
+            if sc:
+                fig.colorbar(sc, ax=axe,label=f"$\\lambda$ {wlunit_text}")
