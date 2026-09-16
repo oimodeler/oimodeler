@@ -80,7 +80,7 @@ class oimGrater (oimComponentImage):
         self.params["grainSizeMax"]=oimParam(name="grainSizeMax",value=3000,
                                 description="Maximum grain size",
                                 unit=u.um,free=False,mini=0,maxi=np.inf)        
-        self.params["gainPow"]=oimParam(name="gainPow",value=3.5,
+        self.params["grainPow"]=oimParam(name="grainPow",value=3.5,
                                 description="Power-law index for size distribution",
                                 unit=u.one,free=False,mini=0,maxi=np.inf)           
 
@@ -127,7 +127,7 @@ class oimGrater (oimComponentImage):
             'M_tot'    : self.params["Mtot"].value,
             'a_min'    : self.params["grainSizeMin"].value*self.params["grainSizeMin"].unit.to(u.m),
             'a_max'    : self.params["grainSizeMax"].value*self.params["grainSizeMax"].unit.to(u.m),
-            'kappa'    : self.params["gainPow"].value,
+            'kappa'    : self.params["grainPow"].value,
             'N_sizes_integral': 400
         }
         
@@ -157,7 +157,7 @@ class oimGrater (oimComponentImage):
             'M_tot'    : self.params["Mtot"].value,
             'a_min'    : self.params["grainSizeMin"].value*self.params["grainSizeMin"].unit.to(u.m),
             'a_max'    : self.params["grainSizeMax"].value*self.params["grainSizeMax"].unit.to(u.m),
-            'kappa'    : self.params["gainPow"].value,
+            'kappa'    : self.params["grainPow"].value,
             'N_sizes_integral': 400
         }
                 
