@@ -1216,8 +1216,12 @@ class oimConvolutor(oimComponentFourier):
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
         vcs = []
+        
+        
         for index, component in enumerate(self.components, start=1):
             fxp, fyp = ucoord.copy(), vcoord.copy()
+            
+           
             if component.elliptic:
                 pa_rad = (self.params[f"c{index}_pa"](wl, t)) * self.params[
                     f"c{index}_pa"
@@ -1231,12 +1235,19 @@ class oimConvolutor(oimComponentFourier):
                 fypt = fxp * si + fyp * co
             else:
                 fxpt, fypt = fxp, fyp
-
-            vcs.append(
-                self.params[f"c{index}_f"](wl, t)
-                * component._visFunction(
+                
+            
+            try:
+                vi = component.visfunc(
                     fxpt, fypt, np.hypot(fxpt, fypt), wl, t
                 )
+            except:
+                vi = component.getComplexCoherentFlux(
+                    fxpt, fypt, wl, t
+                )
+
+            vcs.append(
+                self.params[f"c{index}_f"](wl, t)* vi
             )
 
         return (
