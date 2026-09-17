@@ -1024,7 +1024,7 @@ def oimComputeChi2PlusOneUncertainties(
             unit = f"{params[pi].unit.to_string(format='latex')}"
             ax[ip].set_title(f"{pi} \n{res[ip]:.3f}"
                              f"$\\pm${err_mean[ip]:.3f} {unit}",fontsize=8)
-            txt=f"{params[pi].name}  ({unit})".split("($\mathrm{}$)")[0]
+            txt=f"{params[pi].name}  ({unit})".split("($\\mathrm{}$)")[0]
             ax[ip].set_xlabel(txt)
             
         ax[0].set_ylabel("$\\chi^2_r$")
