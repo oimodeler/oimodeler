@@ -1325,3 +1325,10 @@ class oimConvolutor(oimComponentFourier):
                 )
 
         return img
+    
+    def _fov(self,wl,t):
+        res=[]
+        for component in self.components:
+            res.append(component.getFOV(wl,t))
+        res=np.array(res)
+        return np.sum(res,axis=0)
