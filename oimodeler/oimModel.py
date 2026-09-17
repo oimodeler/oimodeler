@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+
 import copy
 import sys
 from pathlib import Path
@@ -19,6 +20,8 @@ from matplotlib.figure import Figure
 from matplotlib.ticker import ScalarFormatter
 from numpy.typing import ArrayLike
 
+
+from .oimUtils import oimWarning
 from .oimComponent import oimComponent
 from .oimOptions import ARCSEC2RAD, MAS2RAD
 from .oimParam import (
@@ -326,6 +329,20 @@ class oimModel:
 
         if t is None:
             t = 0
+            
+            
+        #check FOV
+        inner_fov = self.getFOV(wl)
+        inner_fov_square = 2*np.abs(np.array(inner_fov)).max()
+        fov = dim*pixSize
+
+        if inner_fov_square > fov:
+            oimWarning(oimModel, "Problematic Value",
+                       f"FOV fopr image ({fov:.1f} mas) smaller than the actual" \
+                       f" object size ({inner_fov_square:.1f} mas).\n"
+                        "Artifacts may appear with fromFT=True option",
+                        color = "yellow")
+     
 
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
         nt, nwl = t.size, wl.size
@@ -1071,7 +1088,7 @@ class oimModel:
                 
                 ccf = self.getComplexCoherentFlux(spfx, spfy)
                 v = np.abs(ccf)
-                v = v/v.max()
+                v = v/v[0]
                 
                 if PA_names == None:
                     if nPA == 1:
@@ -1082,7 +1099,9 @@ class oimModel:
                     label=PA_names[iPA]
                 if label != None:
                     nlegend += 1
-                axe.plot(spf*xunit_mult, v,label=label,**kwargs)
+                if label!=None:
+                    kwargs["label"]=label
+                axe.plot(spf*xunit_mult, v,**kwargs)
             if nlegend != 0:
                 axe.legend() 
             axe.set_xlabel(f"spatial frequency ({xunit_text})")
