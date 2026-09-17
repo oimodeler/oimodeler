@@ -407,7 +407,6 @@ class FFTWBackend:
         spfmax_im = freqVectYX.max()      
         spf = np.sqrt(vcoord**2+ucoord**2)    
         idx = np.where(spf>spfmax_im)[0]
-        print(len(idx))
         real[idx] = 0
         imag[idx] = 0    
         
