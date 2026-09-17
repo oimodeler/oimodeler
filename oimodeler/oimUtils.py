@@ -2613,7 +2613,7 @@ def colorPrint(text: str, color) -> None:
 
 # %%
 def oimWarning(myclass, warningName, text: str, color: str = "red") -> None:
-    if myclass._firstInit and oimOptions.general.warning:
+     if oimOptions.general.warning:
         BOLD = "\033[1m"
         colorPrint(
             BOLD + f"oimodeler {warningName} Warning ({myclass.__name__})",
@@ -2625,8 +2625,9 @@ def oimWarning(myclass, warningName, text: str, color: str = "red") -> None:
 
 # %%
 def oimAckWarning(myclass, text: str) -> None:
-    text += (
-        "\nCheck the oimodeler page for proper refrence and acknowledgment : \n"
-        "https://oimodeler.readthedocs.io/en/latest/ackn.html#acknowledgment"
-    )
-    oimWarning(myclass, "acknowledgement", text)
+    if myclass._firstInit:
+        text += (
+            "\nCheck the oimodeler page for proper refrence and acknowledgment : \n"
+            "https://oimodeler.readthedocs.io/en/latest/ackn.html#acknowledgment"
+        )
+        oimWarning(myclass, "acknowledgement", text,color="green")
