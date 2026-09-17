@@ -1236,9 +1236,9 @@ class oimConvolutor(oimComponentFourier):
             else:
                 fxpt, fypt = fxp, fyp
                 
-            
+
             try:
-                vi = component.visfunc(
+                vi = component._visFunction(
                     fxpt, fypt, np.hypot(fxpt, fypt), wl, t
                 )
             except:
