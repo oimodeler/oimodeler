@@ -921,66 +921,119 @@ class oimFitterRegularGrid(oimFitter):
 
         return fig, ax
 
-
-def oimComputeChi2PlusOneUncertainties(
+def oimComputeChi2PlusOneUncertainties(  
     fit,
-    factErr: int = 500,
-    npts: int = 100,
+    nmax: int = 1e5,
     plot: bool = False,
+    plotFact = 1.2,
+    log = False,
     dataTypes=None,
+    searchFact:float = 1,
 ):
-    grids = []
-    errs = []
-    valps = []
+
     res, _, _, err = fit.getResults(
         discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
     )
     chi2min = fit.simulator.chi2r
+    params = fit.model.getParameters()
+    
+    errs=[]
+
+    if plot:
+        chi2_arr=[]
+        pval_arr=[]
     for ip, pi in enumerate(tqdm(fit.freeParams)):
+        if plot:
+            chi2mapi=[chi2min]
+            pvali=[params[pi].value]
         fit.getResults(
             discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
         )
-        gridi = oimFitterRegularGrid(fit.data, fit.model, dataTypes=dataTypes)
-        mini = res[ip] - factErr * err[ip]
-        maxi = res[ip] + factErr * err[ip]
-        step = (maxi - mini) / npts
-        gridi.prepare(
-            min=[mini],
-            max=[maxi],
-            steps=[step],
-            params=[fit.model.getFreeParameters()[pi]],
-        )
-        gridi.run(progress=False)
-        valp1 = gridi.grid[0][np.where(gridi.chi2rMap < (chi2min + 1))]
-        valps.append(valp1)
-        errp1 = (valp1.max() - valp1.min()) / 2
-        grids.append(gridi)
-        errs.append(errp1)
+        val0  = params[pi].value
+        step0 = params[pi].error
+        chi2i = chi2min
+        stop = False
+        n=0
+        nomore= False
+        while chi2i<(chi2min+1)*plotFact or stop:
+            params[pi].value
+            params[pi].value+=step0*searchFact
+            
+            fit.simulator.compute(computeChi2=True,dataTypes=dataTypes)
+            chi2i=fit.simulator.chi2r
+            n+=1
+            if plot:
+                pvali.append(params[pi].value)
+                chi2mapi.append(chi2i)
+            if chi2i<(chi2min+1) and not(nomore):
+                errp = params[pi].value-val0
+            if chi2i>(chi2min+1): 
+                nomore = True
+            if n>nmax:
+                stop=True
 
+        params[pi].value = val0
+        chi2i = chi2min
+        stop = False
+        n=0
+        nomore= False
+        while  chi2i<(chi2min+1)*plotFact or stop:
+            params[pi].value
+            params[pi].value-=step0*searchFact
+            fit.simulator.compute(computeChi2=True,dataTypes=dataTypes)
+            chi2i=fit.simulator.chi2r
+            n+=1
+            if plot:
+                pvali.append(params[pi].value)
+                chi2mapi.append(chi2i)
+            if chi2i<(chi2min+1) and not(nomore):
+                errm = val0-params[pi].value
+            if chi2i>(chi2min+1): 
+                nomore = True
+            if n>nmax:
+                stop=True
+        
+        
+        if plot:
+            chi2mapi=np.array(chi2mapi)
+            pvali=np.array(pvali)
+            idx = np.argsort(pvali)
+            
+            chi2_arr.append(chi2mapi[idx])
+            pval_arr.append(pvali[idx])
+        errs.append([errm,errp])
+        
+    errs=np.array(errs)
+    err_mean=np.mean(errs,axis=1)
+    
     if plot:
         fig, ax = plt.subplots(
-            1, fit.nfree, figsize=(4 * fit.nfree, 4), sharey=True
+            1, fit.nfree, figsize=(18 , 25/ fit.nfree), sharey=True
         )
         if fit.nfree == 1:
             ax = [ax]
+            
         for ip, pi in enumerate(fit.freeParams):
-            grids[ip].plotMap(axe=ax[ip])
-            ax[ip].plot(
-                [valps[ip].min(), valps[ip].max()],
-                [chi2min + 1] * 2,
-                color="b",
-                ls="--",
+            
+            ax[ip].plot(pval_arr[ip],chi2_arr[ip],color="r")
+            
+            ax[ip].plot([res[ip]-errs[ip,0],res[ip]+errs[ip,1]],
+                [chi2min + 1]*2,
+                color="b"
             )
-            ax[ip].text(
-                valps[ip].max(),
-                chi2min + 1,
-                f"$\\sigma$={errs[ip]:.3f}",
-                va="center",
-                ha="left",
-                color="b",
-            )
-        ax[0].set_ylim([chi2min, chi2min * 20])
-        ax[0].set_yscale("log")
-        return errs, fig, ax
+            unit = f"{params[pi].unit.to_string(format='latex')}"
+            ax[ip].set_title(f"{pi} \n{res[ip]:.3f}"
+                             f"$\\pm${err_mean[ip]:.3f} {unit}",fontsize=8)
+            txt=f"{params[pi].name}  ({unit})".split("($\mathrm{}$)")[0]
+            ax[ip].set_xlabel(txt)
+            
+        ax[0].set_ylabel("$\\chi^2_r$")
+        if log:
+            ax[0].set_yscale("log")
+        fig.tight_layout()
 
-    return errs
+        return err_mean, fig, ax
+    else:
+        return err_mean
+
+
