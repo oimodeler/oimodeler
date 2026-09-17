@@ -195,6 +195,17 @@ class numpyFFTBackend:
         imag = interpolate.interpn(
             grid, np.imag(fft2D), coord, bounds_error=False, fill_value=None
         )
+        
+        # her is a fix the the fill_value pb. To avoid artifact we should 
+        # not extrapolate beyond spfmax but we shouyld extrapolate in wl
+        
+        spfmax_im = freqVectYX.max()      
+        spf = np.sqrt(vcoord**2+ucoord**2)    
+        idx = np.where(spf>spfmax_im)[0]
+        print(len(idx))
+        real[idx] = 0
+        imag[idx] = 0    
+        
         return real + imag * 1j
 
 
@@ -388,6 +399,18 @@ class FFTWBackend:
         imag = interpolate.interpn(
             grid, np.imag(fft2D), coord, bounds_error=False, fill_value=None
         )
+        
+        
+        # her is a fix the the fill_value pb. To avoid artifact we should 
+        # not extrapolate beyond spfmax but we shouyld extrapolate in wl
+        
+        spfmax_im = freqVectYX.max()      
+        spf = np.sqrt(vcoord**2+ucoord**2)    
+        idx = np.where(spf>spfmax_im)[0]
+        print(len(idx))
+        real[idx] = 0
+        imag[idx] = 0    
+        
         return real + imag * 1j
 
 
