@@ -28,13 +28,15 @@ from oimodeler.oimSimulator import oimSimulator
 class TestOimTempGrad:
     """Tests `oimCustomComponents.oimTempGrad`."""
 
-    # TODO: Should this data be saved in the `test_data_dir`
     @pytest.fixture(scope="module")
-    def data(self, global_data_dir: Path) -> oimData:
+    def data(self, test_data_dir: Path) -> oimData:
         """Data suited for temperature gradient."""
-        data = oimData(
-            sorted((global_data_dir / "AS209_MATISSE").glob("*.fits"))
-        )
+        fits_files = [
+            "as209_ut_l_low.fits",
+            "as209_ut_n_low.fits",
+            "as209_ut_l_low_chop.fits",
+        ]
+        data = oimData([test_data_dir / "temp_grad" / f for f in fits_files])
         f1 = oimWavelengthRangeFilter(targets=[0, 2], wlRange=[3.2e-6, 3.8e-6])
         filt_bin_L = oimWavelengthBinningFilter(
             targets=[0, 2], bin=5, normalizeError=False
@@ -50,7 +52,7 @@ class TestOimTempGrad:
     def vis_base(self, test_data_dir: Path) -> NDArray[np.float64]:
         """Baseline correlated fluxes for temperature gradient
         to detect if model executes correctly. Should be equal to test."""
-        return np.load(test_data_dir / "TempGradVis.npy")
+        return np.load(test_data_dir / "temp_grad" / "vis.npy")
 
     @pytest.fixture(scope="module")
     def star(self) -> oimPt:
@@ -59,13 +61,11 @@ class TestOimTempGrad:
 
     @pytest.fixture(scope="module")
     def temp_grad_kwargs(
-        self, global_data_dir: Path
+        self, test_data_dir: Path
     ) -> dict[str, float | oimInterp]:
         """Parameters for the base temperature gradient."""
         opac_file = (
-            global_data_dir
-            / "FSCMa_MATISSE"
-            / "dustkappa_olivine_graphite_1_20.inp"
+            test_data_dir / "temp_grad" / "dustkappa_olivine_graphite_1_20.inp"
         )
         op_wl, op = np.loadtxt(opac_file, usecols=[0, 1], unpack=True)
         return {
@@ -127,7 +127,6 @@ class TestOimTempGrad:
         star: oimPt,
         temp_grad_model: oimModel,
         temp_grad_kwargs: dict[str, float | oimInterp],
-        global_data_dir: Path,
         params: dict[str, float],
     ) -> None:
         """Tests if models initialised with `compute_sigma0` and `flat` are
