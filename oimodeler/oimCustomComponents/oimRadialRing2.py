@@ -51,18 +51,21 @@ class oimRadialRing2(oimComponentRadialProfile):
         super().__init__(**kwargs)
         self.params["din"] = oimParam(base="din")
         self.params["w"] = oimParam(base="w")
-        self.params["p"] = oimParam(base="p")
+        self.params["p"] = oimParam(
+            name="p",
+            description="Power-law exponent for radial ring",
+            mini=-1,
+            maxi=0,
+            base="amp",
+        )
         self._eval(**kwargs)
 
     @property
     def r(self):
         """Gets the radial profile [mas]."""
-        rin = self.din.value / 2
+        rin, dim = self.din.value / 2, self.dim.value
         rout = rin + self.w.value
-        dim, dist = self.dim.value, self.dist.value
         grid_type = oimOptions.model.grid.type
-
-        rin, rout = rin / dist * 1e3, rout / dist * 1e3
         if grid_type == "linear":
             self._r = np.linspace(rin, rout, dim)
         else:

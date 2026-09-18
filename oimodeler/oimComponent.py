@@ -1048,7 +1048,7 @@ class oimComponentRadialProfile(oimComponent):
             M[..., 1] = np.stack((-si / elong, co), axis=-1)
             uvcoord0 = np.einsum("...ij,jk->...ik", M, uvcoord0)
 
-        extfactor = 1.0
+        extfactor = np.array([1.0])
         if self.extincted:
             extfactor = 10 ** (
                 -0.4
@@ -1080,9 +1080,13 @@ class oimComponentRadialProfile(oimComponent):
         # TODO: Grid is overcomputed: (nwl * nuv[m]) < (nwl * nuv[cycle/rad])
         vc0 = Ir0 @ kernel * 1e23 + 0j
         vc0 *= (
-            self._ftTranslateFactor(*uvcoord0, wl0, t0)
+            self._ftTranslateFactor(
+                *uvcoord0[:, np.newaxis, np.newaxis],
+                wl0[np.newaxis, :, np.newaxis],
+                t0[:, np.newaxis, np.newaxis],
+            )
             * self.f(wl0, t0)
-            * extfactor
+            * extfactor[np.newaxis, :, np.newaxis]
         )
 
         # FIXME: Test if correct for ``(Ir0.shape[0] = nt0) != 1``
