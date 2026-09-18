@@ -111,12 +111,15 @@ is fully compatible with OIFITS2 and can simulate any data type from an OIFITS f
 (e.g., VIS2DATA, VISAMP in absolute, differential, and correlated flux).
 
 oimFitter
-
 ^^^^^^^^^
+
 The :mod:`oimFitter <oimodeler.oimFitter>` module is dedicated to model fitting. The parent class 
 :func:`oimFitter.oimFitter <oimodeler.oimFitter.oimFitter>` is an abstract class to be inherited 
 for implementing various fitters. Current fitters include an MCMC sampler based on the popular 
-emcee library, a simple grid search, and a minimizer using the scipy minimize function.
+`emcee <https://emcee.readthedocs.io/en/stable/>`_ library, a Dynamic Nested (DN) sampler based 
+based on the `dynesty <https://emcee.readthedocs.io/en/stable/>`_ library, a simple grid search, 
+and a minimizer using the scipy minimize function.
+
 
 oimPlots
 ^^^^^^^^
