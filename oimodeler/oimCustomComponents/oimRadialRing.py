@@ -49,19 +49,23 @@ class oimRadialRing(oimComponentRadialProfile):
     def __init__(self, **kwargs):
         """The class's constructor."""
         super().__init__(**kwargs)
-        self.params["din"] = oimParam(**_standardParameters["din"])
-        self.params["dout"] = oimParam(**_standardParameters["dout"])
-        self.params["p"] = oimParam(**_standardParameters["p"])
+        self.params["din"] = oimParam(base="din")
+        self.params["dout"] = oimParam(base="dout")
+        self.params["p"] = oimParam(
+            name="p",
+            description="Power-law exponent for radial ring",
+            mini=-1,
+            maxi=0,
+            base="amp",
+        )
         self._eval(**kwargs)
 
     @property
     def r(self):
         """Gets the radial profile [mas]."""
+        dim = self.dim.value
         rin, rout = self.din.value / 2, self.dout.value / 2
-        dim, dist = self.dim.value, self.dist.value
         grid_type = oimOptions.model.grid.type
-
-        rin, rout = rin / dist * 1e3, rout / dist * 1e3
         if grid_type == "linear":
             self._r = np.linspace(rin, rout, dim)
         else:
