@@ -7,12 +7,13 @@ Loading & manipulating data
 
 Interferometric data from all modern optical-infrared interferometric instruments are stored in FITS files following the OIFITS2 (Optical Interferometry FITS) standard defined in `Duvert et al. (2017) <https://www.aanda.org/articles/aa/pdf/2017/01/aa26405-15.pdf>`_. 
 
-In oimodeler optical-interferometry data are stored in an :func:`oimData <oimodeler.oimData.oimData>` object. This object uses `astropy.io.fits <https://docs.astropy.org/en/stable/io/fits/index.html>`_ , the  standard  module to 
+In **oimodeler** optical-interferometry data are stored in an :func:`oimData <oimodeler.oimData.oimData>` object. This object uses `astropy.io.fits <https://docs.astropy.org/en/stable/io/fits/index.html>`_ , the  standard  module to 
 load, save and manipulated FITS files. 
 
-Non-interferometric photometric or spectroscopic data can be added to an **oimData** object using the **oimFluxData** class.
+Non-interferometric photometric or spectroscopic data can be added to an :func:`oimData <oimodeler.oimData.oimData>` object 
+using the :func:`oimFluxData <oimodeler.oimFluxData.oimFluxData>` class.
 
-Finally data can be filtered using the **oimDataFilter** class.
+Finally data can be filtered using the :func:`oimDataFilter <oimodeler.oimDataFilter>` module.
 
 
 ..  _data_oimData:
@@ -94,7 +95,7 @@ We can have more readable informations calling the :func:`oimData.info <oimodele
     
 In our case the OIFITS files contains the data extension OI_VIS2, OI_VIS, OI_T3 and OI_FLUX.
 
-For each element of the list, we can call the ``info``  method of 
+For each element of the list, we can call the **info** method of 
 the  `hdulist  <https://docs.astropy.org/en/stable/io/fits/api/hdulists.html>`_. class which  lists all 
 extensions and gives some basics infos on what they contain.
 
@@ -132,7 +133,7 @@ Optimized data
 ^^^^^^^^^^^^^^
 
 In order to reduce the computation time when simulating data during model fitting, 
-the oim:func:`oimData.data <oimodeler.oimData.oimData>` class also contain the 
+the :func:`oimData.data <oimodeler.oimData.oimData>` class also contain the 
 data coordinates as single vectors and the logic to pass from optimized data 
 (in a  single vector) to unoptimized form (as a list of hdulist) as more complex 
 structures (stored as lists of lists) 
@@ -167,7 +168,7 @@ some zeros spatial frequencies data (used to computes flux and normaized visibli
 
 
 On the other hand, to pass from the  optimized data to unoptimized data are stored 
-in members called ``struct_XXXX``. For instance, in the followin we print the 
+in members called ``struct_XXXX``. For instance, in the following we print the 
 structures containing :
 
 - the number of baselines (including zero-frequency ones)
@@ -207,8 +208,7 @@ The oimData object also contains two methods to plot :
 
 - :func:`oimData.uvplot <oimodeler.oimData.oimData.uvplot>`: the (u,v) plan coverage
 
-- :func:`oimData.plot <oimodeler.oimData.oimData.plot>`:   any data type (VIS2DATA, VISPHI ...)
- as a function of the spatial frequency, baseline length, position angle, or wavelength.
+- :func:`oimData.plot <oimodeler.oimData.oimData.plot>`: any data type (VIS2DATA, VISPHI ...) as a function of the spatial frequency, baseline length, position angle, or wavelength.
 
 .. code:: ipython3
 
@@ -227,10 +227,10 @@ The oimData object also contains two methods to plot :
   :alt: Alternative text   
   
   
-These pltting methods are based on the :func:`uvplot <oimodeler.oimPlots.oimAxes.uvplot>`
- and :func:`oiplot <oimodeler.oimPlots.oimAxes.oiplot>`  methods of the 
- :func:`omiAxes <oimodeler.oimPlots.oimAxes>` class. See the 
- :ref:`plotting section <plot>` for details and option in plotting oifits data with oimodeler.
+These plotting methods are based on the :func:`uvplot <oimodeler.oimPlots.oimAxes.uvplot>`
+and :func:`oiplot <oimodeler.oimPlots.oimAxes.oiplot>`  methods of the 
+:func:`omiAxes <oimodeler.oimPlots.oimAxes>` class. See the 
+:ref:`plotting section <plot>` for details and option in plotting oifits data with **oimodeler**.
 
 
 ..  _data_oimDataFilter:
@@ -284,7 +284,7 @@ has two keywords:
   range will be removed from the data.
     
 
-We then apply the filter using th :func:`oimData.setFilter <oimodeler.oimData.setFilter>` method
+We then apply the filter using the :func:`oimData.setFilter <oimodeler.oimData.setFilter>` method
 
 .. code-block:: ipython3 
 
@@ -297,10 +297,10 @@ this object will contain both the filtered and unfiltered data as two private me
 - :func:`oimData._filteredData <oimodeler.oimData.oimData._filteredData>`: the filtered data
 
 :func:`oimData.data <oimodeler.oimData.oimData.data>` will be point toward the filtered
- data unless the member :func:`oimData.data <oimodeler.oimData.oimData>.data`
+data unless the member :func:`oimData.data <oimodeler.oimData.oimData>.data`
 
-We can temporary remove the filter by setting the 
-:func:`oimData.useFilter <oimodeler.oimData.oimData.useFilter>` member to **False**
+We can temporary deactivate the filter by setting the 
+:func:`oimData.useFilter <oimodeler.oimData.oimData.useFilter>` member to **False**,
 
 .. code-block:: ipython3 
 
@@ -315,12 +315,12 @@ or we can remove the filter once and for all using the the
    
 Finally let's plot the square visibility as the function of the spatial frequency for :
 
-- the unfiltered data in light grey.
-- the filtered data with a colorscale based on the wavlelength (in μm)
+- the unfiltered data in orange with a wide line width
+- the filtered data in black
 
 
 To plot the unfiltered data without removing the filter we can use the ``removeFilter=True``
- option of the :func:`oimData.plot <oimodeler.oimData.oimData.plot>` method.
+option of the :func:`oimData.plot <oimodeler.oimData.oimData.plot>` method.
 
 .. code-block:: ipython3 
 
@@ -344,10 +344,10 @@ Spectral binning
 Spectral binning can be applied easily using the 
 :func:`oimWavelengthBinningFilter <oimodeler.oimDataFilter.oimWavelengthBinningFilter>` 
 class. This might be useful to enhance the SNR on some noisy data or to reduce the
- number data points in order to gain computing-time for model fitting.
+number data points in order to gain computing-time for model fitting.
 
 Here we are binning some HIGH resolution YSO data from GRAVITY by a factor 100
- and plotting the raw and binned data.
+and plotting the raw and binned data.
 
 .. code-block:: python 
 
@@ -372,14 +372,14 @@ Flagging with expressions
 """""""""""""""""""""""""
 
 The :func:`oimFlagWithExpressionFilter <oimodeler.oimDataFilter.oimFlagWithExpressionFilter>`
- class can be used to remove data based on an expression based on standard OIFITS2 
- keywords (e.g. VIS2DATA, VIS2ERR, EFF_WAVE, UCOORD, MJD ...) and a few additionnal 
- quantities computed by oimodeler such as the baseline length (LENGTH) or orientation (PA).
+class can be used to remove data using an expression based on standard OIFITS2 
+keywords (e.g. VIS2DATA, VIS2ERR, EFF_WAVE, UCOORD, MJD ...) and a few additionnal 
+quantities computed by oimodeler such as the baseline length (LENGTH) or orientation (PA).
 
 .. note::
     In the OIFITS2 format, all data extensions (OI_VIS2, OI_VIS, OI_T3, and OI_FLUX) contain
     a boolean column **FLAG** used to flag bad data. The flagged data are not used in 
-    **oimodeler** when computing :math:`chi^2`.
+    **oimodeler** when computing chi2.
     
 Typical use of the class 
 :func:`oimFlagWithExpressionFilter <oimodeler.oimDataFilter.oimFlagWithExpressionFilter>` are :
@@ -388,9 +388,9 @@ Typical use of the class
 - flagging data based on relative errors
 
 For instance in the following we flag data with baselines longer than 50m for the MATISSE.
- This can be useful to determine the caracterist size of object using simple models such 
- as Gaussian or uniform disk and avoid being biased by longer baselines than would contain 
- information on smaller structures.
+This can be useful to determine the caracterist size of object using simple models such 
+as Gaussian or uniform disk and avoid being biased by longer baselines than would contain 
+information on smaller structures.
 
 
 .. code-block:: python 
@@ -421,10 +421,10 @@ Selection by baseline name(s)
 The :func:`oimKeepBaselinesFilter <oimodeler.oimDataFilter.oimKeepBaselinesFilter>`
 class can be used to select data by baseline name. For instance in the following we 
 keep the data for the MATISSE data for the A0-B2 and A0-D0 baselines. Other data are 
-flagged and ths will not be used for chi2 computation and model fitting.
- This can be useful to determine the caracterist size of object using simple models such 
- as Gaussian or uniform disk and avoid being biased by longer baselines than would contain 
- information on smaller structures.
+flagged and will not be used for  :math:`\chi^2` computation and model fitting.
+This can be useful to determine the caracterist size of object using simple models such 
+as Gaussian or uniform disk and avoid being biased by longer baselines than would contain 
+information on smaller structures.
 
 
 .. code-block:: python 
@@ -452,7 +452,7 @@ flagged and ths will not be used for chi2 computation and model fitting.
 Photometric and spectroscopic data
 ----------------------------------
 
-This complete code corresponding to this section is available in `PhotometricAndSpectroscopicData.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/PhotometricAndSpectroscopicData.py>`_ 
+This code corresponding to this section is available in `PhotometricAndSpectroscopicData.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/PhotometricAndSpectroscopicData.py>`_ 
 
 The `OIFITS2 <https://www.aanda.org/articles/aa/pdf/2017/01/aa26405-15.pdf>`_ format 
 allow to use flux or spectrum measurements using the OI_FLUX extension.  
@@ -462,7 +462,7 @@ well as the compulsory OI_WAVELENGTH, OI_TARGET and OI_ARRAY extensions.
 
 To build some flux data you need to provide the :func:`oimFluxdata <oimodeler.oimFluxdata.oimFluxdata>`  with:
 
-- ``oitarget``: a OI_TARGET extension with the proper target name (can be copied from a OIFITS file)
+- ``oitarget``: a OI_TARGET extension with the proper target name. This can be copied from another OIFITS file concerning the same target.
 - ``wl`` : the spectral channel central wavelengths for your flux/spectrum (unit in meter).
 - ``dwl``: the spectral channels width (can be put to some dummy values)
 - ``flx``: the fluxes measurements. 
@@ -471,11 +471,11 @@ To build some flux data you need to provide the :func:`oimFluxdata <oimodeler.oi
 
 .. warnings::
 
-    **oimodeler** is currently blind to flux unit. The users must assure that all data and model 
+    **oimodeler** is currently "blind" to flux unit. The users must assure that all data and model 
     components have the same unit.
 
 
-Let's assume that we have a 3 columns ascii files (named `iso_spectrum_fname`) for a ISO spectrum with:
+Let's assume that we have a 3 columns ascii files named **iso_spectrum_fname** for a ISO spectrum with:
 - the wavelengths in microns
 - the flux in Jansky, 
 - and the uncertainties on the fluxes in Jansky.
@@ -549,3 +549,5 @@ We can plot the spectrum of the MATISSE and ISO data to compare them (note that 
 .. image:: ../../images/oimDataExample_plot_oimFluxData.png
   :alt: Alternative text   
   
+  
+This photometric data can then be included in your model-fitting using **oimodeler**.

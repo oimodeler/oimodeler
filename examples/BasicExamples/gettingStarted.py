@@ -86,7 +86,8 @@ fit.printResults(mode="median", discard=1000)
 
 #%%
 err2, figErr,axErr = oim.oimComputeChi2PlusOneUncertainties(fit,plot=True)
-figErr.savefig(save_dir/ "gettingStarted_error_estimation.py")
+print(err2)
+figErr.savefig(save_dir/ "gettingStarted_error_estimation.png")
 
 # %%
 figSim, axSim = fit.simulator.plot(
