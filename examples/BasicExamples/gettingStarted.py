@@ -30,12 +30,18 @@ pprint(ud)
 pprint(ud.params["d"])
 pprint(ud.params["x"])
 
+
 # %%
-ud.params["d"].set(min=0.01, max=20)
-ud.params["x"].set(min=-50, max=50, free=True)
-ud.params["y"].set(min=-50, max=50, free=True)
-ud.params["f"].set(min=0.0, max=10.0)
-pt.params["f"].free = False
+pprint(ud.d)
+pprint(ud.x)
+
+# %%
+ud.d.set(min=0, max=20)
+ud.x.set(min=-50, max=50, free=True)
+ud.y.set(min=-50, max=50, free=True)
+ud.f.set(min=0., max=10.)
+pt.f.free = False
+
 
 # %%
 model = oim.oimModel(ud, pt)
@@ -75,6 +81,14 @@ figCorner, axeCorner = fit.cornerPlot(
 # %%
 median, err_l, err_u, err = fit.getResults(mode="median", discard=1000)
 
+# %%
+fit.printResults(mode="median", discard=1000)
+
+#%%
+err2, figErr,axErr = oim.oimComputeChi2PlusOneUncertainties(fit,plot=True)
+figErr.savefig(save_dir/ "gettingStarted_error_estimation.py")
+
+# %%
 figSim, axSim = fit.simulator.plot(
     ["VIS2DATA", "T3PHI"], savefig=save_dir / "gettingStarted_modelFinal.png"
 )

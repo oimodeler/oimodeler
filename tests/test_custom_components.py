@@ -35,12 +35,12 @@ class TestOimTempGrad:
         data = oimData(
             sorted((global_data_dir / "AS209_MATISSE").glob("*.fits"))
         )
-        f1 = oimWavelengthRangeFilter(targets=[0, 2], wlRange=[3.2e-6, 3.8e-6])
+        f1 = oimWavelengthRangeFilter(targets=[1, 2], wlRange=[3.2e-6, 3.8e-6])
         filt_bin_L = oimWavelengthBinningFilter(
-            targets=[0, 2], bin=5, normalizeError=False
+            targets=[1, 2], bin=5, normalizeError=False
         )
         filt_bin_N = oimWavelengthBinningFilter(
-            targets=1, bin=7, normalizeError=False
+            targets=0, bin=7, normalizeError=False
         )
         f2 = oimKeepDataTypeFilter(dataType=["FLUXDATA", "VISAMP"])
         data.setFilter(oimDataFilter([f1, f2, filt_bin_L, filt_bin_N]))

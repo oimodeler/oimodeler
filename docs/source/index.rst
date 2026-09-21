@@ -61,7 +61,7 @@ Adding time-dependence or chromaticy
 Parameter interpolators can be used to :
 
 - simulate chromatic changes of an object intensity distribution
-- Simulate time dependence : pulsation, binarity …
+- simulate time dependence : pulsation, binarity …
 
 Many interpolators are available in oimodeler: 
 - Gaussian 
