@@ -332,7 +332,7 @@ class oimModel:
             
             
         #check FOV
-        inner_fov = self.getFOV(wl)
+        inner_fov = self.getFOV(wl,t)
         inner_fov_square = 2*np.abs(np.array(inner_fov)).max()
         fov = dim*pixSize
 
@@ -1022,6 +1022,7 @@ class oimModel:
         fovs = np.zeros((4, ncomp))
 
         for i, component in enumerate(self.components):
+            print(wl,t)
             fovs[:, i] = component.getFOV(wl, t)
 
         maxi = np.max(fovs, axis=1)
@@ -1104,7 +1105,7 @@ class oimModel:
                 axe.plot(spf*xunit_mult, v,**kwargs)
             if nlegend != 0:
                 axe.legend() 
-            axe.set_xlabel(f"spatial frequency ({xunit_text})")
+            axe.set_xlabel(f"B/$\\lambda$ ({xunit_text})")
             axe.set_ylabel("Visbility")  
 
         else:
@@ -1131,7 +1132,7 @@ class oimModel:
                 vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
                 
                 sc = axe[iPA].scatter(spf*xunit_mult, vis, c=wls*wlunit_mult, **kwargsi)
-                axe[iPA].set_xlabel(f"spatial frequency ({xunit_text})")
+                axe[iPA].set_xlabel(f"B/$\\lambda$ ({xunit_text})")
                 
                 if nPA!=1:
                     if PA_names == None:
@@ -1151,3 +1152,5 @@ class oimModel:
             fig.tight_layout(rect=(0,0,0.99,1))
             if sc:
                 fig.colorbar(sc, ax=axe,label=f"$\\lambda$ {wlunit_text}")
+            
+        return fig, axe
