@@ -18,7 +18,7 @@ if not save_dir.exists():
 g = oim.oimGauss(fwhm=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 8]))
 mg = oim.oimModel(g)
 # %%
-pprint(g.params["fwhm"](wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6]))
+pprint(g.fwhm(wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6]))
 
 # %%
 
@@ -43,24 +43,11 @@ nwl = 100  # number of walvengths
 wl = np.linspace(3e-6, 4e-6, num=nwl)
 B = np.linspace(1, 400, num=nB)
 
-spf = (B[np.newaxis, :] / wl[:, np.newaxis]).flatten()
-wls = (np.ones((1, nB)) * wl[:, np.newaxis]).flatten()
-
-
-# %%
-vis = np.abs(mg.getComplexCoherentFlux(spf, spf * 0, wls)).reshape(
-    len(wl), len(B)
-)
-vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
-
 figGv, axGv = plt.subplots(1, 1, figsize=(8, 4))
-sc = axGv.scatter(spf, vis, c=wls * 1e6, s=0.2, cmap="plasma")
-figGv.colorbar(sc, ax=axGv, label="$\\lambda$ ($\\mu$m)")
-axGv.set_xlabel("B/$\\lambda$ (cycles/rad)")
-axGv.set_ylabel("Visiblity")
+mg.plotVis(B,wl,axe=axGv)
 axGv.margins(0, 0)
+figGv.savefig(save_dir / "complexModel_chromaticGaussianVis.png")
 
-plt.savefig(save_dir / "complexModel_chromaticGaussianVis.png")
 
 # %%
 ud = oim.oimUD(d=0.5, f=oim.oimInterp("wl", wl=[3e-6, 4e-6], values=[2, 0.2]))
@@ -78,16 +65,9 @@ fig2im.tight_layout()
 fig2im.savefig(save_dir / "complexModel_UDAndGauss.png")
 
 
-vis = np.abs(m2.getComplexCoherentFlux(spf, spf * 0, wls)).reshape(
-    len(wl), len(B)
-)
-vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
 
 fig2v, ax2v = plt.subplots(1, 1, figsize=(14, 8))
-sc = ax2v.scatter(spf, vis, c=wls * 1e6, s=0.2, cmap="plasma")
-fig2v.colorbar(sc, ax=ax2v, label="$\\lambda$ ($\\mu$m)")
-ax2v.set_xlabel("B/$\\lambda$ (cycles/rad)")
-ax2v.set_ylabel("Visiblity")
+m2.plotVis(B,wl,axe=ax2v)
 ax2v.margins(0, 0)
 ax2v.set_ylim(0, 1)
 plt.savefig(save_dir / "complexModel_UDAndGaussVis.png")
@@ -118,46 +98,25 @@ fig3im.savefig(save_dir / "complexModel_Elong.png")
 
 
 # %%
-fig3v, ax3v = plt.subplots(1, 2, figsize=(12, 5), sharex=True, sharey=True)
 
-# NOTE: East-West baselines/spatial frequencies
-vis = np.abs(m3.getComplexCoherentFlux(spf, spf * 0, wls)).reshape(
-    len(wl), len(B)
-)
-vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
-ax3v[0].scatter(spf, vis, c=wls * 1e6, s=0.2, cmap="plasma")
-ax3v[0].set_title("East-West Baselines")
-ax3v[0].margins(0, 0)
-ax3v[0].set_ylim(0, 1)
-ax3v[0].set_xlabel("B/$\\lambda$ (cycles/rad)")
-ax3v[0].set_ylabel("Visiblity")
-
-# NOTE: North-South baselines/spatial frequencies
-vis = np.abs(m3.getComplexCoherentFlux(spf * 0, spf, wls)).reshape(
-    len(wl), len(B)
-)
-vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
-sc = ax3v[1].scatter(spf, vis, c=wls * 1e6, s=0.2, cmap="plasma")
-ax3v[1].set_title("North-South Baselines")
-ax3v[1].set_xlabel("B/$\\lambda$ (cycles/rad)")
-fig3v.colorbar(sc, ax=ax3v.ravel().tolist(), label="$\\lambda$ ($\\mu$m)")
-
+m3.plotVis(B,wl,PA=[0,90])
 plt.savefig(save_dir / "complexModel_ElongVis.png")
 
+#%%
 # NOTE: Check the number of free parameters
 pprint(m3.getFreeParameters())
 
 # NOTE: Link some parameters
-eg.params["elong"] = el.params["elong"]
-eg.params["pa"] = el.params["pa"]
+eg.elong = el.elong
+eg.pa = el.pa
 pprint(m3.getFreeParameters())
 
 # %%
 er = oim.oimERing()
-er.params["elong"] = eg.params["elong"]
-er.params["pa"] = oim.oimParamLinker(eg.params["pa"], "+", 90)
-er.params["din"] = oim.oimParamLinker(el.params["d"], "*", 2)
-er.params["dout"] = oim.oimParamLinker(el.params["d"], "*", 4)
+er.elong = eg.elong
+er.pa = oim.oimParamLinker(eg.pa, "+", 90)
+er.din = oim.oimParamLinker(el.d, "*", 2)
+er.dout = oim.oimParamLinker(el.d, "*", 4)
 
 m4 = oim.oimModel([el, eg, er])
 
@@ -177,8 +136,8 @@ fig4im.savefig(save_dir / "complexModel_link.png")
 pprint(m4.getFreeParameters())
 
 # %%
-el.params["d"].value = 4
-el.params["pa"].value = 45
+el.d.value = 4
+el.pa.value = 45
 
 fig5im, ax5im, im = m4.showModel(
     256,
@@ -193,24 +152,69 @@ fig5im, ax5im, im = m4.showModel(
 fig5im.tight_layout()
 fig5im.savefig(save_dir / "complexModel_linkRotScale.png")
 
+#%%
+
+innerRim = oim.oimInnerRim(dim=128,d=20,incl=60,h=3,y=0,pa=-90+67,f=1)
+expRing = oim.oimExpRing(dim=64, fwhm=5,f=10,elong=1)
+mdisk = oim.oimModel(innerRim,expRing)
+
+expRing.d  = innerRim.d
+
+expRing.pa = oim.oimParamLinker(innerRim.pa,operator="add",fact=90)
+
+
+def func(p):
+    return 1./np.cos(np.deg2rad(p))
+
+expRing.elong=oim.oimParamLinkerFunction(innerRim.incl,func)
+
+pprint(mdisk.getFreeParameters())
+
+
+fig, ax , _ = mdisk.showModel(256,0.3,fromFT=True,normPow=1)
+
+fig.savefig(save_dir / "complexModel_linkingFunction0.png")
+
+
+#%%
+
+fig, ax = plt.subplots(1,4,figsize=(15,5))
+
+d= [20,15,20,17]
+pa = [0,20,90,-50]
+incl = [20,40,60,45]
+
+for i in range(4):
+    innerRim.d.value=d[i]
+    innerRim.pa.value=pa[i]
+    innerRim.incl.value=incl[i]
+        
+    mdisk.showModel(256,0.3,fromFT=True,normPow=1,axe=ax[i],colorbar=False)
+    if i!=0:
+        ax[i].get_yaxis().set_visible(False)
+fig.tight_layout()
+
+fig.savefig(save_dir / "complexModel_linkingFunction.png")
+
+
 # %%
 star1 = oim.oimUD(f=0.8, d=1)
 star2 = oim.oimPt(f=0.15, x=5, y=5)
 star3 = oim.oimPt(x=15, y=12)
 mtriple = oim.oimModel(star1, star2, star3)
-star2.params["x"].free = True
-star2.params["y"].free = True
-star3.params["x"].free = True
-star3.params["y"].free = True
+star2.x.free = True
+star2.y.free = True
+star3.x.free = True
+star3.y.free = True
 
 pprint(mtriple.getFreeParameters())
 mtriple.normalizeFlux()
 
 pprint(mtriple.getFreeParameters())
 
-print(star3.params["f"]())
-star1.params["f"].value = 0.5
-print(star3.params["f"]())
+print(star3.f())
+star1.f.value = 0.5
+print(star3.f())
 
 # %%
 gd1 = oim.oimGauss(fwhm=oim.oimInterp("time", mjd=[0, 1, 3], values=[1, 4, 1]))

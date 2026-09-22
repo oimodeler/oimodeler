@@ -15,23 +15,25 @@ This complete code corresponding to this section is available in `TheBasicsOfMod
 Models, Components and Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the **oimodeler** framework, a model is and instance of the :func:`oimModel <oimodeler.oimModel.oimModel>` class. 
-It contains a collection of components, which all derived from the :func:`oimComponent <oimodeler.oimComponent.oimComponent>` 
-semi-abstract class. The components may be described in the image plane, by their 1D or 2D intensity distribution,
+In the modular-object oriented **oimodeler** framework, a model is an instance of the 
+:func:`oimModel <oimodeler.oimModel.oimModel>` class. It contains a collection of components, 
+which all derived from the :func:`oimComponent <oimodeler.oimComponent.oimComponent>` semi-abstract 
+class. The components may be described in the image plane, by their 1D or 2D intensity distribution,
 or directly in the Fourier plane, for the most simple components with known analytical Fourier transforms. 
-Each components is described by a set of parameters which are instances of the :func:`oimParam <oimodeler.oimParam.oimParam>` class.
+Each components is described by a set of parameters, such as positions **x** and **y** or diameter **d**, 
+which are instances of the :func:`oimParam <oimodeler.oimParam.oimParam>` class.
 
 Thus, building models in **oimodeler** relies on three classes:
 
-- :func:`oimModel <oimodeler.oimModel.oimModel>`: the model class 
+- :func:`oimModel <oimodeler.oimModel.oimModel>`: the model container 
 
-- :func:`oimComponent <oimodeler.oimComponent.oimComponent>`: the abstract class from which all components derive
+- :func:`oimComponent <oimodeler.oimComponent.oimComponent>`: an abstract class from which all components derive
 
 - :func:`oimParam <oimodeler.oimParam.oimParam>`: the parameter class
 
 
 To create models we must first create some components.
-Let's create a few simple components.
+Let's create a few simple analytical Fourier-based components.
 
 .. code-block:: ipython3
 
@@ -40,9 +42,9 @@ Let's create a few simple components.
     g  = oim.oimGauss(fwhm=5, f=1)
     r  = oim.oimIRing(d=5, f=0.5)
 
-Here, we have create a point source, a 10 mas uniform disk, a Gaussian distribution 
-with a 5 mas fwhm and a 5 mas infinitesimal ring. 
-The comprehensive list of components available is **oimodeler** is given in the next section. 
+Here, we have create a point source, a 10 mas uniform disk, a Gaussian distribution with a 5 mas 
+FWHM and a 5 mas infinitesimal ring. The comprehensive list of components available is **oimodeler** 
+is given in the next section. 
 
 The model parameters which are not set explicitly during the components creation
 are set to their default values (i.e., f=1, x=y=0).
@@ -51,35 +53,42 @@ We can print the description of the component easily:
 
 .. code:: ipython3
 
-    print(ud.params)
+    print(ud)
 
 .. parsed-literal::
     
     Uniform Disk x=0.00 y=0.00 f=0.50 d=10.00
 
-Or if you want to print the details of a parameter:
+Or if you want to print the details of a parameter, we can either access it through the ``params``
+dictionary or directly as a member variable:
 
 .. code-block:: ipython3
 
     print(ud.params['d'])
+    print(ud.d)
 
- 
 .. parsed-literal::
     
     oimParam d = 10 ± 0 mas range=[-inf,inf] free
+    oimParam d = 10 ± 0 mas range=[-inf,inf] free
 
 
-Note that the components parameters are instances of the
-:func:`oimParam <oimodeler.oimParam.oimParam>` class which hold not only the
-parameter value stored in the ``oimParam.value`` attribute, but in addition to it
-the following attributes: 
+
+.. note::
+
+    Both methods are equivalent but the direct access of parameters without the use of the ``params`` 
+    dictionary was implemented in **oimodeler** version 0.9. 
+    
+
+The components parameters are instances of the :func:`oimParam <oimodeler.oimParam.oimParam>` 
+class which hold not only the parameter value stored in the ``oimParam.value`` attribute, 
+but in addition to it the following attributes: 
 
 - ``oimParam.error``: the parameters uncertainties (for model fitting).
 - ``oimParam.unit``: the unit as a ``astropy.units`` object.
 - ``oimParam.min``: minimum possible value (for model fitting).
 - ``oimParam.max``: minimum possible value (for model fitting).
-- ``oimParam.free``: Describes a free parameter for ``True``
-  and a fixed parameter for ``False`` (for model fitting).
+- ``oimParam.free``: ``True`` if the parameter is free for model-fitting
 - ``oimParam.description``: A string that describes the model parameter.
 
 
@@ -98,7 +107,7 @@ We can now create our first models using the
     mUDPt = oim.oimModel(ud, pt)
     
 
-Now, we have four one-component models and one two-component model.
+Now, we have four one-component models and one two-components model.
 
 We can get the parameters of our models using the 
 :func:`oimModel.getParameters <oimodeler.oimModel.oimModel.getParameters>`
@@ -122,11 +131,11 @@ method.
      'c2_Pt_f': oimParam at 0x23debc1ac10 : f=0.1 ± 0  range=[-inf,inf] free=True }
 
 The method returns a dict of all parameters of the model components.
-The keys are defined as 
+The keys are defined as :
 
-    ``x{num of component}_{short Name of component}_{param name}``.
+    **x{num of component}_{short Name of component}_{param name}**
 
-Alternatively, we can get the free parameters using the
+Alternatively, we can obtain only the free parameters using the.
 :func:`getFreeParameters <oimodeler.oimModel.oimModel.getFreeParameters>` method:
 
 .. code-block:: ipython3
@@ -140,14 +149,20 @@ Alternatively, we can get the free parameters using the
      'c1_UD_d': oimParam at 0x23debc1abb0 : d=10 ± 0 mas range=[-inf,inf] free=True ,
      'c2_Pt_f': oimParam at 0x23debc1ac10 : f=0.1 ± 0  range=[-inf,inf] free=True }
 
-The two main methods of an :func:`oimModel <oimodeler.oimModel.oimModel>` object are:
+The main methods of an :func:`oimModel <oimodeler.oimModel.oimModel>` object are:
 
-- :func:`getImage <oimodeler.oimModel.oimModel.getImage>`: which returns an image of the model 
-- :func:`oimModel.getComplexCoherentFlux <oimodeler.oimModel.oimModel.getComplexCoherentFlux>` which returns the complex Coherent Flux of the model 
+- :func:`getImage <oimodeler.oimModel.oimModel.getImage>`: which returns an image of the model as a numpy array
+- :func:`showModel <oimodeler.oimModel.oimModel.showModel>`: which returns a maplotlib figure of the model image 
+- :func:`getComplexCoherentFlux <oimodeler.oimModel.oimModel.getComplexCoherentFlux>` which returns the complex Coherent Flux of the model 
+- :func:`getFourierImage <oimodeler.oimModel.oimModel.getFourierImage>` which return the 2D Fourier-plan of the model
+- :func:`showFourier <oimodeler.oimModel.oimModel.showFourier>` which returns a Figure containing the 2D Fourier-plan of the model
+- :func:`plotVis <oimodeler.oimModel.oimModel.plotVis>` which returns Figure of a visibility plot for a serie of baselines.  
 
-Althought the :func:`getImage <oimodeler.oimModel.oimModel.getImage>`  is only used to vizualize the model intensity 
-distribution and is not used for  model-fitting, :func:`getComplexCoherentFlux <oimodeler.oimModel.oimModel.getComplexCoherentFlux>` is
-at the base of the computation of all interferometric observables and thus of the data-model comparison.
+.. note::
+    
+    The :func:`getImage <oimodeler.oimModel.oimModel.getImage>` and :func:`showModel <oimodeler.oimModel.oimModel.showModel>` 
+    are only used to vizualize the model intensity distribution and are not used for model-fitting. :func:`getComplexCoherentFlux <oimodeler.oimModel.oimModel.getComplexCoherentFlux>` is at the base of the computation of all interferometric observables 
+    and thus of the data-model comparison. 
 
 
 Getting the model image
@@ -213,9 +228,7 @@ The image will then contained a header with the proper fits image keywords
     to fits-image format. If specified, the **wl** and **t** vectors need to be regularily
     sampled. The easiest way is to use the 
     `numpy.linspace <https://numpy.org/doc/stable/reference/generated/numpy.linspace.html>`_
-    function.
-
-    If their sampling is irregular an error will be raised.
+    function. If their sampling is irregular an error will be raised.
 
 
     
@@ -245,6 +258,7 @@ proper axes and colorbar.
 
 .. image:: ../../images/basicModel_showModel.png
   :alt: Alternative text  
+  
 
 Getting the model Complex Coherent Flux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -253,9 +267,9 @@ In most of the cases the user won't use directly the :func:`oimModel.getComplexC
 method to retrieve the model complex coherent flux for a set of coordinates but will create  :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>`
 or a  :func:`oimSimulator <oimodeler.oimFitter.oimFitter>` that will contain the instance of :func:`oimModel <oimodeler.oimModel.oimModel>`
 and some interferometric data in an :func:`oimData <oimodeler.oimData.oimData>` to simulate interferometric quantities from the model at the 
-spatial frequenciesfrom our data.  This will be covered in the XXXXXXXXXXX section.
+spatial frequenciesfrom our data.  This will be covered in the :ref:`simulator` section.
 
-Nevertheless, in some cases and for explanatory purposes we will directly use this methods in the following example.
+Nevertheless, for explanatory purposes we will directly use this method in the following example.
 Without the :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>` class, the :func:`oimModel <oimodeler.oimModel.oimModel>`
 can only produce complex coherent flux (i.e., non normalized complex visibility) for a vector of spatial frequecies and wavelengths. 
 
@@ -307,25 +321,59 @@ We can now plot the visibility from the CCF as the function of the spatial frequ
   :alt: Alternative text  
 
 
+Since **oimodeler** V1.0, the same result can be achieve using the 
+:func:`plotVis <oimodeler.oimModel.oimModel.plotVis>` method which takes the baseline 
+length array and wavlength as arguments. The spatial frequency can be converted to more
+tangible unit such as **cycle/mas**  to improve the plot. Let's apply that to plot the 
+visibility of the Uniform disk model.
+
+.. code-block:: ipython3
+
+    fig, ax = mUD.plotVis(B,wl,xunit="cycle/mas")
+    
+.. image:: ../../images/basicModel_vis1.png
+  :alt: Alternative text  
+
 Let's finish this example by creating a figure with the image and visibility
-for all the previously created models.
+for all the previously created models. We will also use the 
+:func:`showFourier <oimodeler.oimModel.oimModel.showFourier>` method to include 
+the modulus and phase of the of the Fourier transform of the model intensity distribution.
 
 .. code-block:: ipython3
 
     models = [mPt, mUD, mG, mR, mUDPt]
-    mNames = ["Point Source", "Uniform Disk", "Gausian", "Ring",
-              "Uniform Disk + Point Source"]
+    mNames = [
+    "Point Source (Pt)",
+    "Uniform Disk (UD",
+    "Gausian",
+    "Ring",
+    "UD + Pt",
+    ]
+    
+    nmodel = len(models)
 
-    fig, ax = plt.subplots(2, len(models), figsize=(
-        3*len(models), 6), sharex='row', sharey='row')
-
+    fig, ax = plt.subplots(4, nmodel, figsize=(10,10/ nmodel*4))
+    
     for i, m in enumerate(models):
         m.showModel(512, 0.1, normPow=0.2, axe=ax[0, i], colorbar=False)
-        v = np.abs(m.getComplexCoherentFlux(spf,  spf*0))
-        v = v/v.max()
-        ax[1, i].plot(spf, v)
+        spfmax = 0.69 # 11 cycle/mas
+        m.showFourier(512, spfmax, axe=ax[1, i],colorbar=False,display="amp",unit="cycle/mas")
+        m.showFourier(512, spfmax, axe=ax[2, i],colorbar=False,display="phase",unit="cycle/mas")
+        m.plotVis(B,wl,xunit="cycle/mas",axe=ax[3,i])
         ax[0, i].set_title(mNames[i])
-        ax[1, i].set_xlabel("sp. freq. (cycles/rad)")
+        ax[3, i].set_ylim(-0.05,1.05)
+    
+        if i!=0:
+            for j in range(4):
+                ax[j,i].get_yaxis().set_visible(False)
+        for j in range(3):
+            ax[j,i].get_xaxis().set_visible(False)            
+   
+    ax[0,0].text(0.05,0.9,"IMAGE",      transform=ax[0,0].transAxes,color="w",ha="left",va="top")  
+    ax[1,0].text(0.05,0.9,"FT MODULUS", transform=ax[1,0].transAxes,color="w",ha="left",va="top")   
+    ax[2,0].text(0.05,0.9,"FT PHASE",   transform=ax[2,0].transAxes,color="w",ha="left",va="top")   
+    ax[3,0].text(0.05,0.9,"VISIBILITY", transform=ax[3,0].transAxes,color="k",ha="left",va="top")   
+
 
 .. image:: ../../images/basicModel_all.png
   :alt: Alternative text 
@@ -360,18 +408,18 @@ to 8 mas at 4 microns.
 .. Note::
     Parameter interpolators are described in details in the :ref:`parameterInterpolators`.
 
-We can access to the interpolated value of the parameters using the ``__call__``
-operator of the :func:`oimParam <oimodeler.oimParam.oimParam>` class with values
-passed for the wavelengths to be interpolated:
+We can access to the interpolated value of the parameters using the ``()`` 
+operator of the :func:`oimParam <oimodeler.oimParam.oimParam>` 
+class with values passed for the wavelengths to be interpolated:
 
 .. code-block:: ipython3
 
-    pprint(g.params['fwhm'](wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6]))
+    print(g.fwhm(wl=[3e-6, 3.5e-6, 4e-6, 4.5e-6]))     
 
 
 .. parsed-literal::
 
-    ... [2. 5. 8. 8.]
+    array([2., 5., 8., 8.])
 
 The values are interpolated within the wavelength range [3e-6, 4e-6] and fixed beyond
 this range (see :ref:`parameterInterpolators` for more options such as extrapolation).
@@ -388,7 +436,7 @@ method. Unlike for grey models, the wavelength need to be specified.
   :alt: Alternative text
 
 
-Let's now create some spatial frequencies and wavelengths to be used to generate visibilities.
+Let's now plot chromatic visibilities using the :func:`plotVis <oimodeler.oimModel.oimModel.plotVis>` method.
 
 .. code-block:: ipython3
 
@@ -397,39 +445,23 @@ Let's now create some spatial frequencies and wavelengths to be used to generate
 
     wl = np.linspace(3e-6, 4e-6, num=nwl)
     B = np.linspace(1, 400, num=nB)
-
-    spf =
-    Bs = np.tile(B, (nwl, 1)).flatten()
-    wls = np.transpose(np.tile(wl, (nB, 1))).flatten()
-    spf = Bs/wls
-    spf0 = spf*0
-
-
-Unlike in the previous example with the grey data, we create a 2D-array for the spatial
-frequencies of ``nB`` baselines by ``nwl`` wavelengths. The wavlength vector is tiled
-itself to have the same length as the spatial frequency vector. Finally, we flatten the
-vector to be passed to the
-:func:`getComplexCoherentFlux <oimodeler.oimModel.oimModel.getComplexCoherentFlux>`method.
-
-We can now plot the visibilities for these baselines with a colorscale corresponding
-to the wavelength. As expected the visibility decreases with the wavelength as the
-fwhm of our object grows with it.
-
-.. code-block:: ipython3
-
-    vis = np.abs(mg.getComplexCoherentFlux(
-        spf, spf*0, wls)).reshape(len(wl), len(B))
-    vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
-
-    figGv, axGv = plt.subplots(1, 1, figsize=(14, 8))
-    sc = axGv.scatter(spf, vis, c=wls*1e6, s=0.2, cmap="plasma")
-    figGv.colorbar(sc, ax=axGv, label="$\\lambda$ ($\\mu$m)")
-    axGv.set_xlabel("B/$\\lambda$ (cycles/rad)")
-    axGv.set_ylabel("Visiblity")
-    axGv.margins(0, 0)
-
+    
+    mg.plotVis(B,wl)
+    
 .. image:: ../../images/complexModel_chromaticGaussianVis.png
   :alt: Alternative text
+
+
+      
+.. note::
+
+    When the wavelength is an array, the :func:`plotVis <oimodeler.oimModel.oimModel.plotVis>` method
+    directly produce a 2D-array for the spatial frequencies of ``nB`` baselines by ``nwl`` wavelengths. 
+    The wavlength vector is tiled itself to have the same length as the spatial frequency vector.
+    The method produce a plot with a colorscale corresponding to the wavelength.
+    
+As expected the visibility decreases with the wavelength as the fwhm of our object grows with it.
+
 
 Let's add a second component: An uniform disk with a chromatic flux.
 
@@ -440,16 +472,7 @@ Let's add a second component: An uniform disk with a chromatic flux.
 
     m2.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],normPow=0.2)
 
-    vis = np.abs(m2.getComplexCoherentFlux(spf, spf*0, wls)).reshape(len(wl), len(B))
-    vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
-
-    fig2v, ax2v = plt.subplots(1, 1, figsize=(14, 8))
-    sc = ax2v.scatter(spf, vis, c=wls*1e6, s=0.2, cmap="plasma")
-    fig2v.colorbar(sc, ax=ax2v, label="$\\lambda$ ($\\mu$m)")
-    ax2v.set_xlabel("B/$\\lambda$ (cycles/rad)")
-    ax2v.set_ylabel("Visiblity")
-    ax2v.margins(0, 0)
-    ax2v.set_ylim(0, 1)
+    m2.plotVis(B,wl)
 
 
 .. image:: ../../images/complexModel_UDAndGauss.png
@@ -482,31 +505,13 @@ uniform disk by an ellipse and the Gaussian by an elongated Gaussian.
 
 
 Now that our model is no more circular, we need to take care of the baselines
-orientations. Let's plot both North-South and East-West baselines.
+orientations. Let's plot both North-South and East-West baselines. 
+Using :func:`plotVis <oimodeler.oimModel.oimModel.plotVis>` method this can be done by specifying the ``PA`` keyword.
+We ask for **PA=0** (North-South) and **PA=90** (East-West) baselines.
 
 .. code-block:: ipython3
 
-    fig3v, ax3v = plt.subplots(1, 2, figsize=(14, 5), sharex=True, sharey=True)
-
-    # East-West
-    vis = np.abs(m3.getComplexCoherentFlux(
-        spf, spf*0, wls)).reshape(len(wl), len(B))
-    vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
-    ax3v[0].scatter(spf, vis, c=wls*1e6, s=0.2, cmap="plasma")
-    ax3v[0].set_title("East-West Baselines")
-    ax3v[0].margins(0, 0)
-    ax3v[0].set_ylim(0, 1)
-    ax3v[0].set_xlabel("B/$\\lambda$ (cycles/rad)")
-    ax3v[0].set_ylabel("Visiblity")
-
-    # North-South
-    vis = np.abs(m3.getComplexCoherentFlux(
-        spf*0, spf, wls)).reshape(len(wl), len(B))
-    vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
-    sc = ax3v[1].scatter(spf, vis, c=wls*1e6, s=0.2, cmap="plasma")
-    ax3v[1].set_title("North-South Baselines")
-    ax3v[1].set_xlabel("B/$\\lambda$ (cycles/rad)")
-    fig3v.colorbar(sc, ax=ax3v.ravel().tolist(), label="$\\lambda$ ($\\mu$m)")
+    m3.plotVis(B,wl,PA=[0,90])
 
 
 .. image:: ../../images/complexModel_ElongVis.png
@@ -519,24 +524,24 @@ Let's have a look at our last model's free parameters.
 
 .. code-block:: ipython3
 
-    pprint(m3.getFreeParameters())
+    print(m3.getFreeParameters())
 
 
 .. parsed-literal::
 
-    ... {'c1_eUD_f_interp1': oimParam at 0x23d9e7194f0 : f=2 ± 0  range=[-inf,inf] free=True ,
-         'c1_eUD_f_interp2': oimParam at 0x23d9e719520 : f=0.2 ± 0  range=[-inf,inf] free=True ,
-         'c1_eUD_elong': oimParam at 0x23d9e7192e0 : elong=2 ± 0  range=[-inf,inf] free=True ,
-         'c1_eUD_pa': oimParam at 0x23d9e719490 : pa=90 ± 0 deg range=[-inf,inf] free=True ,
-         'c1_eUD_d': oimParam at 0x23d9e7193a0 : d=0.5 ± 0 mas range=[-inf,inf] free=True ,
-         'c2_EG_f': oimParam at 0x23d9e7191c0 : f=1 ± 0  range=[-inf,inf] free=True ,
-         'c2_EG_elong': oimParam at 0x23d9e7191f0 : elong=2 ± 0  range=[-inf,inf] free=True ,
-         'c2_EG_pa': oimParam at 0x23d9e719220 : pa=90 ± 0 deg range=[-inf,inf] free=True ,
-         'c2_EG_fwhm_interp1': oimParam at 0x23d9e7192b0 : fwhm=2 ± 0 mas range=[-inf,inf] free=True ,
-         'c2_EG_fwhm_interp2': oimParam at 0x23d9e719340 : fwhm=8 ± 0 mas range=[-inf,inf] free=True }
+    {'c1_eUD_f_interp1': oimParam at 0x23d9e7194f0 : f=2 ± 0  range=[-inf,inf] free=True ,
+     'c1_eUD_f_interp2': oimParam at 0x23d9e719520 : f=0.2 ± 0  range=[-inf,inf] free=True ,
+     'c1_eUD_elong': oimParam at 0x23d9e7192e0 : elong=2 ± 0  range=[-inf,inf] free=True ,
+     'c1_eUD_pa': oimParam at 0x23d9e719490 : pa=90 ± 0 deg range=[-inf,inf] free=True ,
+     'c1_eUD_d': oimParam at 0x23d9e7193a0 : d=0.5 ± 0 mas range=[-inf,inf] free=True ,
+     'c2_EG_f': oimParam at 0x23d9e7191c0 : f=1 ± 0  range=[-inf,inf] free=True ,
+     'c2_EG_elong': oimParam at 0x23d9e7191f0 : elong=2 ± 0  range=[-inf,inf] free=True ,
+     'c2_EG_pa': oimParam at 0x23d9e719220 : pa=90 ± 0 deg range=[-inf,inf] free=True ,
+     'c2_EG_fwhm_interp1': oimParam at 0x23d9e7192b0 : fwhm=2 ± 0 mas range=[-inf,inf] free=True ,
+     'c2_EG_fwhm_interp2': oimParam at 0x23d9e719340 : fwhm=8 ± 0 mas range=[-inf,inf] free=True }
 
 
-We see here that for the Ellipse (``C1_eUD``) the f parameter has been replaced by two
+We see here that for the Ellipse (``C1_eUD``) the ``f`` parameter has been replaced by two
 independent parameters called ``c1_eUD_f_interp1`` and ``c1_eUD_f_interp2``. They
 represent the value of the flux at 3 and 4 microns. We could have added more reference
 wavelengths in our model and would have ended with more parameters. The same happens for
@@ -544,14 +549,15 @@ the elongated Gaussian (``C2_EG``) fwhm.
 
 
 Currently our model has 10 free parameters. In certain cases we might want to link or
-share two or more parameters. In our case, we might consider that the two components have
+share two or more parameters, for physical reasons, the flattening may represents a projectoinal effects, or
+to reduce the number of free parameters for model-fitting. In our case, we might consider that the two components have
 the same ``pa`` and ``elong``. This can be done easily. To share a parameter you can just
 replace one parameter by another.
 
 .. code-block:: ipython3
 
-    eg.params['elong'] = el.params['elong']
-    eg.params['pa'] = el.params['pa']
+    eg.elong = el.elong
+    eg.pa = el.pa
 
     pprint(m3.getFreeParameters())
 
@@ -567,12 +573,12 @@ replace one parameter by another.
          'c2_EG_fwhm_interp2': oimParam at 0x23d9e719340 : fwhm=8 ± 0 mas range=[-inf,inf] free=True }
 
 
-That way we have reduced our number of free parameters to 8. If you change  ``params['elong']`` value
-it will also change ``el.params['elong']`` values are they are actually the same instance of the
+That way we have reduced our number of free parameters to 8. If you change ``eg.elong`` value
+it will also change ``el.elong`` values are they are actually the same instance of the
 :func:`oimParam <oimodeler.oimParam.oimParam>` class.
 
 A more advance way to link parameters is the use :func:`oimParamLinker <oimodeler.oimParam.oimParamLinker>`
-class. This class allow to define a simple mathematically formulat between the value of two parameters.
+class. This class allow to define a simple mathematically formula between the value of two parameters.
 
 Let's create a new model which include a elongated ring perpendicular to the Gaussian
 and Ellipse ``pa`` and with a inner and outer radii equals to 2 and 4 times the ellipse
@@ -581,11 +587,11 @@ diameter, respectively.
 .. code-block:: ipython3
 
     er = oim.oimERing()
-    er.params['elong'] = eg.params['elong']
-    er.params['pa'] = oim.oimParamLinker(eg.params["pa"], "add", 90)
-    er.params['din'] = oim.oimParamLinker(el.params["d"], "mult", 2)
-    er.params['dout'] = oim.oimParamLinker(el.params["d"], "mult", 4)
-
+    er.elong = eg.elong
+    er.pa = oim.oimParamLinker(eg.pa, "+", 90)
+    er.din = oim.oimParamLinker(el.d, "*", 2)
+    er.dout = oim.oimParamLinker(el.d, "*", 4)
+    
     m4 = oim.oimModel([el, eg, er])
 
     m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6],normPow=0.2)
@@ -594,28 +600,133 @@ diameter, respectively.
 .. image:: ../../images/complexModel_link.png
   :alt: Alternative text
 
-
 Although quite complex this models only have 9 free parameters. If we change the ellipse
 diameter and its position angle, the components will scale (except the Gaussian whose fwhm
 is independent) and rotate.
 
 .. code-block:: ipython3
 
-    el.params['d'].value = 4
-    el.params['pa'].value = 45
+    el.d.value = 4
+    el.pa.value = 45
 
     m4.showModel(256, 0.1, wl=[3e-6, 3.25e-6, 3.5e-6, 4e-6], normPow=0.2)
 
 
 .. image:: ../../images/complexModel_linkRotScale.png
   :alt: Alternative text
+  
+If simple mathematical operation (+,-,*,/) are not sufficient, you can use custom-made linking function.
+
+In the following example, we will use two more advanced components that, when combined, mimic a dusty
+circumstellar disk:
+
+- :func:`oimInnerRim <oimodeler.oimCustomComponents.oimInnerRim.oimInnerRim>`: a geometrical inner rim of a dusty disk
+- :func:`oimExpRing <oimodeler.oimCustomComponents.oimExpRing.oimExpRing>`: an exponential ring representing the emission beyond the rim.
+
+Let's first build our model.
+
+.. code-block:: ipython3
+
+    innerRim = oim.oimInnerRim(dim=128,d=20,incl=60,h=3,y=0,pa=-90+67,f=1)
+    expRing = oim.oimExpRing(dim=64, fwhm=5,f=10,elong=1)
+    mdisk = oim.oimModel(innerRim,expRing)
+
+Our goal here is to link a few parameters together.
+
+The diameter of the inner rim and that of the exponential ring should be the same. This can easily be achieved by assigning one parameter to the other:
+
+.. code-block:: ipython3
+
+
+    expRing.d = innerRim.d
+
+
+The position angle `pa` of the exponential ring is defined along its major axis (which represents the equatorial axis of the disk),
+whereas the position angle of the inner rim is defined along its polar axis. The two position angles should therefore be perpendicular.
+This can be achieved using the :func:`oimParamLinker <oimodeler.oimParam.oimParamLinker>` function with the `add` (or `+`) operator.
+
+.. code-block:: ipython3
+
+
+    expRing.pa = oim.oimParamLinker(innerRim.pa,operator="add",fact=90)
+    
+
+Finally, we want to link ``innerRim.incl``, the inclination angle of the inner rim, to ``expRing.elong``, the elongation of the
+exponential ring. Their relation is fairly simple: **elong = 1 / cos(incl)**. We can define a custom function and pass it to the
+:func:`oimParamLinkerFunction <oimodeler.oimParam.oimParamLinkerFunction>` function.
+
+.. code-block:: ipython3
+
+
+    def func(p):
+        return 1./np.cos(np.deg2rad(p))
+
+    expRing.elong = oim.oimParamLinkerFunction(innerRim.incl,func)
+
+
+Now that we have linked all the parameters we want, we can print the list of free parameters:
+
+.. code-block:: ipython3
+
+
+    print(mdisk.getFreeParameters())
+
+
+.. code-block::
+
+
+    {'c1_InRim_d': oimParam at 0x20a8f337770 : d=0 ± 0 mas range=[0.0,inf] free=True ,
+     'c1_InRim_f': oimParam at 0x20a8f3379b0 : f=1 ± 0  range=[0.0,1.0] free=True ,
+     'c1_InRim_h': oimParam at 0x20a8f337ec0 : h=3 ± 0 mas range=[-inf,inf] free=True ,
+     'c1_InRim_incl': oimParam at 0x20a8f337c80 : incl=60 ± 0 deg range=[-inf,inf] free=True ,
+     'c1_InRim_pa': oimParam at 0x20a8f337a40 : pa=-23 ± 0 deg range=[-180.0,180.0] free=True ,
+     'c2_ExpRing_f': oimParam at 0x20a8f3375c0 : f=10 ± 0  range=[0.0,1.0] free=True ,
+     'c2_ExpRing_fwhm': oimParam at 0x20a8f337800 : fwhm=5 ± 0 mas range=[0.0,inf] free=True }
+    
+
+We can also plot the image of our model:
+
+.. code-block:: ipython3
+
+
+    mdisk.showModel(256,0.3,fromFT=True,normPow=1)
+
+
+.. image:: ../../images/complexModel_linkingFunction0.png
+    :alt: Alternative text
+
+Now that the diameter, inclination angle, and orientation (``pa``) are linked between the two components,
+changing one of these parameters will automatically update the corresponding parameter in the other component,
+as shown in the example below.
+
+.. code-block:: ipython3
+
+    fig, ax = plt.subplots(1,4,figsize=(15,5))
+
+    d = [20,15,20,17]
+    pa = [0,20,90,-50]
+    incl = [20,40,60,45]
+
+    for i in range(4):
+        innerRim.d.value = d[i]
+        innerRim.pa.value = pa[i]
+        innerRim.incl.value = incl[i]
+            
+        mdisk.showModel(256,0.3,fromFT=True,normPow=1,axe=ax[i],colorbar=False)
+        if i!=0:
+            ax[i].get_yaxis().set_visible(False)
+    fig.tight_layout()
+
+
+.. image:: ../../images/complexModel_linkingFunction.png
+    :alt: Alternative text
 
 Flux normalization
 ~~~~~~~~~~~~~~~~~~
 
 In most cases, the user will want to have the total flux of the model to be normalized to 1.
 The allows to remove one of the flux parameter of the model and remove degenracy unless actual
-fluxes measurement are available.
+fluxes measurements are available.
 
 Here we build a triple-system model with one uniform disk and to point sources.
 
@@ -625,11 +736,10 @@ Here we build a triple-system model with one uniform disk and to point sources.
     star2 = oim.oimPt(f=0.15,x=5,y=5)
     star3 = oim.oimPt(x=15,y=12)
     mtriple = oim.oimModel(star1,star2,star3)
-    star2.params["x"].free=True
-    star2.params["y"].free=True
-    star3.params["x"].free=True
-    star3.params["y"].free=True
-
+    star2.x.free = True
+    star2.y.free = True
+    star3.x.free = True
+    star3.y.free = True
 
     print(mtriple.getFreeParameters())
 
@@ -649,7 +759,7 @@ we can use the :func:`oimParamNorm <oimodeler.oimParam.oimParamNorm>` class.
 
 .. code-block:: ipython3
 
-    star3.params["f"] = oim.oimParamNorm([star1.params["f"],star2.params["f"]])
+    star3.f = oim.oimParamNorm([star1.f,star2.f])
 
 Alternatively, we can  use the :func:`normalizeFlux <oimodeler.oimModel.oimModel.normalizeFlux>`
 method of the :func:`oimModel <oimodeler.oimModel.oimModel>` class.
@@ -663,9 +773,9 @@ These flux will be updated if the other are modified.
 
 .. code-block:: ipython3
 
-   print(star3.params["f"]())
-   star1.params["f"].value = 0.5
-   print(star3.params["f"]())
+   print(star3.f())
+   star1.f.value = 0.5
+   print(star3.f())
 
 .. parsed-literal::
 

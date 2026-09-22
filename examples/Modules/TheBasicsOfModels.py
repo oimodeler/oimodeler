@@ -22,7 +22,9 @@ r = oim.oimIRing(d=5, f=0.5)
 
 # %%
 pprint(ud)
+#%%
 pprint(ud.params["d"])
+pprint(ud.d)
 
 # NOTE: Build a few models from the components
 mPt = oim.oimModel(pt)
@@ -80,49 +82,47 @@ plt.xlabel("spatial frequency (cycles/rad)")
 plt.ylabel("Visbility")
 plt.savefig(save_dir / "basicModel_vis0.png")
 
+#%%
+
+fig, ax = mUD.plotVis(B,wl,xunit="cycle/mas")
+fig.savefig(save_dir / "basicModel_vis1.png")
+
+#%%
 # NOTE: Some components
 models = [mPt, mUD, mG, mR, mUDPt]
 mNames = [
-    "Point Source",
-    "Uniform Disk",
-    "Gausian",
-    "Ring",
-    "Uniform Disk + Point Source",
+"Point Source (Pt)",
+"Uniform Disk (UD",
+"Gausian",
+"Ring",
+"UD + Pt",
 ]
 
-fig, ax = plt.subplots(
-    2, len(models), figsize=(3 * len(models), 6), sharex="row", sharey="row"
-)
+nmodel = len(models)
+
+fig, ax = plt.subplots(4, nmodel, figsize=(10,10/ nmodel*4))
+
 for i, m in enumerate(models):
     m.showModel(512, 0.1, normPow=0.2, axe=ax[0, i], colorbar=False)
-    v = np.abs(m.getComplexCoherentFlux(spf, spf * 0))
-    v = v / v.max()
-    ax[1, i].plot(spf, v)
+    spfmax = 0.69 # 11 cycle/mas
+    m.showFourier(512, spfmax, axe=ax[1, i],colorbar=False,display="amp",unit="cycle/mas")
+    m.showFourier(512, spfmax, axe=ax[2, i],colorbar=False,display="phase",unit="cycle/mas")
+    m.plotVis(B,wl,xunit="cycle/mas",axe=ax[3,i])
     ax[0, i].set_title(mNames[i])
-    ax[1, i].set_xlabel("Sp. freq. (cycles/rad)")
+    ax[3, i].set_ylim(-0.05,1.05)
 
+    if i!=0:
+        for j in range(4):
+            ax[j,i].get_yaxis().set_visible(False)
+    for j in range(3):
+        ax[j,i].get_xaxis().set_visible(False)            
+   
+ax[0,0].text(0.05,0.9,"IMAGE",      transform=ax[0,0].transAxes,color="w",ha="left",va="top")  
+ax[1,0].text(0.05,0.9,"FT MODULUS", transform=ax[1,0].transAxes,color="w",ha="left",va="top")   
+ax[2,0].text(0.05,0.9,"FT PHASE",   transform=ax[2,0].transAxes,color="w",ha="left",va="top")   
+ax[3,0].text(0.05,0.9,"VISIBILITY", transform=ax[3,0].transAxes,color="k",ha="left",va="top")   
+
+
+fig.tight_layout()
 fig.savefig(save_dir / "basicModel_all.png")
 
-fig, ax = plt.subplots(
-    2, len(models), figsize=(3 * len(models), 6), sharex="row", sharey="row"
-)
-for i, m in enumerate(models):
-    m.showFourier(
-        512,
-        0.1,
-        wl=wl,
-        axe=ax[0, i],
-        colorbar=False,
-        display="amp",
-    )
-    m.showFourier(
-        512,
-        0.1,
-        wl=wl,
-        axe=ax[1, i],
-        colorbar=False,
-        display="phase",
-    )
-    ax[0, i].set_title(mNames[i])
-
-fig.savefig(save_dir / "basicModelFourier_all.png")
