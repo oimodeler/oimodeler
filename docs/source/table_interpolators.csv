@@ -18,6 +18,6 @@ oimParamPowerLawTime|powerlawTime|Powerlaw interpolation in mjd|x0, A, p
 oimParamPowerLawWl|powerlawWl|Powerlaw interpolation in wl|x0, A, p
 oimParamLinearRangeWl|rangeWl|Linear range interpolation in wl|wlmin, wlmax, values
 oimParamLinearTemplateWl|templateWl|Interpolation in wl using external regular grid template|wl0, dwl, f_contrib, values, kind
-oimParamLinearTemperatureWl|tempWl|Blackbody in wl for given temperature|temp, solid_angle
-oimParamLinearStarWl|starWl|Blackbody in wl for given Teff, dist, and radius or lum|temp, dist, lum, radius
+oimParamLinearTemperatureWl|tempWl|Blackbody in wl for given temperature|T, solid_angle
+oimParamLinearStarWl|starWl|Blackbody (per wavelength) for given temperature, radius or luminosity, and distance|T, L, R, dist
 oimParamUserFunc|userFunc|Interpolate from user-supplied function|

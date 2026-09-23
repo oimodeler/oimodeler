@@ -14,13 +14,13 @@ product_dir = path / "data"
 if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
-
+#%%
 # NOTE: Get the list of all Fourier-based components currently available
 print(oim.listComponents(componentType="fourier"))
-
+#%%
 # NOTE: Get information on a component
 help(oim.oimUD)
-
+#%%
 # NOTE: Get the list of all image-based components currently available.
 print(oim.listComponents(componentType="image"))
 
@@ -40,11 +40,9 @@ mradmc3D = oim.oimModel(radmc3D)
 
 figimages, aximages = plt.subplots(1, 3, figsize=(15, 4))
 
-mspiral.showModel(256, 0.3, axe=aximages[0], colorbar=False, normPow=1)
+mspiral.showModel(256, 0.2, axe=aximages[0], colorbar=False, normPow=1)
 mfrot.showModel(256, 0.05, wl=1e-6, axe=aximages[1], colorbar=False, normPow=1)
-mradmc3D.showModel(
-    256, 0.5, wl=3e-6, axe=aximages[2], colorbar=False, normPow=0.22
-)
+mradmc3D.showModel(256, 0.5, wl=3e-6, axe=aximages[2], colorbar=False, normPow=0.5)
 
 plt.tight_layout()
 figimages.savefig(save_dir / "componentImages_images.png")
@@ -61,6 +59,7 @@ oim.setFTBackend("fftw")  # or with the setFTBackend specifying  the alias
 # NOTE: Set zero padding (affects the accuracy of the FFT)
 oim.oimOptions.ft.padding = 8
 
+#%% 
 # NOTE: Create the spiral model
 spiral = oim.oimSpiral(dim=128, fwhm=20, P=1, width=0.1, pa=0, elong=1)
 mspiral = oim.oimModel(spiral)
@@ -117,3 +116,6 @@ axpad[1, 0].set_ylabel("Residual (%)")
 
 figpad.savefig(save_dir / "componentImages_padding.png")
 oim.oimOptions.ft.padding = 4
+
+#%%
+padfact, err_mean, err_max = mspiral.checkPaddingEffect()

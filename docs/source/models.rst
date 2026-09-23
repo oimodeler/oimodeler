@@ -842,20 +842,24 @@ To print the comprehensive list of Fourier-based compnents you can type:
 
     print(oim.listComponents(componentType="fourier"))
 
+.. code-block:: 
 
-
-    ['oimComponentFourier', 'oimPt', 'oimBackground', 'oimUD', 'oimEllipse', 'oimGauss', 'oimEGauss', 'oimIRing',
-     'oimEIRing', 'oimRing', 'oimRing2', 'oimERing', 'oimERing2', 'oimESKIRing', 'oimESKGRing', 'oimESKRing', 'oimLorentz',
-     'oimELorentz', 'oimLinearLDD', 'oimQuadLDD', 'oimPowerLawLDD', 'oimSqrtLDD', 'oimAEIRing', 'oimAERing', 'oimBox',
-     'oimGaussLorentz', 'oimStarHaloGaussLorentz', 'oimStarHaloIRing']
+    ['oimComponentFourier', 'oimPt', 'oimBackground', 'oimUD', 'oimEllipse', 
+    'oimGauss', 'oimEGauss', 'oimIRing', 'oimEIRing', 'oimRing', 'oimRing2', 
+    'oimERing', 'oimERing2', 'oimESKIRing', 'oimESKGRing', 'oimESKRing', 
+    'oimLorentz', 'oimELorentz', 'oimLinearLDD', 'oimQuadLDD', 'oimPowerLawLDD',
+    'oimSqrtLDD', 'oim4CLDD', 'oimAEIRing', 'oimBox', 'oimExpRing', 
+    'oimGaussLorentz', 'oimStarHaloGaussLorentz', 'oimStarHaloIRing', 
+    'oimBinaryOrbit']
      
-If you want to have more information on a component (for instance, on its paramaters) you can use python **help** function.
+If you want to have more information on a component (for instance, on its paramaters) you can use python
+``help()`` function.
 
 .. code-block:: ipython3
 
     help(oim.oimUD)
 
-.. parsed-literal::
+.. code-block:: 
 
     class oimUD(oimodeler.oimComponent.oimComponentFourier)
      |  oimUD(**kwargs)
@@ -875,20 +879,19 @@ If you want to have more information on a component (for instance, on its parama
      |
 
 
-Although simple, these components can allow to build complex models, For instance, Chromaticity and/or time-dependency 
-can be added to any parameters of these components to build more complex models.
-We will see this in details in the :ref:`Advanced parameters` section.
+Although simple, these components can allow to build complex models, For instance, Chromaticity and/or
+time-dependency can be added to any parameters of these components to build more complex models.
 
 .. note:: 
-    Models using Fourier-based components are usually faster to run as they use a simple function to compute the 
-    complex Coherent Flux whereas imaged-based used FFT or Hankel-Transform (for radial profile) 
+    Models using Fourier-based components are generally faster to run, as they use a simple function to compute the
+    complex coherent flux, whereas image-based models rely on FFTs or Hankel transforms.
 
 
 Image components
 ----------------
 
-**oimodeler** allows to use components described in the image space. This can be done by subclassing the semi-abstract
-:func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class.
+**oimodeler** allows to use components described by their intensity 2D-distribution. This can be done by subclassing
+the semi-abstract :func:`oimComponentImage <oimodeler.oimcomponent.oimComponentImage>` class.
 
 In the table below is a list of the current image-plan components:
 
@@ -898,19 +901,23 @@ In the table below is a list of the current image-plan components:
    :delim: |
    :widths: auto
 
-To print the comprehensive list of image-based compnents you can type:
+To print the comprehensive list of image-based components you can type:
 
 .. code-block:: ipython3
 
     print(oim.listComponents(componentType="image"))
 
 
-Describing an object by its intensity distribution instead of its Fourier transform can be useful in three cases:
+Although this approach requires more computational time, describing an object by its intensity distribution rather than
+by its Fourier transform can be useful in three cases:
 
-1. the component cannot be described using an analytical formula in the Fourier space but can be described by an analytical formula in the image plan
-2. the component cannot be described by a simple analytical formula even in the image space but an image can easily be computed, for instance with a iterative code
-3. the user want to use external code such as images from a radiative transfert model
+1.  The component cannot be described by an analytical formula in Fourier space but can be described by an analytical
+    formula in image space.
 
+2.  The component cannot be described by a simple analytical formula, even in image space, but its intensity
+    distribution can be readily computed, for instance using an iterative method.
+
+3.  The user wants to use external data or models, such as images produced by a radiative transfer model.
 
 Here are three examples of these three kind of image components implemented in **oimodeler**.
 
@@ -936,11 +943,22 @@ and a full description is given in :ref:`fastrot`.
     frot = oim.oimFastRotator(dpole=5, dim=128, incl=-50,rot=0.99, Tpole=20000, beta=0.25,pa=20)
     mfrot = oim.oimModel(frot)
 
-Finally, the last one is an output from the radiative transfer code  `RADMC3D <https://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_
-simulating the inner part of a dusty disk around the B[e] star FS CMa.
-The simulation was made from 1.5 to 13μm. and the output was saved as a chromatic image-cube in the fits format with proper axes descruibed
-in the header (size of pixel in x, y and wavelength). We use the :func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>`
-class described in the next section to load the image as a image-components.
+Finally, the last one is an output from the radiative transfer code
+`RADMC3D <https://www.ita.uni-heidelberg.de/~dullemond/software/radmc-3d/>`_ simulating the inner part of a dusty disk
+around the B[e] star FS CMa. The simulation was made from 1.5 to 13μm. and the output was saved as a chromatic
+image-cube in the fits format with proper axes descruibed in the header (size of pixel in x, y and wavelength).
+We use the :func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>` class described in the next
+section to load the image as a image-components.
+
+To produce the images above we use the following code :
+
+.. code-block:: ipython3
+
+    figimages, aximages = plt.subplots(1, 3, figsize=(15, 4))
+
+    mspiral.showModel(256, 0.2, axe=aximages[0], colorbar=False, normPow=1)
+    mfrot.showModel(256, 0.05, wl=1e-6, axe=aximages[1], colorbar=False, normPow=1)
+    mradmc3D.showModel(256, 0.5, wl=3e-6, axe=aximages[2], colorbar=False, normPow=0.5)
 
 .. code-block:: ipython3
 
@@ -948,11 +966,12 @@ class described in the next section to load the image as a image-components.
     radmc3D = oim.oimComponentFitsImage(radmc3D_fname,pa=180)
     mradmc3D = oim.oimModel(radmc3D)
 
-Unlike when using Fourier-based components, the determination of the complex coherent flux (and the other interferometric observables) from an image
-requires the computation of the image Fourier Transform (FT) at the spatial frequency (and optionnally spectral and time) coordinates of the data.
+Unlike Fourier-based components, determining the complex coherent flux (and other interferometric observables) from an
+image requires computing the image's Fourier transform (FT) at the spatial frequencies corresponding to the data, as
+well as, optionally, at their spectral and temporal coordinates.
 
-In **oimodeler** such computation relies on the :func:`oimFTBackends <oimodeler.oimFTBackends>` module which contains various algorithms to compute
-the Fourier trasnform. Currently implemented are the following:
+In **oimodeler** such computation relies on the :func:`oimFTBackends <oimodeler.oimFTBackends>` module which contains
+various algorithms to compute the Fourier transform. Currently implemented are the following:
 
 .. csv-table:: Available Fourier Transform Backends
    :file: table_ftbackends.csv
@@ -971,6 +990,7 @@ available on your installation, type:
 .. parsed-literal::
 
     [<class 'oimodeler.oimFTBackends.numpyFFTBackend'>,
+     <class 'oimodeler.oimFTBackends.DFTBackend'>,
      <class 'oimodeler.oimFTBackends.FFTWBackend'>]
 
 The current FT backend is given by :
@@ -1011,62 +1031,82 @@ Here is a ample script illustrating the accuracy of the FFT as the function of t
 
 .. code-block:: ipython3
 
-    #creating the spiral model
     spiral = oim.oimSpiral(dim=128, fwhm=20, P=1, width=0.1, pa=0, elong=1)
     mspiral = oim.oimModel(spiral)
 
-    #creating a set of baselines from 0 to 100m in K band
+    # NOTE: Set baselines from 0 to 100m in K band
     wl = 2.1e-6
-    B = np.linspace(0, 100, num=200)
-    spf = B/wl
+    B = np.linspace(0, 100, num=1000)
+    spf = B / wl
 
-    #computing the reference model with padding of 32
+    # NOTE: Compute the reference model with padding of 32
     oim.oimOptions.ft.padding = 32
-    ccf01 = mspiral.getComplexCoherentFlux(spf, spf*0)
-    v01 = np.abs(ccf01/ccf01[0])
+    ccf01 = mspiral.getComplexCoherentFlux(spf, spf * 0)
+    v01 = np.abs(ccf01 / ccf01[0])
 
     start = time.time()
-    ccf02 = mspiral.getComplexCoherentFlux(spf*0, spf)
-    v02 = np.abs(ccf02/ccf02[0])
+    ccf02 = mspiral.getComplexCoherentFlux(spf * 0, spf)
+    v02 = np.abs(ccf02 / ccf02[0])
     end = time.time()
-    dt0 = end -start
+    dt0 = end - start
 
-    #%%  computing FFT with different padding
-    padding=[16,8,4,2,1]
-    figpad,axpad = plt.subplots(2,2, figsize=(10,5),sharey="row",sharex=True)
+    # NOTE: Compute the FFT with different padding
+    padding = [16, 8, 4, 2, 1]
+    figpad, axpad = plt.subplots(2, 2, figsize=(10, 5), sharey="row", sharex=True)
 
-    axpad[0,0].plot(spf, v01, color="k",lw=4)
-    axpad[0,1].plot(spf, v02, color="k",lw=4,label=f"padding=32x ({dt0*1000:.0f}ms)")
+    axpad[0, 0].plot(spf, v01, color="k", lw=4)
+    axpad[0, 1].plot(
+        spf, v02, color="k", lw=4, label=f"padding=32x ({dt0*1000:.0f}ms)"
+    )
 
-    for pi in padding :
+    for pi in padding:
         oim.oimOptions.ft.padding = pi
-        ccf1 = mspiral.getComplexCoherentFlux(spf, spf*0)
-        v1 = np.abs(ccf1/ccf1[0])
+        ccf1 = mspiral.getComplexCoherentFlux(spf, spf * 0)
+        v1 = np.abs(ccf1 / ccf1[0])
         start = time.time()
-        ccf2 = mspiral.getComplexCoherentFlux(spf*0, spf)
-        v2 = np.abs(ccf2/ccf2[0])
+        ccf2 = mspiral.getComplexCoherentFlux(spf * 0, spf)
+        v2 = np.abs(ccf2 / ccf2[0])
         end = time.time()
-        dt = end -start
-        axpad[0,0].plot(spf, v1)
-        axpad[0,1].plot(spf, v2,label=f"padding={pi}x ({dt*1000:.0f}ms)")
-        axpad[1,0].plot(spf, (v1-v01)/v01*100,marker=".",ls="")
-        axpad[1,1].plot(spf, (v2-v02)/v02*100,marker=".",ls="")
+        dt = end - start
+        axpad[0, 0].plot(spf, v1)
+        axpad[0, 1].plot(spf, v2, label=f"padding={pi}x ({dt*1000:.0f}ms)")
+        axpad[1, 0].plot(spf, (v1 - v01) / v01 * 100)
+        axpad[1, 1].plot(spf, (v2 - v02) / v02 * 100)
+
 
     for i in range(2):
-        axpad[1,i].set_xlabel("spatial frequency (cycles/rad)")
-        axpad[1,i].set_yscale("symlog")
-    axpad[0,0].set_title("East-West baselines")
-    axpad[0,1].set_title("North-South baselines")
-    axpad[0,0].set_ylabel("Visbility")
-    axpad[0,1].legend()
-    axpad[1,0].set_ylabel("Residual (%)")
+        axpad[1, i].set_xlabel("spatial frequency (cycles/rad)")
+        axpad[1, i].set_yscale("symlog")
+    axpad[0, 0].set_title("East-West baselines")
+    axpad[0, 1].set_title("North-South baselines")
+    axpad[0, 0].set_ylabel("Visbility")
+    axpad[0, 1].legend()
+    axpad[1, 0].set_ylabel("Residual (%)")
+
 
 .. image:: ../../images/componentImages_padding.png
   :alt: Alternative text
 
 In the case of the :func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oimSpiral>` component, reducing the
-zero-padding below the default value of 4 leads to mean errors of the order of 30% (with values up to 500%). The default
-padding reduce mean errors to a few percents (with maximum of the order of 10%).
+zero-padding below the default value of 4 leads to mean errors of the order of 20% (with values up to about 100%).
+The default padding reduce mean errors to about 1% percents (with maximum of the order of 10%).
+
+The :func:oimModel <oimodeler.oimModel.oimModel> class provides the
+:func:checkPaddingEffect <oimodeler.oimModel.oimModel.checkPaddingEffect> method, which allows users to quantify the
+effect of padding on a model and determine an appropriate padding value based on the required accuracy.
+
+.. code-block:: ipython3
+
+    padfact, err_mean, err_max = mspiral.checkPaddingEffect()
+
+.. code-block::
+
+    Checking Padding effect on FFT
+    padding = 16 => err_mean=0.08% err_max=0.59%
+    padding = 8 => err_mean=0.39% err_max=1.95%
+    padding = 4 => err_mean=1.64% err_max=8.23%
+    padding = 2 => err_mean=6.03% err_max=41.19%
+    padding = 1 => err_mean=22.14% err_max=88.13%
 
 However, as the FFT computation time grows like :math:`n log(n)`, where n is the number of pixels in the image,
 increasing the padding increase significantly the computation time of the model (see the example above).
@@ -1074,8 +1114,8 @@ increasing the padding increase significantly the computation time of the model 
 Another way to reduce the computation time of the FFT (and the DFT) is to reduce the size of the image and increase the
 pixel size of the image while keeping the field of view fixed.
 
-Finally, when dealing with image-component, the user show determine the good trade-off between image resolution and size,
-zero-padding and computation time.
+Finally, when dealing with image-component, the user show determine the good trade-off between image resolution and
+size, zero-padding and computation time.
 
 Loading fits images
 -------------------

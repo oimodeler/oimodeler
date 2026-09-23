@@ -3,17 +3,17 @@ oimDataFilterComponent|All filters are derived from this class|targets, arr
 oimRemoveArrayFilter|Removing array(s)/table(s) by name: OI_VIS2, OI_T3...|targets, arr
 oimRemoveInsnameFilter|Remove arrays/tables by insname(s)|targets, arr, insname
 oimDataTypeFilter|Sets column values to 0 by colum name(s) : VIS2DATA, VISAMP...|targets, arr, dataType
-oimKeepDataTypeFilter|Keep columns that are specified: VIS2DATA, VISAMP...|target, arr, dataType
+oimKeepDataTypeFilter|Keep columns that are specified: VIS2DATA, VISAMP...|targets, arr, dataType
 oimFlagWithExpressionFilter|Flags based on boolean expressions|targets, arr, expr, keepOldFlag
 oimWavelengthRangeFilter|Cuts the wavelength range(s)|targets, arr, wlRange, addCut, method
 oimWavelengthShiftFilter|Shifts the wavelength table|targets, arr, wlShift
-oimWavelengthSmoothingFilter|Spectral smoothing|targets, arr, smoothPix, normalizeError
+oimWavelengthSmoothingFilter|Spectral smoothing |targets, arr, smoothPix, normalizeError
 oimWavelengthBinningFilter|Spectral binning|targets, arr, bin, normalizeError
-oimWavelengthIntpBinFilter|Spectral binning to grid with interpolation at window edges.|targets, arr, binGrid, binWindow, resetFlags, averageError, nSpecChannels
+oimWavelengthIntpBinFilter|Binning to wavelength grid with interpolation at window edges.|targets, arr, binGrid, binWindow, resetFlags, averageError, nSpecChannels
 oimKeepBaselinesFilter|Keeps baseline(s) specified by name|targets, arr, baselines, keepOldFlag
 oimRemoveBaselinesFilter|Removes baseline(s) specified by name|targets, arr, baselines, keepOldFlag
 oimKeepTelescopesFilter|Keeps telescope(s) specified by name|targets, arr, telescopes, keepOldFlag
 oimRemoveTelescopesFilter|Removes telescope(s) specified by name|targets, arr, telescopes, keepOldFlag
 oimResetFlagsFilter|Unflag data (i.e. set flags to `False`)|targets, arr
 oimDiffErrFilter|Compute differential error from std inside or outside a range|targets, arr, ranges, rangeType, excludeRange, dataType
-oimSetMinErrFilter|Set minimum error on data. (%) for vis and (deg) for phases|targets, arr, values, dataType
+oimSetMinErrFilter|Set minimum error on data. (%) for vis and (deg) for phases|targets, arr, values, dataType, relThreshold
