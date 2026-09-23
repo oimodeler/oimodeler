@@ -36,12 +36,13 @@ class oimSpiral(oimComponentImage):
             unit=units.one,
         )
 
-        # self.pixSize=0.3
         self._t = np.array([0])  # constant value <=> static model
         self._wl = np.array([0])  # constant value <=> achromatic model
 
         # Finally evalutating paramters as for all other components
         self._eval(**kwargs)
+        
+        self._fwhmFact = 2
 
     def _imageFunction(self, xx, yy, wl, t):
         # As xx and yy are transformed coordinates, r and phi takes into account
@@ -62,5 +63,5 @@ class oimSpiral(oimComponentImage):
     def getPixelSize(self):
         fwhm = self.params["fwhm"]()
         dim = self.params["dim"]()
-        return 4 * fwhm / dim * units.mas.to(units.rad)
+        return self._fwhmFact * fwhm / dim * units.mas.to(units.rad)
 
