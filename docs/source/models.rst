@@ -1091,9 +1091,13 @@ In the case of the :func:`oimSpiral <oimodeler..oimCustomComponents.oimSpiral.oi
 zero-padding below the default value of 4 leads to mean errors of the order of 20% (with values up to about 100%).
 The default padding reduce mean errors to about 1% percents (with maximum of the order of 10%).
 
-The :func:oimModel <oimodeler.oimModel.oimModel> class provides the
-:func:checkPaddingEffect <oimodeler.oimModel.oimModel.checkPaddingEffect> method, which allows users to quantify the
-effect of padding on a model and determine an appropriate padding value based on the required accuracy.
+Note that, since the FFT computation time scales as :math:`n \log(n)`, where :math:`n` is the number of pixels in the
+image, increasing the padding can significantly increase the model computation time (see the example above).
+
+The :func:`oimModel <oimodeler.oimModel.oimModel>` class provides the
+:func:`checkPaddingEffect <oimodeler.oimModel.oimModel.checkPaddingEffect>` method, method, which allows users to
+quantify the effect of padding on a model and determine an appropriate padding value based on the desired balance
+between accuracy and computational time.
 
 .. code-block:: ipython3
 
@@ -1102,20 +1106,18 @@ effect of padding on a model and determine an appropriate padding value based on
 .. code-block::
 
     Checking Padding effect on FFT
-    padding = 16 => err_mean=0.08% err_max=0.59%
-    padding = 8 => err_mean=0.39% err_max=1.95%
-    padding = 4 => err_mean=1.64% err_max=8.23%
-    padding = 2 => err_mean=6.03% err_max=41.19%
-    padding = 1 => err_mean=22.14% err_max=88.13%
+    Reference : padding = 32 (1119ms)
+    padding = 16 => err_mean=0.08% err_max=0.59% (279ms)
+    padding = 8 => err_mean=0.39% err_max=1.95% (54ms)
+    padding = 4 => err_mean=1.64% err_max=8.23% (11ms)
+    padding = 2 => err_mean=6.03% err_max=41.19% (5ms)
+    padding = 1 => err_mean=22.14% err_max=88.13% (2ms)
 
-However, as the FFT computation time grows like :math:`n log(n)`, where n is the number of pixels in the image,
-increasing the padding increase significantly the computation time of the model (see the example above).
+Another way to reduce the computation time of the FFT (and DFT) is to reduce the image size while increasing the pixel
+size, thereby keeping the field of view fixed. However, this also introduces a sampling error.
 
-Another way to reduce the computation time of the FFT (and the DFT) is to reduce the size of the image and increase the
-pixel size of the image while keeping the field of view fixed.
-
-Finally, when dealing with image-component, the user show determine the good trade-off between image resolution and
-size, zero-padding and computation time.
+Keeping all these considerations in mind when working with image-based components, users should find the right trade-off
+between image resolution and size, zero-padding, and computational time.
 
 Loading fits images
 -------------------
