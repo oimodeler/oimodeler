@@ -21,8 +21,10 @@ from matplotlib.ticker import ScalarFormatter
 from numpy.typing import ArrayLike
 
 
+from oimodeler.oimOptions import oimOptions
 from .oimUtils import oimWarning
-from .oimComponent import oimComponent
+from .oimComponent import oimComponent,oimComponentFourier, \
+                oimComponentImage,oimComponentRadialProfile
 from .oimOptions import ARCSEC2RAD, MAS2RAD
 from .oimParam import (
     oimParam,
@@ -1022,7 +1024,6 @@ class oimModel:
         fovs = np.zeros((4, ncomp))
 
         for i, component in enumerate(self.components):
-            print(wl,t)
             fovs[:, i] = component.getFOV(wl, t)
 
         maxi = np.max(fovs, axis=1)
@@ -1154,3 +1155,62 @@ class oimModel:
                 fig.colorbar(sc, ax=axe,label=f"$\\lambda$ {wlunit_text}")
             
         return fig, axe
+
+
+    def _checkTypeOfComponents(self,):
+        #TODO: write this in a better way with real bitwise stuff
+        radial  = False
+        image   = False
+        fourier = False
+        
+        for ci in self.components:
+            if isinstance(ci,oimComponentFourier):
+                fourier = True
+            if isinstance(ci,oimComponentImage):
+                image = True            
+            if isinstance(ci,oimComponentRadialProfile):
+                radial = True                
+
+        return fourier + image*2 + radial*4
+    
+    def checkPaddingEffect(self,padmax=32,wl=None,B=None):
+        checkFTcomp = self._checkTypeOfComponents()
+        if not(checkFTcomp & 2):
+            oimWarning(oimModel, "Not relevant",
+                       "The model doesn't comtain any Image-based component.\n"
+                       "The padding won't have any effect on the visibility.",
+                        color = "yellow")
+            return 0
+        else:
+            print("Checking Padding effect on FFT")
+            errs_mean=[]
+            errs_max=[]
+            if not(wl):
+                wl = 2.1e-6
+            if not(B):
+                B = np.linspace(0, 100, num=1000)
+            spf = B / wl
+
+            # NOTE: Compute the reference model with padding of 32
+            oimOptions.ft.padding = padmax
+            ccf0 = self.getComplexCoherentFlux(spf, spf * 0)
+            v0 = np.abs(ccf0 / ccf0[0])
+
+            # NOTE: Compute the FFT with different padding
+            padding = (np.flip(2**np.arange(0,np.log2(padmax)))).astype(int)
+
+            for pi in padding:
+                oimOptions.ft.padding = int(pi)
+                ccf1 = self.getComplexCoherentFlux(spf, spf * 0)
+                v1 = np.abs(ccf1 / ccf1[0])
+            
+                err = np.abs((v1 - v0) / v0 * 100)
+                
+                
+                errs_mean.append(np.mean(err))
+                errs_max.append(np.max(err))
+                print(f"padding = {pi} => err_mean={errs_mean[-1]:.2f}%"
+                                         f" err_max={errs_max[-1]:.2f}%")
+            return padding,np.array(errs_mean),np.array(errs_max)
+            
+
