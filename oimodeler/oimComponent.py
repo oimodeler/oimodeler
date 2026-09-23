@@ -852,7 +852,8 @@ class oimComponentImage(oimComponent):
 
     def getPixelSize(self, mas=False):
         raise ValueError(
-            "setPixelSize Method not implemented" " while self._pixSize = None"
+            "getPixelSize Method not implemented" " while self._pixSize = "
+            f"{self._pixSize}"
         )
 
     def _fov(self, wl=None, t=None):
