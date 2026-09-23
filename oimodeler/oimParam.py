@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """The oimParam.py module contains the definition of main model parameter class
-:func:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers,
+:class:`oimParam <oimodeler.oimParam.oimParam>`, as well as parameter linkers,
 normalizers ad interpolators.
 """
 
@@ -18,7 +18,7 @@ from typing import Any
 
 import astropy.units as u
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.interpolate import interp1d
 
 from .oimOptions import M2AU, RAD2MAS, SI
@@ -67,24 +67,43 @@ class oimParam:
     Parameters
     ----------
     name : string, optional
-        Name of the Parameter. The default is None.
-    value : int or float, optional
-        Value of the parameter. The default is None.
-    mini : int or float, optional
-        Mininum value allowed for the parameter. The default is -1*np.inf.
-    maxi : int or float, optional
-        maximum value allowed for the parameter. The default is np.inf.
+        Name of the Parameter. The default is ``None``.
+    value : float, optional
+        Value of the parameter. The default is ``None``.
+    mini : float, optional
+        Mininum value allowed for the parameter. The default is ``-np.inf``.
+    maxi : float, optional
+        maximum value allowed for the parameter. The default is ``np.inf``.
     description : string, optional
-        Description of the parameter. The default is "".
+        Description of the parameter. The default is ``""``.
     unit : astropy.unit.Quantity, optional
-        Unit of the parameter. The default is astropy.units.one
+        Unit of the parameter. The default is ``astropy.units.one``
     free : bool, optional
-        Determines if the parameter is to be fitted. The default is None
-    error : int or float, optional
-        The error of the parameter. The default is 0.
+        Determines if the parameter is to be fitted. The default is ``None``.
+    error : float, optional
+        The error of the parameter. The default is``0``.
     default : str, optional
         Default parameter from which all of the settings are adopted. Will be
-        overwritten by user input. Default is None.
+        overwritten by user input. Default is ``None``.
+
+    Attributes
+    ----------
+    name : string
+        Name of the Parameter.
+    value : float
+        Value of the parameter.
+    mini : float
+        Mininum value allowed for the parameter.
+    maxi : float
+        maximum value allowed for the parameter.
+    description : string
+        Description of the parameter.
+    unit : astropy.unit.Quantity, optional
+        Unit of the parameter.
+    free : bool
+        Determines if the parameter is to be fitted.
+    error : float
+        The error of the parameter.
     """
 
     def __init__(
@@ -118,14 +137,13 @@ class oimParam:
             setattr(self, k[:-1] if k in ["mini", "maxi"] else k, v)
 
     def __call__(self, wl=None, t=None) -> float | np.ndarray:
-        """
-        The call function will be useful for wavelength or time dependent
-        parameters. In a simple oimParam it only return the parameter value
+        """The call function will be useful for wavelength or time dependent
+        parameters. In a simple `oimParam` it only return the parameter value.
         """
         return self.value
 
     def __str__(self):
-        """String (print) representation of the oimParam class"""
+        """String (print) representation of the `oimParam` class"""
         try:
             return "oimParam {} = {} \xb1 {} {} range=[{},{}] {} ".format(
                 self.name,
@@ -140,7 +158,7 @@ class oimParam:
             return "oimParam is {}".format(type(self))
 
     def __repr__(self):
-        """String (console) representation of the oimParam class"""
+        """String (console) representation of the `oimParam` class"""
         try:
             return "oimParam at {} : {}={} \xb1 {} {} range=[{},{}] free={} ".format(
                 hex(id(self)),
@@ -154,10 +172,6 @@ class oimParam:
             )
         except AttributeError:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
-
-    # TODO: Make an alias decorator to enable simple aliases
-    def qty(self, wl=None, t=None):
-        return self.quantity(wl, t)
 
     def quantity(self, wl=None, t=None):
         return self.__call__(wl, t) * self.unit
@@ -175,7 +189,7 @@ class oimParam:
         Parameters
         ----------
         skip_copy : bool, optional
-            If "True" skips the top-level deepcopy of oimParam. Default is False.
+            If ``True`` skips the top-level deepcopy of oimParam. Default is ``False``.
         """
         ser = self.__dict__
         if not skip_copy:
@@ -205,7 +219,7 @@ class oimParam:
     def deserialize(
         ser: dict[str, Any],
     ) -> "oimParam | oimParamInterpolator | oimParamNorm":
-        """Deserializes into an oimParam/oimParamInterpolator/oimParamNorm."""
+        """Deserializes into an `oimParam`/`oimParamInterpolator`/`oimParamNorm`."""
         ser = copy.deepcopy(ser)
         if "class" in ser:
             global OIM_PARAM_MODULE
@@ -240,9 +254,12 @@ class oimParam:
 
         return param
 
+    # NOTE: Class aliases
+    qty = quantity
+
 
 class oimParamLinker:
-    """Class to directly link two oimParam."""
+    """Class to directly link two `oimParam`."""
 
     def __init__(
         self,
@@ -254,14 +271,14 @@ class oimParamLinker:
 
         Parameters
         ----------
-        param : .oimParam
+        param : oimParam
             the oimParam to link with.
         operator : str, optional
-            the operator to use. All python operators are available (case-insensitive) either spelt out like
-            "add" or with the symbol like "+". The default is "add".
-        fact : list of int, float, or .oimParam or int, float, or .oimParam, optional
-            The value used for the operation. Can be a list or a single value of float or an oimParam.
-            The default is 0.
+            the operator to use. All python operators are available (case-insensitive) either
+            spelt out like "add" or with the symbol like ``"+"``. The default is ``"add"``.
+        fact : float or oimParam or list of float or oimParam, optional
+            The value used for the operation. Can be a list or a single value of float or
+            an :class:`oimParam`. The default is ``0``.
         """
 
         self.param = param
@@ -288,21 +305,21 @@ class oimParamLinker:
         return reduce(self.op, values)
 
     def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
-        """Serializes the oimParamLinker."""
+        """Serializes the `oimParamLinker`."""
         raise NotImplementedError(
             "Serialization of oimParamLinker not yet implemented."
         )
 
     @staticmethod
     def deserialize(ser: dict[str, Any]) -> "oimParamLinker":
-        """Deserializes into an oimParamLinker."""
+        """Deserializes into an `oimParamLinker`."""
         raise NotImplementedError(
             "Deserialization of oimParamLinker not yet implemented."
         )
 
 
 class oimParamLinkerFunction:
-    """Class to directly link some oimParam using a user function"""
+    """Class to directly link some `oimParam` using a user function"""
 
     def __init__(self, params, func):
         if type(params) != type([]):
@@ -319,14 +336,14 @@ class oimParamLinkerFunction:
         return self.func(*params)
 
     def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
-        """Serializes the oimParamLinkerFunction."""
+        """Serializes the `oimParamLinkerFunction`."""
         raise NotImplementedError(
             "Serialization of oimParamLinkerFunction not yet implemented."
         )
 
     @staticmethod
     def deserialize(ser: dict[str, Any]) -> "oimParamLinkerFunction":
-        """Deserializes into an oimParamLinkerFunction."""
+        """Deserializes into an `oimParamLinkerFunction`."""
         raise NotImplementedError(
             "Deserialization of oimParamLinkerFunction not yet implemented."
         )
@@ -335,7 +352,7 @@ class oimParamLinkerFunction:
 @attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
 class oimParamNorm:
     """
-    Class to normalize a list of oimParam
+    Class to normalize a list of `oimParam`
 
     Example :
     p2 = oimParamNorm([p0, p1)]
@@ -638,7 +655,8 @@ class oimParamInterpolatorKeyframes(oimParamInterpolator):
             bounds_error=bounds_error,
         )(var)
 
-    def _getParams(self):
+    def _getParams(self) -> list[oimParam]:
+        """Gets the parameters of the interpolator."""
         params = []
         if not self.fixedRef:
             params.extend(self.keyframes)
@@ -730,7 +748,8 @@ class oimParamCosineTime(oimParamInterpolator):
             self.values[0]() - self.values[1]()
         ) + (self.values[1]())
 
-    def _getParams(self):
+    def _getParams(self) -> list[oimParam]:
+        """Gets the parameters of the interpolator."""
         params = []
         params.extend([self.T0, self.P])
 
@@ -801,7 +820,8 @@ class oimParamGaussian(oimParamInterpolator):
             -2.77 * (var - self.x0()) ** 2 / self.fwhm() ** 2
         )
 
-    def _getParams(self):
+    def _getParams(self) -> NDArray[np.floating]:
+        """Gets the parameters of the interpolator."""
         return [self.x0, self.fwhm, self.val0, self.value]
 
 
@@ -1011,7 +1031,8 @@ class oimParamPolynomial(oimParamInterpolator):
         c = np.flip([ci() for ci in self.coeffs])
         return np.poly1d(c)(var)
 
-    def _getParams(self):
+    def _getParams(self) -> list[oimParam]:
+        """Gets the parameters of the interpolator."""
         return self.coeffs
 
 
@@ -1061,7 +1082,7 @@ class oimParamPowerLaw(oimParamInterpolator):
         A: float = 0.0,
         p: float = 1.0,
         **kwargs,
-    ):
+    ) -> None:
         self.dependence = dependence
 
         self.x0 = oimParam(**_standardParameters[dependence])
@@ -1082,7 +1103,9 @@ class oimParamPowerLaw(oimParamInterpolator):
         self.p.value = p
         self.p.free = True
 
-    def _interpFunction(self, wl, t):
+    def _interpFunction(
+        self, wl: NDArray[np.floating], t: NDArray[np.floating]
+    ) -> NDArray[np.floating]:
 
         if self.dependence == "wl":
             x = wl
@@ -1095,7 +1118,8 @@ class oimParamPowerLaw(oimParamInterpolator):
 
         return self.A() * (x / self.x0()) ** self.p()
 
-    def _getParams(self):
+    def _getParams(self) -> list[oimParam]:
+        """Gets the parameters of the interpolator."""
         return [self.x0, self.A, self.p]
 
 
@@ -1171,7 +1195,9 @@ class oimParamLinearRangeWl(oimParamInterpolator):
                 )
             )
 
-    def _interpFunction(self, wl, t):
+    def _interpFunction(
+        self, wl: NDArray[np.floating], t: NDArray[np.floating]
+    ) -> NDArray[np.floating]:
 
         vals = np.array([vi.value for vi in self.values])
         nwl = vals.size
@@ -1180,7 +1206,8 @@ class oimParamLinearRangeWl(oimParamInterpolator):
             wl
         )
 
-    def _getParams(self):
+    def _getParams(self) -> list[oimParam]:
+        """Gets the parameters of the interpolator."""
         params = []
         params.extend(self.values)
         params.append(self.wlmin)
@@ -1203,7 +1230,7 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
         values: ArrayLike = [],
         kind: str = "linear",
         **kwargs,
-    ):
+    ) -> None:
         self.kind = kind
 
         n = len(values)
@@ -1245,7 +1272,7 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
                 )
             )
 
-    def _interpFunction(self, wl, t):
+    def _interpFunction(self, wl: np.ndarray, t: np.ndarray) -> np.ndarray:
         vals = np.array([vi.value for vi in self.values])
         nwl = vals.size
         wl0 = np.linspace(
@@ -1257,10 +1284,9 @@ class oimParamLinearTemplateWl(oimParamInterpolator):
         interp_template_norm = interp_template / interp_template.max()
         return interp_template_norm * self.f_contrib.value
 
-    def _getParams(self):
-        params = []
-        params.append(self.f_contrib)
-        return params
+    def _getParams(self) -> list[oimParam]:
+        """Gets the parameters of the interpolator."""
+        return [self.f_contrib]
 
 
 class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
@@ -1269,17 +1295,17 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
 
     Parameters
     ----------
-    param : .oimParam
+    param : oimParam
         The parameter that is to be calculated (interpolated).
     T : float
         The blackbody temperature (K).
-    solid_angle : float or .oimParam
+    solid_angle : float or oimParam
         The solid angle of the object or an oimParam containing the solid angle (mas**2).
 
     Attributes
     ----------
-    T : .oimParam
-    solid_angle : float or .oimParam
+    T : oimParam
+    solid_angle : float or oimParam
     """
 
     interpdescription = "Blackbody in wl for given temperature"
@@ -1303,25 +1329,27 @@ class oimParamLinearTemperatureWl(oimParamInterpolatorKeyframes):
         )
         self.solid_angle = solid_angle
 
-    def _getParams(self):
+    def _getParams(self) -> list[oimParam]:
         """Gets the parameters of the interpolator."""
         return [self.T]
 
-    def _interpFunction(self, wl: np.ndarray, t: np.ndarray):
-        """Calculates a temperature and wavelength dependent blackbody
+    def _interpFunction(
+        self, wl: NDArray[np.floating], t: NDArray[np.floating]
+    ) -> NDArray[np.floating]:
+        """Computes a the flux over a solid angle from a blackbody
         distribution via Planck's law.
 
         Parameters
         ----------
-        wl : numpy.ndarray
+        wl : NDArray[np.floating]
             Wavelengths (m).
-        t : numpy.ndarray
+        t : NDArray[np.floating]
             Times (mjd).
 
         Returns
         -------
-        blackbody_distribution : numpy.ndarray
-            The star's flux (Jy).
+        NDArray[np.floating]
+            The flux (Jy).
         """
         if isinstance(self.solid_angle, oimParam):
             solid_angle = self.solid_angle(wl, t)
@@ -1340,7 +1368,7 @@ class oimParamLinearStarWl(oimParamInterpolator):
     ----------
     param : oimParam
         The parameter that is to be calculated (interpolated).
-    T : array_like
+    T : float or array_like
         The star's effective temperature (K).
     R : float, optional
         The star's radius (Rsun).
@@ -1351,13 +1379,13 @@ class oimParamLinearStarWl(oimParamInterpolator):
 
     Attributes
     ----------
-    T : .oimParam
+    T : oimParam
         The star's effective temperature (K).
-    R : .oimParam
+    R : oimParam
         The star's radius (Rsun).
-    L : .oimParam
+    L : oimParam
         The star's luminosity (Lsun).
-    dist : .oimParam
+    dist : oimParam
         The distance to the star (pc).
     """
 
@@ -1367,7 +1395,7 @@ class oimParamLinearStarWl(oimParamInterpolator):
     def _init(
         self,
         param: oimParam = oimParam(),
-        T: float = 0.0,
+        T: float | ArrayLike = 0.0,
         R: float | None = None,
         L: float | None = None,
         dist: float = 0.0,
@@ -1397,30 +1425,32 @@ class oimParamLinearStarWl(oimParamInterpolator):
         self.dist = oimParam(
             value=dist, description="Distance to the star", base="dist"
         )
-        self.compute_radius = True if R is None else False
-        if L is None and R is None:
+        self.compute_radius = R is None
+        if L is None and self.compute_radius:
             warnings.warn(
                 "Luminosity or radius must be provided for stellar flux computation."
             )
 
-    def _getParams(self):
+    def _getParams(self) -> list[oimParam]:
         """Gets the parameters of the interpolator."""
         return [self.T]
 
-    def _interpFunction(self, wl: np.ndarray, t: np.ndarray) -> np.ndarray:
+    def _interpFunction(
+        self, wl: NDArray[np.floating], t: NDArray[np.floating]
+    ) -> NDArray[np.floating]:
         """Calculates the stellar flux from its distance and radius at
         the specified wavelengths.
 
         Parameters
         ----------
-        wl : numpy.ndarray
+        wl : NDArray[np.floating]
             Wavelengths (m).
-        t : numpy.ndarray
+        t : NDArray[np.floating]
             Times (mjd).
 
         Returns
         -------
-        F : numpy.ndarray
+        F : NDArray[np.floating]
             The star's flux (Jy).
         """
         if self.compute_radius:
@@ -1443,6 +1473,30 @@ class oimParamLinearStarWl(oimParamInterpolator):
 
 
 class oimParamUserFunc(oimParamInterpolator):
+    """User-defined parameter interpolator.
+
+    Parameters
+    ----------
+    param : oimParam
+        The parameter to be computed/interpolated.
+    userfunc : callable
+        A user-defined function that is used for the interpolation.
+    dependence : str, optional
+        The dependence of the interpolator. Defines what base class
+        is being used. Defaults to ``"wl"``.
+
+
+    Attributes
+    ----------
+    userfunc : callable
+        A user-defined function that is used for the interpolation.
+    dependence : str
+        The dependence of the interpolator. Defines what base class
+        is being used. Defaults to ``"wl"``.
+    interparams : list of str
+        The parameters of the interpolator.
+    """
+
     interpdescription = "Interpolate from user-supplied function"
 
     def _init(
@@ -1451,7 +1505,7 @@ class oimParamUserFunc(oimParamInterpolator):
         userfunc: Callable = lambda x: x,
         dependence: str = "wl",
         **kwargs,
-    ):
+    ) -> None:
         self.dependence = dependence
         self.userfunc = userfunc
         self.interparams = []
@@ -1475,8 +1529,22 @@ class oimParamUserFunc(oimParamInterpolator):
             self.interparams.append(param)
             setattr(self, arg, param)
 
-    def _interpFunction(self, wl, t):
+    def _interpFunction(
+        self, wl: NDArray[np.floating], t: NDArray[np.floating]
+    ) -> NDArray[np.floating]:
+        """Computes the user-defined function at the specified wavelengths and times.
 
+        Parameters
+        ----------
+        wl : NDArray[np.floating]
+            Wavelengths (m).
+        t : NDArray[np.floating]
+            Times (mjd).
+
+        Returns
+        -------
+        NDArray[np.floating]
+        """
         if self.dependence == "wl":
             argvals = [wl]
         elif self.dependence == "mjd":
@@ -1487,8 +1555,8 @@ class oimParamUserFunc(oimParamInterpolator):
             argvals = []
 
         argvals += [x() for x in self.interparams]
-
         return self.userfunc(*argvals)
 
-    def _getParams(self):
+    def _getParams(self) -> list[oimParam]:
+        """Gets the parameters of the interpolator."""
         return self.interparams
