@@ -8,6 +8,7 @@ import copy
 import sys
 from pathlib import Path
 from typing import Any
+import time
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -1193,15 +1194,24 @@ class oimModel:
 
             # NOTE: Compute the reference model with padding of 32
             oimOptions.ft.padding = padmax
+            start = time.time()
             ccf0 = self.getComplexCoherentFlux(spf, spf * 0)
+            end = time.time()
+            dt = (end - start)*1000
             v0 = np.abs(ccf0 / ccf0[0])
 
             # NOTE: Compute the FFT with different padding
             padding = (np.flip(2**np.arange(0,np.log2(padmax)))).astype(int)
 
+
+            print(f"Reference : padding = {padmax} ({dt:.0f}ms)")
+            
             for pi in padding:
                 oimOptions.ft.padding = int(pi)
+                start = time.time()
                 ccf1 = self.getComplexCoherentFlux(spf, spf * 0)
+                end = time.time()
+                dt = (end - start)*1000
                 v1 = np.abs(ccf1 / ccf1[0])
             
                 err = np.abs((v1 - v0) / v0 * 100)
@@ -1210,7 +1220,8 @@ class oimModel:
                 errs_mean.append(np.mean(err))
                 errs_max.append(np.max(err))
                 print(f"padding = {pi} => err_mean={errs_mean[-1]:.2f}%"
-                                         f" err_max={errs_max[-1]:.2f}%")
+                                         f" err_max={errs_max[-1]:.2f}%"
+                                         f" ({dt:.0f}ms)")
             return padding,np.array(errs_mean),np.array(errs_max)
             
 
