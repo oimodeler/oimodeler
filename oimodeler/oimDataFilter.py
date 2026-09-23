@@ -33,15 +33,15 @@ class oimDataFilterComponent:
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Can be `"all"` or a
-        list of indices corresponding to the list of input data. Defaults to `"all"`.
+        The targets that this filter is applied to. Can be ``"all"`` or a
+        list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -117,15 +117,15 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -152,17 +152,17 @@ class oimRemoveInsnameFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     insname : str or list of str
-        One or more `"INSNAME"` that is/are to be removed. Defaults to `None`.
+        One or more ``"INSNAME"`` that is/are to be removed. Defaults to ``None``.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -198,17 +198,17 @@ class oimDataTypeFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     dataType : str or list of str
-        The OIFITS datatypes(s)/column(s) to be removed.  Defaults to `[]`.
+        The OIFITS datatypes(s)/column(s) to be removed.  Defaults to ``[]``.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -247,17 +247,17 @@ class oimKeepDataTypeFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     dataType : str or list of str
-        The OIFITS datatype(s)/column(s) to be kept. Defaults to `[]`.
+        The OIFITS datatype(s)/column(s) to be kept. Defaults to ``[]``.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -304,23 +304,23 @@ class oimFlagWithExpressionFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     expr : str
-        The expression to be applied. Defaults to `""`.
+        The expression to be applied. Defaults to ``""``.
     keepOldFlag : bool, optional
-        If `True`, the old flag(s) are kept. Defaults to `True`.
+        If `True`, the old flag(s) are kept. Defaults to ``True``.
 
     See Also
     --------
-    oimUtils.oifitsFlagWithExpression : Flag data with an expression.
+    `oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -351,26 +351,26 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     wlRange : list of float
-        The wavelength range after filtering. Defaults to `[]`.
+        The wavelength range after filtering. Defaults to ``[]``.
     addCut : list of float, optional
     method : str, optional
-        The method for . If `method="cut"`, the `.oimUtils.cutWavelengthRange` function
-        is used, otherwise the `.oimUtils.oimFlagWithExpression`. Defaults to `"cut"`.
+        The method for . If ``method="cut"``, the `.oimUtils.cutWavelengthRange` function
+        is used, otherwise the `.oimUtils.oimFlagWithExpression`. Defaults to ``"cut"``.
 
     See Also
     --------
-    oimUtils.cutWavelengthRange : Cut the wavelength range of an OIFITS file.
-    oimUtils.oifitsFlagWithExpression : Flag data with an expression.
+    `oimUtils.cutWavelengthRange` : Cut the wavelength range of an OIFITS file.
+    `oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -415,21 +415,21 @@ class oimWavelengthShiftFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     wlShift : float
-        The amount the wavelenght is shifted by. Defaults to `0`.
+        The amount the wavelenght is shifted by. Defaults to ``0``.
 
     See Also
     --------
-    oimUtils.shiftWavelength : Shift the wavelength of an OIFITS file.
+    `oimUtils.shiftWavelength` : Shift the wavelength of an OIFITS file.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -453,23 +453,23 @@ class oimWavelengthSmoothingFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     smoothPix : int, optional
-        The kernel size of the smoothing. Defaults to `2`.
+        The kernel size of the smoothing. Defaults to ``2``.
     normalizeError : bool, optional
-        If `True`, the errors are normalised by the kernel size. Defaults to `True`.
+        If ``True``, the errors are normalised by the kernel size. Defaults to ``True``.
 
     See Also
     --------
-    oimUtils.spectralSmoothing : Smooth the spectral data of an OIFITS file.
+    `oimUtils.spectralSmoothing` : Smooth the spectral data of an OIFITS file.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -499,23 +499,23 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
     Other Parameters
     ----------------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     bin : int
-        The bin size. Defaults to `None`.
+        The bin size. Defaults to ``None``.
     normalizeError : bool, optional
-        If `True`, the errors are normalised by the bin size. Defaults to `True`.
+        If ``True``, the errors are normalised by the bin size. Defaults to ``True``.
 
     See Also
     --------
-    oimUtils.binWavelength : Bin the wavelength of an OIFITS file.
+    `oimUtils.binWavelength` : Bin the wavelength of an OIFITS file.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -545,36 +545,36 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
     Other Parameters
     ----------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     binGrid : array_like
         The grid that is to be achieved/binned to.
     binWindow : array_like, optional
-        The bin windows that correspond to the `binGrid`. If `None`, the
+        The bin windows that correspond to the ``binGrid``. If ``None``, the
         bin windows are computed from the distance between two elements in the
-        `binGrid`. Defaults to `None`.
+        ``binGrid``. Defaults to ``None``.
     resetFlags : bool, optional
-        If `True`, resets all flags to `False` after binning. Defaults to `True`.
+        If ``True``, sets all flags to ``False`` after binning. Defaults to ``True``.
     averageError : bool, optional
-        If `True`, forgoes the error propagation and simply averages the errors
-        for each bin. Defaults to `False`.
+        If ``True``, forgoes the error propagation and simply averages the errors
+        for each bin. Defaults to ``False``.
     nSpecChannels : float, optional
         The number of spectral channels determined by the spectral resolution.
         Will be used to calculate the divisor within the error propagation.
-        Defaults to `1.0`.
+        Defaults to ``1.0``.
 
         .. math:: divisor = bin_elements / spectralChannels
 
     See Also
     --------
-    oimUtils.intpBinWavelength : Bin the wavelength of an OIFITS file to a specified binGrid.
+    `oimUtils.intpBinWavelength` : Bin the wavelength of an OIFITS file to a specified binGrid.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -619,23 +619,23 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
     Other Parameters
     ----------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     baselines : str or list of str
-        The baseline(s) to be kept. Defaults to `""`.
+        The baseline(s) to be kept. Defaults to ``""``.
     keepOldFlag : bool, optional
-        If `True`, the old flag(s) are kept. Defaults to `True`.
+        If ``True``, the old flag(s) are kept. Defaults to ``True``.
 
     See Also
     --------
-    oimUtils.oifitsKeepBaselines : Remove all baselines except those specified by name.
+    `oimUtils.oifitsKeepBaselines` : Remove all baselines except those specified by name.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -666,23 +666,23 @@ class oimRemoveBaselinesFilter(oimDataFilterComponent):
     Other Parameters
     ----------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     baselines : str or list of str
-        The baseline(s) to be removed. Defaults to `""`.
+        The baseline(s) to be removed. Defaults to ``""``.
     keepOldFlag : bool, optional
-        If `True`, the old flag(s) are kept. Defaults to `True`.
+        If ``True``, the old flag(s) are kept. Defaults to ``True``.
 
     See Also
     --------
-    oimUtils.oifitsRemoveBaselines : Remove all baselines specified by name.
+    `oimUtils.oifitsRemoveBaselines` : Remove all baselines specified by name.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -713,23 +713,23 @@ class oimKeepTelescopesFilter(oimDataFilterComponent):
     Other Parameters
     ----------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     telescopes : str or list of str
-        The telescopes(s) to be kept. Defaults to `""`.
+        The telescopes(s) to be kept. Defaults to ``""``.
     keepOldFlag : bool, optional
-        If `True`, the old flag(s) are kept. Defaults to `True`.
+        If ``True``, the old flag(s) are kept. Defaults to ``True``.
 
     See Also
     --------
-    oimUtils.oifitsKeepTelescopes : Remove all telescopes except those specified by name.
+    `oimUtils.oifitsKeepTelescopes` : Remove all telescopes except those specified by name.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -760,23 +760,23 @@ class oimRemoveTelescopesFilter(oimDataFilterComponent):
     Other Parameters
     ----------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     telescopes : str or list of str
-        The telescopes(s) to be removed. Defaults to `""`.
+        The telescopes(s) to be removed. Defaults to ``""``.
     keepOldFlag : bool, optional
-        If `True`, the old flag(s) are kept. Defaults to `True`.
+        If ``True``, the old flag(s) are kept. Defaults to ``True``.
 
     See Also
     --------
-    oimUtils.oifitsRemoveTelescopes : Remove all telescopes specified by name.
+    `oimUtils.oifitsRemoveTelescopes` : Remove all telescopes specified by name.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -807,19 +807,19 @@ class oimResetFlagsFilter(oimDataFilterComponent):
     Other Parameters
     ----------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
 
     See Also
     --------
-    oimUtils.oifitsFlagWithExpression : Flag data with an expression.
+    `oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -845,27 +845,27 @@ class oimDiffErrFilter(oimDataFilterComponent):
     Other Parameters
     ----------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     ranges : list of list of float, optional
-        Defaults to `[[0, 5]]`.
+        Defaults to ``[[0, 5]]``.
     rangeType : str, optional
-        Defaults to `"index"`.
+        Defaults to ``"index"``.
     excludeRange : bool, optional
-        Defaults to `False`.
+        Defaults to ``False``.
     dataType : str or list of str, optional
-        The OIFITS datatype(s)/column(s) to be kept. Defaults to `"VISPHI"`.
+        The OIFITS datatype(s)/column(s) to be kept. Defaults to ``"VISPHI"``.
 
     See Also
     --------
-    oimUtils.computeDifferentialError : Compute the differential error.
+    `oimUtils.computeDifferentialError` : Compute the differential error.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
@@ -901,31 +901,31 @@ class oimSetMinErrFilter(oimDataFilterComponent):
     Other Parameters
     ----------
     targets : str or list of int, optional
-        The targets that this filter is applied to. Either ``"all"`` or a
+        The targets that this filter is applied to. Can be ``"all"`` or a
         list of indices corresponding to the list of input data. Defaults to ``"all"``.
     arr : str or list of str, optional
-        The OIFITS array(s)/table(s) this filter is applied to. Can be `"all"` or a
-        string or list of strings with (a) table name(s). Defaults to `"all"`.
+        The OIFITS array(s)/table(s) this filter is applied to. Can be ``"all"`` or a
+        string or list of strings with (a) table name(s). Defaults to ``"all"``.
     values : float or list of float
         The minimum error values corresponding to the column(s)/datatype(s).
-        If passed as `list`, must have the same length as `dataType`. Defaults to `5`.
+        If passed as `list`, must have the same length as ``dataType``. Defaults to ``5``.
     dataType : str or list of str, optional
-        The OIFITS datatype(s)/column(s) to be kept. Defaults to `"VISPHI"`.
+        The OIFITS datatype(s)/column(s) to be kept. Defaults to ``"VISPHI"``.
     relThreshold : float or list of float, optional
-        Can be used for `dataType in ["VISAMP", "VIS2DATA"]`. Switches from the
+        Can be used for ``dataType in ["VISAMP", "VIS2DATA"]``. Switches from the
         scheme where the errors are compared/computed relatively to the values of the
-        datapoints to one where this is only done if they are above the `relThreshold`.
+        datapoints to one where this is only done if they are above the ``relThreshold``.
         This can be, for instance, useful to avoid extremly small errors for correlated
-        fluxes with value under `1`. If passed as `list`, must have the same length as
-        `dataType`. Defaults to `None`.
+        fluxes with value under ``1``. If passed as ``list``, must have the same length as
+        `dataType`. Defaults to ``None``.
 
     See Also
     --------
-    oimUtils.setMinimumError : Set the minimum error of a given data type to a given value.
+    `oimUtils.setMinimumError` : Set the minimum error of a given data type to a given value.
 
     Notes
     -----
-    All keyword arguments are passed to the `self.params` dictionary, which is then used
+    All keyword arguments are passed to the ``self.params`` dictionary, which is then used
     to pass it to the underlying filter class/function.
     """
 
