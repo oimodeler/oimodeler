@@ -323,7 +323,7 @@ OI_FLUX_COLUMNS = [
 
 def _pickle(self, f: str | Path | io.BufferedWriter, **kwargs) -> None:
     """Save the pickled representation of the object into an already
-    open file or opens a file from a string or `pathlib.Path`.
+    open file or opens a file from a string or :class:`pathlib.Path`.
     """
     file = open(f, "wb") if isinstance(f, (str, Path)) else f
     pickle.dump(self.serialize(), file)
@@ -332,8 +332,8 @@ def _pickle(self, f: str | Path | io.BufferedWriter, **kwargs) -> None:
 
 
 def _unpickle(cls, f: Path | io.TextIOWrapper, **kwargs) -> object:
-    """Read the pickled representation from an open file
-    or reads a string or `pathlib.Path` into a file to return the reconstituted object.
+    """Read the pickled representation from an open file or reads a string or
+    :class:`pathlib.Path` into a file to return the reconstituted object.
     """
     file = open(f, "rb") if isinstance(f, (str, Path)) else f
     restored_object = cls.deserialize(pickle.load(file))
@@ -361,8 +361,8 @@ def _deserialize_function(value: str) -> Callable:
 
 
 def load_toml(toml_file: Path) -> dict[str, Any]:
-    """Loads a `toml` file into a dictionary while properly converting units
-    to `astropy.units` and floats to `numpy._float`.
+    """Loads a .toml file into a dictionary while properly converting units
+    to :module:`astropy.units` and floats to `numpy.floating`.
     """
     with open(toml_file, "r") as file:
         dictionary = toml.load(file)
@@ -395,30 +395,30 @@ def attach_methods(
 
 
 def blackbody(
-    T: float | NDArray[np.float64],
-    wl: float | NDArray[np.float64],
-) -> float | NDArray[np.float64]:
+    T: float | NDArray[np.floating],
+    wl: float | NDArray[np.floating],
+) -> float | NDArray[np.floating]:
     r"""Computes Planck's law.
 
     Parameters
     ----------
-    T: float or numpy.typing.NDArray[np.float64]
+    T: float or NDArray[np.floating]
         The temperature (K).
-    wl : float or numpy.typing.NDArray[np.float64]
+    wl : float or NDArray[np.floating]
         The wavelength (m).
 
     Returns
     -------
-    blackbody : float or numpy.typing.NDArray[np.float64]
+    blackbody : float or NDArray[np.floating]
         The blackbody (erg / (s sr cm² Hz)).
 
     Notes
     -----
-    Planck's law is defined as
+    Computes Planck's law, defined as
 
     .. math::
 
-        B_ν(λ,T)=2hc/λ³ 1/(exp(hc/(λk_B T))-1)
+        B_\nu(\lambda,T)=\frac{2hc}{\lambda^3}\frac{1}{\exp\left(\frac{hc}{\lambda k_\text{B} T}\right)-1}.
 
     This custom variant is implemented for a more efficient computation (i.e. to
     avoid the overhead of similar implementations like the astropy's
@@ -429,23 +429,23 @@ def blackbody(
 
 
 def spectral_index(
-    data, T: float | np.ndarray
-) -> tuple[np.ndarray, np.ndarray]:
+    data, T: float | NDArray[np.floating]
+) -> tuple[NDArray[np.floating], NDArray[np.floating]]:
     r"""Computes the spectral index of a star dependent on its effective
     temperature.
 
     Parameters
     ----------
-    data : oimData.oimData
+    data : oimData
         The data.
-    T : float or numpy.ndarray
+    T : float or NDArray[np.floating]
         The effective temperature of the star (K).
 
     Returns
     -------
-    wl : numpy.ndarray
+    wl : NDArray[np.floating]
         The (unique) wavelengths of the data (m).
-    spectral_index : numpy.ndarray
+    spectral_index : NDArray[np.floating]
         The spectral index.
 
     Notes
@@ -462,20 +462,22 @@ def spectral_index(
     return wl, np.gradient(np.log(blackbody(T, nu)), np.log(nu))
 
 
-def pad_image(image: np.ndarray, padfact: float | None = None) -> np.ndarray:
+def pad_image(
+    image: NDArray[np.floating], padfact: float | None = None
+) -> NDArray[np.floating]:
     """Pads an image with additional zeros for Fourier transform.
 
     Parameters
     ----------
-    image : numpy.ndarray
-        The image of shape (nt, nwl, nx, ny) to be padded.
+    image : NDArray[np.floating]
+        The image of shape ``(nt, nwl, nx, ny)`` to be padded.
     padfact : float, optional
-        The factor by which to pad (e.g. `factor=2` with original shape `4` yields `16`).
-        Defaults to the `oimOptions.ft.padding`, which itself by default is `4`.
+        The factor by which to pad (e.g. ``factor=2`` with original shape ``4`` yields ``16``).
+        Defaults to the ``oimOptions.ft.padding``, which itself by default is ``4``.
 
     Results
     -------
-    padded_image : numpy.ndarray
+    padded_image : NDArray[np.floating]
         The padded image.
     """
 
@@ -558,23 +560,23 @@ def getBaselineName(
     """Gets the baseline names (i.e., the telescope names connected with a dash)
     in an extension/table of a OIFITS file.
 
-    Defaults to reading the `"OI_VIS2"` array/table.
+    Defaults to reading the ``"OI_VIS2"`` array/table.
 
     Parameters
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
-        Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
+        Either a path to an OIFITS file or an :class:`astropy.io.fits.HDUList`.
     hduname: str, optional
-        The fits array/table name. Defaults to `"OI_VIS2"`.
+        The fits array/table name. Defaults to ``"OI_VIS2"``.
     length: bool, optional
-        Adds baseline length to the result. Defaults to `False`.
+        Adds baseline length to the result. Defaults to ``False``.
     angle: bool, optional
-        Adds baseline position angle (deg) to the result. Defaults to `False`.
+        Adds baseline position angle (deg) to the result. Defaults to ``False``.
     extver: int, optional
-        The extension/table version. Defaults to `None`.
+        The extension/table version. Defaults to ``None``.
     squeeze: bool, optional
-        If `True` and only one extension/table is found, the result is squeezed.
-        Defaults to `True`.
+        If ``True`` and only one extension/table is found, the result is squeezed.
+        Defaults to ``True``.
 
     Returns
     -------
@@ -645,19 +647,19 @@ def getConfigName(
 ) -> list[str]:
     """Gets the configuration names in an extension/table of a OIFITS file.
 
-    Defaults to reading the `"OI_VIS2"` extension/table.
+    Defaults to reading the ``"OI_VIS2"`` extension/table.
 
     Parameters
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
-        Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
+        Either a path to an OIFITS file or an :class:`astropy.io.fits.HDUList`.
     hduname: str, optional
-        The fits extension/table name. Defaults to `"OI_VIS2"`.
+        The fits extension/table name. Defaults to ``"OI_VIS2"``.
     extver: int, optional
-        The extension/table version. Defaults to `None`.
+        The extension/table version. Defaults to ``None``.
     squeeze: bool, optional
-        If `True` and only one extension/table is found, the result is squeezed.
-        Defaults to `True`.
+        If ``True`` and only one extension/table is found, the result is squeezed.
+        Defaults to ``True``.
 
     Results
     -------
@@ -709,40 +711,40 @@ def getBaselineLengthAndPA(
     returnUV: bool = False,
     T3Max: bool = False,
     showFlagged: bool = True,
-) -> tuple[np.ndarray, ...]:
+) -> tuple[NDArray[np.floating], ...]:
     """Return a tuple (B, PA) of the baseline lengths and orientation
     (position angles) from a fits extension/table within an opened oifits file.
 
-    Defaults to reading the `"OI_VIS2"` extension/table.
+    Defaults to reading the ``"OI_VIS2"`` extension/table.
 
     Parameters
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
-        Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
+        Either a path to an OIFITS file or an :class:`astropy.io.fits.HDUList`.
     arr: str, optional
-        The fits extension/table name. Defaults to `"OI_VIS2"`.
+        The fits extension/table name. Defaults to ``"OI_VIS2"``.
     extver: int, optional
-        The extension/table version. Defaults to `None`.
+        The extension/table version. Defaults to ``None``.
     squeeze: bool, optional
         If True and only one extension/table is found, the result is squeezed.
-        Defaults to `True`.
+        Defaults to ``True``.
     returnUV : bool, optional
-        If True also return the (u,v) coordinates (m). Defaults to `False`.
+        If True also return the (u,v) coordinates (m). Defaults to ``False``.
     T3Max : bool, optional
-        If `True` and `arr="OI_T3"` then the longest baselines of the triangles
-        are returned. Defaults to `False`.
+        If ``True`` and ``arr="OI_T3"`` then the longest baselines of the triangles
+        are returned. Defaults to ``False``.
     showFlagged : bool, optional
-        If `True`, takes flagged (u,v) coordinates into account. Defaults to `True`.
+        If ``True``, takes flagged (u,v) coordinates into account. Defaults to ``True``.
 
     Returns
     -------
-    B : numpy.ndarray
+    B : NDArray[np.floating]
         The baseline lengths.
-    PA : numpy.ndarray
+    PA : NDArray[np.floating]
         The baseline orientations (deg).
-    ucoord : numpy.ndarray, optional
+    ucoord : NDArray[np.floating], optional
         The u coordinate (m).
-    vcoord : numpy.ndarray, optional
+    vcoord : NDArray[np.floating], optional
         The v coordinate (m).
     """
     already_open = isinstance(data, fits.HDUList)
@@ -812,28 +814,28 @@ def getSpaFreq(
     unit: str | None = None,
     extver: int | None = None,
     squeeze: bool = True,
-) -> list[np.ndarray] | np.ndarray:
+) -> list[NDArray[np.floating]] | NDArray[np.floating]:
     """Get the spatial dimensional frequencies.
 
-    Defaults to reading the `"OI_VIS2"` extension/table.
+    Defaults to reading the ``"OI_VIS2"`` extension/table.
 
     Parameters
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
-        Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
+        Either a path to an OIFITS file or an :class:`astropy.io.fits.HDUList`.
     arr : str, optional
-        The fits extension/table name. Defaults to `"OI_VIS2"`.
+        The fits extension/table name. Defaults to ``"OI_VIS2"``.
     unit : str, optional
-        The unit of the spatial frequency. Defaults to `None`.
+        The unit of the spatial frequency. Defaults to ``None``.
     extver : int, optional
-        The extension/table version. Defaults to `None`.
+        The extension/table version. Defaults to ``None``.
     squeeze : bool, optional
-        If `True` and only one extension/table is found, the result is squeezed.
-        Defaults to `True`.
+        If ``True`` and only one extension/table is found, the result is squeezed.
+        Defaults to ``True``.
 
     Returns
     -------
-    spaFreq : list of numpy.ndarray or numpy.ndarray
+    spaFreq : list of NDArray[np.floating] or numpy.ndarray
         The Spatial frequencies.
     """
     already_open = isinstance(data, fits.HDUList)
@@ -893,28 +895,28 @@ def get2DSpaFreq(
     unit: str | None = None,
     extver: int | None = None,
     squeeze: bool = True,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[NDArray[np.floating], NDArray[np.floating]]:
     """Get the spatial two dimensional frequencies.
 
-    Defaults to reading the `"OI_VIS2"` extension/table.
+    Defaults to reading the ``"OI_VIS2"`` extension/table.
 
     Parameters
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
         Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
     arr : str, optional
-        The fits extension/table name. Defaults to `"OI_VIS2"`.
+        The fits extension/table name. Defaults to ``"OI_VIS2"``.
     unit : str, optional
-        The unit of the spatial frequency. Defaults to `None`.
+        The unit of the spatial frequency. Defaults to ``None``.
     extver : int, optional
-        The extension/table version. Defaults to `None`.
+        The extension/table version. Defaults to ``None``.
     squeeze : bool, optional
-        If `True` and only one extension/table is found, the result is squeezed.
-        Defaults to `True`.
+        If ``True`` and only one extension/table is found, the result is squeezed.
+        Defaults to ``True``.
 
     Returns
     -------
-    2DspaFreq : tuple of numpy.ndarray
+    2DspaFreq : tuple of NDArray[np.floating]
         The two-dimensional spatial frequencies.
     """
     already_open = isinstance(data, fits.HDUList)
@@ -980,29 +982,29 @@ def getWlFromOifits(
     arr: str = "OI_VIS2",
     extver: int | None = None,
     returnBand: bool = False,
-) -> tuple[np.ndarray, ...]:
+) -> tuple[NDArray[np.floating], ...]:
     """Get the wavelength.
 
-    Defaults to reading the `"OI_VIS2"` extension/table.
+    Defaults to reading the ``"OI_VIS2"`` extension/table.
 
     Parameters
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
         Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
     arr : str, optional
-        The fits extension/table name. Defaults to `"OI_VIS2"`.
+        The fits extension/table name. Defaults to ``"OI_VIS2"``.
     unit : str, optional
-        The unit of the spatial frequency. Defaults to `None`.
+        The unit of the spatial frequency. Defaults to ``None``.
     extver : int, optional
-        The extension/table version. Defaults to `None`.
+        The extension/table version. Defaults to ``None``.
     returnBand : bool, optional
-        If `True` returns the bandwith. Defaults to `False`.
+        If ``True`` returns the bandwith. Defaults to ``False``.
 
     Returns
     -------
-    wavelength : numpy.ndarray
+    wavelength : NDArray[np.floating]
         The wavelength (m).
-    dwl : numpy.ndarray, optional
+    dwl : NDArray[np.floating], optional
         The bandwith.
     """
     already_open = isinstance(data, fits.HDUList)
@@ -1039,20 +1041,20 @@ def getWlFromOifits(
 def getWlFromFitsImageCube(
     header: fits.header.Header, outputUnit: str | None = None
 ) -> float:
-    """Returns the wavelength law from a chromatic cube image in the fits format.
+    """Returns the wavelength law from a chromatic cube image in the FITS format.
 
     Parameters
     ----------
     header : astropy.io.fits.header
         The header of the fits cube.
     outputUnit : astropy.unit, optional
-        Converts the wavelength to passed unit. Defaults to `None`.
+        Converts the wavelength to passed unit. Defaults to ``None``.
 
     Returns
     -------
     wavelength : float
         The wavelength in the given unit of the fits cube or the user-specified
-        if outputUnit is set.
+        if ``outputUnit`` is set.
     """
     dwl, nwl, wl0 = header["CDELT3"], header["NAXIS3"], header["CRVAL3"]
     try:
@@ -1092,15 +1094,15 @@ def _createOiTab(
     dataTypeFromShape: str,
     **kwargs,
 ) -> fits.BinTableHDU:
-    """Create a OIFITS table from a dictionary of data.
+    """Create an OIFITS table from a dictionary of data.
 
     Parameters
     ----------
     extname : str
         The extension/table name.
-    keywords_def : tuple of typing.Any
+    keywords_def : tuple of any
         The keywords definition.
-    colums_def : tuple of typing.Any
+    colums_def : tuple of any
         The columns definition.
     dataTypeFromShape : str
         The key in keyword argument to get the data type from.
@@ -1179,7 +1181,7 @@ def _createOiTab(
 
 
 def createOiTarget(**kwargs):
-    """Create a OI_TARGET table from a dictionary of data."""
+    """Create an ``"OI_TARGET"`` table from a dictionary of data."""
     return _createOiTab(
         "OI_TARGET",
         OI_TARGET_KEYWORDS,
@@ -1190,49 +1192,49 @@ def createOiTarget(**kwargs):
 
 
 def createOiArray(**kwargs):
-    """Create a OI_ARRAY table from a dictionary of data."""
+    """Create an ``"OI_ARRAY"`` table from a dictionary of data."""
     return _createOiTab(
         "OI_ARRAY", OI_ARRAY_KEYWORDS, OI_ARRAY_COLUMNS, "STA_INDEX", **kwargs
     )[0]
 
 
 def createOiWavelength(**kwargs):
-    """Create a OI_WAVELENGTH table from a dictionary of data."""
+    """Create an ``OI_WAVELENGTH`` table from a dictionary of data."""
     return _createOiTab(
         "OI_WAVELENGTH", OI_WL_KEYWORDS, OI_WL_COLUMNS, "EFF_WAVE", **kwargs
     )[0]
 
 
 def createOiVis(**kwargs):
-    """Create a OI_VIS table from a dictionary of data."""
+    """Create an ``"OI_VIS"`` table from a dictionary of data."""
     return _createOiTab(
         "OI_VIS", OI_VIS_KEYWORDS, OI_VIS_COLUMNS, "VISAMP", **kwargs
     )[0]
 
 
 def createOiVis2(**kwargs):
-    """Create a OI_VIS2 table from a dictionary of data."""
+    """Create an ``"OI_VIS2"`` table from a dictionary of data."""
     return _createOiTab(
         "OI_VIS2", OI_VIS2_KEYWORDS, OI_VIS2_COLUMNS, "VIS2DATA", **kwargs
     )[0]
 
 
 def createOiT3(**kwargs):
-    """Create a OI_T3 table from a dictionary of data."""
+    """Create an ``"OI_T3"`` table from a dictionary of data."""
     return _createOiTab(
         "OI_T3", OI_T3_KEYWORDS, OI_T3_COLUMNS, "T3AMP", **kwargs
     )[0]
 
 
 def createOiFlux(**kwargs):
-    """Create a OI_FLUX table from a dictionary of data."""
+    """Create an ``"OI_FLUX"`` table from a dictionary of data."""
     return _createOiTab(
         "OI_FLUX", OI_FLUX_KEYWORDS, OI_FLUX_COLUMNS, "FLUXDATA", **kwargs
     )[0]
 
 
 def createOiTargetFromSimbad(names: str | list[str]) -> fits.BinTableHDU:
-    """Create a OI_TARGET table from a dictionary of data.
+    """Create an ``"OI_TARGET"`` table from a dictionary of data.
 
     Parameters
     ----------
@@ -1298,9 +1300,9 @@ def cutWavelengthRange(
     data: str or pathlib.Path or astropy.io.fits.HDUList
         Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
     wlRange : list of float, optional
-        The wavelength range to keep. Defaults to `None`.
+        The wavelength range to keep. Defaults to ``None``.
     addCut : list of float, optional
-        Additional columns to cut. Defaults to `[]`.
+        Additional columns to cut. Defaults to ``[]``.
 
     Returns
     -------
@@ -1395,7 +1397,7 @@ def shiftWavelength(
     shift : float
         The wavelength shift to apply.
     verbose : bool, optional
-        If `True` prints the tables index. Defaults to `False`.
+        If ``True`` prints the tables index. Defaults to ``False``.
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -1428,9 +1430,9 @@ def spectralSmoothing(
     kernel_size : float
         The kernel size.
     cols2Smooth : str or list of str, optional
-        The columns to smooth. Defaults to `"all"`.
+        The columns to smooth. Defaults to ``"all"``.
     normalizeError : bool, optional
-        If `True` normalize the error. Defaults to `True`.
+        If ``True`` normalize the error. Defaults to ``True``.
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -1453,7 +1455,7 @@ def spectralSmoothing(
             "T3PHI",
             "T3PHIERR",
             "FLUXDATA",
-            "FLUXDATAERR",
+            "FLUXERR",
         ]
 
         circular = [
@@ -1529,19 +1531,19 @@ def spectralSmoothing(
 
 # TODO: Properly implement error propagation for circular case.
 def _intpBinning(
-    array: np.ndarray,
+    array: NDArray[np.floating],
     binMasks: ArrayLike,
     binEdgeValues: ArrayLike,
     values: ArrayLike | None = None,
     nSpecChannels: float = 1.0,
     kind: str = "mean",
     **kwargs,
-) -> np.ndarray:
-    """Bins the given array  in the mask.
+) -> NDArray[np.floating]:
+    r"""Bins the given array  in the mask.
 
     Parameters
     ----------
-    array : numpy.ndarray
+    array : NDArray[np.floating]
         The array to be binned.
     binMasks : array_like
         Masks of the grid underlying the array that splits it into individual bins.
@@ -1550,22 +1552,22 @@ def _intpBinning(
         to make sure the edge points of the bins are always included. Without this they
         might not be the case for arbitrary values of the bin grid.
     values : array_like, optional
-        If this parameters is passed the function will assume that the `array`
-        provided are errors to this `values` parameter. Defaults to `None`.
+        If this parameters is passed the function will assume that the ``array``
+        provided are errors to this ``values`` parameter. Defaults to ``None``.
     nSpecChannels : float, optional
         The number of spectral channels determined by the spectral resolution.
         Will be used to calculate the divisor within the error propagation.
-        Defaults to `1.0`.
+        Defaults to ``1.0``.
 
-        .. math:: divisor = bin_elements / spectralChannels
+        .. math:: d = \frac{n_\text{bin}}{n_\text{spec}}
 
     kind : bool, optional
         Specifies the kind of binning as a string. The string has to be one of
-        `"mean"`, `"median"`, `"circular"`. Defaults to `"mean"`.
+        ``"mean"``, ``"median"``, ``"circular"``. Defaults to ``"mean"``.
 
     Returns
     -------
-    interpolation_binned_array : numpy.ndarray
+    interpolation_binned_array : NDArray[np.floating]
         The interpolated and binned array.
     """
     bin_func = np.mean
@@ -1592,23 +1594,23 @@ def _intpBinning(
 # TODO: Change this to masked arrays somehow to make it even more robust?
 def _interpolateBinHDU(
     hdu: fits.BinTableHDU,
-    binGrid: np.ndarray,
-    binMasks: np.ndarray,
+    binGrid: NDArray[np.floating],
+    binMasks: NDArray[np.floating],
     binEdgeValues: ArrayLike,
     grid: ArrayLike,
     exception: list[str] = [],
     nSpecChannels: float = 1.0,
     **kwargs,
 ) -> fits.BinTableHDU:
-    """Bin an HDU via interpolation.
+    r"""Bin an :class:`astropy.io.fits.BinTableHDU` via interpolation.
 
     Parameters
     ----------
     hdu : astropy.io.fits.BinTableHDU
         The HDU to re-bin.
-    binGrid : numpy.ndarray
+    binGrid : NDArray[np.floating]
         The grid that is to be achieved/binned to.
-    binMasks : numpy.ndarray
+    binMasks : NDArray[np.floating]
         Masks of the grid underlying the array that splits it into individual bins.
     binEdgeValues : array_like
         Edge points (i.e. values) of the bin windows (i.e. masks). These are included
@@ -1621,20 +1623,19 @@ def _interpolateBinHDU(
     nSpecChannels : float, optional
         The number of spectral channels determined by the spectral resolution.
         Will be used to calculate the divisor within the error propagation.
-        Defaults to `1.0`.
+        Defaults to ``1.0``.
 
-        .. math:: divisor = bin_elements / spectralChannels
+        .. math::  d = frac{n_\text{bin}}{n_\text{spec}}
 
     Returns
     -------
     newhdu : astropy.io.fits.BinTableHDU
-        The rebinned HDU.
+        The rebinned :class:`astropy.io.fits.BinTableHDU`.
     """
+    indices = slice(None)
     if not np.all(np.diff(grid) > 0):
         indices = np.argsort(grid)
         grid = grid[indices]
-    else:
-        indices = grid.astype(bool)
 
     cols, new_cols = hdu.data.columns, []
     if 2 in [len(np.shape(hdu.data[coli.name])) for coli in cols]:
@@ -1747,29 +1748,29 @@ def _interpolateBinHDU(
 def intpBinWavelength(
     data: str | Path | fits.HDUList, binGrid: ArrayLike, **kwargs
 ) -> None:
-    """Bin the wavelength of an OIFITS file to a specified binGrid.
+    r"""Bin the wavelength of an OIFITS file to a specified binGrid.
 
     Parameters
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
         Either a path to an OIFITS file or an `astropy.io.fitsHDUList`.
-    binGrid : numpy.ndarray
+    binGrid : NDArray[np.floating]
         The grid that is to be achieved/binned to.
     binWindow : array_like, optional
-        The bin windows that correspond to the binGrid elements.
-        If None, computes the bin windows from the distance between two
-        elements in the binGrid. Defaults to None.
+        The bin windows corresponding to ``binGrid`` elements.
+        If ``None``, computes the bin windows from the distance between two
+        elements in ``binGrid``. Defaults to ``None``.
     resetFlags : bool, optional
-        If True, resets all flags to "False" after binning. Defaults to True.
+        If ``True``, resets all flags to ``False`` after binning. Defaults to ``True``.
     averageError : bool, optional
-        If True, forgoes the error propagation and simply averages the errors
-        for each bin. Defaults to False.
+        If ``True``, forgoes the error propagation and simply averages the errors
+        for each bin. Defaults to ``False``.
     nSpecChannels : float, optional
         The number of spectral channels determined by the spectral resolution.
         Will be used to calculate the divisor within the error propagation.
-        Defaults to "1.0".
+        Defaults to ``1.0``.
 
-        .. math:: divisor = bin_elements / spectralChannels
+        .. math:: d = \frac{n_\text{bin}}{n\text{nspec}}
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -1810,22 +1811,22 @@ def _rebin(
     array: ArrayLike,
     binSize: int,
     kind: str = "mean",
-) -> np.ndarray:
+) -> NDArray[np.floating]:
     """Rebins an array.
 
     Parameters
     ----------
-    array : numpy.ndarray
+    array : NDArray[np.floating]
         The array to rebin.
     binSize : int, optional
         The bin size.
     kind : bool, optional
         Specifies the kind of binning as a string. The string has to be one of
-        "mean", "median", "circular". Defaults to "mean".
+        ``"mean"``, ``"median"``, ``"circular"``. Defaults to ``"mean"``.
 
     Returns
     -------
-    rebinned_array : numpy.ndarray
+    rebinned_array : NDArray[np.floating]
         The re-binned array.
     """
     newsize = (array.shape[0] // int(binSize)) * binSize
@@ -1858,7 +1859,7 @@ def _rebinHDU(
     binsize : int
         The bin size.
     exception : list of str
-        The exceptions. Defaults to [].
+        The exceptions. Defaults to ``[]``.
 
     Returns
     -------
@@ -1913,11 +1914,11 @@ def binWavelength(
     Parameters
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
-        Either a path to an oifits file or a HDUList.
+        Either a path to an OIFITS file or a HDUList.
     binSize : int, optional
-        The bin size. Defaults to None.
+        The bin size. Defaults to ``None``.
     normalizeError : bool, optional
-        If True normalize the error. Defaults to True.
+        If True normalize the error. Defaults to ``True``.
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -1952,11 +1953,11 @@ def oifitsFlagWithExpression(
     expr : str
         The expression to evaluate.
     keepOldFlag : bool, optional
-        If True keep the old flag. Defaults to True.
+        If ``True`` keep the old flag. Defaults to ``True``.
 
     Returns
     -------
-    flags : numpy.ndarray
+    flags : NDArray[np.floating]
         The flags.
     """
     if not isinstance(arr, list):
@@ -2206,44 +2207,39 @@ def oifitsRemoveTelescopes(
             pass
 
 
-
 def scaleSpatialFrequencies(
     data: str | Path | fits.HDUList,
     arr: str | list[str],
     scale: float = 1,
-    
     extver: list[int | None] = [None],
 ) -> None:
-    """Scale spatial frequencies
-    """
-    
+    """Scale spatial frequencies"""
+
     if isinstance(data, (str, Path)):
         data = fits.open(data)
 
     if arr == "all" or arr == ["all"] or not arr:
         arr = ["OI_VIS", "OI_VIS2", "OI_T3"]
-    
+
     if isinstance(arr, str) or not isinstance(arr, Iterable):
         arr = [arr]
-    
-    
+
     for datai in data:
         if datai.name in arr:
-            if datai.name!= "OI_T3":
-                datai.data["UCOORD"]*=scale
-                datai.data["VCOORD"]*=scale  
+            if datai.name != "OI_T3":
+                datai.data["UCOORD"] *= scale
+                datai.data["VCOORD"] *= scale
             else:
-                datai.data["U1COORD"]*=scale
-                datai.data["V1COORD"]*=scale                  
-                datai.data["U2COORD"]*=scale
-                datai.data["V2COORD"]*=scale 
-                 
-            if "UVSCALE" in  datai.header:
-                datai.header["UVSCALE"]*=scale
+                datai.data["U1COORD"] *= scale
+                datai.data["V1COORD"] *= scale
+                datai.data["U2COORD"] *= scale
+                datai.data["V2COORD"] *= scale
+
+            if "UVSCALE" in datai.header:
+                datai.header["UVSCALE"] *= scale
             else:
-                datai.header["UVSCALE"]=scale
-                
-            
+                datai.header["UVSCALE"] = scale
+
 
 def computeDifferentialError(
     data: str | Path | fits.HDUList,
@@ -2260,15 +2256,15 @@ def computeDifferentialError(
     data: str or pathlib.Path or astropy.io.fits.HDUList
         Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
     ranges : list of list of float, optional
-        The ranges to compute the differential error. Defaults to `[[0, 5]]`.
+        The ranges to compute the differential error. Defaults to ``[[0, 5]]``.
     excludeRange : bool, optional
-        If `True`, exclude the range. Defaults to `False`.
+        If ``True``, exclude the range. Defaults to ``False``.
     rangeType : str, optional
-        The range type. Defaults to `"index"`.
+        The range type. Defaults to ``"index"``.
     dataType : str or list of str, optional
-        The data type(s). Defaults to `"VISPHI"`.
+        The data type(s). Defaults to ``"VISPHI"``.
     extver : list of int, optional
-        The extension/table version. Defaults to `[None]`.
+        The extension/table version. Defaults to ``[None]``.
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -2341,17 +2337,17 @@ def setMinimumError(
     dataTypes : str or list of str
         The data types.
     values : float or list of float
-        The minimum error value. If passed as a `list`, must have the
-        same length as `dataType`.
+        The minimum error value. If passed as a ``list``, must have the
+        same length as ``dataType``.
     extver : int or list of int, optional
-        The extension/table version. Defaults to `None`.
+        The extension/table version. Defaults to ``None``.
     relThreshold : float or list of float, optional
-        Can be used for `dataType in ["VISAMP", "VIS2DATA"]`. Switches from the
+        Can be used for ``dataType in ["VISAMP", "VIS2DATA"]``. Switches from the
         scheme where the errors are compared/computed relatively to the values of the
-        datapoints to one where this is only done if they are above the `relThreshold`.
+        datapoints to one where this is only done if they are above the ``relThreshold``.
         This can be, for instance, useful to avoid extremly small errors for correlated
-        fluxes < 1. If passed as `list`, must have the same length as `dataType`.
-        Defaults to `None`.
+        fluxes < 1. If passed as ``list``, must have the same length as ``dataType``.
+        Defaults to ``None``.
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -2613,7 +2609,7 @@ def colorPrint(text: str, color) -> None:
 
 # %%
 def oimWarning(myclass, warningName, text: str, color: str = "red") -> None:
-     if oimOptions.general.warning:
+    if oimOptions.general.warning:
         BOLD = "\033[1m"
         colorPrint(
             BOLD + f"oimodeler {warningName} Warning ({myclass.__name__})",
@@ -2630,4 +2626,4 @@ def oimAckWarning(myclass, text: str) -> None:
             "\nCheck the oimodeler page for proper refrence and acknowledgment : \n"
             "https://oimodeler.readthedocs.io/en/latest/ackn.html#acknowledgment"
         )
-        oimWarning(myclass, "acknowledgement", text,color="green")
+        oimWarning(myclass, "acknowledgement", text, color="green")
