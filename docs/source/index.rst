@@ -144,6 +144,7 @@ External constraints can also be added by writting user priors functions. For in
    modularity
    installation
    getting_started
+   oimodeler-app
 
 
 .. toctree::

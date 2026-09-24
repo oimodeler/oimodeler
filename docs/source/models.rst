@@ -1121,18 +1121,19 @@ between image resolution and size, zero-padding, and computational time.
 
 Loading fits images
 -------------------
-One special and very useful image based component is the
-:func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>` that allows the loading precomputed images
-and use them as normal **oimodeler** components.
+One particularly useful image-based component is the
+:func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>`, which allows precomputed images to be loaded
+and used as regular **oimodeler** components.
 
-To illustrate the functionalities of this component we will use two fits files representing a classical Be star
+To illustrate the functionality of this component, we will use two FITS files representing a classical Be star
 and its circumstellar disk:
 
-1. a H-band continuum image generated using the DISCO semi-physical code as described in
-`Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_
+1. An H-band continuum image generated using the DISCO semi-physical code, as described in
+   `Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_.
 
-2. a chromatic image-cube computed around the :math:`Br\,\gamma` emission line using the Kinematic Be disk model as
-described in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
+2. A chromatic image cube computed around the :math:`Br\,\gamma` emission line using the Kinematic Be disk model, as
+   described in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_.
+
 
 .. note::
     Both models were generated using the `AMHRA <https://amhra.oca.eu/AMHRA/disco-gas/input.htm>`_ service of the JMMC.
@@ -1189,11 +1190,12 @@ When using the image-component, the image shown by the :func:`showModel <oimodel
 method is interpolated and crop or zero-padded depending on the internal image dimension and pixel size and the
 dimension and pixel size used in the :func:`showModel <oimodeler.oimModel.oimModel.showModel>` method.
 
-One can retrieve the component internal image (the one loaded from the fits file) using the ._internalImage() function
+One can retrieve the component internal image (the one loaded from the fits file) using the
+:func:`getInternalImage <oimodeler.oimModel.oimModel.getInternalImage>` method of the component.
 
 .. code-block:: ipython3
 
-    im_disco = cdisco._internalImage()
+    im_disco = cdisco.getInternalImage()
     print(im_disco.shape)
 
 .. parsed-literal::
@@ -1205,52 +1207,53 @@ The first two dimensions are the time and the wavelength but they are 1 as our m
 .. note::
     The internal image can be modify that way if needed.
 
-The internal pixel size in rad can also be retrieved using the ```_pixSize`` variable. This can be used to plot the
-image using the showModel method without rescaling. Here we use astropy.units to convert the radians in mas.
+The pixel size in radians can also be retrieved using the
+:func:`getPixelSize <oimodeler.oimModel.oimModel.getPixelSize>` method with the `mas=True` option
+(otherwise, the size is returned in radians). This can be used to plot the image with the
+:func:`showModel <oimodeler.oimModel.oimModel.showModel>` method without rescaling it.
+We also need to retrieve the image dimensions stored in the component's `dim` parameter.
+
 
 .. code-block:: ipython3
 
-    import astropy.units as u
-    pixSize = cdisco._pixSize*u.rad.to(u.mas)
-    dim = im_disco.shape[-1]
+    pixSize = cdisco.getPixelSize(mas=True)
+    dim = cdisco.dim.value
     mdisco.showModel(dim, pixSize, legend=True, normalize=True, normPow=1, cmap="hot")
 
 .. image:: ../../images/FitsImage_Disco_internal_image.png
   :alt: Alternative text
 
-We now create spatial frequencies for a thousand baselines ranging from 0 to 120 m,
-in the North-South and East-West orientation and at an observing wavlength of 1.5 microns.
-
+We can plot the visibility as a function of spatial frequency for baselines oriented in the North–South and East–West
+directions. We choose baselines ranging from 0 to 120 m and a wavelength of 1.5 :math:\mu\mathrm{m}.
 .. code-block:: ipython3
 
    wl, nB = 1.5e-6, 1000
    B = np.linspace(0, 120, num=nB)
+   fig, ax = mdisco.plotVis(B,wl,PA=[0,90])
+   ax.margins(0)
+   ax.set_yscale("log")
 
-   spfx = np.append(B, B*0)/wl # 1st half of B array are baseline in the East-West orientation
-   spfy = np.append(B*0, B)/wl # 2nd half are baseline in the North-South orientation
 
-We compute the complex coherent flux and then the absolute visibility
 
-.. code-block:: ipython3
-
-   ccf = m.getComplexCoherentFlux(spfx, spfy)
-   v = np.abs(ccf)
-   v = v/v.max()
-
-and, finally, we can plot our results:
-
-.. code-block:: ipython3
-
-    plt.figure()
-    plt.plot(B , v[0:nB],label="East-West")
-    plt.plot(B , v[nB:],label="North-South")
-    plt.xlabel("B (m)")
-    plt.ylabel("Visbility")
-    plt.legend()
-    plt.margins(0)
 
 .. image:: ../../images/FitsImage_Disco_visibility.png
   :alt: Alternative text
+
+We can check if a higher padding is needed for this model.
+
+.. code-block:: ipython3
+
+    res = mdisco.checkPaddingEffect()
+
+.. code-block::
+
+    padding = 16 => err_mean=0.02% err_max=0.14% (893ms)
+    padding = 8 => err_mean=0.10% err_max=0.46% (219ms)
+    padding = 4 => err_mean=0.43% err_max=2.79% (43ms)
+    padding = 2 => err_mean=1.81% err_max=6.34% (9ms)
+    padding = 1 => err_mean=7.71% err_max=42.76% (3ms)
+
+For the standard padding value of 1, the FT-sampling error remain below 1% which is sufficient in most cases.
 
 Let's now have a look at the model's parameters:
 
@@ -1258,14 +1261,14 @@ Let's now have a look at the model's parameters:
 
     pprint(m.getParameters())
 
-.. parsed-literal::
+.. code-block::
 
-    ... {'c1_Fits_Comp_dim': oimParam at 0x19c6201c820 : dim=128 ± 0  range=[1,inf] free=False ,
-         'c1_Fits_Comp_f': oimParam at 0x19c6201c760 : f=1 ± 0  range=[0,1] free=True ,
-         'c1_Fits_Comp_pa': oimParam at 0x19c00b9bbb0 : pa=0 ± 0 deg range=[-180,180] free=True ,
-         'c1_Fits_Comp_scale': oimParam at 0x19c6201c9d0 : scale=1 ± 0  range=[-inf,inf] free=True ,
-         'c1_Fits_Comp_x': oimParam at 0x19c6201c6a0 : x=0 ± 0 mas range=[-inf,inf] free=False ,
-         'c1_Fits_Comp_y': oimParam at 0x19c6201c640 : y=0 ± 0 mas range=[-inf,inf] free=False }
+     {'c1_Fits_Comp_dim': oimParam at 0x19c6201c820 : dim=128 ± 0  range=[1,inf] free=False ,
+      'c1_Fits_Comp_f': oimParam at 0x19c6201c760 : f=1 ± 0  range=[0,1] free=True ,
+      'c1_Fits_Comp_pa': oimParam at 0x19c00b9bbb0 : pa=0 ± 0 deg range=[-180,180] free=True ,
+      'c1_Fits_Comp_scale': oimParam at 0x19c6201c9d0 : scale=1 ± 0  range=[-inf,inf] free=True ,
+      'c1_Fits_Comp_x': oimParam at 0x19c6201c6a0 : x=0 ± 0 mas range=[-inf,inf] free=False ,
+      'c1_Fits_Comp_y': oimParam at 0x19c6201c640 : y=0 ± 0 mas range=[-inf,inf] free=False }
 
 
 In addition to the `x`, `y`, and `f` parameters, common to all components,
@@ -1285,8 +1288,8 @@ Let's try to rotate and scale our model and plot the image again.
 
 .. code-block:: ipython3
 
-    c.params['pa'].value = 45
-    c.params['scale'].value = 2
+    c.pa.value = 45
+    c.scale.value = 2
     m.showModel(256, 0.04, legend=True, normPow=0.4, colorbar=False)
 
 
@@ -1317,18 +1320,8 @@ baseline for our binary Be-star model.
 
 .. code-block:: ipython3
 
-    ccf = m2.getComplexCoherentFlux(spfx, spfy)
-    v = np.abs(ccf)
-    v = v/v.max()
-
-    plt.figure()
-    plt.plot(B, v[0:nB], label="East-West")
-    plt.plot(B, v[nB:], label="North-South")
-    plt.xlabel("B (m)")
-    plt.ylabel("Visbility")
-    plt.legend()
-    plt.margins(0)
-
+    fig, ax = mdisco_ud.plotVis(B,wl,PA=[0,90])
+    ax.set_yscale("log")
 
 .. image:: ../../images/FitsImage_Disco_visibility2.png
   :alt: Alternative text
@@ -1336,14 +1329,15 @@ baseline for our binary Be-star model.
 Using a chromatic image-cube
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` can also be used to import fits files containing
-chromatic image-cubes into oimodeler.
+The :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` can also be used to import fits files
+containing chromatic image-cubes into oimodeler.
 
-In this example we will use a chromatic image-cube computed around the :math:`Br\,\gamma` emission line for a classical Be star
-circumstellar disk. The model, detailed in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
+In this example we will use a chromatic image-cube computed around the :math:`Br_\gamma` emission line for a classical
+Be star circumstellar disk. The model, detailed in
+`Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
 was computed using the `AMHRA <https://amhra.oca.eu/AMHRA/bedisk/input.htm>`_ service of the JMMC.
 
-The fits-formatted image-cube we will use, `KinematicsBeDiskModel.fits`, is located in the `data/IMAGES` directory.
+The fits-formatted image-cube we will use, **KinematicsBeDiskModel.fits**, is located in the **data/IMAGES** directory.
 
 The code corresponding to this section is available in
 `LoadingFitsImageCube.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/LoadingFitsImageCube.py>`_
@@ -1363,7 +1357,7 @@ However, unlike for the monochromatic image, our model is now chromatic. The int
     print(c._image.shape)
     print(c._wl)
 
-.. parsed-literal::
+.. code-block::
 
     (1, 25, 256, 256)
     [2.16286e-06 2.16313e-06 2.16340e-06 2.16367e-06 2.16394e-06 2.16421e-06

@@ -49,12 +49,12 @@ mdisco.showModel(
 )
 
 # %%
-im_disco = cdisco._internalImage()
+im_disco = cdisco.getInternalImage()
 print(im_disco.shape)
 
 # %%
-pixSize = cdisco._pixSize * u.rad.to(u.mas)
-dim = im_disco.shape[-1]
+pixSize = cdisco.getPixelSize(mas=True)
+dim = cdisco.dim.value
 mdisco.showModel(
     dim,
     pixSize,
@@ -65,38 +65,26 @@ mdisco.showModel(
     figsize=(7, 5.5),
     savefig=save_dir / "FitsImage_Disco_internal_image.png",
 )
-
+#%%
 # NOTE: Create some spatial frequencies (Baselines from 0 to 120m at 1.5 microns)
 wl, nB = 1.5e-6, 1000
-B = np.linspace(0, 120, num=nB)
+B = np.linspace(0, 200, num=nB)
 
-# NOTE: 1st half of B array are baseline in the East-West orientation
-spfx = np.append(B, B * 0) / wl
-# NOTE: 2nd half are baseline in the North-South orientation
-spfy = np.append(B * 0, B) / wl
+fig, ax = mdisco.plotVis(B,wl,PA=[0,90])
 
-
-ccf = mdisco.getComplexCoherentFlux(spfx, spfy)
-v = np.abs(ccf)
-v = v / v.max()
-
-plt.figure()
-plt.plot(B, v[0:nB], label="East-West")
-plt.plot(B, v[nB:], label="North-South")
-plt.xlabel("B (m)")
-plt.ylabel("Visbility")
-plt.legend()
-plt.margins(0)
-
+ax.margins(0)
+ax.set_yscale("log")
 plt.savefig(save_dir / "FitsImage_Disco_visibility.png")
-plt.close()
+#%%
+
+res = mdisco.checkPaddingEffect()
 
 # %%
 pprint(mdisco.getParameters())
 
 # NOTE: Scaling and rotating
-cdisco.params["pa"].value = 40
-cdisco.params["scale"].value = 0.8
+cdisco.pa.value = 40
+cdisco.scale.value = 0.8
 
 mdisco.showModel(
     512,
@@ -111,7 +99,7 @@ mdisco.showModel(
 
 # NOTE: Adding a companion
 cud = oim.oimUD(x=20, d=1, f=0.03)
-mdisco_ud = oim.oimModel(cdisco, cud)
+mdisco_ud = oim.oimModel(cdisco,cud)
 
 mdisco_ud.showModel(
     512,
@@ -125,15 +113,9 @@ mdisco_ud.showModel(
 )
 
 # %%
-ccf = mdisco_ud.getComplexCoherentFlux(spfx, spfy)
-v = np.abs(ccf)
-v = v / v.max()
 
-plt.figure()
-plt.plot(B, v[0:nB], label="East-West")
-plt.plot(B, v[nB:], label="North-South")
-plt.xlabel("B (m)")
-plt.ylabel("Visbility")
-plt.legend()
+
+fig, ax = mdisco_ud.plotVis(B,wl,PA=[0,90])
+ax.set_yscale("log")
 plt.margins(0)
 plt.savefig(save_dir / "FitsImage_Disco_visibility2.png")
