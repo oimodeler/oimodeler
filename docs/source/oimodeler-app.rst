@@ -60,5 +60,5 @@ Construct multi-component parametric models
 Perform model fitting and visualize the results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: _static/oimodelerapp1.png
+.. image:: _static/oimodelerapp4.png
     :alt: Alternative text
