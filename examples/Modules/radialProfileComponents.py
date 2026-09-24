@@ -26,55 +26,61 @@ if not save_dir.exists():
 print(oim.listComponents(componentType="radial"))
 
 # NOTE: Create a flattened exponential ring component
-c = oim.oimExpRing(d=10, fwhm=1, elong=1.5, pa=90)
+c = oim.oimRadialExpRing(d=10, fwhm=1, elong=1.5, pa=90)
 m = oim.oimModel(c)
 
 # NOTE: Plot it's image
 fig, ax, im = m.showModel(256, 0.5, figsize=(5, 4))
 fig.savefig(save_dir / "radialProfile_image_exp.png")
 
+
 # %%
-c1 = oim.oimIRing(d=10, elong=1.5, pa=90)
+
+c1 = oim.oimRadialPowRing(din=10, dout=100,p=-3, elong=1.5, pa=90,dim=64)
 m1 = oim.oimModel(c1)
 
-c2 = oim.oimRing(din=10, dout=13, elong=1.5, pa=90)
+c2 = oim.oimIRing(d=10, elong=1.5, pa=90)
 m2 = oim.oimModel(c2)
 
-fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+c3 = oim.oimRing(din=10, dout=25, elong=1.5, pa=90)
+m3 = oim.oimModel(c3)
 
-m.showModel(256, 0.15, figsize=(5, 4), axe=ax[0], colorbar=False)
-m1.showModel(256, 0.15, figsize=(5, 4), axe=ax[1], fromFT=True, colorbar=False)
-m2.showModel(256, 0.15, figsize=(5, 4), axe=ax[2], fromFT=True, colorbar=False)
+fig, ax = plt.subplots(1, 4, figsize=(13, 4))
+
+dim=256
+pix=0.3
+m.showModel(256, 0.3, figsize=(5, 4), axe=ax[0], colorbar=False,normPow=1)
+m1.showModel(256, 0.3, figsize=(5, 4), axe=ax[1], colorbar=False,normPow=1)
+m2.showModel(256, 0.3, figsize=(5, 4), axe=ax[2], fromFT=True, colorbar=False,normPow=1)
+m3.showModel(256, 0.3, figsize=(5, 4), axe=ax[3], fromFT=True, colorbar=False,normPow=1)
+
+cs=[c,c1,c2,c3]
+for i in range(4):
+    if i!=0:
+        ax[i].get_yaxis().set_visible(False)
+    ax[i].text(0,dim*pix/2.5,cs[i].name,color="w",ha="center",fontsize=15)
+fig.tight_layout()
 
 fig.savefig(save_dir / "radialProfile_image_comp.png")
 
 # %%
 wl = 2.1e-6
 B = np.linspace(0, 100, num=10000)
-spf = B / wl
 
-start = time.time()
-ccf = m.getComplexCoherentFlux(spf, spf * 0)
-v = np.abs(ccf / ccf[0])
-dt = (time.time() - start) * 1000
+fig, ax = plt.subplots()
 
-start = time.time()
-ccf1 = m1.getComplexCoherentFlux(spf, spf * 0)
-v1 = np.abs(ccf1 / ccf1[0])
-dt1 = (time.time() - start) * 1000
-
-start = time.time()
-ccf2 = m2.getComplexCoherentFlux(spf, spf * 0)
-v2 = np.abs(ccf2 / ccf2[0])
-dt2 = (time.time() - start) * 1000
-
-plt.figure()
-plt.plot(B, v, label=f"Exponential Ring ({dt:.1f}ms)")
-plt.plot(B, v1, label=f"Infinitesimal Ring ({dt1:.1f}ms)")
-plt.plot(B, v2, label=f"Uniform Ring ({dt2:.1f}ms)")
-plt.xlabel("B (m)")
-plt.ylabel("Visbility")
+ms = [m,m1,m2,m3]
+for i in range(4):
+    ms[i].plotVis(B,wl,axe=ax,label=cs[i].name,addTimeToLabel=True)
 plt.legend()
-plt.margins(0)
 plt.savefig(save_dir / "radialProfile_visi_comp.png")
+#%%
+spf= B/wl
+
+dts=[]
+for i in range(4):
+    start = time.time()
+    ccf = ms[i].getComplexCoherentFlux(spf, spf * 0)
+    dts.append((time.time() - start) * 1000)
+print(dts)
 

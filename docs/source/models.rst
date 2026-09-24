@@ -1367,7 +1367,7 @@ However, unlike for the monochromatic image, our model is now chromatic. The int
 The image-cube contains 256x256 pixels images at 25 wavelength ranging from 2.16286 to 2.16934:math:`\mu`m.
 
 
-We can now plot some images through the :math:`Br\gamma` emission line (21661 :math:`\mu`m)using the
+We can now plot some images through the :math:`Br\gamma` emission line (2166.1nm) using the
 :func:`oimModel.showModel <oimodeler.oimModel.oimModel.showModel>` method. We need to specify some wavelengths.
 Images will be interpolated between the internal image-cubve wavelengths.
 
@@ -1440,12 +1440,9 @@ a V-shaped profile.
 Radial-Profile components
 -------------------------
 
-.. warning::
-    **oimodeler** radial profile component is not yet fully tested. Use at your own risk!
-
-Although not fully implemented and optimize, **oimodeler** allow to use 1D intensity radial profile
-for circular or intensity distributions. Radial-profile components are derived from the semi-abstract class
-:func:`oimComponentRadialProfile <oimodeler.oimComponent.oimComponentRadialProfile>` .This class implement
+**oimodeler** allow to use 1D intensity radial profile for circular or intensity distributions.
+Radial-profile components are derived from the semi-abstract class
+:func:`oimComponentRadialProfile <oimodeler.oimComponent.oimComponentRadialProfile>` .This class implements
 complex-coherent-flux computation using Hankel transform which take into account flattening for elliptic components.
 
 The code corresponding to this section is available in
@@ -1467,38 +1464,51 @@ You can get this list using the :func:`listComponents <oimodeler.oimUtils.listCo
 
 .. parsed-literal::
 
-    ['oimComponentRadialProfile', 'oimExpRing', 'oimRadialRing',
-     'oimRadialRing2', 'oimTempGrad', 'oimAsymTempGrad']
+    ['oimComponentRadialProfile', 'oimRadialExpRing', 'oimRadialPowRing',
+     'oimRadialPowRing2', 'oimTempGrad']
 
 Let's build a model with the exponential ring.
 
 .. code-block:: ipython3
 
-    c = oim.oimExpRing(d=10,fwhm=1,elong=1.5,pa=90)
+    c = oim.oimRadialExpRing(d=10,fwhm=1,elong=1.5,pa=90)
     m = oim.oimModel(c)
     fig, ax, im = m.showModel(256,0.5)
 
 .. image:: ../../images/radialProfile_image_exp.png
   :alt: Alternative text
 
-Let's compare the visibility from this model to that of two other rings defined using the Fourier-based components:
+Let's compare the visibility from other ring models:
 
+- a 10 mas ring with a radial intensity following a power law with -3 exponent
 - a 10 mas infinitesimal ring
-- a 10 mas uniform ring with a 5 mas width
+- a 10 mas uniform ring with a 10 mas width
+
+Note that the Power-law ring is also a Radial-Profile component whereas the two other one are Fourier-based components.
+
+
+First, let's have a look a their intensity distribution:
 
 .. code-block:: ipython3
 
-    c1 = oim.oimIRing(d=10,elong=1.5,pa=90)
+
+    c1 = oim.oimRadialPowRing(din=10, dout=100,p=-2, elong=1.5, pa=90,dim=64)
     m1 = oim.oimModel(c1)
 
-    c2 = oim.oimRing(din=10,dout=13,elong=1.5,pa=90)
+    c2 = oim.oimIRing(d=10, elong=1.5, pa=90)
     m2 = oim.oimModel(c2)
 
-    fig, ax = plt.subplots(1,3,figsize=(15,5))
+    c3 = oim.oimRing(din=10, dout=25, elong=1.5, pa=90)
+    m3 = oim.oimModel(c3)
 
-    m.showModel(256,0.15,figsize=(5,4),axe=ax[0],colorbar=False)
-    m1.showModel(256,0.15,figsize=(5,4),axe=ax[1],fromFT=True,colorbar=False)
-    m2.showModel(256,0.15,figsize=(5,4),axe=ax[2],fromFT=True,colorbar=False)
+    fig, ax = plt.subplots(1, 4, figsize=(13, 4))
+
+    dim=256
+    pix=0.3
+    m.showModel(256, 0.3, figsize=(5, 4), axe=ax[0], colorbar=False,normPow=1)
+    m1.showModel(256, 0.3, figsize=(5, 4), axe=ax[1], colorbar=False,normPow=1)
+    m2.showModel(256, 0.3, figsize=(5, 4), axe=ax[2], fromFT=True, colorbar=False,normPow=1)
+    m3.showModel(256, 0.3, figsize=(5, 4), axe=ax[3], fromFT=True, colorbar=False,normPow=1)
 
 .. image:: ../../images/radialProfile_image_comp.png
   :alt: Alternative text
@@ -1509,39 +1519,22 @@ We will simulated visibilities for 1000 East-West baselines in the K-band.
 
     wl = 2.1e-6
     B = np.linspace(0, 100, num=10000)
-    spf = B/wl
 
-    start = time.time()
-    ccf = m.getComplexCoherentFlux(spf, spf*0)
-    v = np.abs(ccf/ccf[0])
-    dt = (time.time() - start)*1000
+    fig, ax = plt.subplots()
 
-
-    start = time.time()
-    ccf1 = m1.getComplexCoherentFlux(spf, spf*0)
-    v1 = np.abs(ccf1/ccf1[0])
-    dt1 = (time.time() - start)*1000
-
-    start = time.time()
-    ccf2 = m2.getComplexCoherentFlux(spf, spf*0)
-    v2 = np.abs(ccf2/ccf2[0])
-    dt2 = (time.time() - start)*1000
-
-    plt.figure()
-    plt.plot(B, v, label=f"Exponential Ring ({dt:.1f}ms)")
-    plt.plot(B, v1, label=f"Infinitesimal Ring ({dt1:.1f}ms)")
-    plt.plot(B, v2, label=f"Uniform Ring ({dt2:.1f}ms)")
-    plt.xlabel("B (m)")
-    plt.ylabel("Visbility")
+    ms = [m,m1,m2,m3]
+    for i in range(4):
+        ms[i].plotVis(B,wl,axe=ax,label=cs[i].name,addTimeToLabel=True)
     plt.legend()
-    plt.margins(0)
 
 
 .. image:: ../../images/radialProfile_visi_comp.png
   :alt: Alternative text
 
-
 .. note::
+
+    We have used the **addTimeToLabel=True** option to add the computing time for each component on the plot.
+
     Remember that, as for Image-based model, the computation time of visibility from radial profiles
     is much longer than that of the basic Fourier-based components as show in the figure above.
 
