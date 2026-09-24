@@ -180,9 +180,10 @@ External constraints can also be added by writting user priors functions. For in
 
 .. toctree::
    :hidden:
-   :caption: Tools
+   :caption: Related packages
 
    oimodeler-app
+   nimodeler
 
 .. toctree:: 
    :hidden: 
