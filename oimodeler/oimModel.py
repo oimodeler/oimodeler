@@ -1175,6 +1175,8 @@ class oimModel:
         return fourier + image*2 + radial*4
     
     def checkPaddingEffect(self,padmax=32,wl=None,B=None):
+        
+        padd0 = oimOptions.ft.padding
         checkFTcomp = self._checkTypeOfComponents()
         if not(checkFTcomp & 2):
             oimWarning(oimModel, "Not relevant",
@@ -1222,6 +1224,8 @@ class oimModel:
                 print(f"padding = {pi} => err_mean={errs_mean[-1]:.2f}%"
                                          f" err_max={errs_max[-1]:.2f}%"
                                          f" ({dt:.0f}ms)")
+                
+            oimOptions.ft.padding = padd0
             return padding,np.array(errs_mean),np.array(errs_max)
             
 
