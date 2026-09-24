@@ -780,7 +780,7 @@ class oimComponentImage(oimComponent):
                         )
         return im
 
-    def getInternalImage(self, wl, t):
+    def getInternalImage(self, wl=None, t=None):
         res = self._internalImage()
 
         if res is None:
@@ -1178,3 +1178,5 @@ class oimComponentFitsImage(oimComponentImage):
     def getPixelSize(self, mas=False):
         self._pixSize = self._pixSize0 * self.params["scale"].value
         return self._pixSize * (RAD2MAS * mas + (not mas))
+
+        
