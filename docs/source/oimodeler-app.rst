@@ -1,8 +1,13 @@
 :tocdepth: 1
+.. raw:: html
+
+   <style>
+   h1{
+       display: none;
+   }
+   </style>
 
 ..  _oimodelerapp:
-
-
 
 oimodeler-app
 =============
@@ -30,35 +35,41 @@ the installation of any Python libraries.
 The application provides an intuitive environment in which users can:
 
 - explore **oimodeler** components;
-- load, plot, and filter datasets;
+- load, plot, and filter OIFITS2 datasets;
 - construct multi-component parametric models;
 - perform model fitting and visualize the results.
 
 **oimodeler-app** also generates Python code, allowing users to learn how to use **oimodeler** through scripting.
 
 
+A few Screenshots for oimodeler-app
+-----------------------------------
 
-Explore available components
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+|
 
-.. image:: _static/oimodelerapp1.png
-    :alt: Alternative text
+.. figure:: _static/oimodelerapp1.png
+
+    **Exploring oimodeler components**
+
+|
+|
 
 
-Load, plot, and filter datasets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. figure:: _static/oimodelerapp2.png
 
-.. image:: _static/oimodelerapp2.png
-    :alt: Alternative text
+    **Loading, plotting, and filtering datasets**
 
-Construct multi-component parametric models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+|
+|
 
-.. image:: _static/oimodelerapp3.png
-    :alt: Alternative text
+.. figure:: _static/oimodelerapp3.png
 
-Perform model fitting and visualize the results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    **Constructing multi-component parametric models**
 
-.. image:: _static/oimodelerapp4.png
-    :alt: Alternative text
+|
+|
+
+.. figure:: _static/oimodelerapp4.png
+
+    **Performing model fitting and visualizing the results**
+

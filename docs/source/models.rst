@@ -1225,6 +1225,7 @@ We also need to retrieve the image dimensions stored in the component's `dim` pa
 
 We can plot the visibility as a function of spatial frequency for baselines oriented in the North–South and East–West
 directions. We choose baselines ranging from 0 to 120 m and a wavelength of 1.5 :math:\mu\mathrm{m}.
+
 .. code-block:: ipython3
 
    wl, nB = 1.5e-6, 1000
@@ -1232,9 +1233,6 @@ directions. We choose baselines ranging from 0 to 120 m and a wavelength of 1.5 
    fig, ax = mdisco.plotVis(B,wl,PA=[0,90])
    ax.margins(0)
    ax.set_yscale("log")
-
-
-
 
 .. image:: ../../images/FitsImage_Disco_visibility.png
   :alt: Alternative text
