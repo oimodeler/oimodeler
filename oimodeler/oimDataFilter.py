@@ -316,7 +316,7 @@ class oimFlagWithExpressionFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
+    :func:`oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
@@ -365,8 +365,8 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.cutWavelengthRange` : Cut the wavelength range of an OIFITS file.
-    `oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
+    :func:`oimUtils.cutWavelengthRange` : Cut the wavelength range of an OIFITS file.
+    :func:`oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
@@ -425,7 +425,7 @@ class oimWavelengthShiftFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.shiftWavelength` : Shift the wavelength of an OIFITS file.
+    :func:`oimUtils.shiftWavelength` : Shift the wavelength of an OIFITS file.
 
     Notes
     -----
@@ -465,7 +465,7 @@ class oimWavelengthSmoothingFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.spectralSmoothing` : Smooth the spectral data of an OIFITS file.
+    :func:`oimUtils.spectralSmoothing` : Smooth the spectral data of an OIFITS file.
 
     Notes
     -----
@@ -511,7 +511,7 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.binWavelength` : Bin the wavelength of an OIFITS file.
+    :func:`oimUtils.binWavelength` : Bin the wavelength of an OIFITS file.
 
     Notes
     -----
@@ -570,7 +570,7 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.intpBinWavelength` : Bin the wavelength of an OIFITS file to a specified binGrid.
+    :func:`oimUtils.intpBinWavelength` : Bin the wavelength of an OIFITS file to a specified binGrid.
 
     Notes
     -----
@@ -631,7 +631,7 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.oifitsKeepBaselines` : Remove all baselines except those specified by name.
+    :func:`oimUtils.oifitsKeepBaselines` : Remove all baselines except those specified by name.
 
     Notes
     -----
@@ -678,7 +678,7 @@ class oimRemoveBaselinesFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.oifitsRemoveBaselines` : Remove all baselines specified by name.
+    :func:`oimUtils.oifitsRemoveBaselines` : Remove all baselines specified by name.
 
     Notes
     -----
@@ -725,7 +725,7 @@ class oimKeepTelescopesFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.oifitsKeepTelescopes` : Remove all telescopes except those specified by name.
+    :func:`oimUtils.oifitsKeepTelescopes` : Remove all telescopes except those specified by name.
 
     Notes
     -----
@@ -772,7 +772,7 @@ class oimRemoveTelescopesFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.oifitsRemoveTelescopes` : Remove all telescopes specified by name.
+    :func:`oimUtils.oifitsRemoveTelescopes` : Remove all telescopes specified by name.
 
     Notes
     -----
@@ -815,7 +815,7 @@ class oimResetFlagsFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
+    :func:`oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
@@ -861,7 +861,7 @@ class oimDiffErrFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.computeDifferentialError` : Compute the differential error.
+    :func:`oimUtils.computeDifferentialError` : Compute the differential error.
 
     Notes
     -----
@@ -921,7 +921,7 @@ class oimSetMinErrFilter(oimDataFilterComponent):
 
     See Also
     --------
-    `oimUtils.setMinimumError` : Set the minimum error of a given data type to a given value.
+    :func:`oimUtils.setMinimumError` : Set the minimum error of a given data type to a given value.
 
     Notes
     -----
