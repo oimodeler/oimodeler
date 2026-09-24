@@ -1037,6 +1037,7 @@ class oimModel:
                 PA_names=None,axe=None,
                 xunit="cycle/rad",
                 wlunit="micron",
+                addTimeToLabel=False,
                 **kwargs):
         
         
@@ -1081,15 +1082,17 @@ class oimModel:
             except:
                 fig = axe.flatten()[0].get_figure()
             
-    
+        label0 = kwargs.pop("label","")
+            
         if nwl==1:
             
             spf = B/wl
             for iPA,PAi in enumerate(PA):
                 spfx = np.cos(np.deg2rad(PAi))*spf
                 spfy = -np.sin(np.deg2rad(PAi))*spf
-                
+                start = time.time()
                 ccf = self.getComplexCoherentFlux(spfx, spfy)
+                dt = (time.time() - start) * 1000
                 v = np.abs(ccf)
                 v = v/v[0]
                 
@@ -1103,7 +1106,13 @@ class oimModel:
                 if label != None:
                     nlegend += 1
                 if label!=None:
-                    kwargs["label"]=label
+                    kwargs["label"]=label0  + label
+                else:
+                    kwargs["label"]=label0
+                    
+                if addTimeToLabel:
+                    
+                    kwargs["label"]+=f" ({dt:.1f}ms)"
                 axe.plot(spf*xunit_mult, v,**kwargs)
             if nlegend != 0:
                 axe.legend() 
