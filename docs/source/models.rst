@@ -1116,6 +1116,29 @@ between accuracy and computational time.
 Another way to reduce the computation time of the FFT (and DFT) is to reduce the image size while increasing the pixel
 size, thereby keeping the field of view fixed. However, this also introduces a sampling error.
 
+We can check the effect of pixel sampling using the
+:func:`checkPaddingEffect <oimodeler.oimModel.oimModel.checkPaddingEffect>` method, which works similarly. Both methods
+allow to plot the results using the ``plot=True`` option.
+
+.. code-block:: ipython3
+
+    dims, err_mean2, err_max2 = mspiral.checkSamplingEffect(plot=True)
+
+.. code-block::
+
+        Reference : dim = 1024 (549ms)
+        dim = 512 => err_mean=0.75% err_max=5.12% (137ms)
+        dim = 256 => err_mean=2.18% err_max=25.55% (35ms)
+        dim = 128 => err_mean=7.31% err_max=111.02% (8ms)
+        dim = 64 => err_mean=14.40% err_max=239.91% (3ms)
+        dim = 32 => err_mean=27.50% err_max=364.29% (1ms)
+        dim = 16 => err_mean=41.70% err_max=494.80% (1ms)
+
+
+.. image:: ../../images/componentImages_sampling.png
+  :alt: Alternative text
+
+
 Keeping all these considerations in mind when working with image-based components, users should find the right trade-off
 between image resolution and size, zero-padding, and computational time.
 
@@ -1241,15 +1264,17 @@ We can check if a higher padding is needed for this model.
 
 .. code-block:: ipython3
 
-    res = mdisco.checkPaddingEffect()
+    res  = mdisco.checkPaddingEffect()
 
 .. code-block::
 
-    padding = 16 => err_mean=0.02% err_max=0.14% (893ms)
-    padding = 8 => err_mean=0.10% err_max=0.46% (219ms)
-    padding = 4 => err_mean=0.43% err_max=2.79% (43ms)
-    padding = 2 => err_mean=1.81% err_max=6.34% (9ms)
-    padding = 1 => err_mean=7.71% err_max=42.76% (3ms)
+    Checking Padding effect on FFT
+    Reference : padding = 32 (6138ms)
+    padding = 16 => err_mean=0.02% err_max=0.14% (1455ms)
+    padding = 8 => err_mean=0.10% err_max=0.46% (313ms)
+    padding = 4 => err_mean=0.43% err_max=2.79% (55ms)
+    padding = 2 => err_mean=1.81% err_max=6.34% (13ms)
+    padding = 1 => err_mean=7.71% err_max=42.76% (5ms)
 
 For the standard padding value of 1, the FT-sampling error remain below 1% which is sufficient in most cases.
 

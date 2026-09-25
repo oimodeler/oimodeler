@@ -245,7 +245,7 @@ figvis.savefig(save_dir / "interp6_1.png")
 
 #%%
 
-mbin.showModel(256,0.06,wl=[0.5e-6,1e-6,3e-6,8e-6],legend=True,figsize=(2,2.1),
+fig,ax,im = mbin.showModel(256,0.06,wl=[0.5e-6,1e-6,3e-6,8e-6],legend=True,figsize=(2,2.1),
                fromFT=True,normPow=1,normalize=True,cmap="inferno")
 
 fig.savefig(save_dir / "interp6_2.png")

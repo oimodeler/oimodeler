@@ -118,4 +118,7 @@ figpad.savefig(save_dir / "componentImages_padding.png")
 oim.oimOptions.ft.padding = 4
 
 #%%
-padfact, err_mean, err_max = mspiral.checkPaddingEffect()
+padfact, err_mean, err_max = mspiral.checkPaddingEffect(plot=True)
+#%%
+fig, ax, dims, err_mean2, err_max2 = mspiral.checkSamplingEffect(plot=True)
+fig.savefig(save_dir / "componentImages_sampling.png")
