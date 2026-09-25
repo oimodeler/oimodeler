@@ -935,6 +935,7 @@ def oimPlot(
     kwargs_error: dict = {},
     **kwargs,
 ):
+
     """Plot the data from the oifits files.
 
     Parameters
@@ -1335,7 +1336,7 @@ def oimPlot(
     if legend == True:    
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys())
+        axe.legend(by_label.values(), by_label.keys())
                
 
     if yscale is not None:
@@ -1757,6 +1758,7 @@ class oimAxes(plt.Axes):
     def oiplot(
         self, oifitsList: fits.HDUList, xname: str, yname: str, **kwargs
     ):
+
         """Plot the data from the oifits files."""
         res = oimPlot(oifitsList, xname, yname, axe=self, **kwargs)
         self.xtype, self.ytype = xname, yname
@@ -1780,8 +1782,9 @@ class oimAxes(plt.Axes):
         elif self.ytype in ["VISPHI", "T3PHI"]:
             self.set_ylim(-180, 180)
 
-    def legend(self, **kwargs):
+    def legend(self, *args,**kwargs):
         """Add a legend to the plot."""
+
         handles, labels = self.get_legend_handles_labels()
 
         hmap = {}
