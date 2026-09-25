@@ -540,7 +540,7 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
 
 class oimWavelengthIntpBinFilter(oimDataFilterComponent):
-    """Filter that bins the wavelength to a specified grid. It also interpolates
+    r"""Filter that bins the wavelength to a specified grid. It also interpolates
     at the edges of the bins, ensuring a minimum number of elements.
 
     Other Parameters
@@ -559,15 +559,8 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
         ``binGrid``. Defaults to ``None``.
     resetFlags : bool, optional
         If ``True``, sets all flags to ``False`` after binning. Defaults to ``True``.
-    averageError : bool, optional
-        If ``True``, forgoes the error propagation and simply averages the errors
-        for each bin. Defaults to ``False``.
-    nSpecChannels : float, optional
-        The number of spectral channels determined by the spectral resolution.
-        Will be used to calculate the divisor within the error propagation.
-        Defaults to ``1.0``.
-
-        .. math:: divisor = bin_elements / spectralChannels
+    normalizeError : bool, optional
+        If ``True`` normalize the error. Defaults to ``True``.
 
     See Also
     --------
@@ -591,8 +584,7 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
         self.params["binGrid"] = None
         self.params["binWindow"] = None
         self.params["resetFlags"] = True
-        self.params["averageError"] = False
-        self.params["nSpecChannels"] = 1.0
+        self.params["normalizeError"] = True
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
@@ -602,8 +594,7 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
             self.params["binGrid"],
             binWindow=self.params["binWindow"],
             resetFlags=self.params["resetFlags"],
-            averageError=self.params["averageError"],
-            nSpecChannels=self.params["nSpecChannels"],
+            normalizeError=self.params["normalizeError"],
         )
 
 
