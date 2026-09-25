@@ -1543,11 +1543,11 @@ We will simulated visibilities for 1000 East-West baselines in the K-band.
 Parameter interpolators
 -----------------------
 
-Here we present in more details the parameter interpolators. This example can be found in the
-`paramInterpolators.py <https://github.com/oimodeler/examples/Modules/paramInterpolators.py>`_ script.
+Here we describe in more details the concept of parameter interpolators. This example file can be found here:
+`paramInterpolators.py <https://github.com/oimodeler/examples/Modules/paramInterpolators.py>`_.
 
-The following table summarize the available interpolators and their parameters. Most of
-them will be presented in this example.
+The following table summarize the available interpolators and their parameters. Some of
+them will be presented in this example in more details.
 
 .. csv-table:: Available parameter interpolators
    :file: table_interpolators.csv
@@ -1632,7 +1632,7 @@ build for each model either a length 1000 wavelength or time vector.
 
 
 Now, let's start with our first interpolator: A Gaussian in wavelength (also available
-for time). It can be used to model spectral features like atomic lines or molecular bands
+in time). It can be used to model spectral features like atomic lines or molecular bands
 in emission or absorption.
 
 It has 4 parameters :
@@ -1667,12 +1667,12 @@ Finally, we can define the wavelength range and use our custom plotting function
   :alt: Alternative text
 
 
-The parameters of the interpolator can be accessed using the ``params`` attribute of the
+The list of parameters of the interpolator can be accessed using the ``params`` attribute of the
 :func:`oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>`:
 
 .. code-block:: ipython3
 
-    pprint(c1.params['d'].params)
+    pprint(c1.d.params)
 
 
 .. parsed-literal::
@@ -1682,11 +1682,11 @@ The parameters of the interpolator can be accessed using the ``params`` attribut
          oimParam at 0x2610e25e280 : d=2 ± 0 mas range=[-inf,inf] free=True ,
          oimParam at 0x2610e25e2b0 : d=4 ± 0 mas range=[-inf,inf] free=True ]
 
-Each one can also be accessed using their name as an attribute:
+Each one can also be accessed using their name:
 
 .. code-block:: ipython3
 
-    pprint(c1.params['d'].x0)
+    pprint(c1.d.x0)
 
 
 .. parsed-literal::
@@ -1727,10 +1727,10 @@ multiple values for ``x0``, ``fwhm`` and ``values``.
     pt = oim.oimPt(f=0.5)
     m2 = oim.oimModel(c2, pt)
 
-    c2.params['d'].values[1] = oim.oimParamLinker(
-        c2.params['d'].values[0], "*", 3)
-    c2.params['d'].values[2] = oim.oimParamLinker(
-        c2.params['d'].values[0], "+", -1)
+    c2.d.values[1] = oim.oimParamLinker(
+        c2.d.values[0], "*", 3)
+    c2.d.values[2] = oim.oimParamLinker(
+        c2.d.values[0], "+", -1)
 
     wl = np.linspace(1.9e-6, 2.4e-6, num=nwl)
 
@@ -1743,7 +1743,7 @@ multiple values for ``x0``, ``fwhm`` and ``values``.
   :alt: Alternative text
 
 
-Here, to reduce the number of free parameters of the model with have linked the second
+Here, to reduce the number of free parameters of the model we have linked the second
 and third ``values`` of the interpolator to the first one.
 
 Let's look at our third interpolator: An asymmetric cosine interpolator in time. As it
@@ -1774,9 +1774,8 @@ It has 5 parameters :
 .. image:: ../../images/interp3.png
   :alt: Alternative text
 
-
 Now, let's have a look at the classic wavelength interpolator (also available for time).
-jIt has two parameters:
+It has two parameters:
 
 - A list of reference wavelengths: ``wl``.
 - A list of values at the reference wavelengths: ``values``.
@@ -1798,19 +1797,19 @@ extrapolation.
     fig, ax = plt.subplots(2, 6, figsize=(18, 6), sharex=True, sharey="row")
 
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 0], colorbar=False)
-    c4.params['d'].extrapolate = False
+    c4.d.extrapolate = False
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 1], colorbar=False)
 
-    c4.params['d'].extrapolate = True
-    c4.params['d'].kind = "quadratic"
+    c4.d.extrapolate = True
+    c4.d.kind = "quadratic"
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 2], colorbar=False)
-    c4.params['d'].extrapolate = False
+    c4.d.extrapolate = False
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 3], colorbar=False)
 
-    c4.params['d'].extrapolate = True
-    c4.params['d'].kind = "cubic"
+    c4.d.extrapolate = True
+    c4.d.kind = "cubic"
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 4], colorbar=False)
-    c4.params['d'].extrapolate = False
+    c4.d.extrapolate = False
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 5], colorbar=False)
 
     plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.9,
@@ -1828,7 +1827,7 @@ extrapolation.
   :alt: Alternative text
 
 
-Finally, we can also use a polynominal interpolator in time (also available for
+We can also use a polynominal interpolator in time (also available for
 wavelength). Its free parameters are the coefficients of the polynomial. The parameter
 ``x0`` allows to shift the reference time (in mjd) from 0 to an arbitrary date.
 
@@ -1849,6 +1848,63 @@ wavelength). Its free parameters are the coefficients of the polynomial. The par
   :alt: Alternative text
 
 
-As for other part of the oimodeler software, **oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage. See the :ref:`create_interp` example.
+
+To model components with physically realistic fluxes, one can use the blackbody interpolators **tempWl** and **starWl**.
+The main difference is the way the angular size of the component (needed to normalize the flux) is calculated:
+
+- the **tempWl** uses a ``solid_angle`` parameter
+- the **starWl** uses 2 out the 3 parameters : luminosity ``L``, stellar Radius ``R`` and distance ``dist``
+
+Here we use the **starWl** to build two different stars : a A0V and a K1III.
+
+.. code-block:: ipython3
+
+    star1 = oim.oimUD(f=oim.oimInterp("starWl", T=10000, R=2.5, dist=100) # A0V
+    star2 = oim.oimUD(f=oim.oimInterp("starWl", T=5000, R=17, dist=100) # K1III.
+
+We can plot their respective flux in Jansky.
+
+.. code-block:: ipython3
+
+    wl = np.logspace(-7, -4, num=50)
+    f_star1 = star1.f(wl)
+    f_star2 = star2.f(wl)
+
+    fig, ax = plt.subplots()
+
+    ax.loglog(wl * 1e6, f_star1, label="star1: A0V")
+    ax.loglog(wl * 1e6, f_star2, label="star2: K1III")
+    ax.set_xlabel("$\\lambda$ ($\\mu$m)")
+    ax.set_ylabel("Flux [Jy]")
+    ax.legend()
+
+.. image:: ../../images/interp6.png
+  :alt: Alternative text
+
+Now let's set create a binary model, set the components positions and plot their images and visbility at
+different wavelengths.
+
+.. code-block:: ipython3
+
+    mbin = oim.oimModel(star1,star2)
+    star1.x.value =  5
+    star2.x.value = -5
+    star1.d.value = 0.23 #mas =  2.5Rsol at 100pc
+    star2.d.value = 1.59 #mas = 17 Rsol at 100pc
+    wls = np.linspace(1e-6,4e-6,num=1000)
+    figvis,axvis = mbin.plotVis(B,wls,PA=[0,90],xunit="cycle/arcsec")
+
+    mbin.showModel(256,0.06,wl=[0.5e-6,1e-6,3e-6,8e-6],legend=True
+                           fromFT=True,normPow=1,normalize=True,cmap="inferno")
 
 
+.. image:: ../../images/interp6_1.png
+  :alt: Alternative text
+
+.. image:: ../../images/interp6_2.png
+  :alt: Alternative text
+
+|
+
+**oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage.
+See the :ref:`create_interp` example.

@@ -104,8 +104,8 @@ fig.suptitle(
 )
 plt.savefig(save_dir / "interp1.png")
 
-pprint(c1.params["d"].params)
-pprint(c1.params["d"].x0)
+pprint(c1.d.params)
+pprint(c1.d.x0)
 pprint(m1.getParameters())
 
 # %%
@@ -122,9 +122,9 @@ c2 = oim.oimUD(
 pt = oim.oimPt(f=0.5)
 m2 = oim.oimModel(c2, pt)
 
-c2.params["d"].values[1] = oim.oimParamLinker(c2.params["d"].values[0], "*", 3)
-c2.params["d"].values[2] = oim.oimParamLinker(
-    c2.params["d"].values[0], "+", -1
+c2.d.values[1] = oim.oimParamLinker(c2.params["d"].values[0], "*", 3)
+c2.d.values[2] = oim.oimParamLinker(
+    c2.d.values[0], "+", -1
 )
 
 wl = np.linspace(1.9e-6, 2.4e-6, num=nwl)
@@ -167,19 +167,19 @@ wl = np.linspace(1.8e-6, 3.2e-6, num=nwl)
 fig, ax = plt.subplots(2, 6, figsize=(18, 6), sharex=True, sharey="row")
 
 plotParamAndVis(B, wl, None, m4, c4.params["d"], ax=ax[:, 0], colorbar=False)
-c4.params["d"].extrapolate = False
+c4.d.extrapolate = False
 plotParamAndVis(B, wl, None, m4, c4.params["d"], ax=ax[:, 1], colorbar=False)
 
-c4.params["d"].extrapolate = True
-c4.params["d"].kind = "quadratic"
+c4.d.extrapolate = True
+c4.d.kind = "quadratic"
 plotParamAndVis(B, wl, None, m4, c4.params["d"], ax=ax[:, 2], colorbar=False)
-c4.params["d"].extrapolate = False
+c4.d.extrapolate = False
 plotParamAndVis(B, wl, None, m4, c4.params["d"], ax=ax[:, 3], colorbar=False)
 
-c4.params["d"].extrapolate = True
-c4.params["d"].kind = "cubic"
+c4.d.extrapolate = True
+c4.d.kind = "cubic"
 plotParamAndVis(B, wl, None, m4, c4.params["d"], ax=ax[:, 4], colorbar=False)
-c4.params["d"].extrapolate = False
+c4.d.extrapolate = False
 plotParamAndVis(B, wl, None, m4, c4.params["d"], ax=ax[:, 5], colorbar=False)
 
 plt.subplots_adjust(
@@ -219,8 +219,8 @@ star2 = oim.oimUD(
 )  # K1III
 
 wl = np.logspace(-7, -4, num=50)
-f_star1 = star1.params["f"](wl)
-f_star2 = star2.params["f"](wl)
+f_star1 = star1.f(wl)
+f_star2 = star2.f(wl)
 
 fig, ax = plt.subplots()
 
@@ -229,3 +229,23 @@ ax.loglog(wl * 1e6, f_star2, label="star2: K1III")
 ax.set_xlabel("$\\lambda$ ($\\mu$m)")
 ax.set_ylabel("Flux [Jy]")
 ax.legend()
+
+plt.savefig(save_dir / "interp6.png")
+
+#%%
+mbin = oim.oimModel(star1,star2)
+star1.x.value =  5
+star2.x.value = -5
+star1.d.value = 0.23 #mas =  2.5Rsol at 100pc 
+star2.d.value = 1.59 #mas = 17 Rsol at 100pc 
+wls = np.linspace(1e-6,4e-6,num=1000)
+figvis,axvis = mbin.plotVis(B,wls,PA=[0,90],xunit="cycle/arcsec")
+figvis.savefig(save_dir / "interp6_1.png")
+
+
+#%%
+
+mbin.showModel(256,0.06,wl=[0.5e-6,1e-6,3e-6,8e-6],legend=True,figsize=(2,2.1),
+               fromFT=True,normPow=1,normalize=True,cmap="inferno")
+
+fig.savefig(save_dir / "interp6_2.png")
