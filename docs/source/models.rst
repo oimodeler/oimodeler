@@ -1948,7 +1948,7 @@ sharing models between scripts/processes, and for the reproducability of a (fitt
 
 
 Saving a model
---------------
+~~~~~~~~~~~~~~
 
 For instance, serialising a model composed of a uniform disk and a point source
 
@@ -1985,7 +1985,7 @@ which enables storing it by various means (e.g. by pickling or storing it in JSO
 
 
 Loading a model
----------------
+~~~~~~~~~~~~~~~
 
 A serialized model can be restored with (at the JSON example)
 
