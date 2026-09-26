@@ -92,7 +92,7 @@ class oimComponent:
     description : str
         Detailed description of the component.
     params : dict of str to oimParam
-        The dictionary of the component parameters.
+        Dictionary of the component parameters.
     """
 
     _firstInit = True
@@ -852,7 +852,8 @@ class oimComponentImage(oimComponent):
 
     def getPixelSize(self, mas=False):
         raise ValueError(
-            "getPixelSize Method not implemented" " while self._pixSize = "
+            "getPixelSize Method not implemented"
+            " while self._pixSize = "
             f"{self._pixSize}"
         )
 

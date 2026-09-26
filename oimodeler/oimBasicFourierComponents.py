@@ -8,6 +8,7 @@ from functools import reduce
 
 import astropy.units as u
 import numpy as np
+from numpy.typing import NDArray
 from scipy.signal import convolve2d
 from scipy.special import gamma, j0, j1, jn, jv
 
@@ -16,35 +17,66 @@ from .oimParam import _standardParameters, oimParam
 
 
 class oimPt(oimComponentFourier):
-    """Point Source component defined in the fourier space
+    """Point Source component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
     """
 
     name = "Point source"
     shortname = "Pt"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._eval(**kwargs)
 
-    def _visFunction(self, ucoord, vcoord, rho, wl, t):
+    def _visFunction(
+        self,
+        ucoord: NDArray[np.floating],
+        vcoord: NDArray[np.floating],
+        rho: NDArray[np.floating],
+        wl: NDArray[np.floating],
+        t: NDArray[np.floating],
+    ) -> float:
         return 1
 
-    def _imageFunction(self, xx, yy, wl, t):
+    def _imageFunction(
+        self,
+        xx: NDArray[np.floating],
+        yy: NDArray[np.floating],
+        wl: NDArray[np.floating],
+        t: NDArray[np.floating],
+    ) -> NDArray[np.floating]:
         if len(xx.shape) != 1:
             image = xx * 0
             val = np.abs(xx) + np.abs(yy)
             nwl = xx.shape[1]
             nt = xx.shape[0]
-            # TODO rewrite without loop
+
+            # TODO: rewrite without loop
             for it in range(nt):
                 for iwl in range(nwl):
                     val = np.abs(xx[it, iwl, :, :]) + np.abs(yy[it, iwl, :, :])
@@ -53,19 +85,36 @@ class oimPt(oimComponentFourier):
             return image
         else:
             return (xx == 0) & (yy == 0)
-        
+
 
 class oimBackground(oimComponentFourier):
-    """Background component defined in the fourier space
+    """Background component defined in the Fourier space
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
     """
 
     name = "Background"
@@ -76,7 +125,14 @@ class oimBackground(oimComponentFourier):
         super().__init__(**kwargs)
         self._eval(**kwargs)
 
-    def _visFunction(self, ucoord, vcoord, rho, wl, t):
+    def _visFunction(
+        self,
+        ucoord: NDArray[np.floating],
+        vcoord: NDArray[np.floating],
+        rho: NDArray[np.floating],
+        wl: NDArray[np.floating],
+        t: NDArray[np.floating],
+    ) -> NDArray[np.floating]:
         vc = rho * 0
         idx = np.where(rho == 0)[0]
         if np.size(idx) != 0:
@@ -88,18 +144,37 @@ class oimBackground(oimComponentFourier):
 
 
 class oimUD(oimComponentFourier):
-    """Uniform Disk component defined in the fourier space
+    """Uniform Disk component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the disk (in mas). The default is 0.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the disk (mas). Defaults to ``0``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the disk (mas).
     """
 
     name = "Uniform Disk"
@@ -123,31 +198,54 @@ class oimUD(oimComponentFourier):
         return (
             (xx**2 + yy**2) <= (self.params["d"](wl, t) / 2) ** 2
         ).astype(float)
-    
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)
 
-    def _solidAngle(self,wl=None,t=None):
-        return self.params["d"](wl,t)**2/4*np.pi
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t)
+
+    def _solidAngle(self, wl=None, t=None):
+        return self.params["d"](wl, t) ** 2 / 4 * np.pi
+
 
 class oimEllipse(oimUD):
-    """Uniform Ellipse component defined in the fourier space
+    """Uniform Ellipse component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        major-axis diameter of the ellipse (in mas). The default is 0.
-    pa: u.deg | oimInterp
-        position angle of the major axis of the ellipse (in deg).
-        The default is 0.
-    elong : u.dimensionless_unscaled | oimInterp
-        elongation of the ellipse. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Major-axis diameter of the ellipse (mas). Defaults to ``0``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Major-axis diameter of the ellipse (mas).
+    pa : oimParam
+        Position angle of the major axis (deg).
+    elong : oimParam
+        Elongation of the major axis.
     """
 
     name = "Uniform Ellipse"
@@ -160,18 +258,37 @@ class oimEllipse(oimUD):
 
 
 class oimGauss(oimComponentFourier):
-    """Gaussian Disk component defined in the fourier space
+    """Gaussian Disk component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    fwhm: u.mas | oimInterp
-        FWHM of the Gaussian (in mas). The default is 0.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    fwhm : float or oimInterp
+        FWHM of the Gaussian (mas). Defaults to ``0``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    fwhm : oimParam
+        FWHM of the Gaussian (mas).
     """
 
     name = "Gaussian Disk"
@@ -200,27 +317,50 @@ class oimGauss(oimComponentFourier):
             * np.exp(-4 * np.log(2) * r2 / self.params["fwhm"](wl, t) ** 2)
         )
 
-    def _fov(self,wl,t):
-        return self.params["fwhm"](wl,t)*3
+    def _fov(self, wl, t):
+        return self.params["fwhm"](wl, t) * 3
+
 
 class oimEGauss(oimGauss):
-    """Elliptical Gaussian component defined in the fourier space
+    """Elliptical Gaussian component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    fwhm: u.mas | oimInterp
-        FWHM of the Gaussian (in mas). The default is 0.
-    pa: u.deg | oimInterp
-        position angle of the major axis of the Gaussian (in deg).
-        The default is 0.
-    elong: u.dimensionless_unscaled | oimInterp
-        elongation of the Gaussian. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    fwhm : float or oimInterp
+        FWHM of the Gaussian (mas). Defaults to ``0``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    fwhm : oimParam
+        FWHM of the Gaussian (mas).
+    pa : oimParam
+        Position angle of the major axis (deg).
+    elong : oimParam
+        Elongation of the major axis.
     """
 
     name = "Gaussian Ellipse"
@@ -233,18 +373,37 @@ class oimEGauss(oimGauss):
 
 
 class oimIRing(oimComponentFourier):
-    """Infinitesimal Ring component defined in the fourier space
+    """Infinitesimal Ring component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
     """
 
     name = "Infinitesimal Ring"
@@ -277,28 +436,50 @@ class oimIRing(oimComponentFourier):
             & (r2 >= (self.params["d"](wl, t) / 2) ** 2)
         ).astype(float)
 
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t)
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)
 
 class oimEIRing(oimIRing):
-    """Infinitesimal Elliptical Ring component defined in the fourier space
+    """Infinitesimal Elliptical Ring component defined in Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    pa: u.deg | oimInterp
-        position angle of the major axis of the ring (in deg).
-        The default is 0.
-    elong: u.dimensionless_unscaled | oimInterp
-        elongation of the ring. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    pa : oimParam
+        Position angle of the major axis (deg).
+    elong : oimParam
+        Elongation of the major axis.
     """
 
     name = "Ellitical Infinitesimal Ring"
@@ -311,20 +492,41 @@ class oimEIRing(oimIRing):
 
 
 class oimRing(oimComponentFourier):
-    """Ring component defined in the fourier space
+    """Ring component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    din: u.mas | oimInterp
-        inner diameter of the ring (in mas). The default is 0.
-    dout: u.mas | oimInterp
-        outer diameter of the ring (in mas). The default is 0.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    din : float or oimInterp
+        Inner Diameter of the ring (mas). Defaults to ``0``.
+    dout : float or oimInterp
+        Outer Diameter of the ring (mas). Defaults to ``0``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    din : oimParam
+        Inner Diameter of the ring (mas).
+    dout : oimParam
+        Outer Diameter of the ring (mas).
     """
 
     name = "Ring"
@@ -368,25 +570,46 @@ class oimRing(oimComponentFourier):
             & (r2 >= (self.params["din"](wl, t) / 2) ** 2)
         ).astype(float)
 
+    def _fov(self, wl, t):
+        return self.params["dout"](wl, t)
 
-    def _fov(self,wl,t):
-        return self.params["dout"](wl,t)
 
 class oimRing2(oimComponentFourier):
-    """Ring component defined in the fourier space
+    """Ring component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    width: u.mas | oimInterp
-        width of the ring (in mas). The default is 0.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    width : float or oimInterp
+        Width of the ring (mas). Defaults to ``0``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    width : oimParam
+        Width of the ring (mas).
     """
 
     name = "IRing convolved with UD"
@@ -408,53 +631,68 @@ class oimRing2(oimComponentFourier):
         return j0(xx) * np.nan_to_num(np.divide(2 * j1(dxx), dxx), nan=1)
 
     def _imageFunction(self, xx, yy, wl, t):
-
         r2 = xx**2 + yy**2
         return (
             (
-                (
-                    r2
-                    <= (
-                        self.params["d"](wl, t) / 2
-                        + self.params["w"](wl, t) / 2
-                    )
-                    ** 2
-                )
-                & (
-                    r2
-                    >= (
-                        self.params["d"](wl, t) / 2
-                        - self.params["w"](wl, t) / 2
-                    )
-                    ** 2
-                )
+                r2
+                <= (self.params["d"](wl, t) / 2 + self.params["w"](wl, t) / 2)
+                ** 2
+            )
+            & (
+                r2
+                >= (self.params["d"](wl, t) / 2 - self.params["w"](wl, t) / 2)
+                ** 2
             )
         ).astype(float)
 
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t) + self.params["w"](wl, t)
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)+self.params["w"](wl,t)
 
 class oimERing(oimRing):
-    """Elliptical Ring component defined in the fourier space
+    """Elliptical Ring component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    width: u.mas | oimInterp
-        width of the ring (in mas). The default is 0.
-    pa: u.deg | oimInterp
-        position angle of the major axis of the ring (in deg).
-        The default is 0.
-    elong: u.dimensionless_unscaled | oimInterp
-        elongation of the ring. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    width : float or oimInterp
+        Width of the ring (mas). Defaults to ``0``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    width : oimParam
+        Width of the ring (mas).
+    pa : float or oimInterp
+        Position angle of the major axis (deg).
+    elong : oimParam
+        Elongation of the major axis.
     """
 
     name = "Elliptical Ring"
@@ -467,25 +705,49 @@ class oimERing(oimRing):
 
 
 class oimERing2(oimRing2):
-    """Elliptical Ring component defined in the fourier space
+    """Elliptical Ring component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    width: u.mas | oimInterp
-        width of the ring (in mas). The default is 0.
-    pa: u.deg | oimInterp
-        position angle of the major axis of the ring (in deg).
-        The default is 0.
-    elong: u.dimensionless_unscaled | oimInterp
-        elongation of the ring. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    width : float or oimInterp
+        Width of the ring (mas). Defaults to ``0``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    width : oimParam
+        Width of the ring (mas).
+    pa : oimParam
+        Position angle of the major axis (deg).
+    elong : oimParam
+        Elongation of the major axis.
     """
 
     name = "Elliptical Ring2"
@@ -498,22 +760,53 @@ class oimERing2(oimRing2):
 
 
 class oimESKIRing(oimComponentFourier):
-    """Skewed Elliptical Infinitesimal Ring component defined in the fourier space
+    """Skewed Elliptical Infinitesimal Ring component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    skw: u.dimensionless_unscaled | oimInterp
-        skew of the ring. The default is 0.
-    skwPa: u.deg | oimInterp
-        elongation of the ring. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    skw : float or oimInterp
+        Skew of the ring. Defaults to ``0``.
+    skwPa : float or oimInterp
+        Elongation of the ring. Defaults to ``1``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    skw : oimParam
+        Skew of the ring.
+    skwPa : oimParam
+        Elongation of the ring.
+    pa : oimParam
+        Position angle of the major axis (deg).
+    elong : float or oimInterp
+        Elongation of the major axis.
     """
 
     name = "Skewed Elliptical Infinitesimal Ring"
@@ -527,7 +820,7 @@ class oimESKIRing(oimComponentFourier):
         self.params["skwPa"] = oimParam(**_standardParameters["skwPa"])
         self._eval(**kwargs)
 
-    # TODO change definition of skwPA
+    # TODO: Change definition of skwPA
     def _visFunction(self, xp, yp, rho, wl, t):
         xx = (
             np.pi
@@ -568,29 +861,62 @@ class oimESKIRing(oimComponentFourier):
             & (r2 >= (self.params["d"](wl, t) / 2 - dx / 2) ** 2)
         ).astype(float) * F
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t)
 
 
 class oimESKGRing(oimComponentFourier):
-    """Skewed Elliptical Gaussian Ring component defined in the fourier space
+    """Skewed Elliptical Gaussian Ring component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    fwhm: u.mas | oimInterp
-        outer diameter of the ring (in mas). The default is 0.
-    skw: u.dimensionless_unscaled | oimInterp
-        skew of the ring. The default is 0.
-    skwPa: u.deg | oimInterp
-        elongation of the ring. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    fwhm : float or oimInterp
+        Outer diameter of the ring (mas). Defaults to ``0``.
+    skw : float or oimInterp
+        Skew of the ring. Defaults to ``0``.
+    skwPa : float or oimInterp
+        Elongation of the ring. Defaults to ``1``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    fwhm : oimParam
+        Outer diameter of the ring (mas).
+    skw : oimParam
+        Skew of the ring.
+    skwPa : oimParam
+        Elongation of the ring.
+    pa : oimParam
+        Position angle of the major axis of the ring (deg).
+    elong : oimParam
+        Elongation of the major axis.
     """
 
     name = "Skewed Elliptical Ring"
@@ -631,29 +957,62 @@ class oimESKGRing(oimComponentFourier):
 
         return res
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)+self.params["fwhm"](wl,t)*3
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t) + self.params["fwhm"](wl, t) * 3
 
 
 class oimESKRing(oimComponentFourier):
-    """Skewed Elliptical Ring component defined in the fourier space
+    """Skewed Elliptical Ring component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    din: u.mas | oimInterp
-        inner diameter of the ring (in mas). The default is 0.
-    dout: u.mas | oimInterp
-        outer diameter of the ring (in mas). The default is 0.
-    skw: u.dimensionless_unscaled | oimInterp
-        skew of the ring. The default is 0.
-    skwPa: u.deg | oimInterp
-        elongation of the ring. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    din : float or oimInterp
+        Inner diameter of the ring (mas). Defaults to ``0``.
+    dout : float or oimInterp
+        Outer diameter of the ring (mas). Defaults to ``0``.
+    skw : float or oimInterp
+        Skew of the ring. Defaults to ``0``.
+    skwPa : float or oimInterp
+        Elongation of the ring. Defaults to ``1``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    din : oimParam
+        Inner diameter of the ring (mas).
+    dout : oimParam
+        Outer diameter of the ring (mas).
+    skw : oimParam
+        Skew of the ring.
+    skwPa : oimParam
+        Elongation of the ring.
+    pa : oimParam
+        Position angle of the major axis (deg).
+    elong : oimParam
+        Elongation of the major axis.
     """
 
     name = "Skewed Elliptical Ring"
@@ -708,26 +1067,48 @@ class oimESKRing(oimComponentFourier):
     # return ((r2 <= (self.params["dout"](wl, t)/2)**2) &
     #         (r2 >= (self.params["din"](wl, t)/2)**2)).astype(float)*F
 
-    def _fov(self,wl,t):
-        return self.params["dout"](wl,t)
+    def _fov(self, wl, t):
+        return self.params["dout"](wl, t)
 
-# TODO
+
 class oimLorentz(oimComponentFourier):
-    """Pseudo-Lorentzian component defined in the fourier space
+    """Pseudo-Lorentzian component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    fwhm: u.mas | oimInterp
-        FWHM of the Lorentzian (in mas). The default is 0.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    fwhm : float or oimInterp
+        FWHM of the Lorentzian (mas). Defaults to ``0``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    fwhm : oimParam
+        FWHM of the Lorentzian (mas).
+
+    Notes
+    -----
+    From `2017A%26A...599A..85L <https://scixplorer.org/abs/2017A%26A...599A..85L>`_.
     """
 
-    # NOTE: From Lazareff 2017 A&A 599, 85
     # TODO : Small difference between images using direct formula or inverse of vis function
     name = "Pseudo Lorentzian"
     shortname = "LZ"
@@ -759,27 +1140,54 @@ class oimLorentz(oimComponentFourier):
         )
         return a / (2 * np.pi * 3**0.5) * (a**2 / 3 + r2) ** (-1.5)
 
-    def _fov(self,wl,t):
-        return self.params["fwhm"](wl,t)*3
+    def _fov(self, wl, t):
+        return self.params["fwhm"](wl, t) * 3
+
 
 class oimELorentz(oimLorentz):
-    """Elliptical-Lorentzian component defined in the fourier space
+    """Elliptical-Lorentzian component defined in the Fourier space.
 
     Parameters
     ----------
-    x : u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y : u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f : u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    fwhm : u.mas | oimInterp
-        FWHM of the Lorentzian (in mas). The default is 0.
-    pa : u.deg | oimInterp
-        position angle of the major axis of the Lorentzian (in deg).
-        The default is 0.
-    elong : u.dimensionless_unscaled | oimInterp
-        elongation of the Lorentzian. The default is 1.
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    fwhm : float or oimInterp
+        FWHM of the Lorentzian (mas). Defaults to ``0``.
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    fwhm : oimParam
+        FWHM of the Lorentzian (mas).
+    pa : oimParam
+        Position angle of the major axis (deg).
+    elong : oimParam
+        Elongation of the major axis.
+
+    Notes
+    -----
+    From `2017A%26A...599A..85L <https://scixplorer.org/abs/2017A%26A...599A..85L>`_.
     """
 
     name = "Elliptical Pseudo Lorentzian"
@@ -792,29 +1200,56 @@ class oimELorentz(oimLorentz):
 
 
 class oimLinearLDD(oimComponentFourier):
-    """Linear Limb Darkened Disk component defined in the fourier space
+    r"""Linear Limb Darkened Disk component defined in the Fourier space.
 
     Parameters
     ----------
-    x: u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y: u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f: u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    a: u.dimensionless_unscaled | oimInterp
-        linear limb darkening coefficient
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    a : float or oimInterp
+        Linear limb darkening coefficient. Defaults to ``0``.
 
-    I(mu)/I(1) = 1  - a(1-mu)
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    a : oimParam
+        Linear limb darkening coefficient.
+
+    Notes
+    ------
+    The linear limb darkend disc is defined as
+
+    .. math::
+
+        \frac{I(\mu)}{I(1)}=1-a(1-\mu)
+
+    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "Linear Limb Darkened Disk "
     shortname = "LLDD"
-
-    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
-    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -845,33 +1280,63 @@ class oimLinearLDD(oimComponentFourier):
         c2 = 1.5 * (np.pi * 2) ** 0.5 * np.divide(jv(1.5, xx), xx**1.5)
         return np.nan_to_num((1 - a) * c1 + a * c2, nan=1)
 
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t)
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)
-    
+
 class oimQuadLDD(oimComponentFourier):
-    """Quadratic Limb Darkened Disk component defined in the fourier space
+    r"""Quadratic Limb Darkened Disk component defined in the Fourier space.
 
     Parameters
     ----------
-    x : u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y : u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f : u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    a1: u.dimensionless_unscaled | oimInterp
-        first quadratic limb darkening coefficient
-    a2: u.dimensionless_unscaled | oimInterp
-        second quadratic limb darkening coefficient
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    a1 : float or oimInterp
+        First quadratic limb darkening coefficient. Defaults to ``0``.
+    a2 : float or oimInterp
+        Second quadratic limb darkening coefficient. Defaults to ``0``.
 
-    I(mu)/I(1) = 1  - a1(1-mu) - a2(1 - mu)**2
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    a1 : oimParam
+        First quadratic limb darkening coefficient.
+    a2 : oimParam
+        Second quadratic limb darkening coefficient.
+
+    Notes
+    ------
+    The quadratic limb darkend disc is defined as
+
+    .. math::
+
+        \frac{I(\mu)}{I(1)}=1-a1(1-\mu)-a2(1-\mu)^2
+
+    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
-    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
-    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
     name = "Quadratic Limb Darkened Disk "
     shortname = "QLDD"
 
@@ -916,30 +1381,58 @@ class oimQuadLDD(oimComponentFourier):
             ((1 - a1 - a2) * c1 + (a1 + 2 * a2) * c2 - a2 * c3) / s, nan=1
         )
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)
-    
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t)
+
 
 class oimPowerLawLDD(oimComponentFourier):
-    """Power Law Limb Darkened Disk component defined in the fourier space
+    r"""Power Law Limb Darkened Disk component defined in the Fourier space.
+
     Parameters
     ----------
-    x : u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y : u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f : u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    a: u.dimensionless_unscaled | oimInterp
-        power law limb darkening exponent
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    a : float or oimInterp
+        Power-law limb darkening exponent. Defaults to ``0``.
 
-    I(mu)/I(1) = mu**a
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    a : oimParam
+        Power-law limb darkening exponent.
+
+    Notes
+    ------
+    The power-law limb darkend disc is defined as
+
+    .. math::
+
+        \frac{I(\mu)}{I(1)}=\mu^a
+
+    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
-
-    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
-    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
 
     name = "Power Law Limb Darkened Disk "
     shortname = "PLLDD"
@@ -975,33 +1468,63 @@ class oimPowerLawLDD(oimComponentFourier):
             nu * gamma(nu) * 2**nu * jn(nu, xx) / xx**nu, nan=1
         )
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)
-    
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t)
+
 
 class oimSqrtLDD(oimComponentFourier):
-    """Square-root Limb Darkened Disk component defined in the fourier space
+    r"""Square-root Limb Darkened Disk component defined in the Fourier space.
 
     Parameters
     ----------
-    x : u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y : u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f : u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    a1: u.dimensionless_unscaled | oimInterp
-        first square-root limb darkening coefficient
-    a2: u.dimensionless_unscaled | oimInterp
-        second square-root darkening coefficient
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d: float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    a1 : float or oimInterp
+        First square-root limb darkening coefficient. Defaults to ``0``.
+    a2 : float or oimInterp
+        Second square-root darkening coefficient. Defaults to ``0``.
 
-    I(mu)/I(1) = 1  - a1 (1-mu) - a2 (1 - sqrt(mu))
+    Attributes
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d: oimParam
+        Diameter of the ring (mas).
+    a1 : oimParam
+        First square-root limb darkening coefficient
+    a2 : oimParam
+        Second square-root darkening coefficient
+
+    Notes
+    ------
+    The square-root limb darkend disc is defined as
+
+    .. math::
+
+        \frac{I(\mu)}{I(1)}=1-a1(1-\mu)-a2(1-\sqrt{\mu})
+
+    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
-    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
-    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
     name = "square-root Limb Darkened Disk "
     shortname = "SLDD"
 
@@ -1047,38 +1570,71 @@ class oimSqrtLDD(oimComponentFourier):
             nan=1,
         )
 
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t)
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)
-    
+
 class oim4CLDD(oimComponentFourier):
-    """4 Coefficients Limb Darkened Disk component defined in the fourier space
+    r"""Four coefficient Limb Darkened Disk component defined in the Fourier space.
 
     Parameters
     ----------
-    x : u.mas | oimInterp
-        x pos of the component (in mas). The default is 0.
-    y : u.mas | oimInterp
-        y pos of the component (in mas). The default is 0.
-    f : u.dimensionless_unscaled | oimInterp
-        flux of the component. The default is 1.
-    d: u.mas | oimInterp
-        diameter of the ring (in mas). The default is 0.
-    a1: u.dimensionless_unscaled | oimInterp
-        first 4 Coefficients limb darkening coefficient
-    a2: u.dimensionless_unscaled | oimInterp
-        second 4 Coefficients limb darkening coefficient
-    a3: u.dimensionless_unscaled | oimInterp
-        third 4 Coefficients limb darkening coefficient
-    a4: u.dimensionless_unscaled | oimInterp
-        forth 4 Coefficients limb darkening coefficient
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    d : float or oimInterp
+        Diameter of the ring (mas). Defaults to ``0``.
+    a1 : float or oimInterp
+        First 4 Coefficients limb darkening coefficient. Defaults to ``0``.
+    a2 : float or oimInterp
+        Second 4 Coefficients limb darkening coefficient. Defaults to ``0``.
+    a3 : float or oimInterp
+        Third 4 Coefficients limb darkening coefficient. Defaults to ``0``.
+    a4 : float or oimInterp
+        Forth 4 Coefficients limb darkening coefficient. Defaults to ``0``.
 
-    I(mu)/I(1) = 1 - a1(1-mu**0.5) - a2(1 - mu)
-                   - a3(1 - mu**1.5) - a4(1 - mu**2)
+    Parameters
+    ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
+    params : dict of str to oimParam
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    d : oimParam
+        Diameter of the ring (mas).
+    a1 : oimParam
+        First 4 Coefficients limb darkening coefficient.
+    a2 : oimParam
+        Second 4 Coefficients limb darkening coefficient.
+    a3 : oimParam
+        Third 4 Coefficients limb darkening coefficient.
+    a4 : oimParam
+        Forth 4 Coefficients limb darkening coefficient.
+
+    Notes
+    ------
+    The four-coefficient limb darkend disc is defined as
+
+    .. math::
+
+        \frac{I(\mu)}{I(1)}=1-a1(1-\mu^{0.5})-a2(1-\mu)-a3(1-\mu^{1.5})-a4(1-\mu^2)
+
+    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
-    # NOTE: From Domiciano de Souza 2003 (phd thesis) and 2021
-    # https://www.aanda.org/articles/aa/pdf/2021/10/aa40478-21.pdf
     name = "4 Coefficients Limb Darkened Disk "
     shortname = "4CLDD"
 
@@ -1163,32 +1719,37 @@ class oim4CLDD(oimComponentFourier):
             nan=1,
         )
 
+    def _fov(self, wl, t):
+        return self.params["d"](wl, t)
 
-    def _fov(self,wl,t):
-        return self.params["d"](wl,t)
-    
-    
+
 class oimConvolutor(oimComponentFourier):
     """Convolves two components.
 
     Parameters
     ----------
     component1 : oimComponentFourier
-        first fourier component of the convolution
+        First component.
     component2 : oimComponentFourier
-        first fourier component of the convolution
+        Second component.
 
     Attributes
     ----------
+    name : str
+        Name of the component.
+    shortname : str
+        Short name for the component.
+    description : str
+        Description of the component.
     components : list of oimComponentFourier
         The components that are to be convolved.
     params : dict
-        Dictionary with the convolutors parameters.
+        Dictionary with the convolutor's parameters.
 
     Warnings
-    -----
-    This component overloads the methods "getComplexCoherentFlux" and "getImage"
-    and does not use "_visFunction" and "_imageFunction", beware during usage.
+    --------
+    This component overloads the methods ``getComplexCoherentFlux`` and ``getImage``
+    and does not use ``_visFunction`` and ``_imageFunction``.
     """
 
     name = "Convolution Component"
@@ -1216,12 +1777,10 @@ class oimConvolutor(oimComponentFourier):
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
         vcs = []
-        
-        
+
         for index, component in enumerate(self.components, start=1):
             fxp, fyp = ucoord.copy(), vcoord.copy()
-            
-           
+
             if component.elliptic:
                 pa_rad = (self.params[f"c{index}_pa"](wl, t)) * self.params[
                     f"c{index}_pa"
@@ -1235,20 +1794,15 @@ class oimConvolutor(oimComponentFourier):
                 fypt = fxp * si + fyp * co
             else:
                 fxpt, fypt = fxp, fyp
-                
 
             try:
                 vi = component._visFunction(
                     fxpt, fypt, np.hypot(fxpt, fypt), wl, t
                 )
             except:
-                vi = component.getComplexCoherentFlux(
-                    fxpt, fypt, wl, t
-                )
+                vi = component.getComplexCoherentFlux(fxpt, fypt, wl, t)
 
-            vcs.append(
-                self.params[f"c{index}_f"](wl, t)* vi
-            )
+            vcs.append(self.params[f"c{index}_f"](wl, t) * vi)
 
         return (
             self.params["f"](wl, t)
@@ -1325,10 +1879,10 @@ class oimConvolutor(oimComponentFourier):
                 )
 
         return img
-    
-    def _fov(self,wl,t):
-        res=[]
+
+    def _fov(self, wl, t):
+        res = []
         for component in self.components:
-            res.append(component.getFOV(wl,t))
-        res=np.array(res)
-        return np.sum(res,axis=0)
+            res.append(component.getFOV(wl, t))
+        res = np.array(res)
+        return np.sum(res, axis=0)
