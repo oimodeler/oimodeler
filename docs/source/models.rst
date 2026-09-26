@@ -1922,7 +1922,6 @@ different wavelengths.
     mbin.showModel(256,0.06,wl=[0.5e-6,1e-6,3e-6,8e-6],legend=True
                            fromFT=True,normPow=1,normalize=True,cmap="inferno")
 
-
 .. image:: ../../images/interp6_1.png
   :alt: Alternative text
 
@@ -1933,3 +1932,70 @@ different wavelengths.
 
 **oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage.
 See the :ref:`create_interp` example.
+
+Model serialization
+-------------------
+
+An :class:`oimodeler.oimModel.oimModel` can be serialized and restored later.
+With this, a model configuration (e.g. best-fit) can be stored. This is useful for
+sharing models between scripts/processes, and for the reproducability of a (fitting) setup.
+
+.. note::
+
+   The :class:`oimodeler.oimParam.oimParam`, :class:`oimodeler.oimParam.oimParamInterpolator`, and 
+   :class:`oimodeler.oimComponent.oimComponent` classes and all their subclasses have serialization
+   implemented. These can be used identically to the below description for :class:`oimodeler.oimModel.oimModel`
+
+
+Saving a model
+--------------
+
+For instance, serialising a model composed of a uniform disk and a point source
+
+.. code-block:: python
+
+    ud = oim.oimUD(d=3, f=0.5, x=5, y=-5)
+    pt = oim.oimPt(f=1)
+    model = oim.oimModel(ud, pt)
+
+
+can be done by
+
+.. code-block:: python
+
+    serialized = model.serialize()
+
+
+.. note::
+
+    The ``.serialize()`` method has a ``skip_copy`` keyword argument. This can be
+    used to skip the deepcopies that are made during serialisation to not corrupt
+    mutuable objects in, for instance, the ``oimModel``. It is turned off automatically
+    for dependencies of a serialization. That is ``oimModel`` has it turned off for its
+    components as they are already deep copied at the highest level.
+
+which enables storing it by various means (e.g. by pickling or storing it in JSON)
+
+.. code-block:: python
+
+   import json
+
+   with open("model.json", "wb") as f:
+      json.dump(serialized, f, indent=True)
+
+
+Loading a model
+---------------
+
+A serialized model can be restored with (at the JSON example)
+
+.. code-block:: python
+
+   with open("model.json", "rb") as f:
+      serialized = json.load(f)
+
+   model = oim.oimModel.deserialize(serialized)
+
+
+The resulting object is an :class:`oimodeler.oimModel` containing the same
+model components and parameters.

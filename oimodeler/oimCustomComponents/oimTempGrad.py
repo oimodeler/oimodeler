@@ -20,18 +20,30 @@ class oimTempGrad(oimComponentRadialProfile):
         Outer radius of the disk (au).
     r0 : float
         Reference radius for power-laws (au).
-    T0 : float
-        Temperature at reference radius r0 (K).
-    sigma0 : float
-         Dust surface density at reference radius r0 (M_sun).
-    Mdust : float
-         Mass of the dusty disk (M_sun).
     q : float
         Power-law exponent of the temperature profile.
+    T0 : float
+        Temperature at reference radius ``r0`` (K).
     p : float
         Power-law exponent of the dust surface density profile.
+    log_sigma0 : float, optional
+        Logarithmic dust surface density at reference radius ``r0``. If passed
+        or ``compute_sigma0=True``, will replace the ``Mdust`` parameter.
+    Mdust : float, optional
+        Mass of the dusty disk (M_sun).
+    kappa_abs : float
+        Silicate absorption opacity (cm²/g).
+    kappa_cont : float, optional
+        Continuum absorption opacity (cm²/g). Will only be set as a parameter
+        if a ``kappa_cont`` kwarg is passed.
+    kappa_ratio : float, optional
+        Silicate to continuum ratio. Is set as a parameter if ``kappa_cont``
+        is passed.
     dist : float
-        Distance of the star (pc).
+        Distance to the star (pc).
+    compute_sigma0 : bool, optional
+        If ``True``, will set the ``Mdust`` parameter. If ``False``, will
+        set the ``log_sigma0`` parameter. Defaults to ``True``.
 
     Attributes
     ----------
@@ -43,30 +55,38 @@ class oimTempGrad(oimComponentRadialProfile):
         Outer radius of the disk (au).
     r0 : oimParam
         Reference radius for power-laws (au).
-    T0 : oimParam
-        Temperature at reference radius r0 (K).
-    Tin : float
-        Temperature at inner radius rin (K).
-    sigma0 : oimParam
-         Dust surface density at reference radius r0 (M_sun).
-    Mdust : oimParam
-         Mass of the dusty disk (M_sun).
     q : oimParam
         Power-law exponent of the temperature profile.
+    T0 : oimParam
+        Temperature at reference radius ``r0`` (K).
+    Tin : float
+        Temperature at inner radius rin (K).
     p : oimParam
         Power-law exponent of the dust surface density profile.
-    _r : numpy.ndarray
+    log_sigma0 : oimParam, optional
+        Logarithmic dust surface density at reference radius ``r0``.
+    Mdust : oimParam
+        Mass of the dusty disk (M_sun).
+    kappa_abs : float
+        Silicate absorption opacity (cm²/g).
+    kappa_cont : float, optional
+        Continuum absorption opacity (cm²/g).
+    kappa_ratio : float, optional
+        Silicate to continuum ratio.
+    dist : oimParam
+        Distance to the star (pc).
+    _r : NDArray[np.floating]
         Radii (mas).
-    _wl : numpy.ndarray
+    _wl : NDArray[np.floating]
         Wavelengths (m).
-    _t : numpy.ndarray
+    _t : NDArray[np.floating]
         Times (s).
 
     Methods
     -------
     _radialProfileFunction(r, wl, t)
         Calculates a radial temperature gradient profile via a dust-surface
-        density- and temperature profile.
+        density and temperature profile.
     """
 
     name = "Temperature Gradient"

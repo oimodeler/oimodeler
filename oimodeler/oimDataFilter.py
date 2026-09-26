@@ -316,7 +316,7 @@ class oimFlagWithExpressionFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
+    :func:`oimodeler.oimodeler.oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
@@ -360,13 +360,14 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
         The wavelength range after filtering. Defaults to ``[]``.
     addCut : list of float, optional
     method : str, optional
-        The method for . If ``method="cut"``, the `.oimUtils.cutWavelengthRange` function
-        is used, otherwise the `.oimUtils.oimFlagWithExpression`. Defaults to ``"cut"``.
+        The method for . If ``method="cut"``, the
+        :func:`oimodeler.oimUtils.cutWavelengthRange` function is used, otherwise the
+        :func:`oimodeler.oimUtils.oimFlagWithExpression`. Defaults to ``"cut"``.
 
     See Also
     --------
-    :func:`oimUtils.cutWavelengthRange` : Cut the wavelength range of an OIFITS file.
-    :func:`oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
+    :func:`oimodeler.oimUtils.cutWavelengthRange` : Cut the wavelength range of an OIFITS file.
+    :func:`oimodeler.oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
@@ -425,7 +426,7 @@ class oimWavelengthShiftFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.shiftWavelength` : Shift the wavelength of an OIFITS file.
+    :func:`oimodeler.oimUtils.shiftWavelength` : Shift the wavelength of an OIFITS file.
 
     Notes
     -----
@@ -465,7 +466,7 @@ class oimWavelengthSmoothingFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.spectralSmoothing` : Smooth the spectral data of an OIFITS file.
+    :func:`oimodeler.oimUtils.spectralSmoothing` : Smooth the spectral data of an OIFITS file.
 
     Notes
     -----
@@ -511,7 +512,7 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.binWavelength` : Bin the wavelength of an OIFITS file.
+    :func:`oimodeler.oimodeler.oimUtils.binWavelength` : Bin the wavelength of an OIFITS file.
 
     Notes
     -----
@@ -539,7 +540,7 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
 
 class oimWavelengthIntpBinFilter(oimDataFilterComponent):
-    """Filter that bins the wavelength to a specified grid. It also interpolates
+    r"""Filter that bins the wavelength to a specified grid. It also interpolates
     at the edges of the bins, ensuring a minimum number of elements.
 
     Other Parameters
@@ -558,19 +559,13 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
         ``binGrid``. Defaults to ``None``.
     resetFlags : bool, optional
         If ``True``, sets all flags to ``False`` after binning. Defaults to ``True``.
-    averageError : bool, optional
-        If ``True``, forgoes the error propagation and simply averages the errors
-        for each bin. Defaults to ``False``.
-    nSpecChannels : float, optional
-        The number of spectral channels determined by the spectral resolution.
-        Will be used to calculate the divisor within the error propagation.
-        Defaults to ``1.0``.
-
-        .. math:: divisor = bin_elements / spectralChannels
+    normalizeError : bool, optional
+        If ``True`` normalize the error. Defaults to ``True``.
 
     See Also
     --------
-    :func:`oimUtils.intpBinWavelength` : Bin the wavelength of an OIFITS file to a specified binGrid.
+    :func:`oimodeler.oimUtils.intpBinWavelength` : Bin the wavelength of an OIFITS file to
+    a specified binGrid.
 
     Notes
     -----
@@ -589,16 +584,7 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
         self.params["binGrid"] = None
         self.params["binWindow"] = None
         self.params["resetFlags"] = True
-        self.params["averageError"] = False
-        self.params["nSpecChannels"] = 1.0
-
-        # TODO: Remove this eventually. Just in place due to breaking change
-        # after v0.9.8 and before next version release.
-        if "spectralChannels" in kwargs:
-            raise ValueError(
-                "The kwarg 'spectralChannels' was renamed to 'nSpecChannels'."
-            )
-
+        self.params["normalizeError"] = True
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
@@ -608,8 +594,7 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
             self.params["binGrid"],
             binWindow=self.params["binWindow"],
             resetFlags=self.params["resetFlags"],
-            averageError=self.params["averageError"],
-            nSpecChannels=self.params["nSpecChannels"],
+            normalizeError=self.params["normalizeError"],
         )
 
 
@@ -631,7 +616,7 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.oifitsKeepBaselines` : Remove all baselines except those specified by name.
+    :func:`oimodeler.oimUtils.oifitsKeepBaselines` : Remove all baselines except those specified by name.
 
     Notes
     -----
@@ -678,7 +663,7 @@ class oimRemoveBaselinesFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.oifitsRemoveBaselines` : Remove all baselines specified by name.
+    :func:`oimodeler.oimUtils.oifitsRemoveBaselines` : Remove all baselines specified by name.
 
     Notes
     -----
@@ -725,7 +710,7 @@ class oimKeepTelescopesFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.oifitsKeepTelescopes` : Remove all telescopes except those specified by name.
+    :func:`oimodeler.oimUtils.oifitsKeepTelescopes` : Remove all telescopes except those specified by name.
 
     Notes
     -----
@@ -772,7 +757,7 @@ class oimRemoveTelescopesFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.oifitsRemoveTelescopes` : Remove all telescopes specified by name.
+    :func:`oimodeler.oimUtils.oifitsRemoveTelescopes` : Remove all telescopes specified by name.
 
     Notes
     -----
@@ -815,7 +800,7 @@ class oimResetFlagsFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
+    :func:`oimodeler.oimUtils.oifitsFlagWithExpression` : Flag data with an expression.
 
     Notes
     -----
@@ -861,7 +846,7 @@ class oimDiffErrFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.computeDifferentialError` : Compute the differential error.
+    :func:`oimodeler.oimUtils.computeDifferentialError` : Compute the differential error.
 
     Notes
     -----
@@ -921,7 +906,7 @@ class oimSetMinErrFilter(oimDataFilterComponent):
 
     See Also
     --------
-    :func:`oimUtils.setMinimumError` : Set the minimum error of a given data type to a given value.
+    :func:`oimodeler.oimUtils.setMinimumError` : Set the minimum error of a given data type to a given value.
 
     Notes
     -----
