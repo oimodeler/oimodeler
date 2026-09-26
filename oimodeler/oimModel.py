@@ -187,9 +187,9 @@ class oimModel:
         vcoord : array_like
             Spatial coordinate vu (in cycles/rad).
         wl : array_like, optional
-            Wavelength(s) in meter. The default is None.
+            Wavelength(s) in meter. Defaults to ``None``.
         t :  array_like, optional
-            Time in s (mjd). The default is None.
+            Time in s (mjd). Defaults to ``None``.
 
         Returns
         -------
@@ -209,7 +209,7 @@ class oimModel:
         ----------
         free : bool, optional
             If True retrieve the free parameters of the models only.
-            The default is False.
+            Defaults to ``False``.
 
         Returns
         -------
@@ -293,7 +293,7 @@ class oimModel:
 
         The returned image as the x,y dimension dim in pixel with
         an angular pixel size pixSize in rad. Image is returned as a numpy
-        array unless the keyword fits is set to True. In that case the image is
+        array unless the keyword fits is set to ``True``. In that case the image is
         returned as an astropy.io.fits hdu.
 
         Parameters
@@ -303,20 +303,20 @@ class oimModel:
         pixSize : float
             Pixel angular size in mas.
         wl : int or array_like, optional
-            Wavelength(s) in meter. The default is None.
+            Wavelength(s) in meter. Defaults to ``None``.
         t :  int or array_like, optional
-            Time in s (mjd). The default is None.
+            Time in s (mjd). Defaults to ``None``.
         toFits : bool, optional
-            If True returns result as a fits hdu. The default is False.
+            If True returns result as a fits hdu. Defaults to ``False``.
         fromFT : bool, optional
             If True compute the image using FT formula when available.
-            The default is False.
+            Defaults to ``False``.
         padFact : int, optional
             Padding factor for image computed using the fromFT=True option
-            The default is 1 (no padding)
+            Defaults to 1 (no padding)
         squeeze : bool, optional
             If False returns a (nt,nwl,dim,dim) array even if nt and/or nwl equal 1.
-            The default is True.
+            Defaults to ``True``.
         normalize: bool, optional
             If True normalizes the image.
         clean: bool, optional
@@ -482,12 +482,12 @@ class oimModel:
         pixSize : float
             Pixel angular size in mas.
         wl : int or array_like, optional
-            Wavelength(s) in meter. The default is None.
+            Wavelength(s) in meter. Defaults to ``None``.
         t :  int or array_like, optional
-            Time in s (mjd). The default is None.
+            Time in s (mjd). Defaults to ``None``.
         fromFT : bool, optional
             If True compute the image using FT formula when available.
-            The default is False.
+            Defaults to ``False``.
         normalize: bool, optional
             If True normalizes the image.
         clean: bool, optional
@@ -542,28 +542,28 @@ class oimModel:
         pixSize : float
             Pixel angular size in mas.
         wl : float or array_like, optional
-            Wavelength(s) in meter. The default is None.
-        t :  int, float or array_like, optional
-            Time(s) in s (mjd). The default is None.
+            Wavelength (m). Defaults to ``None``.
+        t :  float or array_like, optional
+            Time (mjd). Defaults to ``None``.
         fromFT : bool, optional
             If True compute the image using FT formula when available.
-            The default is False.
+            Defaults to ``False``.
         padFact : int, optional
             Padding factor for image computed using the fromFT=True option
-            The default is 1 (no padding)
+            Defaults to 1 (no padding)
         axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
-            will be created. The default is None.
+            will be created. Defaults to ``None``.
         normPow : float, optional
             Exponent for the Image colorscale powerLaw normalisation.
-            The default is 0.5.
+            Defaults to 0.5.
         figsize : tuple of float, optional
-            The Figure size in inches. The default is (8., 6.).
+            The Figure size in inches. Defaults to (8., 6.).
         savefig : str, optional
             Name of the files for saving the figure If None the figure is not saved.
-            The default is None.
+            Defaults to ``None``.
         colorbar: bool, optional
-            Add a colobar to the Axe. The default is True.
+            Add a colobar to the Axe. Defaults to ``True``.
         legend : bool, optional
             If True displays a legend. Default is False.
         swapAxes : bool, optional
@@ -719,9 +719,9 @@ class oimModel:
         spfmax : float
             Maximal spatial frequency in in cycle/rad unless uinit is specified
         wl : float or array_like, optional
-            Wavelength(s) in meter. The default is None.
+            Wavelength(s) in meter. Defaults to ``None``.
         t :  int, float or array_like, optional
-            Time(s) in s (mjd). The default is None.
+            Time(s) in s (mjd). Defaults to ``None``.
         swapAxes : bool, optional
             If True swaps the axes of the wavelength and time.
             Default is True.
@@ -836,21 +836,21 @@ class oimModel:
         dim : int
             Image x & y dimension in pixels.
         spfmax : float
-            Maximal spatial frequency in in cycle/rad unless uinit is specified
+            Maximal spatial frequency (cycle/rad or ``unit``).
         wl : float or array_like, optional
-            Wavelength(s) in meter. The default is None.
+            Wavelength(s) in meter. Defaults to ``None``.
         t :  float or array_like, optional
-            Time(s) in s (mjd). The default is None.
+            Time(s) in s (mjd). Defaults to ``None``.
         axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
-            will be created. The default is None.
+            will be created. Defaults to ``None``.
         figsize : tuple of float, optional
-            The Figure size in inches. The default is (8., 6.).
+            The Figure size in inches. Defaults to (8., 6.).
         savefig : str, optional
             Name of the files for saving the figure If None the figure is not saved.
-            The default is None.
+            Defaults to ``None``.
         colorbar : bool, optional
-            Add a colobar to the Axe. The default is True.
+            Add a colobar to the Axe. Defaults to ``True``.
         legend : bool, optional
             If True displays a legend. Default is False.
         swapAxes : bool, optional
