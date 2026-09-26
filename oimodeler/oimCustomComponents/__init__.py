@@ -10,24 +10,23 @@ the customComponent module
 # from all files in the oimCustomComponents directory
 
 from .oimAsymRing import oimAEIRing
+from .oimBinaryOrbit import oimBinaryOrbit
+from .oimBipolar import oimBipolar
 from .oimBox import oimBox
+from .oimDisco import oimDisco
 from .oimExpRing import oimExpRing
 from .oimFastRotator import (
     oimFastRotator,
     oimFastRotatorLLDD,
-    oimFastRotatorQuadLDD,
-    oimFastRotatorNLLDD,
     oimFastRotatorMasse,
+    oimFastRotatorNLLDD,
+    oimFastRotatorQuadLDD,
 )
 from .oimGaussLorentz import oimGaussLorentz
+from .oimInnerRim import oimInnerRim
 from .oimKinematicDisk import oimKinematicDisk
 from .oimRadialRing import oimRadialRing
 from .oimRadialRing2 import oimRadialRing2
 from .oimSpiral import oimSpiral
 from .oimStarHaloDisc import oimStarHaloGaussLorentz, oimStarHaloIRing
 from .oimTempGrad import oimTempGrad
-from .oimKinematicDisk import oimKinematicDisk
-from .oimBinaryOrbit import oimBinaryOrbit
-from .oimDisco import oimDisco
-from .oimBipolar import oimBipolar
-from .oimInnerRim import oimInnerRim

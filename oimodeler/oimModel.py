@@ -3,12 +3,11 @@
 
 from __future__ import annotations
 
-
 import copy
 import sys
+import time
 from pathlib import Path
 from typing import Any
-import time
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -21,11 +20,14 @@ from matplotlib.figure import Figure
 from matplotlib.ticker import ScalarFormatter
 from numpy.typing import ArrayLike
 
-
 from oimodeler.oimOptions import oimOptions
-from .oimUtils import oimWarning
-from .oimComponent import oimComponent,oimComponentFourier, \
-                oimComponentImage,oimComponentRadialProfile
+
+from .oimComponent import (
+    oimComponent,
+    oimComponentFourier,
+    oimComponentImage,
+    oimComponentRadialProfile,
+)
 from .oimOptions import ARCSEC2RAD, MAS2RAD
 from .oimParam import (
     oimParam,
@@ -34,7 +36,7 @@ from .oimParam import (
     oimParamLinkerFunction,
     oimParamNorm,
 )
-from .oimUtils import _pickle, _unpickle, attach_methods
+from .oimUtils import _pickle, _unpickle, attach_methods, oimWarning
 
 # NOTE: Will be lazy loaded by the oimModel.deserialize function when needed
 COMPONENT_MODULES = []
@@ -332,20 +334,21 @@ class oimModel:
 
         if t is None:
             t = 0
-            
-            
-        #check FOV
-        inner_fov = self.getFOV(wl,t)
-        inner_fov_square = 2*np.abs(np.array(inner_fov)).max()
-        fov = dim*pixSize
+
+        # check FOV
+        inner_fov = self.getFOV(wl, t)
+        inner_fov_square = 2 * np.abs(np.array(inner_fov)).max()
+        fov = dim * pixSize
 
         if inner_fov_square > fov:
-            oimWarning(oimModel, "Problematic Value",
-                       f"FOV fopr image ({fov:.1f} mas) smaller than the actual" \
-                       f" object size ({inner_fov_square:.1f} mas).\n"
-                        "Artifacts may appear with fromFT=True option",
-                        color = "yellow")
-     
+            oimWarning(
+                oimModel,
+                "Problematic Value",
+                f"FOV fopr image ({fov:.1f} mas) smaller than the actual"
+                f" object size ({inner_fov_square:.1f} mas).\n"
+                "Artifacts may appear with fromFT=True option",
+                color="yellow",
+            )
 
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
         nt, nwl = t.size, wl.size
@@ -355,16 +358,16 @@ class oimModel:
         dimpad = dim * padFact
         dimspad = (nt, nwl, dimpad, dimpad)
         if fromFT:
-            
+
             if clean:
-                xy = np.linspace(-1,1,num=dim)
-                xx,yy = np.meshgrid(xy,xy)
-                rr = np.sqrt( xx**2+yy**2)
-                mask = np.sinc(rr)*(rr<1)
-                mask = mask[np.newaxis,np.newaxis,:,:]
+                xy = np.linspace(-1, 1, num=dim)
+                xx, yy = np.meshgrid(xy, xy)
+                rr = np.sqrt(xx**2 + yy**2)
+                mask = np.sinc(rr) * (rr < 1)
+                mask = mask[np.newaxis, np.newaxis, :, :]
             else:
-                mask=1
-            
+                mask = 1
+
             v = np.linspace(-0.5 * padFact, 0.5 * padFact, dimpad)
             vx, vy = np.meshgrid(v, v)
 
@@ -377,9 +380,12 @@ class oimModel:
             spfy_arr = (vy_arr / pixSize / u.mas.to(u.rad)).flatten()
             wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
 
-            ft = self.getComplexCoherentFlux(
-                spfx_arr, spfy_arr, wl_arr, t_arr
-            ).reshape(dimspad)*mask
+            ft = (
+                self.getComplexCoherentFlux(
+                    spfx_arr, spfy_arr, wl_arr, t_arr
+                ).reshape(dimspad)
+                * mask
+            )
             image = np.abs(
                 np.fft.fftshift(
                     np.fft.ifft2(
@@ -486,7 +492,7 @@ class oimModel:
             If True normalizes the image.
         clean: bool, optional
             It True (default) multiply the FFT by a Sinc*UD before computing
-            
+
         Returns
         -------
         numpy.ndarray or astropy.io.fits.hdu
@@ -567,7 +573,7 @@ class oimModel:
         normalize : bool, optional
             If True normalizes the image.
         clean: bool, optional
-            It True (default) multiply the FFT by a Sinc*UD before computing            
+            It True (default) multiply the FFT by a Sinc*UD before computing
         **kwargs : dict
             Arguments to be passed to the plt.imshow function.
 
@@ -690,7 +696,7 @@ class oimModel:
             )
 
         return fig, axe, im
-    
+
     def getFourierImage(
         self,
         dim: int,
@@ -701,9 +707,9 @@ class oimModel:
         unit_format: str = "latex_inline",
         swapAxes: bool = True,
         normalize: bool = False,
-        splitAmpAndPhase = False,
-        returnSpaFreq = False,
-        ):
+        splitAmpAndPhase=False,
+        returnSpaFreq=False,
+    ):
         """Get the amplitude and phase of the Fourier space
 
         Parameters
@@ -725,12 +731,12 @@ class oimModel:
         splitAmpAndPhase, optional
             If True return (amp,phase) instead of the complex Fourier Transform
             Default is False
-        returnSpaFreq     
+        returnSpaFreq
             if True add the spatial frequencies arrays (spafreqX, spaFreqY) to
             the result returned (default is False)
         Returns
         -------
-        Either 
+        Either
             im,spafreqX, spaFreqY
             amp,phase
             amp,phase,spafreqX, spaFreqY
@@ -738,10 +744,10 @@ class oimModel:
         """
         if wl is None:
             wl = 0
-    
+
         if t is None:
             t = 0
-    
+
         mult = 1
         if unit == "cycle/mas":
             mult = u.mas.to(u.rad)
@@ -749,61 +755,60 @@ class oimModel:
             mult = u.arcsec.to(u.rad)
         elif unit == "Mlam":
             mult = 1e-6
-    
+
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
-       
+
         if swapAxes:
             t, wl = wl, t
-    
+
         nt, nwl = t.size, wl.size
         dims = (nt, nwl, dim, dim)
-    
+
         v = np.linspace(-0.5, 0.5, dim, endpoint=False) * dim
         vx, vy = np.meshgrid(v, v)
-    
-        vx_arr = np.tile(vx[None, None, ...], (nt, nwl, 1, 1))*spfmax*2/dim
-        vy_arr = np.tile(vy[None, None, ...], (nt, nwl, 1, 1))*spfmax*2/dim
+
+        vx_arr = (
+            np.tile(vx[None, None, ...], (nt, nwl, 1, 1)) * spfmax * 2 / dim
+        )
+        vy_arr = (
+            np.tile(vy[None, None, ...], (nt, nwl, 1, 1)) * spfmax * 2 / dim
+        )
         wl_arr = np.tile(wl[None, :, None, None], (nt, 1, dim, dim))
         t_arr = np.tile(t[:, None, None, None], (1, nwl, dim, dim))
-    
-    
-    
+
         if not swapAxes:
             spfx_arr, spfy_arr = map(
-           lambda x: (x / mult).flatten(), [vx_arr, vy_arr]
-        )
+                lambda x: (x / mult).flatten(), [vx_arr, vy_arr]
+            )
         else:
             spfx_arr, spfy_arr = map(
                 lambda x: (x / mult).flatten(), [vx_arr, vy_arr]
             )
-    
+
         wl_arr, t_arr = map(lambda x: x.flatten(), [wl_arr, t_arr])
-       
-    
+
         if not swapAxes:
             vc = self.getComplexCoherentFlux(spfx_arr, spfy_arr, wl_arr, t_arr)
         else:
             vc = self.getComplexCoherentFlux(spfx_arr, spfy_arr, t_arr, wl_arr)
-    
+
         vc = vc.reshape(dims)
-       
+
         if normalize:
             for it in range(nt):
                 for iwl in range(nwl):
                     vc[it, iwl] /= np.max(np.abs(vc[it, iwl]))
-               
 
         if splitAmpAndPhase:
             if returnSpaFreq:
-                return np.abs(vc),np.angle(vc),spfx_arr,spfy_arr
-            else: 
-                return np.abs(vc),np.angle(vc)
+                return np.abs(vc), np.angle(vc), spfx_arr, spfy_arr
+            else:
+                return np.abs(vc), np.angle(vc)
         else:
             if returnSpaFreq:
-                return  vc,spfx_arr,spfy_arr
+                return vc, spfx_arr, spfy_arr
             else:
                 return vc
-
 
     def showFourier(
         self,
@@ -869,12 +874,20 @@ class oimModel:
         im  : numpy.ndarray
             The image(s).
         """
-        
-        amp, phase, spfx_arr, spfy_arr = self.getFourierImage(dim, spfmax, wl,
-                        t, unit, unit_format,swapAxes,normalize,
-                        splitAmpAndPhase = True, returnSpaFreq=True)
-        
-        
+
+        amp, phase, spfx_arr, spfy_arr = self.getFourierImage(
+            dim,
+            spfmax,
+            wl,
+            t,
+            unit,
+            unit_format,
+            swapAxes,
+            normalize,
+            splitAmpAndPhase=True,
+            returnSpaFreq=True,
+        )
+
         if wl is None:
             wl = 0
 
@@ -890,14 +903,13 @@ class oimModel:
             mult = 1e-6
 
         t, wl = map(lambda x: np.array(x).flatten(), [t, wl])
-        
+
         if swapAxes:
             t, wl = wl, t
 
         nt, nwl = t.size, wl.size
 
-        spfx_extent = spfx_arr.max()*mult
-
+        spfx_extent = spfx_arr.max() * mult
 
         if display == "amp":
             im = amp
@@ -939,7 +951,7 @@ class oimModel:
                         origin="lower",
                         **kwargs,
                     )
-                    axe[iwl, it].set_xlim(spfx_extent,-spfx_extent)
+                    axe[iwl, it].set_xlim(spfx_extent, -spfx_extent)
                 else:
                     cb = axe[iwl, it].imshow(
                         im[iwl, it],
@@ -952,7 +964,7 @@ class oimModel:
                         origin="lower",
                         **kwargs,
                     )
-                    axe[iwl, it].set_xlim(spfx_extent,-spfx_extent)
+                    axe[iwl, it].set_xlim(spfx_extent, -spfx_extent)
 
                 if iwl == nwl - 1:
                     axe[iwl, it].set_xlabel(
@@ -1006,7 +1018,6 @@ class oimModel:
             )
 
         return fig, axe, im
-    
 
     def normalizeFlux(self, comp=None):
         """Normalises the flux."""
@@ -1032,163 +1043,166 @@ class oimModel:
 
         return np.array([mini[0], maxi[1], mini[2], maxi[3]])
 
+    def plotVis(
+        self,
+        B,
+        wl=None,
+        PA=0,
+        PA_names=None,
+        axe=None,
+        xunit="cycle/rad",
+        wlunit="micron",
+        **kwargs,
+    ):
 
-    def plotVis(self,B,wl=None,PA=0,
-                PA_names=None,axe=None,
-                xunit="cycle/rad",
-                wlunit="micron",
-                **kwargs):
-        
-        
-        figsize=kwargs.pop("figsize",(5,4))
-        
+        figsize = kwargs.pop("figsize", (5, 4))
+
         wlunit_text = u.Unit(wlunit).to_string("latex_inline")
-        xunit_text  = u.Unit(xunit).to_string("latex_inline")
-    
+        xunit_text = u.Unit(xunit).to_string("latex_inline")
 
-        B= np.array(B)
-        wl=np.array(wl)
-        PA=np.array(PA)
+        B = np.array(B)
+        wl = np.array(wl)
+        PA = np.array(PA)
         if len(PA.shape) == 0:
-            PA=np.array([PA])
-            
-    
-        
+            PA = np.array([PA])
+
         nwl = wl.size
-        nB  = B.size
+        nB = B.size
         nPA = PA.size
-        
-        if nPA==2:
-            if PA[0]==0 and PA[1]==90 and PA_names==None:
-                PA_names=["North-South","East-West"]
-    
-        xunit_mult   = u.Unit("cycle/rad").to(xunit)
-        wlunit_mult  = u.Unit("m").to(wlunit)
-        
+
+        if nPA == 2:
+            if PA[0] == 0 and PA[1] == 90 and PA_names == None:
+                PA_names = ["North-South", "East-West"]
+
+        xunit_mult = u.Unit("cycle/rad").to(xunit)
+        wlunit_mult = u.Unit("m").to(wlunit)
+
         nlegend = 0
-        
+
         sc = None
         if axe is None:
-            if nwl==1 or nPA==1:
-                fig, axe = plt.subplots(nrows=1, ncols=1,
-                                      figsize=figsize)
+            if nwl == 1 or nPA == 1:
+                fig, axe = plt.subplots(nrows=1, ncols=1, figsize=figsize)
             else:
-                fig, axe = plt.subplots(nrows=1, ncols=nPA,
-                        figsize=(figsize[0]*nPA,figsize[1]))
+                fig, axe = plt.subplots(
+                    nrows=1, ncols=nPA, figsize=(figsize[0] * nPA, figsize[1])
+                )
         else:
             try:
                 fig = axe.get_figure()
             except:
                 fig = axe.flatten()[0].get_figure()
-            
-    
-        if nwl==1:
-            
-            spf = B/wl
-            for iPA,PAi in enumerate(PA):
-                spfx = np.cos(np.deg2rad(PAi))*spf
-                spfy = -np.sin(np.deg2rad(PAi))*spf
-                
+
+        if nwl == 1:
+
+            spf = B / wl
+            for iPA, PAi in enumerate(PA):
+                spfx = np.cos(np.deg2rad(PAi)) * spf
+                spfy = -np.sin(np.deg2rad(PAi)) * spf
+
                 ccf = self.getComplexCoherentFlux(spfx, spfy)
                 v = np.abs(ccf)
-                v = v/v[0]
-                
+                v = v / v[0]
+
                 if PA_names == None:
                     if nPA == 1:
                         label = None
                     else:
                         label = f"PA = {PAi}$^o$"
                 else:
-                    label=PA_names[iPA]
+                    label = PA_names[iPA]
                 if label != None:
                     nlegend += 1
-                if label!=None:
-                    kwargs["label"]=label
-                axe.plot(spf*xunit_mult, v,**kwargs)
+                if label != None:
+                    kwargs["label"] = label
+                axe.plot(spf * xunit_mult, v, **kwargs)
             if nlegend != 0:
-                axe.legend() 
+                axe.legend()
             axe.set_xlabel(f"B/$\\lambda$ ({xunit_text})")
-            axe.set_ylabel("Visbility")  
+            axe.set_ylabel("Visbility")
 
         else:
-            if nPA==1:
-                axe=np.array([axe])
-            
-            
-                
-            kwargsi=dict(s=0.2, cmap="plasma")
-            for name,val in  kwargs.items():
+            if nPA == 1:
+                axe = np.array([axe])
+
+            kwargsi = dict(s=0.2, cmap="plasma")
+            for name, val in kwargs.items():
                 kwargsi[name] = val
-            for iPA,PAi in enumerate(PA):
-                
-                
+            for iPA, PAi in enumerate(PA):
+
                 Bs = np.tile(B, (nwl, 1)).flatten()
                 wls = np.transpose(np.tile(wl, (nB, 1))).flatten()
-                spf = Bs/wls
-                
-                spfx = np.cos(np.deg2rad(PAi))*spf
-                spfy = -np.sin(np.deg2rad(PAi))*spf
-                        
-                vis = np.abs(self.getComplexCoherentFlux(
-                    spfx, spfy, wls)).reshape(len(wl), len(B))
+                spf = Bs / wls
+
+                spfx = np.cos(np.deg2rad(PAi)) * spf
+                spfy = -np.sin(np.deg2rad(PAi)) * spf
+
+                vis = np.abs(
+                    self.getComplexCoherentFlux(spfx, spfy, wls)
+                ).reshape(len(wl), len(B))
                 vis /= np.outer(np.max(vis, axis=1), np.ones(nB))
-                
-                sc = axe[iPA].scatter(spf*xunit_mult, vis, c=wls*wlunit_mult, **kwargsi)
+
+                sc = axe[iPA].scatter(
+                    spf * xunit_mult, vis, c=wls * wlunit_mult, **kwargsi
+                )
                 axe[iPA].set_xlabel(f"B/$\\lambda$ ({xunit_text})")
-                
-                if nPA!=1:
+
+                if nPA != 1:
                     if PA_names == None:
                         if nPA == 1:
                             label = None
                         else:
                             label = f"PA = {PAi}$^o$"
                     else:
-                        label=PA_names[iPA]         
+                        label = PA_names[iPA]
                     axe[iPA].set_title(label)
 
-                
-            axe[0].set_ylabel("Visbility")    
+            axe[0].set_ylabel("Visbility")
             if nlegend != 0:
                 axe[0].legend()
 
-            fig.tight_layout(rect=(0,0,0.99,1))
+            fig.tight_layout(rect=(0, 0, 0.99, 1))
             if sc:
-                fig.colorbar(sc, ax=axe,label=f"$\\lambda$ {wlunit_text}")
-            
+                fig.colorbar(sc, ax=axe, label=f"$\\lambda$ {wlunit_text}")
+
         return fig, axe
 
-
-    def _checkTypeOfComponents(self,):
-        #TODO: write this in a better way with real bitwise stuff
-        radial  = False
-        image   = False
+    def _checkTypeOfComponents(
+        self,
+    ):
+        # TODO: write this in a better way with real bitwise stuff
+        radial = False
+        image = False
         fourier = False
-        
-        for ci in self.components:
-            if isinstance(ci,oimComponentFourier):
-                fourier = True
-            if isinstance(ci,oimComponentImage):
-                image = True            
-            if isinstance(ci,oimComponentRadialProfile):
-                radial = True                
 
-        return fourier + image*2 + radial*4
-    
-    def checkPaddingEffect(self,padmax=32,wl=None,B=None):
+        for ci in self.components:
+            if isinstance(ci, oimComponentFourier):
+                fourier = True
+            if isinstance(ci, oimComponentImage):
+                image = True
+            if isinstance(ci, oimComponentRadialProfile):
+                radial = True
+
+        return fourier + image * 2 + radial * 4
+
+    def checkPaddingEffect(self, padmax=32, wl=None, B=None):
         checkFTcomp = self._checkTypeOfComponents()
-        if not(checkFTcomp & 2):
-            oimWarning(oimModel, "Not relevant",
-                       "The model doesn't comtain any Image-based component.\n"
-                       "The padding won't have any effect on the visibility.",
-                        color = "yellow")
+        if not (checkFTcomp & 2):
+            oimWarning(
+                oimModel,
+                "Not relevant",
+                "The model doesn't comtain any Image-based component.\n"
+                "The padding won't have any effect on the visibility.",
+                color="yellow",
+            )
             return 0
         else:
             print("Checking Padding effect on FFT")
-            errs_mean=[]
-            errs_max=[]
-            if not(wl):
+            errs_mean = []
+            errs_max = []
+            if not (wl):
                 wl = 2.1e-6
-            if not(B):
+            if not (B):
                 B = np.linspace(0, 100, num=1000)
             spf = B / wl
 
@@ -1197,31 +1211,29 @@ class oimModel:
             start = time.time()
             ccf0 = self.getComplexCoherentFlux(spf, spf * 0)
             end = time.time()
-            dt = (end - start)*1000
+            dt = (end - start) * 1000
             v0 = np.abs(ccf0 / ccf0[0])
 
             # NOTE: Compute the FFT with different padding
-            padding = (np.flip(2**np.arange(0,np.log2(padmax)))).astype(int)
-
+            padding = (np.flip(2 ** np.arange(0, np.log2(padmax)))).astype(int)
 
             print(f"Reference : padding = {padmax} ({dt:.0f}ms)")
-            
+
             for pi in padding:
                 oimOptions.ft.padding = int(pi)
                 start = time.time()
                 ccf1 = self.getComplexCoherentFlux(spf, spf * 0)
                 end = time.time()
-                dt = (end - start)*1000
+                dt = (end - start) * 1000
                 v1 = np.abs(ccf1 / ccf1[0])
-            
+
                 err = np.abs((v1 - v0) / v0 * 100)
-                
-                
+
                 errs_mean.append(np.mean(err))
                 errs_max.append(np.max(err))
-                print(f"padding = {pi} => err_mean={errs_mean[-1]:.2f}%"
-                                         f" err_max={errs_max[-1]:.2f}%"
-                                         f" ({dt:.0f}ms)")
-            return padding,np.array(errs_mean),np.array(errs_max)
-            
-
+                print(
+                    f"padding = {pi} => err_mean={errs_mean[-1]:.2f}%"
+                    f" err_max={errs_max[-1]:.2f}%"
+                    f" ({dt:.0f}ms)"
+                )
+            return padding, np.array(errs_mean), np.array(errs_max)
