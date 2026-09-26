@@ -15,6 +15,12 @@ from .oimBipolar import oimBipolar
 from .oimBox import oimBox
 from .oimDisco import oimDisco
 from .oimExpRing import oimExpRing
+
+from .oimRadialRings import (
+    oimRadialExpRing,
+    oimRadialPowRing,
+    oimRadialPowRing2)
+
 from .oimFastRotator import (
     oimFastRotator,
     oimFastRotatorLLDD,
@@ -25,8 +31,6 @@ from .oimFastRotator import (
 from .oimGaussLorentz import oimGaussLorentz
 from .oimInnerRim import oimInnerRim
 from .oimKinematicDisk import oimKinematicDisk
-from .oimRadialRing import oimRadialRing
-from .oimRadialRing2 import oimRadialRing2
 from .oimSpiral import oimSpiral
 from .oimStarHaloDisc import oimStarHaloGaussLorentz, oimStarHaloIRing
 from .oimTempGrad import oimTempGrad

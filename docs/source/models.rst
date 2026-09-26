@@ -1116,23 +1116,47 @@ between accuracy and computational time.
 Another way to reduce the computation time of the FFT (and DFT) is to reduce the image size while increasing the pixel
 size, thereby keeping the field of view fixed. However, this also introduces a sampling error.
 
+We can check the effect of pixel sampling using the
+:func:`checkPaddingEffect <oimodeler.oimModel.oimModel.checkPaddingEffect>` method, which works similarly. Both methods
+allow to plot the results using the ``plot=True`` option.
+
+.. code-block:: ipython3
+
+    dims, err_mean2, err_max2 = mspiral.checkSamplingEffect(plot=True)
+
+.. code-block::
+
+        Reference : dim = 1024 (549ms)
+        dim = 512 => err_mean=0.75% err_max=5.12% (137ms)
+        dim = 256 => err_mean=2.18% err_max=25.55% (35ms)
+        dim = 128 => err_mean=7.31% err_max=111.02% (8ms)
+        dim = 64 => err_mean=14.40% err_max=239.91% (3ms)
+        dim = 32 => err_mean=27.50% err_max=364.29% (1ms)
+        dim = 16 => err_mean=41.70% err_max=494.80% (1ms)
+
+
+.. image:: ../../images/componentImages_sampling.png
+  :alt: Alternative text
+
+
 Keeping all these considerations in mind when working with image-based components, users should find the right trade-off
 between image resolution and size, zero-padding, and computational time.
 
 Loading fits images
 -------------------
-One special and very useful image based component is the
-:func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>` that allows the loading precomputed images
-and use them as normal **oimodeler** components.
+One particularly useful image-based component is the
+:func:`oimComponentFitsImage <oimodeler.oimComponents.oimComponentFitsImage>`, which allows precomputed images to be loaded
+and used as regular **oimodeler** components.
 
-To illustrate the functionalities of this component we will use two fits files representing a classical Be star
+To illustrate the functionality of this component, we will use two FITS files representing a classical Be star
 and its circumstellar disk:
 
-1. a H-band continuum image generated using the DISCO semi-physical code as described in
-`Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_
+1. An H-band continuum image generated using the DISCO semi-physical code, as described in
+   `Vieira et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_.
 
-2. a chromatic image-cube computed around the :math:`Br\,\gamma` emission line using the Kinematic Be disk model as
-described in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
+2. A chromatic image cube computed around the :math:`Br\,\gamma` emission line using the Kinematic Be disk model, as
+   described in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_.
+
 
 .. note::
     Both models were generated using the `AMHRA <https://amhra.oca.eu/AMHRA/disco-gas/input.htm>`_ service of the JMMC.
@@ -1189,11 +1213,12 @@ When using the image-component, the image shown by the :func:`showModel <oimodel
 method is interpolated and crop or zero-padded depending on the internal image dimension and pixel size and the
 dimension and pixel size used in the :func:`showModel <oimodeler.oimModel.oimModel.showModel>` method.
 
-One can retrieve the component internal image (the one loaded from the fits file) using the ._internalImage() function
+One can retrieve the component internal image (the one loaded from the fits file) using the
+:func:`getInternalImage <oimodeler.oimModel.oimModel.getInternalImage>` method of the component.
 
 .. code-block:: ipython3
 
-    im_disco = cdisco._internalImage()
+    im_disco = cdisco.getInternalImage()
     print(im_disco.shape)
 
 .. parsed-literal::
@@ -1205,52 +1230,53 @@ The first two dimensions are the time and the wavelength but they are 1 as our m
 .. note::
     The internal image can be modify that way if needed.
 
-The internal pixel size in rad can also be retrieved using the ```_pixSize`` variable. This can be used to plot the
-image using the showModel method without rescaling. Here we use astropy.units to convert the radians in mas.
+The pixel size in radians can also be retrieved using the
+:func:`getPixelSize <oimodeler.oimModel.oimModel.getPixelSize>` method with the `mas=True` option
+(otherwise, the size is returned in radians). This can be used to plot the image with the
+:func:`showModel <oimodeler.oimModel.oimModel.showModel>` method without rescaling it.
+We also need to retrieve the image dimensions stored in the component's `dim` parameter.
+
 
 .. code-block:: ipython3
 
-    import astropy.units as u
-    pixSize = cdisco._pixSize*u.rad.to(u.mas)
-    dim = im_disco.shape[-1]
+    pixSize = cdisco.getPixelSize(mas=True)
+    dim = cdisco.dim.value
     mdisco.showModel(dim, pixSize, legend=True, normalize=True, normPow=1, cmap="hot")
 
 .. image:: ../../images/FitsImage_Disco_internal_image.png
   :alt: Alternative text
 
-We now create spatial frequencies for a thousand baselines ranging from 0 to 120 m,
-in the North-South and East-West orientation and at an observing wavlength of 1.5 microns.
+We can plot the visibility as a function of spatial frequency for baselines oriented in the North–South and East–West
+directions. We choose baselines ranging from 0 to 120 m and a wavelength of 1.5 :math:\mu\mathrm{m}.
 
 .. code-block:: ipython3
 
    wl, nB = 1.5e-6, 1000
    B = np.linspace(0, 120, num=nB)
-
-   spfx = np.append(B, B*0)/wl # 1st half of B array are baseline in the East-West orientation
-   spfy = np.append(B*0, B)/wl # 2nd half are baseline in the North-South orientation
-
-We compute the complex coherent flux and then the absolute visibility
-
-.. code-block:: ipython3
-
-   ccf = m.getComplexCoherentFlux(spfx, spfy)
-   v = np.abs(ccf)
-   v = v/v.max()
-
-and, finally, we can plot our results:
-
-.. code-block:: ipython3
-
-    plt.figure()
-    plt.plot(B , v[0:nB],label="East-West")
-    plt.plot(B , v[nB:],label="North-South")
-    plt.xlabel("B (m)")
-    plt.ylabel("Visbility")
-    plt.legend()
-    plt.margins(0)
+   fig, ax = mdisco.plotVis(B,wl,PA=[0,90])
+   ax.margins(0)
+   ax.set_yscale("log")
 
 .. image:: ../../images/FitsImage_Disco_visibility.png
   :alt: Alternative text
+
+We can check if a higher padding is needed for this model.
+
+.. code-block:: ipython3
+
+    res  = mdisco.checkPaddingEffect()
+
+.. code-block::
+
+    Checking Padding effect on FFT
+    Reference : padding = 32 (6138ms)
+    padding = 16 => err_mean=0.02% err_max=0.14% (1455ms)
+    padding = 8 => err_mean=0.10% err_max=0.46% (313ms)
+    padding = 4 => err_mean=0.43% err_max=2.79% (55ms)
+    padding = 2 => err_mean=1.81% err_max=6.34% (13ms)
+    padding = 1 => err_mean=7.71% err_max=42.76% (5ms)
+
+For the standard padding value of 1, the FT-sampling error remain below 1% which is sufficient in most cases.
 
 Let's now have a look at the model's parameters:
 
@@ -1258,14 +1284,14 @@ Let's now have a look at the model's parameters:
 
     pprint(m.getParameters())
 
-.. parsed-literal::
+.. code-block::
 
-    ... {'c1_Fits_Comp_dim': oimParam at 0x19c6201c820 : dim=128 ± 0  range=[1,inf] free=False ,
-         'c1_Fits_Comp_f': oimParam at 0x19c6201c760 : f=1 ± 0  range=[0,1] free=True ,
-         'c1_Fits_Comp_pa': oimParam at 0x19c00b9bbb0 : pa=0 ± 0 deg range=[-180,180] free=True ,
-         'c1_Fits_Comp_scale': oimParam at 0x19c6201c9d0 : scale=1 ± 0  range=[-inf,inf] free=True ,
-         'c1_Fits_Comp_x': oimParam at 0x19c6201c6a0 : x=0 ± 0 mas range=[-inf,inf] free=False ,
-         'c1_Fits_Comp_y': oimParam at 0x19c6201c640 : y=0 ± 0 mas range=[-inf,inf] free=False }
+     {'c1_Fits_Comp_dim': oimParam at 0x19c6201c820 : dim=128 ± 0  range=[1,inf] free=False ,
+      'c1_Fits_Comp_f': oimParam at 0x19c6201c760 : f=1 ± 0  range=[0,1] free=True ,
+      'c1_Fits_Comp_pa': oimParam at 0x19c00b9bbb0 : pa=0 ± 0 deg range=[-180,180] free=True ,
+      'c1_Fits_Comp_scale': oimParam at 0x19c6201c9d0 : scale=1 ± 0  range=[-inf,inf] free=True ,
+      'c1_Fits_Comp_x': oimParam at 0x19c6201c6a0 : x=0 ± 0 mas range=[-inf,inf] free=False ,
+      'c1_Fits_Comp_y': oimParam at 0x19c6201c640 : y=0 ± 0 mas range=[-inf,inf] free=False }
 
 
 In addition to the `x`, `y`, and `f` parameters, common to all components,
@@ -1285,8 +1311,8 @@ Let's try to rotate and scale our model and plot the image again.
 
 .. code-block:: ipython3
 
-    c.params['pa'].value = 45
-    c.params['scale'].value = 2
+    c.pa.value = 45
+    c.scale.value = 2
     m.showModel(256, 0.04, legend=True, normPow=0.4, colorbar=False)
 
 
@@ -1317,18 +1343,8 @@ baseline for our binary Be-star model.
 
 .. code-block:: ipython3
 
-    ccf = m2.getComplexCoherentFlux(spfx, spfy)
-    v = np.abs(ccf)
-    v = v/v.max()
-
-    plt.figure()
-    plt.plot(B, v[0:nB], label="East-West")
-    plt.plot(B, v[nB:], label="North-South")
-    plt.xlabel("B (m)")
-    plt.ylabel("Visbility")
-    plt.legend()
-    plt.margins(0)
-
+    fig, ax = mdisco_ud.plotVis(B,wl,PA=[0,90])
+    ax.set_yscale("log")
 
 .. image:: ../../images/FitsImage_Disco_visibility2.png
   :alt: Alternative text
@@ -1336,14 +1352,15 @@ baseline for our binary Be-star model.
 Using a chromatic image-cube
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` can also be used to import fits files containing
-chromatic image-cubes into oimodeler.
+The :func:`oimComponentFitsImage <oimodeler.oimComponent.oimComponentFitsImage>` can also be used to import fits files
+containing chromatic image-cubes into oimodeler.
 
-In this example we will use a chromatic image-cube computed around the :math:`Br\,\gamma` emission line for a classical Be star
-circumstellar disk. The model, detailed in `Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
+In this example we will use a chromatic image-cube computed around the :math:`Br_\gamma` emission line for a classical
+Be star circumstellar disk. The model, detailed in
+`Meilland et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_
 was computed using the `AMHRA <https://amhra.oca.eu/AMHRA/bedisk/input.htm>`_ service of the JMMC.
 
-The fits-formatted image-cube we will use, `KinematicsBeDiskModel.fits`, is located in the `data/IMAGES` directory.
+The fits-formatted image-cube we will use, **KinematicsBeDiskModel.fits**, is located in the **data/IMAGES** directory.
 
 The code corresponding to this section is available in
 `LoadingFitsImageCube.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/LoadingFitsImageCube.py>`_
@@ -1363,7 +1380,7 @@ However, unlike for the monochromatic image, our model is now chromatic. The int
     print(c._image.shape)
     print(c._wl)
 
-.. parsed-literal::
+.. code-block::
 
     (1, 25, 256, 256)
     [2.16286e-06 2.16313e-06 2.16340e-06 2.16367e-06 2.16394e-06 2.16421e-06
@@ -1375,7 +1392,7 @@ However, unlike for the monochromatic image, our model is now chromatic. The int
 The image-cube contains 256x256 pixels images at 25 wavelength ranging from 2.16286 to 2.16934:math:`\mu`m.
 
 
-We can now plot some images through the :math:`Br\gamma` emission line (21661 :math:`\mu`m)using the
+We can now plot some images through the :math:`Br\gamma` emission line (2166.1nm) using the
 :func:`oimModel.showModel <oimodeler.oimModel.oimModel.showModel>` method. We need to specify some wavelengths.
 Images will be interpolated between the internal image-cubve wavelengths.
 
@@ -1448,12 +1465,9 @@ a V-shaped profile.
 Radial-Profile components
 -------------------------
 
-.. warning::
-    **oimodeler** radial profile component is not yet fully tested. Use at your own risk!
-
-Although not fully implemented and optimize, **oimodeler** allow to use 1D intensity radial profile
-for circular or intensity distributions. Radial-profile components are derived from the semi-abstract class
-:func:`oimComponentRadialProfile <oimodeler.oimComponent.oimComponentRadialProfile>` .This class implement
+**oimodeler** allow to use 1D intensity radial profile for circular or intensity distributions.
+Radial-profile components are derived from the semi-abstract class
+:func:`oimComponentRadialProfile <oimodeler.oimComponent.oimComponentRadialProfile>` .This class implements
 complex-coherent-flux computation using Hankel transform which take into account flattening for elliptic components.
 
 The code corresponding to this section is available in
@@ -1475,38 +1489,51 @@ You can get this list using the :func:`listComponents <oimodeler.oimUtils.listCo
 
 .. parsed-literal::
 
-    ['oimComponentRadialProfile', 'oimExpRing', 'oimRadialRing',
-     'oimRadialRing2', 'oimTempGrad', 'oimAsymTempGrad']
+    ['oimComponentRadialProfile', 'oimRadialExpRing', 'oimRadialPowRing',
+     'oimRadialPowRing2', 'oimTempGrad']
 
 Let's build a model with the exponential ring.
 
 .. code-block:: ipython3
 
-    c = oim.oimExpRing(d=10,fwhm=1,elong=1.5,pa=90)
+    c = oim.oimRadialExpRing(d=10,fwhm=1,elong=1.5,pa=90)
     m = oim.oimModel(c)
     fig, ax, im = m.showModel(256,0.5)
 
 .. image:: ../../images/radialProfile_image_exp.png
   :alt: Alternative text
 
-Let's compare the visibility from this model to that of two other rings defined using the Fourier-based components:
+Let's compare the visibility from other ring models:
 
+- a 10 mas ring with a radial intensity following a power law with -3 exponent
 - a 10 mas infinitesimal ring
-- a 10 mas uniform ring with a 5 mas width
+- a 10 mas uniform ring with a 10 mas width
+
+Note that the Power-law ring is also a Radial-Profile component whereas the two other one are Fourier-based components.
+
+
+First, let's have a look a their intensity distribution:
 
 .. code-block:: ipython3
 
-    c1 = oim.oimIRing(d=10,elong=1.5,pa=90)
+
+    c1 = oim.oimRadialPowRing(din=10, dout=100,p=-2, elong=1.5, pa=90,dim=64)
     m1 = oim.oimModel(c1)
 
-    c2 = oim.oimRing(din=10,dout=13,elong=1.5,pa=90)
+    c2 = oim.oimIRing(d=10, elong=1.5, pa=90)
     m2 = oim.oimModel(c2)
 
-    fig, ax = plt.subplots(1,3,figsize=(15,5))
+    c3 = oim.oimRing(din=10, dout=25, elong=1.5, pa=90)
+    m3 = oim.oimModel(c3)
 
-    m.showModel(256,0.15,figsize=(5,4),axe=ax[0],colorbar=False)
-    m1.showModel(256,0.15,figsize=(5,4),axe=ax[1],fromFT=True,colorbar=False)
-    m2.showModel(256,0.15,figsize=(5,4),axe=ax[2],fromFT=True,colorbar=False)
+    fig, ax = plt.subplots(1, 4, figsize=(13, 4))
+
+    dim=256
+    pix=0.3
+    m.showModel(256, 0.3, figsize=(5, 4), axe=ax[0], colorbar=False,normPow=1)
+    m1.showModel(256, 0.3, figsize=(5, 4), axe=ax[1], colorbar=False,normPow=1)
+    m2.showModel(256, 0.3, figsize=(5, 4), axe=ax[2], fromFT=True, colorbar=False,normPow=1)
+    m3.showModel(256, 0.3, figsize=(5, 4), axe=ax[3], fromFT=True, colorbar=False,normPow=1)
 
 .. image:: ../../images/radialProfile_image_comp.png
   :alt: Alternative text
@@ -1517,39 +1544,22 @@ We will simulated visibilities for 1000 East-West baselines in the K-band.
 
     wl = 2.1e-6
     B = np.linspace(0, 100, num=10000)
-    spf = B/wl
 
-    start = time.time()
-    ccf = m.getComplexCoherentFlux(spf, spf*0)
-    v = np.abs(ccf/ccf[0])
-    dt = (time.time() - start)*1000
+    fig, ax = plt.subplots()
 
-
-    start = time.time()
-    ccf1 = m1.getComplexCoherentFlux(spf, spf*0)
-    v1 = np.abs(ccf1/ccf1[0])
-    dt1 = (time.time() - start)*1000
-
-    start = time.time()
-    ccf2 = m2.getComplexCoherentFlux(spf, spf*0)
-    v2 = np.abs(ccf2/ccf2[0])
-    dt2 = (time.time() - start)*1000
-
-    plt.figure()
-    plt.plot(B, v, label=f"Exponential Ring ({dt:.1f}ms)")
-    plt.plot(B, v1, label=f"Infinitesimal Ring ({dt1:.1f}ms)")
-    plt.plot(B, v2, label=f"Uniform Ring ({dt2:.1f}ms)")
-    plt.xlabel("B (m)")
-    plt.ylabel("Visbility")
+    ms = [m,m1,m2,m3]
+    for i in range(4):
+        ms[i].plotVis(B,wl,axe=ax,label=cs[i].name,addTimeToLabel=True)
     plt.legend()
-    plt.margins(0)
 
 
 .. image:: ../../images/radialProfile_visi_comp.png
   :alt: Alternative text
 
-
 .. note::
+
+    We have used the **addTimeToLabel=True** option to add the computing time for each component on the plot.
+
     Remember that, as for Image-based model, the computation time of visibility from radial profiles
     is much longer than that of the basic Fourier-based components as show in the figure above.
 
@@ -1558,12 +1568,11 @@ We will simulated visibilities for 1000 East-West baselines in the K-band.
 Parameter interpolators
 -----------------------
 
- Here we present in more details the parameter
-interpolators.
-This example can be found in the  `paramInterpolators.py <https://github.com/oimodeler/examples/Modules/paramInterpolators.py>`_ script.
+Here we describe in more details the concept of parameter interpolators. This example file can be found here:
+`paramInterpolators.py <https://github.com/oimodeler/examples/Modules/paramInterpolators.py>`_.
 
-The following table summarize the available interpolators and their parameters. Most of
-them will be presented in this example.
+The following table summarize the available interpolators and their parameters. Some of
+them will be presented in this example in more details.
 
 .. csv-table:: Available parameter interpolators
    :file: table_interpolators.csv
@@ -1648,7 +1657,7 @@ build for each model either a length 1000 wavelength or time vector.
 
 
 Now, let's start with our first interpolator: A Gaussian in wavelength (also available
-for time). It can be used to model spectral features like atomic lines or molecular bands
+in time). It can be used to model spectral features like atomic lines or molecular bands
 in emission or absorption.
 
 It has 4 parameters :
@@ -1683,12 +1692,12 @@ Finally, we can define the wavelength range and use our custom plotting function
   :alt: Alternative text
 
 
-The parameters of the interpolator can be accessed using the ``params`` attribute of the
+The list of parameters of the interpolator can be accessed using the ``params`` attribute of the
 :func:`oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>`:
 
 .. code-block:: ipython3
 
-    pprint(c1.params['d'].params)
+    pprint(c1.d.params)
 
 
 .. parsed-literal::
@@ -1698,11 +1707,11 @@ The parameters of the interpolator can be accessed using the ``params`` attribut
          oimParam at 0x2610e25e280 : d=2 ± 0 mas range=[-inf,inf] free=True ,
          oimParam at 0x2610e25e2b0 : d=4 ± 0 mas range=[-inf,inf] free=True ]
 
-Each one can also be accessed using their name as an attribute:
+Each one can also be accessed using their name:
 
 .. code-block:: ipython3
 
-    pprint(c1.params['d'].x0)
+    pprint(c1.d.x0)
 
 
 .. parsed-literal::
@@ -1743,10 +1752,10 @@ multiple values for ``x0``, ``fwhm`` and ``values``.
     pt = oim.oimPt(f=0.5)
     m2 = oim.oimModel(c2, pt)
 
-    c2.params['d'].values[1] = oim.oimParamLinker(
-        c2.params['d'].values[0], "*", 3)
-    c2.params['d'].values[2] = oim.oimParamLinker(
-        c2.params['d'].values[0], "+", -1)
+    c2.d.values[1] = oim.oimParamLinker(
+        c2.d.values[0], "*", 3)
+    c2.d.values[2] = oim.oimParamLinker(
+        c2.d.values[0], "+", -1)
 
     wl = np.linspace(1.9e-6, 2.4e-6, num=nwl)
 
@@ -1759,7 +1768,7 @@ multiple values for ``x0``, ``fwhm`` and ``values``.
   :alt: Alternative text
 
 
-Here, to reduce the number of free parameters of the model with have linked the second
+Here, to reduce the number of free parameters of the model we have linked the second
 and third ``values`` of the interpolator to the first one.
 
 Let's look at our third interpolator: An asymmetric cosine interpolator in time. As it
@@ -1790,9 +1799,8 @@ It has 5 parameters :
 .. image:: ../../images/interp3.png
   :alt: Alternative text
 
-
 Now, let's have a look at the classic wavelength interpolator (also available for time).
-jIt has two parameters:
+It has two parameters:
 
 - A list of reference wavelengths: ``wl``.
 - A list of values at the reference wavelengths: ``values``.
@@ -1814,19 +1822,19 @@ extrapolation.
     fig, ax = plt.subplots(2, 6, figsize=(18, 6), sharex=True, sharey="row")
 
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 0], colorbar=False)
-    c4.params['d'].extrapolate = False
+    c4.d.extrapolate = False
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 1], colorbar=False)
 
-    c4.params['d'].extrapolate = True
-    c4.params['d'].kind = "quadratic"
+    c4.d.extrapolate = True
+    c4.d.kind = "quadratic"
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 2], colorbar=False)
-    c4.params['d'].extrapolate = False
+    c4.d.extrapolate = False
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 3], colorbar=False)
 
-    c4.params['d'].extrapolate = True
-    c4.params['d'].kind = "cubic"
+    c4.d.extrapolate = True
+    c4.d.kind = "cubic"
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 4], colorbar=False)
-    c4.params['d'].extrapolate = False
+    c4.d.extrapolate = False
     plotParamAndVis(B, wl, None, m4, c4.params['d'], ax=ax[:, 5], colorbar=False)
 
     plt.subplots_adjust(left=0.05, bottom=0.1, right=0.99, top=0.9,
@@ -1844,7 +1852,7 @@ extrapolation.
   :alt: Alternative text
 
 
-Finally, we can also use a polynominal interpolator in time (also available for
+We can also use a polynominal interpolator in time (also available for
 wavelength). Its free parameters are the coefficients of the polynomial. The parameter
 ``x0`` allows to shift the reference time (in mjd) from 0 to an arbitrary date.
 
@@ -1865,7 +1873,65 @@ wavelength). Its free parameters are the coefficients of the polynomial. The par
   :alt: Alternative text
 
 
-As for other part of the oimodeler software, **oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage. See the :ref:`create_interp` example.
+
+To model components with physically realistic fluxes, one can use the blackbody interpolators **tempWl** and **starWl**.
+The main difference is the way the angular size of the component (needed to normalize the flux) is calculated:
+
+- the **tempWl** uses a ``solid_angle`` parameter
+- the **starWl** uses 2 out the 3 parameters : luminosity ``L``, stellar Radius ``R`` and distance ``dist``
+
+Here we use the **starWl** to build two different stars : a A0V and a K1III.
+
+.. code-block:: ipython3
+
+    star1 = oim.oimUD(f=oim.oimInterp("starWl", T=10000, R=2.5, dist=100) # A0V
+    star2 = oim.oimUD(f=oim.oimInterp("starWl", T=5000, R=17, dist=100) # K1III.
+
+We can plot their respective flux in Jansky.
+
+.. code-block:: ipython3
+
+    wl = np.logspace(-7, -4, num=50)
+    f_star1 = star1.f(wl)
+    f_star2 = star2.f(wl)
+
+    fig, ax = plt.subplots()
+
+    ax.loglog(wl * 1e6, f_star1, label="star1: A0V")
+    ax.loglog(wl * 1e6, f_star2, label="star2: K1III")
+    ax.set_xlabel("$\\lambda$ ($\\mu$m)")
+    ax.set_ylabel("Flux [Jy]")
+    ax.legend()
+
+.. image:: ../../images/interp6.png
+  :alt: Alternative text
+
+Now let's set create a binary model, set the components positions and plot their images and visbility at
+different wavelengths.
+
+.. code-block:: ipython3
+
+    mbin = oim.oimModel(star1,star2)
+    star1.x.value =  5
+    star2.x.value = -5
+    star1.d.value = 0.23 #mas =  2.5Rsol at 100pc
+    star2.d.value = 1.59 #mas = 17 Rsol at 100pc
+    wls = np.linspace(1e-6,4e-6,num=1000)
+    figvis,axvis = mbin.plotVis(B,wls,PA=[0,90],xunit="cycle/arcsec")
+
+    mbin.showModel(256,0.06,wl=[0.5e-6,1e-6,3e-6,8e-6],legend=True
+                           fromFT=True,normPow=1,normalize=True,cmap="inferno")
+
+.. image:: ../../images/interp6_1.png
+  :alt: Alternative text
+
+.. image:: ../../images/interp6_2.png
+  :alt: Alternative text
+
+|
+
+**oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage.
+See the :ref:`create_interp` example.
 
 Model serialization
 -------------------

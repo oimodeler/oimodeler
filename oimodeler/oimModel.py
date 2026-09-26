@@ -1052,11 +1052,11 @@ class oimModel:
         axe=None,
         xunit="cycle/rad",
         wlunit="micron",
+        addTimeToLabel=False,
         **kwargs,
     ):
 
         figsize = kwargs.pop("figsize", (5, 4))
-
         wlunit_text = u.Unit(wlunit).to_string("latex_inline")
         xunit_text = u.Unit(xunit).to_string("latex_inline")
 
@@ -1093,14 +1093,17 @@ class oimModel:
             except:
                 fig = axe.flatten()[0].get_figure()
 
+        label0 = kwargs.pop("label", "")
         if nwl == 1:
 
             spf = B / wl
             for iPA, PAi in enumerate(PA):
                 spfx = np.cos(np.deg2rad(PAi)) * spf
                 spfy = -np.sin(np.deg2rad(PAi)) * spf
-
+                start = time.time()
                 ccf = self.getComplexCoherentFlux(spfx, spfy, wl)
+                dt = (time.time() - start) * 1000
+
                 v = np.abs(ccf)
                 v = v / v[0]
 
@@ -1113,9 +1116,17 @@ class oimModel:
                     label = PA_names[iPA]
                 if label != None:
                     nlegend += 1
+
                 if label != None:
-                    kwargs["label"] = label
+                    kwargs["label"] = label0 + label
+                else:
+                    kwargs["label"] = label0
+
+                if addTimeToLabel:
+                    kwargs["label"] += f" ({dt:.1f}ms)"
+
                 axe.plot(spf * xunit_mult, v, **kwargs)
+
             if nlegend != 0:
                 axe.legend()
             axe.set_xlabel(f"B/$\\lambda$ ({xunit_text})")
@@ -1185,7 +1196,9 @@ class oimModel:
 
         return fourier + image * 2 + radial * 4
 
-    def checkPaddingEffect(self, padmax=32, wl=None, B=None):
+    def checkPaddingEffect(self, padmax=32, wl=None, B=None, plot=False):
+
+        padd0 = oimOptions.ft.padding
         checkFTcomp = self._checkTypeOfComponents()
         if not (checkFTcomp & 2):
             oimWarning(
@@ -1211,22 +1224,24 @@ class oimModel:
             start = time.time()
             ccf0 = self.getComplexCoherentFlux(spf, spf * 0)
             end = time.time()
-            dt = (end - start) * 1000
+            dt0 = (end - start) * 1000
             v0 = np.abs(ccf0 / ccf0[0])
 
             # NOTE: Compute the FFT with different padding
             padding = (np.flip(2 ** np.arange(0, np.log2(padmax)))).astype(int)
 
-            print(f"Reference : padding = {padmax} ({dt:.0f}ms)")
+            print(f"Reference : padding = {padmax} ({dt0:.0f}ms)")
 
+            vis, dts = [], []
             for pi in padding:
                 oimOptions.ft.padding = int(pi)
                 start = time.time()
                 ccf1 = self.getComplexCoherentFlux(spf, spf * 0)
                 end = time.time()
                 dt = (end - start) * 1000
+                dts.append(dt)
                 v1 = np.abs(ccf1 / ccf1[0])
-
+                vis.append(v1)
                 err = np.abs((v1 - v0) / v0 * 100)
 
                 errs_mean.append(np.mean(err))
@@ -1236,4 +1251,135 @@ class oimModel:
                     f" err_max={errs_max[-1]:.2f}%"
                     f" ({dt:.0f}ms)"
                 )
+
+            oimOptions.ft.padding = padd0
+
+            if plot:
+                figpad, axpad = plt.subplots(2, 1, figsize=(7, 5), sharex=True)
+
+                axpad[0].plot(
+                    spf,
+                    v0,
+                    color="k",
+                    lw=4,
+                    label=f"Ref - pad={padmax} ({dt0:.0f}ms)",
+                )
+
+                for i, pi in enumerate(padding):
+                    axpad[0].plot(
+                        spf, vis[i], label=f"pad={pi}x ({dts[i]:.0f}ms)"
+                    )
+                    axpad[1].plot(spf, (vis[i] - v0) / v0 * 100)
+
+                axpad[1].set_xlabel("spatial frequency (cycles/rad)")
+                axpad[1].set_yscale("symlog")
+                axpad[0].set_ylabel("Visbility")
+                axpad[0].legend()
+                axpad[1].set_ylabel("Residual (%)")
+                figpad.tight_layout()
+
             return padding, np.array(errs_mean), np.array(errs_max)
+
+    def checkSamplingEffect(
+        self,
+        dimmin=16,
+        dimmax=1024,
+        wl=None,
+        B=None,
+        component=None,
+        plot=False,
+    ):
+
+        checkFTcomp = self._checkTypeOfComponents()
+        if not (checkFTcomp & 2) or (checkFTcomp & 4):
+            oimWarning(
+                oimModel,
+                "Not relevant",
+                "The model doesn't comtain any Image-based or radial Profile "
+                "component.\nThe sampling won't have any effect on the "
+                "visibility.",
+                color="yellow",
+            )
+            return 0
+        else:
+            print("Checking Sampling effect on FFT")
+            errs_mean = []
+            errs_max = []
+            if not (wl):
+                wl = 2.1e-6
+            if not (B):
+                B = np.linspace(0, 100, num=1000)
+            spf = B / wl
+
+            if component == None:
+                for ci in self.components:
+                    if isinstance(ci, oimComponentImage) or isinstance(
+                        ci, oimComponentImage
+                    ):
+                        component = ci
+                        break
+            dim0 = component.dim.value
+            component.dim.value = dimmax
+
+            start = time.time()
+            ccf0 = self.getComplexCoherentFlux(spf, spf * 0)
+            end = time.time()
+            dt0 = (end - start) * 1000
+            v0 = np.abs(ccf0 / ccf0[0])
+            vis = []
+            dts = []
+
+            # NOTE: Compute the FFT with different sampling
+            dims = (
+                np.flip(2 ** np.arange(np.log2(dimmin), np.log2(dimmax)))
+            ).astype(int)
+            print(f"Reference : dim = {dimmax} ({dt0:.0f}ms)")
+
+            for dimi in dims:
+                component.dim.value = dimi
+                start = time.time()
+                ccf1 = self.getComplexCoherentFlux(spf, spf * 0)
+                end = time.time()
+                dt = (end - start) * 1000
+                dts.append(dt)
+                v1 = np.abs(ccf1 / ccf1[0])
+                vis.append(v1)
+
+                err = np.abs((v1 - v0) / v0 * 100)
+                errs_mean.append(np.mean(err))
+                errs_max.append(np.max(err))
+
+                print(
+                    f"dim = {dimi} => err_mean={errs_mean[-1]:.2f}%"
+                    f" err_max={errs_max[-1]:.2f}%"
+                    f" ({dt:.0f}ms)"
+                )
+
+            component.dim.value = dim0
+
+            if plot:
+                fig, ax = plt.subplots(2, 1, figsize=(7, 5), sharex=True)
+
+                ax[0].plot(
+                    spf,
+                    v0,
+                    color="k",
+                    lw=4,
+                    label=f"Ref - dim={dimi} ({dt0:.0f}ms)",
+                )
+
+                for i, dimi in enumerate(dims):
+                    ax[0].plot(
+                        spf, vis[i], label=f"dim={dimi}x ({dts[i]:.0f}ms)"
+                    )
+                    ax[1].plot(spf, (vis[i] - v0) / v0 * 100)
+
+                ax[1].set_xlabel("spatial frequency (cycles/rad)")
+                ax[1].set_yscale("symlog")
+                ax[0].set_ylabel("Visbility")
+                ax[0].legend()
+                ax[1].set_ylabel("Residual (%)")
+                fig.tight_layout()
+                return fig, ax, dims, np.array(errs_mean), np.array(errs_max)
+
+            return dims, np.array(errs_mean), np.array(errs_max)

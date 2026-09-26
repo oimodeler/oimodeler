@@ -1,3 +1,13 @@
+.. raw:: html
+
+   <style>
+   h1{
+       display: none;
+   }
+   </style>
+
+
+
 .. image:: ../../images/oimodeler_title.png
   :alt: Alternative text
 
@@ -145,7 +155,6 @@ External constraints can also be added by writting user priors functions. For in
    installation
    getting_started
 
-
 .. toctree::
    :hidden: 
    :caption: Examples   
@@ -163,15 +172,19 @@ External constraints can also be added by writting user priors functions. For in
    plot
    utils
 
-
 .. toctree::
    :hidden:
    :caption: Expanding oimodeler
 
    expanding
 
+.. toctree::
+   :hidden:
+   :caption: Related packages
 
-   
+   oimodeler-app
+   nimodeler
+
 .. toctree:: 
    :hidden: 
    :caption: References

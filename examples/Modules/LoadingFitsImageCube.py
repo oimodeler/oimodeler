@@ -39,7 +39,7 @@ c = oim.oimComponentFitsImage(file_name)
 m = oim.oimModel(c)
 
 # NOTE: Access the internal image and  wavelength table
-print(c._image.shape)
+print(c.getInternalImage().shape)
 print(c._wl)
 
 # NOTE: Plot the model image

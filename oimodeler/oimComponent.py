@@ -579,7 +579,7 @@ class oimComponentFourier(oimComponent):
 
     def _imageFunction(self, xx, yy, wl, t):
         raise ValueError(
-            f"image function not implemented for {self.shortname}."
+            f"image function not implemented for {self.shortname}.\n"
             "Use the fromFT=True option to get a model image"
             " from the inverse Fourier Transform"
         )
@@ -792,7 +792,7 @@ class oimComponentImage(oimComponent):
                         )
         return im
 
-    def getInternalImage(self, wl, t):
+    def getInternalImage(self, wl=None, t=None):
         res = self._internalImage()
 
         if res is None:
@@ -1191,3 +1191,5 @@ class oimComponentFitsImage(oimComponentImage):
     def getPixelSize(self, mas=False):
         self._pixSize = self._pixSize0 * self.params["scale"].value
         return self._pixSize * (RAD2MAS * mas + (not mas))
+
+        

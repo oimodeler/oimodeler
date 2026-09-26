@@ -9,8 +9,8 @@ of the ``oimodeler`` software by creating customs objects:
 :func:`data filters <oimodeler.oimFilter.oimFilter>`,
 :func:`fitters <oimodeler.oimFitter.oimFitter>`, and other functionalities
 
-Adding new components
-=====================
+Adding components
+=================
 
 Fourier component (Box)
 -----------------------
@@ -728,8 +728,8 @@ This example will be added when the ``oimComponentRadialProfile`` is implemented
 
 ..  _create_interp:
 
-Adding a new Interpolators
-==========================
+Adding Interpolators
+====================
 
 In the `createCustomParamInterpolator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomParamInterpolator.py>`_
 example we will create a new parameter interpolator derived from the
@@ -983,12 +983,9 @@ and plot everything together.
 .. image:: ../../images/createInterp1.png
   :alt: Alternative text
 
-Adding a new data Filter
-=========================
-
-Adding a new Fitter
+Adding data Filters
 ===================
 
-Adding other functionalities
-============================
+Adding Fitters
+==============
 
