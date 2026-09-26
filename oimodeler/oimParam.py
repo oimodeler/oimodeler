@@ -67,9 +67,9 @@ class oimParam:
     Parameters
     ----------
     name : string, optional
-        Name of the Parameter. The default is ``None``.
+        Name of the Parameter. The default is ``""``.
     value : float, optional
-        Value of the parameter. The default is ``None``.
+        Value of the parameter. The default is ``0``.
     mini : float, optional
         Mininum value allowed for the parameter. The default is ``-np.inf``.
     maxi : float, optional
@@ -79,12 +79,12 @@ class oimParam:
     unit : astropy.unit.Quantity, optional
         Unit of the parameter. The default is ``astropy.units.one``
     free : bool, optional
-        Determines if the parameter is to be fitted. The default is ``None``.
+        Determines if the parameter is to be fitted. The default is ``True``.
     error : float, optional
-        The error of the parameter. The default is``0``.
-    default : str, optional
-        Default parameter from which all of the settings are adopted. Will be
-        overwritten by user input. Default is ``None``.
+        The error of the parameter. The default is ``0``.
+    base : str, optional
+        Base parameter from which all of the settings are adopted. Will be
+        overwritten by user input. Default is ``""``.
 
     Attributes
     ----------
@@ -95,7 +95,7 @@ class oimParam:
     mini : float
         Mininum value allowed for the parameter.
     maxi : float
-        maximum value allowed for the parameter.
+        Maximum value allowed for the parameter.
     description : string
         Description of the parameter.
     unit : astropy.unit.Quantity, optional
@@ -138,7 +138,7 @@ class oimParam:
 
     def __call__(self, wl=None, t=None) -> float | np.ndarray:
         """The call function will be useful for wavelength or time dependent
-        parameters. In a simple `oimParam` it only return the parameter value.
+        parameters. In a simple `oimParam` it only returns the parameter's value.
         """
         return self.value
 
@@ -174,6 +174,7 @@ class oimParam:
             return "oimParam at {} is  {}".format(hex(id(self)), type(self))
 
     def quantity(self, wl=None, t=None):
+        """Returns the `__call__` function multiplied by the parameter's ``unit``."""
         return self.__call__(wl, t) * self.unit
 
     def set(self, **kwargs):
