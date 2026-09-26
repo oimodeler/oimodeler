@@ -518,7 +518,7 @@ class oimModel:
         dim: int,
         pixSize: float,
         wl: float | ArrayLike | None = None,
-        t: int | float | ArrayLike | None = None,
+        t: float | ArrayLike | None = None,
         fromFT: bool = False,
         padFact: int = 1,
         axe: Axes | None = None,
@@ -815,7 +815,7 @@ class oimModel:
         dim: int,
         spfmax: float,
         wl: float | ArrayLike | None = None,
-        t: int | float | ArrayLike | None = None,
+        t: float | ArrayLike | None = None,
         unit: str = "cycle/rad",
         unit_format: str = "latex_inline",
         axe: Axes | None = None,
@@ -839,7 +839,7 @@ class oimModel:
             Maximal spatial frequency in in cycle/rad unless uinit is specified
         wl : float or array_like, optional
             Wavelength(s) in meter. The default is None.
-        t :  int, float or array_like, optional
+        t :  float or array_like, optional
             Time(s) in s (mjd). The default is None.
         axe : matplotlib.axes.Axes, optional
             If provided the image will be shown in this axe. If not a new figure
@@ -1100,7 +1100,7 @@ class oimModel:
                 spfx = np.cos(np.deg2rad(PAi)) * spf
                 spfy = -np.sin(np.deg2rad(PAi)) * spf
 
-                ccf = self.getComplexCoherentFlux(spfx, spfy)
+                ccf = self.getComplexCoherentFlux(spfx, spfy, wl)
                 v = np.abs(ccf)
                 v = v / v[0]
 
