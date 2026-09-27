@@ -1933,18 +1933,18 @@ different wavelengths.
 **oimParamInterpolator** was designed so that users can easily create their own interoplators using inheritage.
 See the :ref:`create_interp` example.
 
-Model serialization
--------------------
+Model Saving/Serialization
+--------------------------
 
-An :class:`oimodeler.oimModel.oimModel` can be serialized and restored later.
+An :class:`oimModel <oimodeler.oimModel.oimModel>` can be serialized and restored later.
 With this, a model configuration (e.g. best-fit) can be stored. This is useful for
 sharing models between scripts/processes, and for the reproducability of a (fitting) setup.
 
 .. note::
 
-   The :class:`oimodeler.oimParam.oimParam`, :class:`oimodeler.oimParam.oimParamInterpolator`, and 
-   :class:`oimodeler.oimComponent.oimComponent` classes and all their subclasses have serialization
-   implemented. These can be used identically to the below description for :class:`oimodeler.oimModel.oimModel`
+   The :class:`oimodeler.oimParam.oimParam`, :class:`oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>`, and 
+   :class:`oimComponent <oimodeler.oimComponent.oimComponent>` classes and all their subclasses have serialization
+   implemented. These can be used identically to the below description for :class:`oimModel <oimodeler.oimModel.oimModel>`
 
 
 Saving a model
@@ -1968,11 +1968,12 @@ can be done by
 
 .. note::
 
-    The ``.serialize()`` method has a ``skip_copy`` keyword argument. This can be
-    used to skip the deepcopies that are made during serialisation to not corrupt
-    mutuable objects in, for instance, the ``oimModel``. It is turned off automatically
-    for dependencies of a serialization. That is ``oimModel`` has it turned off for its
-    components as they are already deep copied at the highest level.
+    The :func:`serialize() <oimodeler.oimModel.oimModel.serialize>` method has a ``skip_copy``
+    keyword argument. This can be used to skip the deepcopies that are made during serialisation
+    to not corrupt mutuable objects in, for instance, the original `oimModel <oimodeler.oimModel.oimModel>`.
+    It is turned off automatically for sub-dependencies of a serialization. That is
+    `oimModel <oimodeler.oimModel.oimModel>` has it turned off for its components as they are already deep
+    copied at the highest level.
 
 which enables storing it by various means (e.g. by pickling or storing it in JSON)
 
@@ -1997,5 +1998,5 @@ A serialized model can be restored with (at the JSON example)
    model = oim.oimModel.deserialize(serialized)
 
 
-The resulting object is an :class:`oimodeler.oimModel` containing the same
+The resulting object is an :class:`oimModel <oimodeler.oimModel.oimModel>` containing the same
 model components and parameters.

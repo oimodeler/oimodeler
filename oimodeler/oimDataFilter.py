@@ -51,7 +51,6 @@ class oimDataFilterComponent:
 
     def __init__(self, **kwargs) -> None:
         self.params = {}
-
         self.params["targets"] = "all"
         self.params["arr"] = "all"
 
@@ -59,7 +58,7 @@ class oimDataFilterComponent:
 
     def _eval(self, **kwargs) -> None:
         """Evaluates the ``kwargs`` and passes them to the ``self.params``
-        dictionary if they exist in it."""
+        dictionary if the key exists."""
         for key, value in kwargs.items():
             if key in self.params:
                 self.params[key] = value
@@ -84,6 +83,7 @@ class oimDataFilterComponent:
             self._filteringFunction(datai)
 
     def __str__(self) -> str:
+        """The class string representation."""
         txt = self.name
         for key, value in self.params.items():
             txt += "\n"
@@ -94,7 +94,7 @@ class oimDataFilterComponent:
 
 
 class oimDataFilter:
-    """Class for data filter stack."""
+    """Class for the data filter stack."""
 
     def __init__(
         self,
@@ -138,7 +138,7 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         for arri in self.params["arr"]:
             while (
                 len(np.where(np.array([t.name for t in data]) == arri)[0]) != 0
@@ -176,7 +176,7 @@ class oimRemoveInsnameFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         to_remove = []
         insnameToRemove = self.params["insname"]
         if type(insnameToRemove) != type([]):
@@ -224,7 +224,7 @@ class oimDataTypeFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         if type(self.params["dataType"]) != type([]):
             self.params["dataType"] = [self.params["dataType"]]
 
@@ -271,7 +271,7 @@ class oimKeepDataTypeFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         if type(self.params["dataType"]) != type([]):
             self.params["dataType"] = [self.params["dataType"]]
 
@@ -335,7 +335,7 @@ class oimFlagWithExpressionFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         oifitsFlagWithExpression(
             data,
             self.params["arr"],
@@ -387,7 +387,7 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         if self.params["method"] == "cut":
             cutWavelengthRange(
                 data,
@@ -444,7 +444,7 @@ class oimWavelengthShiftFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         shiftWavelength(data, self.params["wlShift"])
 
 
@@ -485,7 +485,7 @@ class oimWavelengthSmoothingFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         spectralSmoothing(
             data,
             self.params["smoothPix"],
@@ -531,7 +531,7 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         binWavelength(
             data,
             binSize=self.params["bin"],
@@ -540,8 +540,8 @@ class oimWavelengthBinningFilter(oimDataFilterComponent):
 
 
 class oimWavelengthIntpBinFilter(oimDataFilterComponent):
-    r"""Filter that bins the wavelength to a specified grid. It also interpolates
-    at the edges of the bins, ensuring a minimum number of elements.
+    r"""Filter that bins the wavelength to a specified grid. It interpolates
+    at the bin edges, ensuring a minimum number of elements in each bin.
 
     Other Parameters
     ----------
@@ -560,12 +560,12 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
     resetFlags : bool, optional
         If ``True``, sets all flags to ``False`` after binning. Defaults to ``True``.
     normalizeError : bool, optional
-        If ``True`` normalize the error. Defaults to ``True``.
+        If ``True`` normalizes the error. Defaults to ``True``.
 
     See Also
     --------
-    :func:`oimodeler.oimUtils.intpBinWavelength` : Bin the wavelength of an OIFITS file to
-    a specified binGrid.
+    :func:`intpBinWavelength <oimodeler.oimUtils.intpBinWavelength>` : Bin the wavelength
+    of an OIFITS file to a specified binGrid.
 
     Notes
     -----
@@ -588,7 +588,7 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         intpBinWavelength(
             data,
             self.params["binGrid"],
@@ -635,7 +635,7 @@ class oimKeepBaselinesFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         for arri in self.params["arr"]:
             oifitsKeepBaselines(
                 data,
@@ -682,7 +682,7 @@ class oimRemoveBaselinesFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         for arri in self.params["arr"]:
             oifitsRemoveBaselines(
                 data,
@@ -729,7 +729,7 @@ class oimKeepTelescopesFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         for arri in self.params["arr"]:
             oifitsKeepTelescopes(
                 data,
@@ -776,7 +776,7 @@ class oimRemoveTelescopesFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         for arri in self.params["arr"]:
             oifitsRemoveTelescopes(
                 data,
@@ -817,7 +817,7 @@ class oimResetFlagsFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         oifitsFlagWithExpression(
             data, self.params["arr"], None, "False", keepOldFlag=False
         )
@@ -869,7 +869,7 @@ class oimDiffErrFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         computeDifferentialError(
             data,
             ranges=self.params["ranges"],
@@ -926,7 +926,7 @@ class oimSetMinErrFilter(oimDataFilterComponent):
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
-        """The filter applied to the data."""
+        """Applies the filter to the data."""
         setMinimumError(
             data,
             self.params["dataType"],
