@@ -53,7 +53,6 @@ test = [
   "pytest-xdist>=3.8.0,<4",
   "ipykernel>=6.31.0",
   "oifits==0.6.1",
-  "papermill>=2.6.0",
 ]
 
 [project.readme]

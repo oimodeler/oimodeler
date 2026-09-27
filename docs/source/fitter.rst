@@ -757,15 +757,60 @@ Let's finish this section by having a look at some binary data.
 Dynesty fitter
 --------------
 
-The **oimodeler** package also implements :func:`oimFitterDynesty <oimodeler.oimFitter.oimFitterDynesty>`, 
-a fitter based on the `dynesty <https://dynesty.readthedocs.io/>`_ package. This fitter uses 
-Dynamic Nested Sampling (DNS) to estimate Bayesian posteriors and model evidences.
+Nested Sampling  to estimate Bayesian posteriors and model evidences.
 
-Documentation on that fitter will be added later.
+**A few words about Nested Sampling**
+
+The nested sampling algorithm explores the parameter space and estimate the posterior distribution
+of a model, providing an estimate of the Bayesian evidence. Nested sampling continuously focuses on
+regions of the parameter space with higher likelihood. First it randomly chooses a set of points (live points)
+from the prior distribution. Each iteration, the live points with the lowest likelihood are removed and replaced
+by a new points drawn from the prior contours with higher likelihood than the removed points. Thus, the live points
+become increasingly concentrated in regions of high likelihood. Discarded points can be assigned weights according
+to the amount of prior volume they represent. These weighted samples provide an approximation of the posterior
+distribution, while the sum of their contributions gives an estimate of the Bayesian evidence.
+
+One advantage of nested sampling is that it can naturally explore complex or multimodal posterior distributions
+without requiring a single chain to move between different regions of high probability, as MCMC algorithms do.
+
+**Description of the oimFitterDynesty class**
+
+For nested fitting, `oimodeler` uses the **dynesty** python package, encapsulated in the
+:func:`oimFitterDynesty <oimodeler.oimFitter.oimFitterDynesty>` class. A sampler can be selected
+via the ``method`` keyword and can either be ``static`` (`NestedSampler <https://dynesty.readthedocs.io/en/stable/api.html#dynesty.dynesty.NestedSampler>`_)
+or ``dynamic`` (`DynamicNestedSampler <https://dynesty.readthedocs.io/en/stable/api.html#dynesty.dynesty.DynamicNestedSampler>`_)
+and require separate keywords.
+
+Below is an example how to set up the `oimFitterDynesty <oimodeler.oimFitter.oimFitterDynesty>` using the
+``method=dynamic`` (i.e. the ``DynamicNestedSampler``):
+
+.. code:: ipython3
+
+    fit = oim.oimFitterDynesty(
+        data, model, method="dynamic", nlive=200, bound="single", sample="slice"
+    )
+    fit.prepare()
+
+
+The keyword arguments are passed directly through to the underlying fitter class
+
+.. code:: ipython3
+
+  fit.run(
+      dlogz_init=0.5,
+      nlive_init=200,
+      nlive_batch=50,
+      n_effective=1e3,
+      maxiter_init=1e5,
+      maxiter_batch=1e4,
+      maxcall=1e6,
+      progress=True,
+  )
+
+All keyword arguments can be found in the `dynesty <https://dynesty.readthedocs.io/en/stable>` documentation.
 
 
 About uncertainties on parameters
 ---------------------------------
-
 
 

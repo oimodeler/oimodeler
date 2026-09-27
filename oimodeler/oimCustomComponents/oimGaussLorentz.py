@@ -5,7 +5,45 @@ from ..oimComponent import oimComponentFourier
 from ..oimParam import _standardParameters, oimParam
 
 
+# TODO: Rename with E convnetion? For Elliptical?
 class oimGaussLorentz(oimComponentFourier):
+    """Gaussian-Lorentzian component defined in the Fourier space.
+
+    Parameters
+    ----------
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
+    hlr : float or oimInterp
+    flor : float or oimInterp
+    pa : float or oimInterp
+        Position angle of the major axis (deg). Defaults to ``0``.
+    elong : float or oimInterp
+        Elongation of the major axis. Defaults to ``1``.
+
+    Attributes
+    ----------
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
+    hlr : oimParam
+    flor : oimParam
+    pa : oimParam
+        Position angle of the major axis (deg).
+    elong : oimParam
+        Elongation of the major axis.
+
+    Notes
+    -----
+    From `2017A%26A...599A..85L <https://scixplorer.org/abs/2017A%26A...599A..85L>`_.
+    """
+
     name = "Gauss-Lorentzian"
     shortname = "GL"
     elliptic = True

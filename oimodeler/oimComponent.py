@@ -14,7 +14,7 @@ import astropy.units as u
 import numpy as np
 from astropy import units
 from astropy.io import fits
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 from scipy import interpolate
 from scipy.special import j0, jv
 
@@ -76,36 +76,47 @@ def getFourierComponents():
 
 @attach_methods({"pickle": _pickle, "unpickle": classmethod(_unpickle)})
 class oimComponent:
-    """The OImComponent class is the parent abstract class for all types of
-    components that can be added to a OImModel.
+    """The oimComponent class is the abstract parent class for all types of
+    components that can be added to an oimModel.
 
-    It has a similar interface than the oimModel and allow to compute images
-    (or image cubes fore wavelength dependent models or time dependent models)
-    and complex coherentFluxes for a vector of u,v,wl, and t coordinates
+    It has a similar interface as the oimModel and allows to compute images
+    (or image cubes for wavelength-dependent or time-dependent models)
+    and complex-coherent fluxes for a vector of ``(t,wl,u,v)`` coordinates.
+
+    Parameters
+    ----------
+    x : float or oimInterp
+        x pos of the component (mas). Defaults to ``0``.
+    y : float or oimInterp
+        y pos of the component (mas). Defaults to ``0``.
+    f : float or oimInterp
+        Flux (ratio) of the component. Defaults to ``1``.
 
     Attributes
     ----------
     name : str
-        The name of the component.
+        Name of the component.
     shortname : str
         Short name for the component.
     description : str
-        Detailed description of the component.
+        Description of the component.
     params : dict of str to oimParam
-        The dictionary of the component parameters.
+        Dictionary of the component parameters.
+    x : oimParam
+        x pos of the component (mas).
+    y : oimParam
+        y pos of the component (mas).
+    f : oimParam
+        Flux (ratio) of the component.
     """
 
     _firstInit = True
     name = "Generic component"
-    shortname = "Gen comp"
-    description = "This is the class from which all components derived"
+    shortname = "GenComp"
+    description = "Class from which all components are derived"
 
     def __init__(self, **kwargs):
-        """Create and initiliaze a new instance of the oimComponent class.
-
-        All components have at least three parameters the position
-        x and y and their flux f
-        """
+        """Create and initialize an instance of the oimComponent class."""
         self._wl = None  # None value <=> All wavelengths (from Data)
         self._t = [0]  # This component is static
 
@@ -215,55 +226,57 @@ class oimComponent:
             )
             setattr(type(self), key, prop)
 
-    def getComplexCoherentFlux(self, u, v, wl=None, t=None) -> np.ndarray:
+    def getComplexCoherentFlux(
+        self,
+        u: ArrayLike,
+        v: ArrayLike,
+        wl: ArrayLike | None = None,
+        t: ArrayLike | None = None,
+    ) -> NDArray[np.floating]:
         """Compute and return the complex coherent flux for an array of u,v
         (and optionally wavelength and time ) coordinates
 
         Parameters
         ----------
-        u : list or numpy array
-            spatial coordinate u (in cycles/rad)
-        v : list or numpy array
-            spatial coordinate vu (in cycles/rad) .
-        wl : list or numpy array, optional
-            wavelength(s) in meter. The default is None.
-        t :  list or numpy array, optional
-            time in s (mjd). The default is None.
+        u : array_like
+            Spatial coordinate u (cycles/rad).
+        v : array_like
+            Spatial coordinate v (cycles/rad).
+        wl : array_like, optional
+            Wavelength (m). Defaults to ``None``.
+        t :  array_like, optional
+            Time (mjd). Defaults to ``None``.
 
         Returns
         -------
-        A numpy array of  the same size as u & v
+        NDArray[np.floating]
             The complex coherent flux.
         """
         return np.array(u) * 0
 
-    def getImage(self, dim, pixSize, wl=None, t=None) -> np.ndarray:
-        """Compute and return an image or and image cube (if wavelength and time
-        are given).
-
-        The returned image as the x,y dimension dim in pixel with
-        an angular pixel size pixSize in rad. Image is returned as a numpy
-        array unless the keyword fits is set to True. In that case the image is
-        returned as an astropy.io.fits hdu
+    def getImage(
+        self,
+        dim: int,
+        pixSize: float,
+        wl: ArrayLike | None = None,
+        t: ArrayLike | None = None,
+    ) -> NDArray[np.floating]:
+        """Compute an image or image cube (if wavelength and time are given).
 
         Parameters
         ----------
         dim : integer
-            image x & y dimension in pixels
+            Image dimension (pixels).
         pixSize : float
-            pixel angular size in rad
+            Pixel angular size (rad).
         wl : integer, list or numpy array, optional
-             wavelength(s) in meter. The default is None
+             Wavelength (m). Defaults to ``None``.
         t :  integer, list or numpy array, optional
-            time in s (mjd). The default is None
-        fits : bool, optional
-            if True returns result as a fits hdu. The default is False
+            Time (mjd). Defaults to ``None``.
 
         Returns
         -------
-        a numpy 2D array (or 3 or 4D array if wl, t or both are given) or an
-        astropy.io.fits hdu. image hdu if fits=True.
-            The image of the component with given size in pixels and rad
+        image : NDArray[np.floating]
         """
         return np.zeros((dim, dim))
 
@@ -278,7 +291,6 @@ class oimComponent:
     def getNonRegularImage(self, xx, yy, wl=None, t=None):
         """Compute and return a non-regular image function at the xx, yy and
         optional wl and t coordinates)"""
-
         return 0 * xx
 
     def serialize(self, skip_copy: bool = False) -> dict[str, Any]:
@@ -287,9 +299,9 @@ class oimComponent:
         Parameters
         ----------
         skip_copy : bool, optional
-            If "True" skips the top-level deepcopy of oimComponent.
+            If ``True`` skips the top-level deepcopy of oimComponent.
             Sub-level deepcopies (e.g. oimParam) are skipped by default.
-            Default is False.
+            Defaults to ``False``.
         """
         ser = {"params": {}, "other": {}}
         params = self.params
@@ -852,7 +864,8 @@ class oimComponentImage(oimComponent):
 
     def getPixelSize(self, mas=False):
         raise ValueError(
-            "getPixelSize Method not implemented" " while self._pixSize = "
+            "getPixelSize Method not implemented"
+            " while self._pixSize = "
             f"{self._pixSize}"
         )
 
@@ -861,7 +874,7 @@ class oimComponentImage(oimComponent):
 
 
 class oimComponentRadialProfile(oimComponent):
-    """Base class for components define by their radial profile"""
+    """Base class for components defined by a radial profile."""
 
     asymmetric = False
     elliptic = False
