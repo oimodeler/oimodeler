@@ -1473,6 +1473,13 @@ complex-coherent-flux computation using Hankel transform which take into account
 The code corresponding to this section is available in
 `radialProfileComponents.py <https://github.com/oimodeler/oimodeler/blob/main/examples/Modules/radialProfileComponents.py>`_
 
+.. note::
+
+   It is possible to make each **oimComponentRadialProfile** and their any components based on it **asymmetric**.
+   That is by passing ``asymmetric=True`` during the initialization, depending on the ``modulation_order``, a number
+   of ``skw`` and ``skwPa`` parameters are added to the component. The default is ``modulation_order=1``, resulting
+   in ``skw1`` and ``skwPa1``. This induces an azimuthal asymmetry in form of a cosine modulation.
+
 Here is the list of radial-profile components currently implemented in **oimodeler**
 
 .. csv-table:: Available radial profile components
