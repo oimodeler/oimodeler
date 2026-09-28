@@ -12,21 +12,27 @@ the :math:`\chi^2` value between the data and the model as seen in the :ref:`sim
 class, :math:`\chi^2` can be computed only on a subset of datatypes setting the ``dataTypes`` kewyord. 
 
 When creating a :func:`oimFitter <oimodeler.oimFitter.oimFitter>` the user should either pass an instance 
-of :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>` 
+of :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>`,
 
 .. code:: ipython3
 
       fit = oimFitter(sim)
 
-or an instance of :func:`oimData <oimodeler.oimData.oimData>` and  :func:`oimModel <oimodeler.oimModel.oimModel>`  
+an instance of :func:`oimData <oimodeler.oimData.oimData>` and  :func:`oimModel <oimodeler.oimModel.oimModel>` ,
 
 .. code:: ipython3
 
          fit = oimFitter(data, model)
 
+or a list of filenames and some model/
+
+.. code:: ipython3
+
+         fit = oimFitter(filenames, model)
+
 The fitting classes have four common methods:
 
-   - :func:`prepare <oimodeler.oimFitter.oimFitter.prepare>` : prepare the fitter: defining the parameter space...
+   - :func:`prepare <oimodeler.oimFitter.oimFitter.prepare>` : prepare the fitter: defining the parameter space, setting some options...
    - :func:`run <oimodeler.oimFitter.oimFitter.run>` : launch the model-fitting run
    - :func:`getResults <oimodeler.oimFitter.oimFitter.getResults>` : return the best-fit parameters and uncertainties 
    - :func:`printResults <oimodeler.oimFitter.oimFitter.printResults>` : print the result of the model-fitting
@@ -88,7 +94,7 @@ If you are not confident with this package, you should have a look at the docume
 
 The **emcee** sampler is encapsulated into the :func:`oimFitterEmcee <oimodeler.oimFitter.oimFitterEmcee>` class.
 
-At the creation of the fitter the number of desired walker exploring the paramter space can be specified using the 
+At the creation of the fitter the number of desired walkers exploring the paramter space can be specified using the
 keyword ``nwalkers``. The default number is 20.
 
 .. code:: ipython3
@@ -123,9 +129,11 @@ progress bar.
 
    fit.run(nsteps=5000, progress=True)
 
-After the MCMC run, the results can be plotted with three methods:
+After the MCMC run, the results can be explored using two plotting methods:
 
+* :func:`oimFitterEmcee.walkersPlot <oimodeler.oimFitter.oimFitterEmcee.walkersPlot>`: produces a **walker plot**, showing the evolution of the MCMC walkers as a function of the iteration number. This plot can be used to visually assess the convergence and mixing of the chains, as well as to identify poorly explored or non-converged regions of parameter space.
 
+* :func:`oimFitter.cornerPlot <oimodeler.oimFitter.oimFitter.cornerPlot>`: produces a **corner plot**, showing the marginalized posterior distributions of the fitted parameters together with their pairwise joint distributions. It provides a convenient visualization of parameter uncertainties, correlations, and degeneracies.
 
 **Example on MIRCX data of a binary star**
 
@@ -133,29 +141,29 @@ To demonstrate the use of the :func:`oimFitterEmcee <oimodeler.oimFitter.oimFitt
 `MIRCX <http://www.astro.ex.ac.uk/people/kraus/mircx.html>`_ observation of the binary star :math:`\beta` Ari. 
 The code for this section is in `emceeFitting.py <https://github.com/oimodeler/oimodeler/tree/main/examples/Modules/emceeFitting.py>`_
 
-We start by creating a binary star model conissting of two uniform disk components.
+We start by creating a binary star model consisting of two uniform disk components.
 
 .. code:: ipython3
 
    ud1 = oim.oimUD()
    ud2 = oim.oimUD()
-   model = oim.oimModel([ud1, ud2])
+   model = oim.oimModel(ud1, ud2)
 
-
-Before starting the run, we need to specify which parameters are free and what their ranges are. By default, all 
-parameters are free, but the components `x` and `y` coordinates. For a binary, we need to release them for one 
-of the components. As we only deal with relative fluxes, we can normalize the total flux to one.
+Before starting the fit, we need to specify which parameters are free and define their allowed ranges. By default, all
+parameters are free, except for the `x` and `y` coordinates of the components. For a binary system, we need to free
+these parameters for one of the components. Since we only deal with relative fluxes, we can normalize the total flux
+to one.
 
 .. code:: ipython3
 
-   ud1.params["d"].set(min=0, max=2)
-   ud1.params["f"].set(min=0.8, max=1)
-   ud2.params["d"].set(min=0, max=2)
-   ud2.params["x"].set(min=-100, max=100, free=True)
-   ud2.params["y"].set(min=-100, max=100, free=True)
+   ud1.d.set(min=0, max=2)
+   ud1.f.set(min=0.8, max=1)
+   ud2.d.set(min=0, max=2)
+   ud2.x.set(min=-100, max=100, free=True)
+   ud2.y.set(min=-100, max=100, free=True)
    model.normalizeFlux()
   
-We can print the list of free paramaters of our binary model:
+We can print the list of free parameters of our binary model:
 
 .. code:: ipython3   
 
@@ -179,6 +187,10 @@ We load the MIRCX data and filter out the OI_VIS table to reduce computation tim
 
 We then create the emcee fitter. We set of number of walkers to 12 and specify that theonly the VIS2DATA and T3PHI we
 will be used to compute the :math:`\chi^2`.
+
+.. code:: ipython3
+
+    fit = oim.oimFitterEmcee(data, model, nwalkers=20, dataTypes=["VIS2DATA", "T3PHI"])
 
 .. note::
 
@@ -253,33 +265,34 @@ We can directly manipulate or plot these data. However, the :func:`oimFitterEmce
 implements various methods to retrieve and plot the results of the mcmc run.
 
 
-The walkers position as the function of the steps with a  :math:`\chi^2` color scale can be plotted 
-using the :func:`oimFitterEmcee.walkersPlot <oimodeler.oimFitter.oimFitterEmcee.walkersPlot>`
-method. This method have the following parameters (default in parenthesis):
+The walker positions as a function of the steps, with a :math:`\chi^2` colour scale, can be plotted using the
+:func:`oimFitterEmcee.walkersPlot <oimodeler.oimFitter.oimFitterEmcee.walkersPlot>` method. This method has the
+following parameters (default values in parentheses):
 
-- ``savefig`` (None) : path of the file to save the plot
-- ``chi2limfact`` (20) : define the upper limit of the color scale in :math:`\chi^2`
-- ``labelsize`` (10) : size of the label of the parameters name
-- ``ncolors`` (128) : number of colors for the color scale (reduce if the function is too slow for large sample)
+* `savefig` (None): path to the file where the plot will be saved.
+* `chi2limfact` (20): defines the upper limit of the :math:`\chi^2` colour scale.
+* `labelsize` (10): size of the parameter name labels.
+* `ncolors` (128): number of colours used for the colour scale (reduce this value if the function is too slow for large samples).
+* `thin` (1): factor by which the sampler is thinned before plotting.
 
-Let's plot the evolution of the walkers with a limit of 10 tiimes the minimum :math:`\chi^2`.
+
+Let's plot the evolution of the walkers with a limit of 10 times the minimum :math:`\chi^2`.
 
 .. code-block:: ipython3
 
-    figWalkers, axeWalkers = fit.walkersPlot(chi2limfact=10)
-
+    figWalkers, axeWalkers = fit.walkersPlot(chi2limfact=5)
 
 .. image:: ../../images/emceeFitting_walkerPlot1.png
   :alt: Alternative text
 
-As evidenced in this figure 20000 steps is not enough for the MCMC run to converge aroun the globaml minimum of :math:`\chi^2` :
-- not all walkers are around the same positions
-- the :math:`\chi^2` is still quite high (but this could also be due to a choice of bad model)
-- the positions are not yet stable as a function of time
+As shown in this figure, 20000 steps are not sufficient for the MCMC run to converge towards the global minimum
+of :math:`\chi^2`:
 
+* the walkers have not yet converged to the same region of parameter space;
+* the :math:`\chi^2` is still relatively high (although this could also be due to an inappropriate model);
+* the walker positions are not yet stable as a function of the step number.
 
-Let's add 20000 steps by running again the same fitter.
-
+Let's add another 20000 steps by running the same fitter again.
 
 .. note::
    By default the :func:`oimFitterEmcee.run <oimodeler.oimFitter.oimFitterEmcee.run>` method starts at the 
@@ -295,30 +308,28 @@ Let's plot the walkers positions for the 40000 steps.
 
 .. code-block:: ipython3
 
-    figWalkers2, axeWalkers2 = fit.walkersPlot(chi2limfact=10)
+    figWalkers2, axeWalkers2 = fit.walkersPlot(chi2limfact=5)
 
 
 .. image:: ../../images/emceeFitting_walkerPlot2.png
   :alt: Alternative text
 
-
-Although not all walkers have converged to the same position, a group of them has converged to a location 
+Although not all walkers have converged to the same position, a group of them has converged to a location
 yielding a significantly lower :math:`\chi^2`. Moreover, the positions of most walkers appear to have remained 
-stable for at least 10,000 steps.
+stable for at least 5000 steps.
 
 Although there is no mathematical test to determine whether the position corresponds to the global minimum 
 of the :math:`\chi^2`, we will assume that the walkers clustered around this minimum have converged to the
 global minimum, while the others are trapped in local minima. As we will see using the grid fitter, 
 this behavior often occurs with binary data.
 
-
 We can generate the well-known corner plot, which displays both 1D and 2D density distributions of the parameters. 
 The **oimodeler** package uses the `corner <https://corner.readthedocs.io/en/latest/>`_ library for this purpose. 
-To ensure we are analyzing only the converged part of the chains, we discard the first 35,000 steps, as most 
+To ensure we are analyzing only the converged part of the chains, we discard the first 35000 steps, as most
 walkers have converged after that point.
 
-By default, the corner plot also excludes samples with a :math:\chi^2 value more than 20 times higher than that
- of the best-fit model. This cutoff can be adjusted using the ``chi2limfact`` keyword of the 
+By default, the corner plot also excludes samples with a :math:`\chi^2 value` more than 20 times higher than that
+of the best-fit model. This cutoff can be adjusted using the ``chi2limfact`` keyword of the
 :func:`oimFitter.cornerPlot <oimodeler.oimFitter.oimFitter.cornerPlot>` method.
 
 However, since not all walkers have converged to the global minimum, we will use a lower value for this parameter 
@@ -333,8 +344,8 @@ to ensure that only the walkers clustered around the global minimum are included
 
 We can now retrieve the results of the fit. The :func:`oimFitterEmcee <oimodeler.oimFitter.oimFitterEmcee>` function 
 can return the ``best``, ``mean``, or ``median`` model, depending on the selected option. It also provides 
-uncertainties estimated from the posterior density distribution
- (see the `emcee <https://emcee.readthedocs.io/en/stable/>`_ documentation for more details).
+uncertainties estimated from the posterior density distribution (see the
+`emcee <https://emcee.readthedocs.io/en/stable/>`_ documentation for more details).
 
 
 .. code-block:: ipython3
@@ -346,8 +357,7 @@ did not converge. This is done using the ``chi2limfact`` keyword (default is aga
 burn-in phase using the ``discard`` option.
 
 When retrieving the results, the simulated data is automatically generated using the fitter's internal 
-simulator. We can then plot the data and model again, and compute the final reduced chi-squared 
-:math:`\chi^2_r`:
+simulator. We can then plot the data and model again, and compute the final :math:`\chi^2_r`:
 
 .. code-block:: ipython3 
     
@@ -366,15 +376,18 @@ of the :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>` class.
    fig2, ax2 = fit.simulator.plotResiduals(["VIS2DATA", "T3PHI"],levels=[1,2])
     
 .. image:: ../../images/emceeFitting_residuals.png
-  :alt: Alternative text 
+  :alt: Alternative text
+
+We can see that the residuals are small, except for the data from the W2–E2 baseline, which show a systematic offset
+at all wavelengths, possibly due to a calibration error.
 
 
 We note that using a low value for the ``chi2limfact`` option is effective in removing walkers that 
 have not converged but biases the posterior distribution.
 
- To obtain a more robust estimate, we can create a new :func:`oimFitterEmcee <oimodeler.oimFitter.oimFitterEmcee>` instance, 
- initialize the parameters using a Gaussian distribution around the putative global minimum (using the currently estimated 
- uncertainties on the parameters as the Gaussian sigma), and run it for several thousand steps.
+To obtain a more robust estimate, we can create a new :func:`oimFitterEmcee <oimodeler.oimFitter.oimFitterEmcee>` instance,
+initialize the parameters using a Gaussian distribution around the putative global minimum (using the currently estimated
+uncertainties on the parameters as the Gaussian sigma), and run it for several thousand steps.
 
 To ensure that the initialization is properly performed, we first use the 
 :func:`oimFitterEmcee.getResults <oimodeler.oimFitter.oimFitterEmcee.getResults>` method, which sets 
@@ -425,24 +438,34 @@ of the :func:`oimSimulator <oimodeler.oimSimulator.oimSimulator>` class.
    fig2, ax2 = fit2.simulator.plotWithResiduals(["VIS2DATA", "T3PHI"],levels=[1,2,3],
                         xunit="cycle/mas",kwargsData=dict(color="byBaseline",marker="."))
 
-
 .. image:: ../../images/emceeFitting_plotwithresiduals.png
    :alt: Alternative text    
+
+
+Note that, for all simulator plotting methods, the plotting style can be customised using dictionaries:
+
+* ``kwargsData`` specifies the plotting style of the data.
+* ``kwargsSimulatedData`` specifies the plotting style of the simulated data.
+
+The parameters provided through these dictionaries are passed to the standard
+:func:`oimPlot <oimodeler.oimPlots.oimPlot>` method, as described in the :ref:`plot` section.
+
+
 
 :math:`\chi^2_r` Minimizer
 --------------------------
 
-**oimodeler** also implements :func:`oimFitterMinimize <oimodeler.oimFitter.oimFitterMinimize>`, 
-a simple :math:`\chi^2_r` minimization fitter based on the 
-`minimize <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_ 
+**oimodeler** also provides :func:`oimFitterMinimize <oimodeler.oimFitter.oimFitterMinimize>`, a simple
+:math:`\chi^2_r` minimization fitter based on the
+`minimize <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_
 function provided by the `scipy <https://docs.scipy.org/doc/scipy/>`_ Python package.
 
-To demonstrate it's use o we will use three VLTI/PIONIER observations of the supergiant Canopus taken from 
-`Domiciano de Souza et al. 2021 <https://ui.adsabs.harvard.edu/abs/2021A%26A...654A..19D/abstract>`_ paper. 
-The code for this section is in 
-`simpleMinimizerFitting.py <https://github.com/oimodeler/oimodeler/tree/main/examples/Modules/simpleMinimizerFitting.py>`_ .
+To demonstrate its use, we will use three VLTI/PIONIER observations of the supergiant Canopus taken from the paper by
+`Domiciano de Souza et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021A%26A...654A..19D/abstract>`_.
+The code for this section is available in
+`simpleMinimizerFitting.py <https://github.com/oimodeler/oimodeler/tree/main/examples/Modules/simpleMinimizerFitting.py>`_.
 
-First, we load the data into an  instance of :func:`oimData <oimodeler.oimData.oimData>`.
+First, we load the data into an instance of the :func:`oimData <oimodeler.oimData.oimData>` class.
 
 .. code-block:: ipython3 
 
@@ -450,7 +473,7 @@ First, we load the data into an  instance of :func:`oimData <oimodeler.oimData.o
    files = list(data_dir.glob("PION*.fits"))
    data=oim.oimData(files)
 
-We create a model, here a single component of a powerlaw limb-darkened disk.
+We create a model consisting of a single component, in this case a power-law limb-darkened disk.
 
 .. code-block:: ipython3 
 
@@ -458,8 +481,8 @@ We create a model, here a single component of a powerlaw limb-darkened disk.
    model = oim.oimModel(pldd)
    model.normalizeFlux()
 
-We create an instance of the :func:`oimFitterMinimize <oimodeler.oimFitter.oimFitterMinimize>` class, 
-prepare the fitter, run it, and finally print the results.
+We create an instance of the :func:`oimFitterMinimize <oimodeler.oimFitter.oimFitterMinimize>` class, prepare the
+fitter, run the fit, and finally print the results.
 
 .. code-block:: ipython3
 
@@ -474,8 +497,7 @@ prepare the fitter, run it, and finally print the results.
    c1_PLLDD_a = 0.19947 ± 0.00310 
    chi2r = 6.06760
 
-Finally, we can plot the comparison obetween our PIONIER data and our model and the residual.
-
+Finally, we can plot the comparison between our PIONIER data and the model, together with the residuals.
 .. code-block:: ipython3
 
    fig, ax = lmfit.simulator.plotWithResiduals(["VIS2DATA", "T3PHI"],xunit="cycle/mas",
@@ -490,12 +512,12 @@ Finally, we can plot the comparison obetween our PIONIER data and our model and 
 .. warning::
    The minimize fitter only converge to the closest local minimum.
 
-For instance, let's see what happens when we start with an initial diameter of 15 mas.
-We can modify the 
+For instance, let's see what happens when we start with an initial diameter of 15 mas. We can modify the initial
+diameter in our model as follows.
 
 .. code-block:: ipython3
 
-   pldd.params["d"].value=10
+   pldd.d.value=10
    lmfit.prepare()
    lmfit.run()
    lmfit.printResults()
@@ -523,7 +545,7 @@ We can plot the data-to-model comparison to verify that the fit is poor.
 
 Note that the minimization method can be specified using the ``method`` keyword during instantiation. 
 The list of available methods, along with their pros and cons, is described in
- `the SciPy minimize documentation <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_ .
+`the SciPy minimize documentation <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_ .
 
 For instance to use the Broyden–Fletcher–Goldfarb–Shanno (BFGS) algorithm:
 

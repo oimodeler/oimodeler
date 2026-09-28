@@ -6,12 +6,10 @@ nimodeler
 =========
 
 
-**nimodeler** is an experimental Python package designed to simulate nulling interferometry data compatible with the NIFITS format.
+**nimodeler** is an experimental Python package designed to simulate nulling interferometry data compatible with the
+NIFITS format. Models are based on **oimodeler** and data simulation on the **NIFITS** python package developpe by R.
+Laugier and available at https://github.com/rlaugier/nifits .
 
-It is built on top of the following libraries:
-
-- **NIFITS**: https://github.com/rlaugier/nifits
-- **oimodeler**: https://github.com/oimodeler/oimodeler/
 
 Project Status
 --------------
@@ -34,20 +32,20 @@ Some plots from  nimodeler and some VLTI/NOTT simulated data
 ------------------------------------------------------------
 
 
-.. figure:: https://github.com/oimodeler/nimodeler/tree/main/images/test_nobackground_v3_channels_responses.png
+.. figure:: https://raw.githubusercontent.com/oimodeler/nimodeler/refs/heads/main/images/test_nobackground_v3_channels_responses.png
 
     Channels response for a exoplanet simulation
 
-.. figure::https://github.com/oimodeler/nimodeler/tree/main/images/flux_allchannels_nobackground_v3.png
+.. figure::https://raw.githubusercontent.com/oimodeler/nimodeler/refs/heads/main/images/flux_allchannels_nobackground_v3.png
 
     Data/Model comparison for an exoplanet simulation
 
 
-.. figure:: https://github.com/oimodeler/nimodeler/tree/main/images/diff_channel_flux_nobackground_v3.png
+.. figure:: https://raw.githubusercontent.com/oimodeler/nimodeler/refs/heads/main/images/diff_channel_flux_nobackground_v3.png
 
     Data/Model comparison of differential null for an exoplanet simulation observed at 20 different hour angle position
     (full night of observation)
 
-.. figure:: https://github.com/oimodeler/nimodeler/tree/main/imagess/position_exploration_nobackground_v3.png
+.. figure:: https://raw.githubusercontent.com/oimodeler/nimodeler/refs/heads/main/images/position_exploration_nobackground_v3.png
 
     Grid exploration of the position of an exoplanet

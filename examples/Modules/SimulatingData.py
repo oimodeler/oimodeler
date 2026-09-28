@@ -7,6 +7,7 @@ Created on Mon Apr 28 11:02:12 2025
 
 from pathlib import Path
 from pprint import pprint
+import numpy as np
 
 import oimodeler as oim
 
@@ -38,6 +39,9 @@ sim.data.info()
 # NOTE: Compute the complex corr flux from the model at the data spatial freq
 # with option to compute chi2 and final simulated data in oifits format
 sim.compute(computeChi2=True, computeSimulatedData=True)
+
+# this is equivalent to the line above
+sim.computeAll()
 
 # NOTE: Access the simulated data
 sim.simulatedData.info()
@@ -72,3 +76,47 @@ fig2, ax2 = sim.plotResiduals(
     ["VIS2DATA", "T3PHI"],
     savefig=save_dir / "ExampleOimSimulator_residuals_plot.png",
 )
+
+#%%
+# Note data + residual plot
+fig3, ax3 = sim.plotWithResiduals("VIS2DATA",
+    savefig=save_dir / "ExampleOimSimulator_data_and_residuals_plot.png",
+)
+#%% Limiting the x and y position to 50 mas from the primary.
+ud2.x.set(min=-50,max=50)
+ud2.y.set(min=-50,max=50)
+
+
+#%%
+
+def positionPrior():
+    sep = np.sqrt(ud2.x.value**2+ud2.y.value**2)
+    return 1e99*(sep>50)
+#%%
+ud2.x.value = 5
+ud2.y.value = 5
+print(positionPrior())
+
+ud2.x.value = 80
+ud2.y.value = 30
+print(positionPrior())
+
+#%%
+sim.cprior = positionPrior
+
+
+for prior in [None,positionPrior]:
+    for x,y in zip([5,80],[5,30]):
+        ud2.x.value = x
+        ud2.y.value = y
+        sim.cprior = prior
+        sim.computeAll()
+        txt = (prior!=None)*"with"+(prior==None)*"without"
+        print(f"Chi2 {txt} prior and x={x} y={y} => {sim.chi2}")
+
+
+#%%
+print(sim.priorWeight)
+sim.priorWeight = 10
+
+

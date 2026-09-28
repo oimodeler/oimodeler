@@ -24,15 +24,15 @@ file = data_dir / "MIRCX_L2.2023Oct14._bet_Ari.MIRCX_IDL.nn.AVG10m.fits"
 # NOTE: Build a oimodeler model with the same parameters
 ud1 = oim.oimUD()
 ud2 = oim.oimUD()
-model = oim.oimModel([ud1, ud2])
+model = oim.oimModel(ud1, ud2)
 
 # NOTE: Set the limits of the parameter space but also set x and y of the UD
 # as a free parameters and f of the pt as fixed (to 1)
-ud1.params["d"].set(min=0, max=2)
-ud1.params["f"].set(min=0.8, max=1)
-ud2.params["d"].set(min=0, max=2)
-ud2.params["x"].set(min=-100, max=100, free=True)
-ud2.params["y"].set(min=-100, max=100, free=True)
+ud1.d.set(min=0, max=2)
+ud1.f.set(min=0.8, max=1)
+ud2.d.set(min=0, max=2)
+ud2.x.set(min=-100, max=100, free=True)
+ud2.y.set(min=-100, max=100, free=True)
 model.normalizeFlux()
 pprint(model.getFreeParameters())
 
@@ -62,18 +62,18 @@ lnprob = fit.sampler.lnprobability
 
 # %%
 figWalkers, axeWalkers = fit.walkersPlot(
-    chi2limfact=10, savefig=save_dir / "emceeFitting_walkerPlot1.png"
+    chi2limfact=5, savefig=save_dir / "emceeFitting_walkerPlot1.png"
 )
 # %%
 fit.run(nsteps=20000, progress=True)
 
 # %%
 figWalkers2, axeWalkers2 = fit.walkersPlot(
-    chi2limfact=10, savefig=save_dir / "emceeFitting_walkerPlot2.png"
+    chi2limfact=5, savefig=save_dir / "emceeFitting_walkerPlot2.png"
 )
 # %%
 figCorner, axeCorner = fit.cornerPlot(
-    discard=35000, chi2limfact=3, savefig=save_dir / "emceeFitting_corner1.png"
+    discard=3500, chi2limfact=3, savefig=save_dir / "emceeFitting_corner1.png"
 )
 
 # NOTE: Get the results of the fit (updates the class internal logic)
@@ -85,11 +85,11 @@ best, err_l, err_u, err = fit.getResults(
 fig0, ax0 = fit.simulator.plot(
     ["VIS2DATA", "T3PHI"], savefig=save_dir / "emceeFitting_fittedData.png"
 )
-
+#%%
 # NOTE: Residual plot
 fig2, ax2 = fit.simulator.plotResiduals(
-    ["VIS2DATA", "T3PHI"],
-    levels=[1, 2],
+    ["VIS2DATA", "T3PHI"],color="byBaseline",
+    levels=[1, 2],legend=True,
     savefig=save_dir / "emceeFitting_residuals.png",
 )
 

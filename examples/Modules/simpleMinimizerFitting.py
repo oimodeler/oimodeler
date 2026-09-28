@@ -48,7 +48,7 @@ ax[0].set_ylim(1e-4, 1)
 fig.savefig(save_dir / "simpleMinimizerFitting_plotwithresiduals.png")
 
 # %%
-pldd.params["d"].value = 15
+pldd.d.value = 15
 
 lmfit.prepare()
 lmfit.run()
