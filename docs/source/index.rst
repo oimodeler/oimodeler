@@ -166,10 +166,10 @@ External constraints can also be added by writting user priors functions. For in
    :caption: Modules Description
    
    data
+   plot
    models
    simulator
    fitter
-   plot
    utils
 
 .. toctree::
