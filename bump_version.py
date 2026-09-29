@@ -6,7 +6,6 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 PACKAGE_FILE = BASE_DIR / "oimodeler" / "__init__.py"
 
-
 def get_commits():
     try:
         last_tag = subprocess.check_output(
