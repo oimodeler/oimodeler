@@ -30,7 +30,7 @@ def detect_level(commits):
             return "MAJOR"
         elif msg.startswith("MINOR:"):
             level = "MINOR"
-        elif msg.startswith("PATCH:") and level is None:
+        elif msg.startswith("PATCH:"):
             level = "PATCH"
 
     return level
@@ -62,6 +62,8 @@ def main():
 
     commits = get_commits()
     level = detect_level(commits)
+
+    print(commits)
 
     if level is None:
         print("No bump keyword → skip")
