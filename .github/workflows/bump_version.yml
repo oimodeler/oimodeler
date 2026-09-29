@@ -23,13 +23,18 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: "3.11"
 
       - name: Run bump script
+        id: bump
+        env:
+          GITHUB_BEFORE: ${{ github.event.before }}
+          GITHUB_SHA: ${{ github.sha }}
         run: python bump_version.py
 
       - name: Create Pull Request
         id: cpr
+        if: steps.bump.outputs.bump == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           branch: bump-version
@@ -43,6 +48,7 @@ jobs:
         if: steps.cpr.outputs.pull-request-number != ''
         run: |
           gh pr merge ${{ steps.cpr.outputs.pull-request-number }} \
-            --squash --delete-branch
+            --squash \
+            --delete-branch
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

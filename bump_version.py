@@ -26,8 +26,6 @@ def get_commits():
         f"{github_before}..{github_sha}",
     ]
 
-
-
     result = subprocess.check_output(cmd, text=True)
 
     return result.splitlines()
