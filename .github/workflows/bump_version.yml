@@ -27,9 +27,6 @@ jobs:
 
       - name: Run bump script
         id: bump
-        env:
-          GITHUB_BEFORE: ${{ github.event.before }}
-          GITHUB_SHA: ${{ github.sha }}
         run: python bump_version.py
 
       - name: Create Pull Request
