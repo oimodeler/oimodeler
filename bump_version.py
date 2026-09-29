@@ -52,6 +52,9 @@ def main():
     content = PACKAGE_FILE.read_text()
 
     match = re.search(r'__version__\s*=\s*"([^"]+)"', content)
+    
+    print(match)
+    print(content)
     if not match:
         raise ValueError("__version__ not found")
 
