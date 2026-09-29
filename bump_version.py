@@ -13,6 +13,7 @@ def get_commits():
             ["git", "describe", "--tags", "--abbrev=0"],
             text=True
         ).strip()
+        print(last_tag)
         cmd = ["git", "log", f"{last_tag}..HEAD", "--pretty=%B"]
     except subprocess.CalledProcessError:
         cmd = ["git", "log", "--pretty=%B"]
@@ -23,14 +24,15 @@ def get_commits():
 def detect_level(commits):
     level = None
 
-    for msg in commits:
+    for i,msg in enumerate(commits):
+       
         msg = msg.strip()
-
+        print(f",{i}\t {msg})
         if msg.startswith("MAJOR:"):
-            return "MAJOR"
-        elif msg.startswith("MINOR:"):
+            level = "MAJOR"
+        elif msg.startswith("MINOR:") and level != "MAJOR":
             level = "MINOR"
-        elif msg.startswith("PATCH:"):
+        elif msg.startswith("PATCH:") and level != "MAJOR" and level != "MINOR":
             level = "PATCH"
 
     return level
@@ -62,8 +64,6 @@ def main():
 
     commits = get_commits()
     level = detect_level(commits)
-
-    print(commits)
 
     if level is None:
         print("No bump keyword → skip")
