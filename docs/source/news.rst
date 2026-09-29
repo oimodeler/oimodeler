@@ -3,14 +3,89 @@
 News and Changelog
 ==================
 
+2026-09-28
+----------
+
+V1.0.0
+^^^^^^
+
+New Features
+::::::::::::
+
+-  new images-based components:
+
+    - :func:`oimGrater < oimodeler.oimCustomComponents.oimGrater.oimGrater>` :
+      **oimodeler** wrapping of pyGrater debris disk code
+
+    - :func:`oimInnerRim < oimodeler.oimCustomComponents.oimInnerRim.oimInnerRim>` :
+      simple geometrical inner rim model for dusty disk
+
+    - :func:`oimBipolar <oimodeler.oimCustomComponents.oimBipolar.oimBipolar>` :
+      semi-physical bipolar model for nova including kinematics in emission lines
+
+- Implementation of two check methods for image-based components:
+
+    - :func:`checkPaddingEffect <oimodeler.oimModel.oimModel.checkPaddingEffect>` to evaluate padding effect on FFT
+    - :func:`checkSamplingEffect <oimodeler.oimModel.oimModel.checkSamplingEffect>` similar for sampling effect in the
+      image plan
+
+- :func:`plotVis <oimodeler.oimModel.oimModel.plotVis>` : easy plot of model visibility
+
+-  :func:`oimWavelengthIntpBinFilter < oimodeler.oimDataFilter.oimWavelengthIntpBinFilter>` :
+   data-filter for binning with interpolation on non regular wavelength grid:
+
+- Full implementation of model serialization to save, load, copy, and clone models.
+
+- :func:`getFOV <oimodeler.oimModel.oimModel.getFOV>`: Field of View for model and components:
+
+- Implementation of pytest test suite
+
+- Automatic code versionning and building of documentation
+
+Upgrade features
+::::::::::::::::
+
+- Refactoring of most plotting code using numpy masked array for data flagging
+
+- :func:`oimComputeChi2PlusOneUncertainties <oimodeler.oimFitter.oimComputeChi2PlusOneUncertainties>` :
+  new implementation without fixed range to determine the :math:`\chi^2_r + 1` uncertainties on model parameters
+
+- Refactoring of :func:`oimExpRing < oimodeler.oimCustomComponents.oimExpRing.oimExpRing>` as a Fourier-based model with
+  a series of udisk instead of a Radial-profile component
+
+- Changing name of old oimExpRing to
+  :func:`oimRadialExpRing < oimodeler.oimCustomComponents.oimRadialRings.oimRadialExpRing>`
+
+- Changing name of oimRadialRing and oimRadialExpRing2 to
+  :func:`oimRadialPowRing < oimodeler.oimCustomComponents.oimRadialRings.oimRadialPowRing>` and
+  :func:`oimRadialPowRing2 < oimodeler.oimCustomComponents.oimRadialRings.oimRadialPowRing2>`, respectively
+
+- refactoring of :func:`oimComponentRadialProfile < oimodeler.oimComponents.oimComponentRadialProfile>`
+  for faster Hankel trasnform computation for chromatic case
+
+- adding assymetries for :func:`oimComponentRadialProfile < oimodeler.oimComponents.oimComponentRadialProfile>`
+
+- code cleaning for v1.0 release version
+
+- Major update of documentation and examples
+
+Bug fix
+:::::::
+
+- Correction of extrapolation in FFTs creating some bugged images with getImage with fromFT=True option when pixel size
+  was smaller than the intrinsinc one
+
+- few plotting bugs corrected
+
+
 2026-03-05
 ----------
 
 v0.9.2: 
 ^^^^^^^
 
-New Features:
-:::::::::::::
+New Features
+::::::::::::
 
 - :func:`oimBinaryOrbit <oimodeler.oimCustomComponents.oimBinaryOrbit>`: a binary orbit component with customizable primary and secondary stars including radial velocity & separation computation to link with external prior in simulator.
 
@@ -26,7 +101,7 @@ New Features:
 
 - :func:`oimParamLinkerFunction <oimodeler.oimParam.oimParamLinkerFunction>`: possiblity to link multiple parameters together using a user function
 
-Upgrade features:
+Upgrade features
 ::::::::::::::::
 
 - :func:`oimParam <oimodeler.oimParam.oimParam>`: access to parameter quantity (i.e., as astropy definition value x unit) through quantity member
@@ -40,8 +115,8 @@ Upgrade features:
 v0.9.0:  2nd Beta Version
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-New Features:
-:::::::::::::
+New Features
+::::::::::::
 
 - added :math:`\chi^2_r` grid exploration: :func:`oimFitterGrid <oimodeler.oimFitter.oimFitterGrid>`
 

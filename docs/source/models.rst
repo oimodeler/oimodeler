@@ -1117,7 +1117,7 @@ Another way to reduce the computation time of the FFT (and DFT) is to reduce the
 size, thereby keeping the field of view fixed. However, this also introduces a sampling error.
 
 We can check the effect of pixel sampling using the
-:func:`checkPaddingEffect <oimodeler.oimModel.oimModel.checkPaddingEffect>` method, which works similarly. Both methods
+:func:`checkSamplingEffect <oimodeler.oimModel.oimModel.checkSamplingEffect>` method, which works similarly. Both methods
 allow to plot the results using the ``plot=True`` option.
 
 .. code-block:: ipython3
