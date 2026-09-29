@@ -18,38 +18,15 @@ def get_commits():
     github_before = os.environ.get("GITHUB_EVENT_BEFORE")
     github_sha = os.environ.get("GITHUB_SHA")
 
-    # Running in GitHub Actions
-    if github_before and github_sha:
-        cmd = [
-            "git",
-            "log",
-            "--format=%s",
-            f"{github_before}..{github_sha}",
-        ]
 
-    # Running locally
-    else:
-        try:
-            last_tag = subprocess.check_output(
-                ["git", "describe", "--tags", "--abbrev=0"],
-                text=True,
-            ).strip()
+    cmd = [
+        "git",
+        "log",
+        "--format=%s",
+        f"{github_before}..{github_sha}",
+    ]
 
-            print(f"Last tag: {last_tag}")
 
-            cmd = [
-                "git",
-                "log",
-                "--format=%s",
-                f"{last_tag}..HEAD",
-            ]
-
-        except subprocess.CalledProcessError:
-            cmd = [
-                "git",
-                "log",
-                "--format=%s",
-            ]
 
     result = subprocess.check_output(cmd, text=True)
 
