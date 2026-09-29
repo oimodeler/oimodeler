@@ -27,7 +27,7 @@ def detect_level(commits):
     for i,msg in enumerate(commits):
        
         msg = msg.strip()
-        print(f",{i}\t {msg})
+        print(f"{i}\t {msg}")
         if msg.startswith("MAJOR:"):
             level = "MAJOR"
         elif msg.startswith("MINOR:") and level != "MAJOR":
