@@ -20,7 +20,7 @@ if not save_dir.exists():
     save_dir.mkdir(parents=True)
 
 # %% Create a DISCO model
-bip = oim.oimBipolar(incl=30,vpole=1300,veq=800,alpha=10,beta=1,dist=2800,time=60,dim=32,dr=2)
+bip = oim.oimBipolar(incl=30,vpole=1300,veq=800,alpha=10,beta=1,dist=2800,time=60,dim=128,dr=2)
 m = oim.oimModel(bip)
 m.normalizeFlux()
 bip.normalizeImage = False  # if the absolute Fluxes are important
@@ -55,9 +55,9 @@ wl = 2.1e-6
 B = np.linspace(0.0, 100, num=200)
 spf = B/wl
 
-d1=datetime.datetime.now()
+d1=datetime.now()
 ccf = m.getComplexCoherentFlux(spf, spf*0)
-d2=datetime.datetime.now()
+d2=datetime.now()
 dt=(d2-d1).total_seconds()
 print(dt)
 v = np.abs(ccf)

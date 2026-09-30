@@ -144,7 +144,7 @@ for i in range(n):
     )
     ax[i].get_xaxis().set_visible(False)
     ax[i].get_yaxis().set_visible(False)
-
+#%%
 # NOTE: Creating spatial frequencies for two sets of perpendicular baselines
 # ranging from 0 to 100m and with the previouslt defined wavelength-range
 nB = 20
