@@ -145,7 +145,8 @@ def extlaw_Cardelli89(
 
 
 class ExtinctionMixIn:
-    """Adds extinction to an `oimComponent <oimodeler.oimComponent.oimComponent>`."""
+    """Adds extinction to an
+    :class:`oimComponent <oimodeler.oimComponent.oimComponent>`."""
 
     extincted = False
 

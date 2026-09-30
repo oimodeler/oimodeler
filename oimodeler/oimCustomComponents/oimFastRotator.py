@@ -225,7 +225,7 @@ def fastRotator_2(
 
     gp = G * M / R_pol**2
 
-    if beta is np.nan:
+    if np.isnan(beta):
         beta = 0.25 - eps / 3
 
     Teff = Tp * (geff / gp) ** beta
@@ -373,15 +373,16 @@ class oimFastRotator(oimComponentImage):
 
         return im
 
-    def getPixelSize(self,mas=False):
+    def getPixelSize(self, mas=False):
         dpole = self.params["dpole"]()
         dim = self.params["dim"]()
         fact = 1
         if mas == False:
             fact = units.mas.to(units.rad)
-        self._pixSize = 1.5 * dpole / dim *fact
-        
-        return  self._pixSize
+        self._pixSize = 1.5 * dpole / dim * fact
+
+        return self._pixSize
+
 
 class oimFastRotatorLLDD(oimComponentImage):
     name = "Fast Rotator"
@@ -455,17 +456,16 @@ class oimFastRotatorLLDD(oimComponentImage):
         self.getPixelSize()
 
         return im
-        
 
-    def getPixelSize(self,mas=False):
+    def getPixelSize(self, mas=False):
         dpole = self.params["dpole"]()
         dim = self.params["dim"]()
         fact = 1
         if mas == False:
             fact = units.mas.to(units.rad)
-        self._pixSize = 1.5 * dpole / dim *fact
-        
-        return  self._pixSize        
+        self._pixSize = 1.5 * dpole / dim * fact
+
+        return self._pixSize
 
 
 class oimFastRotatorQuadLDD(oimComponentImage):
@@ -557,18 +557,16 @@ class oimFastRotatorQuadLDD(oimComponentImage):
         self.getPixelSize()
 
         return im
-        
 
-    def getPixelSize(self,mas=False):
+    def getPixelSize(self, mas=False):
         dpole = self.params["dpole"]()
         dim = self.params["dim"]()
         fact = 1
         if mas == False:
             fact = units.mas.to(units.rad)
-        self._pixSize = 1.5 * dpole / dim *fact
-        
-        return  self._pixSize        
+        self._pixSize = 1.5 * dpole / dim * fact
 
+        return self._pixSize
 
 
 class oimFastRotatorNLLDD(oimComponentImage):
@@ -680,16 +678,16 @@ class oimFastRotatorNLLDD(oimComponentImage):
         self._pixSize = 1.5 * dpole / dim * units.mas.to(units.rad)
 
         return im
-    
-    def getPixelSize(self,mas=False):
+
+    def getPixelSize(self, mas=False):
         dpole = self.params["dpole"]()
         dim = self.params["dim"]()
         fact = 1
         if mas == False:
             fact = units.mas.to(units.rad)
-        self._pixSize = 1.5 * dpole / dim *fact
-        
-        return  self._pixSize
+        self._pixSize = 1.5 * dpole / dim * fact
+
+        return self._pixSize
 
 
 class oimFastRotatorMasse(oimComponentImage):
@@ -825,13 +823,13 @@ class oimFastRotatorMasse(oimComponentImage):
         self.getPixelSize()
 
         return im
-        
-    def getPixelSize(self,mas=False):
+
+    def getPixelSize(self, mas=False):
         dpole = self.params["dpole"]()
         dim = self.params["dim"]()
         fact = 1
         if mas == False:
             fact = units.mas.to(units.rad)
-        self._pixSize = 1.5 * dpole / dim *fact
-        
-        return  self._pixSize        
+        self._pixSize = 1.5 * dpole / dim * fact
+
+        return self._pixSize

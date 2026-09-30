@@ -5,6 +5,7 @@ Tests for the oimodeler.oimComponent module.
 import pytest
 
 from oimodeler.oimComponent import oimComponent, oimComponentFourier
+from oimodeler.oimExtinction import extlaw_FitzIndeb
 from oimodeler.oimParam import oimInterp, oimParam, oimParamInterpolator
 
 from .helpers import assert_component_equal
@@ -64,6 +65,8 @@ class TestOimComponent:
             assert hasattr(fourier_component, "extargs")
             assert hasattr(fourier_component, "extlaw")
             assert "A_V" in fourier_component.params
+            assert fourier_component.A_V.value == pytest.approx(0.9)
+            assert fourier_component.extlaw == extlaw_FitzIndeb
 
         def test_interpolator(self) -> None:
             """Test __init__/_eval with oimInterp for an oimParam value."""

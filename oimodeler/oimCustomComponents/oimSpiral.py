@@ -41,7 +41,7 @@ class oimSpiral(oimComponentImage):
 
         # Finally evalutating paramters as for all other components
         self._eval(**kwargs)
-        
+
         self._fwhmFact = 2
 
     def _imageFunction(self, xx, yy, wl, t):
@@ -64,4 +64,3 @@ class oimSpiral(oimComponentImage):
         fwhm = self.params["fwhm"]()
         dim = self.params["dim"]()
         return self._fwhmFact * fwhm / dim * units.mas.to(units.rad)
-
