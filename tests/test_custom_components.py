@@ -25,33 +25,37 @@ from oimodeler.oimParam import oimInterp
 from oimodeler.oimSimulator import oimSimulator
 
 
-@pytest.mark.skip(reason="Currently gives errors unrelated to test")
 class TestOimTempGrad:
-    """Tests `oimCustomComponents.oimTempGrad`."""
+    """Tests ``oimCustomComponents.oimTempGrad``."""
 
-    # TODO: Should this data be saved in the `test_data_dir`
     @pytest.fixture(scope="module")
-    def data(self, global_data_dir: Path) -> oimData:
+    def data(self, test_data_dir: Path) -> oimData:
         """Data suited for temperature gradient."""
-        data = oimData(
-            sorted((global_data_dir / "AS209_MATISSE").glob("*.fits"))
+        fits_files = sorted((test_data_dir / "oimTempGrad").glob("*.fits"))
+        lband_ind = [i for i, f in enumerate(fits_files) if "-LM_" in f.name]
+        nband_ind = [i for i, f in enumerate(fits_files) if "_N_" in f.name]
+
+        data = oimData(fits_files)
+        filt_wl_L = oimWavelengthRangeFilter(
+            targets=lband_ind, wlRange=[3.2e-6, 3.8e-6]
         )
-        f1 = oimWavelengthRangeFilter(targets=[1, 2], wlRange=[3.2e-6, 3.8e-6])
         filt_bin_L = oimWavelengthBinningFilter(
-            targets=[1, 2], bin=5, normalizeError=False
+            targets=lband_ind, bin=5, normalizeError=False
         )
         filt_bin_N = oimWavelengthBinningFilter(
-            targets=0, bin=7, normalizeError=False
+            targets=nband_ind, bin=7, normalizeError=False
         )
-        f2 = oimKeepDataTypeFilter(dataType=["FLUXDATA", "VISAMP"])
-        data.setFilter(oimDataFilter([f1, f2, filt_bin_L, filt_bin_N]))
+        filt_keep = oimKeepDataTypeFilter(dataType=["FLUXDATA", "VISAMP"])
+        data.setFilter(
+            oimDataFilter([filt_wl_L, filt_keep, filt_bin_L, filt_bin_N])
+        )
         return data
 
     @pytest.fixture(scope="module")
     def vis_base(self, test_data_dir: Path) -> NDArray[np.float64]:
         """Baseline correlated fluxes for temperature gradient
         to detect if model executes correctly. Should be equal to test."""
-        return np.load(test_data_dir / "TempGradVis.npy")
+        return np.load(test_data_dir / "oimTempGrad" / "vis.npy")
 
     @pytest.fixture(scope="module")
     def star(self) -> oimPt:
@@ -60,12 +64,12 @@ class TestOimTempGrad:
 
     @pytest.fixture(scope="module")
     def temp_grad_kwargs(
-        self, global_data_dir: Path
+        self, test_data_dir: Path
     ) -> dict[str, float | oimInterp]:
         """Parameters for the base temperature gradient."""
         opac_file = (
-            global_data_dir
-            / "FSCMa_MATISSE"
+            test_data_dir
+            / "oimTempGrad"
             / "dustkappa_olivine_graphite_1_20.inp"
         )
         op_wl, op = np.loadtxt(opac_file, usecols=[0, 1], unpack=True)
@@ -104,7 +108,6 @@ class TestOimTempGrad:
         model.components.append(tg)
         return model
 
-    # TODO: Save the complex vis as well to compare if something changes in the computation over tim
     @pytest.mark.parametrize(
         "params",
         (
@@ -128,7 +131,6 @@ class TestOimTempGrad:
         star: oimPt,
         temp_grad_model: oimModel,
         temp_grad_kwargs: dict[str, float | oimInterp],
-        global_data_dir: Path,
         params: dict[str, float],
     ) -> None:
         """Tests if models initialised with `compute_sigma0` and `flat` are

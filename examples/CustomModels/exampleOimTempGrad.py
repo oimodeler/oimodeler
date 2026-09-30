@@ -10,19 +10,25 @@ import oimodeler as oim
 # NOTE: Load MATISSE data of AS209 (YSO) into an oimData object
 path = Path(__file__).parent.parent.parent
 save_dir = path / "images"
-files = sorted((path / "data" / "AS209_MATISSE").glob("*.fits"))
-data = oim.oimData(files)
+fits_files = sorted((path / "data" / "AS209_MATISSE").glob("*.fits"))
+data = oim.oimData(fits_files)
 
 # NOTE: Apply filters
-f1 = oim.oimWavelengthRangeFilter(targets=[0, 2], wlRange=[3.2e-6, 3.8e-6])
+lband_ind = [i for i, f in enumerate(fits_files) if "-LM_" in f.name]
+nband_ind = [i for i, f in enumerate(fits_files) if "_N_" in f.name]
+filt_wl_L = oim.oimWavelengthRangeFilter(
+    targets=lband_ind, wlRange=[3.2e-6, 3.8e-6]
+)
 filt_bin_L = oim.oimWavelengthBinningFilter(
-    targets=[0, 2], bin=5, normalizeError=False
+    targets=lband_ind, bin=5, normalizeError=False
 )
 filt_bin_N = oim.oimWavelengthBinningFilter(
-    targets=1, bin=7, normalizeError=False
+    targets=nband_ind, bin=7, normalizeError=False
 )
-f2 = oim.oimKeepDataTypeFilter(dataType=["FLUXDATA", "VISAMP"])
-data.setFilter(oim.oimDataFilter([f1, f2, filt_bin_L, filt_bin_N]))
+filt_keep = oim.oimKeepDataTypeFilter(dataType=["FLUXDATA", "VISAMP"])
+data.setFilter(
+    oim.oimDataFilter([filt_wl_L, filt_keep, filt_bin_L, filt_bin_N])
+)
 
 # NOTE: plot the unfiltered and filtered data (VISAMP)
 fig = plt.figure()
@@ -155,7 +161,7 @@ tg = oim.oimTempGrad(
 # NOTE: Access/Set the temperature at the inner radius
 Tin = tg.Tin
 tg.Tin = Tin
-print(f"Tin: {Tin} K")
+print(f"Tin: {Tin:.2f} K")
 
 # NOTE: Model creation
 model = oim.oimModel([s, tg])
@@ -163,7 +169,7 @@ model = oim.oimModel([s, tg])
 # NOTE: Simulate the initial model observables and compute the associated reduced Chi2
 sim = oim.oimSimulator(data=data, model=model)
 sim.compute(computeChi2=True, computeSimulatedData=True)
-print(f"Chi2r = {sim.chi2r}")
+print(f"Chi2r = {sim.chi2r:.2f}")
 
 # NOTE: plot the model observables and data (without SED)
 fig0, ax0 = sim.plot(["VISAMP"])
