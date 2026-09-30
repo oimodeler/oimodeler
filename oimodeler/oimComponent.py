@@ -1044,44 +1044,38 @@ class oimComponentRadialProfile(oimComponent):
         wl = ucoord * 0 if wl is None else wl
         t = ucoord * 0 if t is None else t
 
-        # TODO: Performance: Move the `np.unique` lines into ``oimData``
-        wl0, idx_wl = np.unique(wl, return_inverse=True)
-        t0, idx_t = np.unique(t, return_inverse=True)
-        uvcoord0, idx_uvcoord = np.unique(
-            np.vstack((ucoord, vcoord)), return_inverse=True, axis=1
-        )
-
+        fxp, fyp = ucoord, vcoord
         if self.elliptic:
-            pa_rad = self.pa.qty(wl0, t0).to(units.rad).value
+            pa_rad = self.pa.qty(wl, t)).to(units.rad).value
             co, si = np.cos(pa_rad), np.sin(pa_rad)
-            elong = (
-                1 / self.cosi(wl0, t0) if self.flat else self.elong(wl0, t0)
-            )
-            M = np.empty(co.shape + (2, 2))
-            M[..., 0] = np.stack((co / elong, si), axis=-1)
-            M[..., 1] = np.stack((-si / elong, co), axis=-1)
-            uvcoord0 = np.einsum("...ij,jk->...ik", M, uvcoord0)
+            fxp = ucoord * co - vcoord * si
+            fyp = ucoord * si + vcoord * co
+
+            if self.flat:
+                fxp *= self.params["cosi"](wl, t)
+            else:
+                fxp /= self.params["elong"](wl, t)
 
         extfactor = np.array([1.0])
         if self.extincted:
             extfactor = 10 ** (
                 -0.4
                 * self.extlaw(
-                    wl0,
+                    wl,
                     *[self.params[extarg].value for extarg in self.extargs],
                 )
             )
 
-        Ir0 = self.getInternalRadialProfile(wl0, t0)
+        Ir0 = self.getInternalRadialProfile(wl, t)
         r = self.r * MAS2RAD
         kr = (
-            2.0 * np.pi * r[:, np.newaxis] * np.hypot(*uvcoord0)[np.newaxis, :]
+            2.0 * np.pi * r[:, np.newaxis] * np.hypot(ucoord, vcoord)[np.newaxis, :]
         )
         kernel = j0(kr)
 
         # FIXME: Not yet tested for correct output values.
         if self.asymmetric:
-            psi = np.arctan2(*uvcoord0)
+            psi = np.arctan2(ucoord, vcoord)
             for i in range(1, self.modulation + 1):
                 skwi = getattr(self, f"skw{i}")(wl, t)
                 skwPai = getattr(self, f"skwPa{i}").qty(wl, t).to(u.rad).value
@@ -1092,19 +1086,19 @@ class oimComponentRadialProfile(oimComponent):
         kernel *= (2 * np.pi * r * self.dr * MAS2RAD)[:, np.newaxis]
 
         # TODO: Grid is overcomputed: (nwl * nuv[m]) < (nwl * nuv[cycle/rad])
-        vc0 = Ir0 @ kernel * 1e23 + 0j
-        vc0 *= (
+        vc = Ir0 @ kernel * 1e23 + 0j
+        vc *= (
             self._ftTranslateFactor(
-                *uvcoord0[:, np.newaxis, np.newaxis],
-                wl0[np.newaxis, :, np.newaxis],
-                t0[:, np.newaxis, np.newaxis],
+                ucoord[np.newaxis, np.newaxis],
+                vcoord[np.newaxis, np.newaxis],
+                wl[np.newaxis, :, np.newaxis],
+                t[:, np.newaxis, np.newaxis],
             )
-            * self.f(wl0, t0)
+            * self.f(wl, t)
             * extfactor[np.newaxis, :, np.newaxis]
         )
+        return vc
 
-        # FIXME: Test if correct for ``(Ir0.shape[0] = nt0) != 1``
-        return vc0[idx_t if Ir0.shape[0] != 1 else 0, idx_wl, idx_uvcoord]
 
 
 class oimComponentFitsImage(oimComponentImage):
@@ -1191,5 +1185,3 @@ class oimComponentFitsImage(oimComponentImage):
     def getPixelSize(self, mas=False):
         self._pixSize = self._pixSize0 * self.params["scale"].value
         return self._pixSize * (RAD2MAS * mas + (not mas))
-
-        

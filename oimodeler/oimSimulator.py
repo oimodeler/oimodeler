@@ -186,12 +186,13 @@ class oimSimulator:
                 "FLUXDATA",
             ]
 
-        self.vcompl = self.model.getComplexCoherentFlux(
-            self.data.vect_u,
-            self.data.vect_v,
-            self.data.vect_wl,
-            self.data.vect_mjd,
-        )
+        # TODO: Test this
+        self.vcompl0 = self.model.getComplexCoherentFlux(
+            self.data.vect_u0,
+            self.data.vect_v0,
+            self.data.vect_wl0,
+            self.data.vect_mjd0,
+        )[self.idx_mjd, self.idx_wl, self.idx_uv0]
 
         nelChi2 = 0
         chi2 = 0
@@ -206,7 +207,6 @@ class oimSimulator:
                 self.simulatedData.addData(hdulistDeepCopy(datai))
 
         data = self.data
-
         if computeChi2 or computeSimulatedData:
             idx = 0
             nfiles = len(data.struct_u)

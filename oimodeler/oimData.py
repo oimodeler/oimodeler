@@ -599,6 +599,16 @@ class oimData:
                     self.struct_val[-1].append(val)
                     self.struct_err[-1].append(err)
                     self.struct_flag[-1].append(flag)
+
+        (self.vect_u0, self.vect_v0), self.idx_uv = np.unique(
+            np.vstack((self.vect_u, self.vect_v)), return_inverse=True, axis=1
+        )
+        self.vect_wl0, self.idx_wl = np.unique(
+            self.vect_wl, return_inverse=True
+        )
+        self.vect_mjd0, self.idx_mjd = np.unique(
+            self.vect_mjd, return_inverse=True
+        )
         self._prepared = True
 
     def writeto(
