@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import copy
-import inspect
 import warnings
 from collections.abc import Callable
 from pathlib import Path
@@ -19,7 +18,7 @@ from scipy import interpolate
 from scipy.special import j0, jv
 
 from . import __dict__ as oimDict
-from .oimExtinction import extlaw_FitzIndeb as extlaw
+from .oimExtinction import ExtinctionMixIn
 from .oimOptions import MAS2RAD, RAD2MAS, oimOptions
 from .oimParam import (
     _standardParameters,
@@ -124,7 +123,12 @@ class oimComponent:
         self.params["x"] = oimParam(**_standardParameters["x"])
         self.params["y"] = oimParam(**_standardParameters["y"])
         self.params["f"] = oimParam(**_standardParameters["f"])
+        self._setup_mixins(kwargs)
         self._eval(**kwargs, checkParam=False)
+
+    def _setup_mixins(self, kwargs) -> None:
+        """Set up mixins. That is, additional capabilities for the component
+        (e.g. ellipticity, extinction)."""
 
     def _paramstr(self):
         txt = []
@@ -396,7 +400,7 @@ class oimComponent:
             )
 
 
-class oimComponentFourier(oimComponent):
+class oimComponentFourier(ExtinctionMixIn, oimComponent):
     """Class for all component analytically defined in the Fourier plan.
     Inherit from the oimComponent.
 
@@ -426,56 +430,7 @@ class oimComponentFourier(oimComponent):
 
             self.params["pa"] = oimParam(**_standardParameters["pa"])
 
-        # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
-        if "extlaw" in kwargs or kwargs.get("extincted", False):
-            self.extincted = True
-            self.extargs, self.extlaw = [], kwargs.get("extlaw", extlaw)
-
-            for extarg in inspect.getfullargspec(self.extlaw).args[1:]:
-                self.extargs.append(extarg)
-                self.params[extarg] = oimParam(
-                    **_standardParameters.get(extarg, {"name": extarg})
-                )
-        # TODO: Remove this eventually. Just in place due to breaking change
-        # after v0.9.8 and before next version release.
-        elif "A_V" in kwargs:
-            raise NotImplementedError(
-                "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
-            )
-
         self._eval(**kwargs, checkParam=False)
-
-    def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
-        fxp, fyp = ucoord, vcoord
-        if self.elliptic:
-            pa_rad = (self.params["pa"](wl, t)) * self.params["pa"].unit.to(
-                units.rad
-            )
-            co, si = np.cos(pa_rad), np.sin(pa_rad)
-            fxp = ucoord * co - vcoord * si
-            fyp = ucoord * si + vcoord * co
-
-            if self.flat:
-                fxp *= self.params["cosi"](wl, t)
-            else:
-                fxp /= self.params["elong"](wl, t)
-
-        extfactor = 1.0
-        if self.extincted:
-            extfactor = 10 ** (
-                -0.4
-                * self.extlaw(
-                    wl, *[self.params[extarg].value for extarg in self.extargs]
-                )
-            )
-
-        vc = self._visFunction(fxp, fyp, np.hypot(fxp, fyp), wl, t)
-        return (
-            vc
-            * self._ftTranslateFactor(ucoord, vcoord, wl, t)
-            * self.params["f"](wl, t)
-            * extfactor
-        )
 
     def _visFunction(self, ucoord, vcoord, rho, wl, t):
         return ucoord * 0
@@ -515,15 +470,6 @@ class oimComponentFourier(oimComponent):
             else:
                 x_arr = xp * self.params["elong"](wl_arr, t_arr)
 
-        extfactor = np.array([1.0])
-        if self.extincted:
-            extfactor = 10 ** (
-                -0.4
-                * self.extlaw(
-                    wl, *[self.params[extarg].value for extarg in self.extargs]
-                )
-            )
-
         image = (
             self._imageFunction(
                 x_arr.reshape(dims),
@@ -531,7 +477,7 @@ class oimComponentFourier(oimComponent):
                 wl_arr.reshape(dims),
                 t_arr.reshape(dims),
             )
-            * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
+            * self._apply_extinction(wl)[np.newaxis, :, np.newaxis, np.newaxis]
         )
 
         tot = np.sum(image, axis=(2, 3))
@@ -563,18 +509,9 @@ class oimComponentFourier(oimComponent):
             else:
                 xx = xp * self.params["elong"](wl, t)
 
-        extfactor = np.array([1.0])
-        if self.extincted:
-            extfactor = 10 ** (
-                -0.4
-                * self.extlaw(
-                    wl, *[self.params[extarg].value for extarg in self.extargs]
-                )
-            )
-
         return (
             self._imageFunction(xx, yy, wl, t)
-            * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
+            * self._apply_extinction(wl)[np.newaxis, :, np.newaxis, np.newaxis]
         )
 
     def _imageFunction(self, xx, yy, wl, t):
@@ -585,7 +522,7 @@ class oimComponentFourier(oimComponent):
         )
 
 
-class oimComponentImage(oimComponent):
+class oimComponentImage(ExtinctionMixIn, oimComponent):
     """Base class for components define in 2D : x,y (regular grid) in the image plan"""
 
     elliptic = False
@@ -614,23 +551,6 @@ class oimComponentImage(oimComponent):
                 self.params["cosi"] = oimParam(**_standardParameters["cosi"])
             else:
                 self.params["elong"] = oimParam(**_standardParameters["elong"])
-
-        # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
-        if "extlaw" in kwargs or kwargs.get("extincted", False):
-            self.extincted = True
-            self.extargs, self.extlaw = [], kwargs.get("extlaw", extlaw)
-
-            for extarg in inspect.getfullargspec(self.extlaw).args[1:]:
-                self.extargs.append(extarg)
-                self.params[extarg] = oimParam(
-                    **_standardParameters.get(extarg, {"name": extarg})
-                )
-        # TODO: Remove this eventually. Just in place due to breaking change
-        # after v0.9.8 and before next version release.
-        elif "A_V" in kwargs:
-            raise NotImplementedError(
-                "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
-            )
 
         if "FTBackend" in kwargs:
             self.FTBackend = kwargs["FTBackend"]()
@@ -681,15 +601,6 @@ class oimComponentImage(oimComponent):
         else:
             t0 = self._t
 
-        extfactor = 1.0
-        if self.extincted:
-            extfactor = 10 ** (
-                -0.4
-                * self.extlaw(
-                    wl, *[self.params[extarg].value for extarg in self.extargs]
-                )
-            )
-
         if not (
             self.FTBackend.check(
                 self.FTBackendData, im, pix, wl0, t0, fxp, fyp, wl, t
@@ -704,7 +615,7 @@ class oimComponentImage(oimComponent):
             self.FTBackendData, im, pix, wl0, t0, fxp, fyp, wl, t
         )
 
-        return vc * tr * self.params["f"](wl, t) * extfactor
+        return vc * tr * self.params["f"](wl, t) * self._apply_extinction(wl)
 
     def getImage(self, dim, pixSize, wl=None, t=None):
         if wl is None:
@@ -747,15 +658,6 @@ class oimComponentImage(oimComponent):
                 else:
                     x_arr *= self.params["elong"](wl_arr, t_arr)
 
-        extfactor = np.array([1.0])
-        if self.extincted:
-            extfactor = 10 ** (
-                -0.4
-                * self.extlaw(
-                    wl, *[self.params[extarg].value for extarg in self.extargs]
-                )
-            )
-
         im0 = self._internalImage()
         if im0 is None:
             im = self._imageFunction(x_arr, y_arr, wl_arr, t_arr)
@@ -776,7 +678,8 @@ class oimComponentImage(oimComponent):
             im = im / f * f0
 
         im = (
-            im.reshape(dims) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
+            im.reshape(dims)
+            * self._apply_extinction(wl)[np.newaxis, :, np.newaxis, np.newaxis]
         )
 
         # TODO: No loop for normalization
@@ -873,7 +776,7 @@ class oimComponentImage(oimComponent):
         return self.getPixelSize() * RAD2MAS * self.params["dim"].value
 
 
-class oimComponentRadialProfile(oimComponent):
+class oimComponentRadialProfile(ExtinctionMixIn, oimComponent):
     """Base class for components defined by a radial profile."""
 
     asymmetric = False
@@ -909,23 +812,6 @@ class oimComponentRadialProfile(oimComponent):
             for i in range(1, self.modulation + 1):
                 self.params[f"skw{i}"] = oimParam(base="skw")
                 self.params[f"skwPa{i}"] = oimParam(base="skwPa")
-
-        # NOTE: Add extinction if extlaw or extincted (use default law) are specified in kwargs
-        if "extlaw" in kwargs or kwargs.get("extincted", False):
-            self.extincted = True
-            self.extargs, self.extlaw = [], kwargs.get("extlaw", extlaw)
-
-            for extarg in inspect.getfullargspec(self.extlaw).args[1:]:
-                self.extargs.append(extarg)
-                self.params[extarg] = oimParam(
-                    **_standardParameters.get(extarg, {"name": extarg})
-                )
-        # TODO: Remove this eventually. Just in place due to breaking change
-        # after v0.9.8 and before next version release.
-        elif "A_V" in kwargs:
-            raise NotImplementedError(
-                "Extinction must now be defined by specifying extlaw or extincted, instead only A_V"
-            )
 
         self._eval(**kwargs, checkParam=False)
 
@@ -1013,19 +899,11 @@ class oimComponentRadialProfile(oimComponent):
             else:
                 x_arr = xp * self.elong(wl_arr, t_arr)
 
-        extfactor = np.array([1.0])
-        if self.extincted:
-            extfactor = 10 ** (
-                -0.4
-                * self.extlaw(
-                    wl, *[self.params[extarg].value for extarg in self.extargs]
-                )
-            )
-
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
         im = np.nan_to_num(
-            im.reshape(dims) * extfactor[np.newaxis, :, np.newaxis, np.newaxis]
+            im.reshape(dims)
+            * self._apply_extinction(wl)[np.newaxis, :, np.newaxis, np.newaxis]
         )
 
         if self.normalizeImage:
@@ -1191,5 +1069,3 @@ class oimComponentFitsImage(oimComponentImage):
     def getPixelSize(self, mas=False):
         self._pixSize = self._pixSize0 * self.params["scale"].value
         return self._pixSize * (RAD2MAS * mas + (not mas))
-
-        
