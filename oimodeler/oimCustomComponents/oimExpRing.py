@@ -5,12 +5,12 @@ Created on Fri Oct 21 12:27:15 2022
 @author: Ame
 """
 
-import numpy as np
-
-from ..oimComponent import oimComponentRadialProfile,oimComponentFourier
-from ..oimParam import oimParam
 import astropy.units as u
-from scipy.special import  j1
+import numpy as np
+from scipy.special import j1
+
+from ..oimComponent import oimComponentFourier, oimComponentRadialProfile
+from ..oimParam import oimParam
 
 
 class oimExpRing(oimComponentFourier):
@@ -33,47 +33,53 @@ class oimExpRing(oimComponentFourier):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.params["d"]     =  oimParam(base="d")
-        self.params["fwhm"]  = oimParam(base="fwhm")
-        self.params["dim"]   = oimParam(base="dim")   
-        self.params["nfwhm"] = oimParam(name="nfwhm", value=8, mini=1,
-            maxi=np.inf, free=False,description="Extension in number of fwhm")       
-               
+        self.params["d"] = oimParam(base="d")
+        self.params["fwhm"] = oimParam(base="fwhm")
+        self.params["dim"] = oimParam(base="dim")
+        self.params["nfwhm"] = oimParam(
+            name="nfwhm",
+            value=8,
+            mini=1,
+            maxi=np.inf,
+            free=False,
+            description="Extension in number of fwhm",
+        )
+
         self._eval(**kwargs)
-        
+
     def _visFunction(self, ucoord, vcoord, rho, wl, t):
-        
-        
+
         dim = self.params["dim"].value
-        d0 = self.params["d"](wl, t)* self.params["d"].unit.to(u.rad)
+        d0 = self.params["d"](wl, t) * self.params["d"].unit.to(u.rad)
         fwhm = self.params["fwhm"](wl, t) * self.params["fwhm"].unit.to(u.rad)
         nfwhm = self.params["nfwhm"].value
 
-        ftot=0
-        res=rho*0
+        ftot = 0
+        res = rho * 0
         for i in range(dim):
-            
-            xi    = d0/2 + fwhm*nfwhm/dim*i
-            xmidi = xi + fwhm*nfwhm/dim/2
-            yi    = np.exp(-0.692*np.divide(xi-d0/2,fwhm))
-            yip   = np.exp(-0.692*np.divide(xi+fwhm*nfwhm/dim-d0/2,fwhm))
 
-            xx = (np.pi*  2*xmidi * rho)
+            xi = d0 / 2 + fwhm * nfwhm / dim * i
+            xmidi = xi + fwhm * nfwhm / dim / 2
+            yi = np.exp(-0.692 * np.divide(xi - d0 / 2, fwhm))
+            yip = np.exp(
+                -0.692 * np.divide(xi + fwhm * nfwhm / dim - d0 / 2, fwhm)
+            )
 
-            if i!=dim-1:
-                fi = np.pi*(yi-yip)*xmidi**2
+            xx = np.pi * 2 * xmidi * rho
+
+            if i != dim - 1:
+                fi = np.pi * (yi - yip) * xmidi**2
             else:
-                fi =  np.pi*(yi)*xmidi**2
-            ftot+=fi
-            #print(f"{i} \t {xmidi:.3e} {yi:.3e} {yip:.3e} {fi:.3e}")
+                fi = np.pi * (yi) * xmidi**2
+            ftot += fi
+            # print(f"{i} \t {xmidi:.3e} {yi:.3e} {yip:.3e} {fi:.3e}")
 
-           
-            res+=np.nan_to_num(np.divide(2 * j1(xx), xx), nan=1)*fi
-        #print(ftot)
-        xx = (np.pi*  d0 * rho)
-        f0 = np.pi*(d0/2)**2
-        res-=(np.nan_to_num(np.divide(2 * j1(xx), xx), nan=1)*f0)
-        ftot-=f0
-        #print(f0)
-        res/=ftot
+            res += np.nan_to_num(np.divide(2 * j1(xx), xx), nan=1) * fi
+        # print(ftot)
+        xx = np.pi * d0 * rho
+        f0 = np.pi * (d0 / 2) ** 2
+        res -= np.nan_to_num(np.divide(2 * j1(xx), xx), nan=1) * f0
+        ftot -= f0
+        # print(f0)
+        res /= ftot
         return res

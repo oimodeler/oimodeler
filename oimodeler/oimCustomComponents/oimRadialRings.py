@@ -2,7 +2,7 @@ import numpy as np
 
 from ..oimComponent import oimComponentRadialProfile
 from ..oimOptions import oimOptions
-from ..oimParam import _standardParameters, oimParam
+from ..oimParam import oimParam
 
 
 class oimRadialPowRing(oimComponentRadialProfile):
@@ -98,6 +98,7 @@ class oimRadialPowRing(oimComponentRadialProfile):
         image = ((r >= rin) & (r <= rout)) * (r / rin) ** self.p(wl, t)
         return image * np.ones_like(wl)
 
+
 class oimRadialPowRing2(oimComponentRadialProfile):
     """A ring defined by a radial intensity profile in r^p.
 
@@ -137,7 +138,6 @@ class oimRadialPowRing2(oimComponentRadialProfile):
 
     name = "Radial Pow Ring alt"
     shortname = "PowR2"
-    elliptic = False
 
     def __init__(self, **kwargs):
         """The class's constructor."""
@@ -196,7 +196,6 @@ class oimRadialPowRing2(oimComponentRadialProfile):
 class oimRadialExpRing(oimComponentRadialProfile):
     name = "Radial Exponential Ring"
     shortname = "ExpR"
-
     elliptic = True
 
     def __init__(self, **kwargs):
