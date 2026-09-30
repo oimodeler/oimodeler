@@ -1,5 +1,5 @@
 Feature|Reference paper(s) to cite|Additional acknowledgement 
-:func:`oimDisco <oimodeler.oimCustomComponents.oimDisco.oimDisco>`|`Vieira et al. 2015 <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_, `Vieira et al. 2016 <https://ui.adsabs.harvard.edu/abs/2016ASPC..506..135V/abstract>`_| Developped by the `AMHRA <https://amhra.oca.eu/AMHRA/index.htm>`_ service of JMMC
+:func:`oimDisco <oimodeler.oimCustomComponents.oimDisco.oimDisco>`|`Vieira et al. 2015 <https://ui.adsabs.harvard.edu/abs/2015MNRAS.454.2107V/abstract>`_, `Vieira et al. 2016 <https://ui.adsabs.harvard.edu/abs/2016ASPC..506..135V/abstract>`_| Developped by A. Domiciano de Souza for the `AMHRA <https://amhra.oca.eu/AMHRA/index.htm>`_ serivce
 :func:`oimKinematicDisk <oimodeler.oimCustomComponents.oimKinematicDisk.oimKinematicDisk>`|`Meilland et al. 2012 <https://ui.adsabs.harvard.edu/abs/2012A%26A...538A.110M/abstract>`_|None
 :func:`oimTempGrad <oimodeler.oimCustomComponents.oimTempGrad.oimTempGrad>`|TODO_|None
 :func:`oimGrater <oimodeler.oimCustomComponents.oimGrater.oimGrater>`|TODO|None
