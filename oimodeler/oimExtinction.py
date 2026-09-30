@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy import interpolate
+
+from .oimParam import _standardParameters, oimParam
 
 FITZINDEB = np.genfromtxt(
     Path(__file__).parent / "extlaws" / "FitzIndeb_3.1_VOSA.dat", unpack=True
@@ -12,22 +16,67 @@ FITZINDEBSPLINE = interpolate.splrep(FITZINDEB[0] / 1e10, FITZINDEB[1], s=1)
 
 
 def extlaw_FitzIndeb(
-    wavelength: float | np.ndarray, A_V: float = 10.0
-) -> float | np.ndarray:
-    """Extinction law of Fitzpatrick (1999, PASP, 111, 63) improved by
-    Indebetouw et al. (2005, ApJ, 619, 931), as obtained from VOSA
-    (https://svo2.cab.inta-csic.es/theory/vosa/).
-    Appropriate for 0.02-1000 µm."""
+    wavelength: float | NDArray[np.floating], A_V: float = 10.0
+) -> float | NDArray[np.floating]:
+    """Optical Extinction law [1]_, with infrared extension [2]_.
+
+    Appropriate for 0.02-1000 µm.
+
+    Parameters
+    ----------
+    wavelength : float or NDArray[np.floating]
+        Wavelength(s) to compute the extinction for.
+    A_V : float, optional
+        Defaults to ``10.0``.
+
+    Returns
+    -------
+    float or NDArray[np.floating]
+
+    Notes
+    -----
+    Obtained from `VOSA <https://svo2.cab.inta-csic.es/theory/vosa>`_.
+
+    References
+    ----------
+    .. [1] Fitzpatrick, "Correcting for the Effects of Interstellar Extinction",
+       PASP, Volume 111, id. 755, 63-75 pp., (1999).
+
+    .. [2] Indebetouw et al., "The Wavelength Dependence of Interstellar Extinction
+       from 1.25 to 8.0 Microns", ApJ, Volume 619, id. 2, 931-938 pp. (2005).
+    """
     kappa = interpolate.splev(wavelength, FITZINDEBSPLINE, der=0)
     return A_V * (kappa / 211.4)
 
 
-def extlaw_Cardelli89(wavelength, A_V=10.0, R_V=3.1):
-    """Extinction law from Cardelli et al. (1989, ApJ 345, 245).
-    Appropriate for 0.125-3.5 µm."""
+def extlaw_Cardelli89(
+    wavelength: float | NDArray[np.floating],
+    A_V: float = 10.0,
+    R_V: float = 3.1,
+) -> float | NDArray[np.floating]:
+    """Extinction law [1]_.
 
+    Appropriate for 0.125-3.5 µm.
+
+    Parameters
+    ----------
+    wavelength : float or NDArray[np.floating]
+        Wavelength(s) to compute the extinction for.
+    A_V : float, optional
+        Defaults to ``10.0``.
+    R_V : float, optional
+        Defaults to ``3.1``.
+
+    Returns
+    -------
+    float or NDArray[np.floating]
+
+    References
+    ----------
+    .. [1] Cardelli et al, "The Relationship between Infrared,
+    Optical, and Ultraviolet Extinction", ApJ, Volume 345, 245-256 pp., (1989).
+    """
     x = 1e6 / wavelength
-
     if np.isscalar(x):
         x = np.array([x])
 
@@ -93,3 +142,45 @@ def extlaw_Cardelli89(wavelength, A_V=10.0, R_V=3.1):
         b[idx] = 13.670 + 4.257 * z - 0.420 * z**2 + 0.374 * z**3
 
     return (a + b / R_V) * A_V
+
+
+class ExtinctionMixIn:
+    """Adds extinction to an `oimComponent <oimodeler.oimComponent.oimComponent>`."""
+
+    extincted = False
+
+    def _setup_mixins(self, kwargs) -> None:
+        """Adds extinction to component initialisation."""
+        super()._setup_mixins(kwargs)
+
+        if "extlaw" in kwargs or kwargs.get("extincted", False):
+            self.extincted = True
+            self.extargs = []
+            self.extlaw = kwargs.get("extlaw", extlaw_FitzIndeb)
+
+            for extarg in inspect.getfullargspec(self.extlaw).args[1:]:
+                self.extargs.append(extarg)
+                self.params[extarg] = oimParam(
+                    **_standardParameters.get(extarg, {"name": extarg})
+                )
+
+        # TODO: Remove this after some time after it is standard behaviour
+        elif "A_V" in kwargs:
+            raise NotImplementedError(
+                "Extinction must now be defined by specifying extlaw or extincted, "
+                "instead only A_V"
+            )
+
+    def _apply_extinction(
+        self,
+        wl: NDArray[np.floating] | None = None,
+    ) -> NDArray[np.floating]:
+        """Apply (wavelength dependent if ``wl is not None``) extinction
+        if ``self.extincted=True``."""
+        if not self.extincted:
+            return np.array([1.0])
+
+        extinction = self.extlaw(
+            wl, *[self.params[extarg].value for extarg in self.extargs]
+        )
+        return 10 ** (-0.4 * extinction)
