@@ -1072,7 +1072,7 @@ class oimESKRing(oimComponentFourier):
 
 
 class oimLorentz(oimComponentFourier):
-    """Pseudo-Lorentzian component defined in the Fourier space.
+    """Pseudo-Lorentzian component defined in the Fourier space [1]_.
 
     Parameters
     ----------
@@ -1104,9 +1104,12 @@ class oimLorentz(oimComponentFourier):
     fwhm : oimParam
         FWHM of the Lorentzian (mas).
 
-    Notes
-    -----
-    From `2017A%26A...599A..85L <https://scixplorer.org/abs/2017A%26A...599A..85L>`_.
+    References
+    ----------
+    .. [1] A. Lazareff et al., *Structure of Herbig AeBe disks at the
+    milliarcsecond scale . A statistical survey in the H band using
+    PIONIER-VLTI*, A&A, Vol. 599, id. A85, 41 pp. (2017).
+    `SciX record <https://scixplorer.org/abs/2017A%26A...599A..85L>`_
     """
 
     # TODO : Small difference between images using direct formula or inverse of vis function
@@ -1145,7 +1148,7 @@ class oimLorentz(oimComponentFourier):
 
 
 class oimELorentz(oimLorentz):
-    """Elliptical-Lorentzian component defined in the Fourier space.
+    """Elliptical-Lorentzian component defined in the Fourier space [1]_.
 
     Parameters
     ----------
@@ -1185,9 +1188,12 @@ class oimELorentz(oimLorentz):
     elong : oimParam
         Elongation of the major axis.
 
-    Notes
-    -----
-    From `2017A%26A...599A..85L <https://scixplorer.org/abs/2017A%26A...599A..85L>`_.
+    References
+    ----------
+    .. [1] A. Lazareff et al., *Structure of Herbig AeBe disks at the
+    milliarcsecond scale . A statistical survey in the H band using
+    PIONIER-VLTI*, A&A, Vol. 599, id. A85, 41 pp. (2017).
+    `SciX record <https://scixplorer.org/abs/2017A%26A...599A..85L>`_
     """
 
     name = "Elliptical Pseudo Lorentzian"
@@ -1200,7 +1206,8 @@ class oimELorentz(oimLorentz):
 
 
 class oimLinearLDD(oimComponentFourier):
-    r"""Linear Limb Darkened Disk component defined in the Fourier space.
+    r"""Linear Limb Darkened Disk component defined in the Fourier space
+    [1]_ [2]_.
 
     Parameters
     ----------
@@ -1238,14 +1245,21 @@ class oimLinearLDD(oimComponentFourier):
 
     Notes
     ------
-    The linear limb darkend disc is defined as
+    The linear limb darkend disc is defined as [1]_ [2]_
 
     .. math::
 
         \frac{I(\mu)}{I(1)}=1-a(1-\mu)
 
-    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
+    References
+    ----------
+    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
+    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
+    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
+    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
+    id. A19, 14 pp. (2021).
+    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "Linear Limb Darkened Disk "
@@ -1285,7 +1299,8 @@ class oimLinearLDD(oimComponentFourier):
 
 
 class oimQuadLDD(oimComponentFourier):
-    r"""Quadratic Limb Darkened Disk component defined in the Fourier space.
+    r"""Quadratic Limb Darkened Disk component defined in the Fourier space
+    [1]_ [2]_.
 
     Parameters
     ----------
@@ -1327,14 +1342,21 @@ class oimQuadLDD(oimComponentFourier):
 
     Notes
     ------
-    The quadratic limb darkend disc is defined as
+    The quadratic limb darkend disc is defined as [1]_ [2]_
 
     .. math::
 
-        \frac{I(\mu)}{I(1)}=1-a1(1-\mu)-a2(1-\mu)^2
+        \frac{I(\mu)}{I(1)}=1-a_1(1-\mu)-a_2(1-\mu)^2
 
-    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
+    References
+    ----------
+    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
+    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
+    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
+    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
+    id. A19, 14 pp. (2021).
+    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "Quadratic Limb Darkened Disk "
@@ -1386,7 +1408,8 @@ class oimQuadLDD(oimComponentFourier):
 
 
 class oimPowerLawLDD(oimComponentFourier):
-    r"""Power Law Limb Darkened Disk component defined in the Fourier space.
+    r"""Power Law Limb Darkened Disk component defined in the Fourier space
+    [1]_ [2]_.
 
     Parameters
     ----------
@@ -1424,14 +1447,21 @@ class oimPowerLawLDD(oimComponentFourier):
 
     Notes
     ------
-    The power-law limb darkend disc is defined as
+    The power-law limb darkend disc is defined as [1]_ [2]_
 
     .. math::
 
         \frac{I(\mu)}{I(1)}=\mu^a
 
-    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
+    References
+    ----------
+    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
+    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
+    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
+    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
+    id. A19, 14 pp. (2021).
+    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "Power Law Limb Darkened Disk "
@@ -1473,7 +1503,8 @@ class oimPowerLawLDD(oimComponentFourier):
 
 
 class oimSqrtLDD(oimComponentFourier):
-    r"""Square-root Limb Darkened Disk component defined in the Fourier space.
+    r"""Square-root Limb Darkened Disk component defined in the Fourier space
+    [1]_ [2]_.
 
     Parameters
     ----------
@@ -1515,14 +1546,21 @@ class oimSqrtLDD(oimComponentFourier):
 
     Notes
     ------
-    The square-root limb darkend disc is defined as
+    The square-root limb darkend disc is defined as [1]_ [2]_
 
     .. math::
 
-        \frac{I(\mu)}{I(1)}=1-a1(1-\mu)-a2(1-\sqrt{\mu})
+        \frac{I(\mu)}{I(1)}=1-a_1(1-\mu)-a_2(1-\sqrt{\mu})
 
-    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
+    References
+    ----------
+    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
+    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
+    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
+    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
+    id. A19, 14 pp. (2021).
+    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "square-root Limb Darkened Disk "
@@ -1575,7 +1613,8 @@ class oimSqrtLDD(oimComponentFourier):
 
 
 class oim4CLDD(oimComponentFourier):
-    r"""Four coefficient Limb Darkened Disk component defined in the Fourier space.
+    r"""Four coefficient Limb Darkened Disk component defined in the Fourier
+    space [1]_ [2]_.
 
     Parameters
     ----------
@@ -1625,14 +1664,21 @@ class oim4CLDD(oimComponentFourier):
 
     Notes
     ------
-    The four-coefficient limb darkend disc is defined as
+    The four-coefficient limb darkend disc is defined as [1]_ [2]_
 
     .. math::
 
-        \frac{I(\mu)}{I(1)}=1-a1(1-\mu^{0.5})-a2(1-\mu)-a3(1-\mu^{1.5})-a4(1-\mu^2)
+        \frac{I(\mu)}{I(1)}=1-a_1(1-\mu^{0.5})-a_2(1-\mu)-a_3(1-\mu^{1.5})-a_4(1-\mu^2)
 
-    From `2003PhDT.......136D <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    `2021A%26A...654A..19D <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
+    References
+    ----------
+    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
+    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
+    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
+    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
+    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
+    id. A19, 14 pp. (2021).
+    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "4 Coefficients Limb Darkened Disk "

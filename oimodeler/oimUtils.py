@@ -421,7 +421,7 @@ def blackbody(
         B_\nu(\lambda,T)=\frac{2hc}{\lambda^3}\frac{1}{\exp\left(\frac{hc}{\lambda k_\text{B} T}\right)-1}.
 
     This custom variant is implemented for a more efficient computation (i.e. to
-    avoid the overhead of similar implementations like the astropy's
+    avoid the overhead of similar implementations like
     `astropy.modeling.physical_models.BlackBody`).
     """
     x = CGS.H * CGS.C / (wl * 1e2 * CGS.K_B * T)
@@ -450,10 +450,19 @@ def spectral_index(
 
     Notes
     -----
-    The spectral index is defined as
+    The spectral index is defined as [1]_ [2]_
 
     .. math:: \alpha(\nu,T)=\frac{\partial\log B_\nu(T)}{\partial\log\nu}
 
+    References
+    ----------
+    .. [1] C. J. Lada & B. A. Wilking, *The nature of the embedded population
+    in the rho Ophiuchi dark cloud : mid-infrared observations*, ApJ, Vol. 287,
+    p. 610-621 (1984).
+    `SciX record <https://scixplorer.org/abs/1984ApJ...287..610L>`_
+    .. [2] C. J. Lada, *Star formation: from OB associations to protostars*,
+    IAU Symposium, Vol. 115, p. 1 (1987).
+    `SciX record <https://scixplorer.org/abs/1987IAUS..115....1L>`_
     """
     wl = np.unique(
         np.hstack([item for sublist in data.struct_wl for item in sublist])
