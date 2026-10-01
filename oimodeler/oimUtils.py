@@ -1581,7 +1581,6 @@ def _intpBinning(
     results = []
     for (lower, upper), mask in zip(binEdgeValues, binMasks):
         val = np.array([lower, *array[mask], upper])
-
         res = bin_func(val)
         if normalizeError and kind == "error":
             res /= np.sqrt(val.size)
@@ -1591,14 +1590,13 @@ def _intpBinning(
     return np.array(results)
 
 
-# TODO: Change this to masked arrays somehow to make it even more robust?
 def _interpolateBinHDU(
     hdu: fits.BinTableHDU,
     binGrid: NDArray[np.floating],
     binMasks: NDArray[np.floating],
     binEdgePoints: ArrayLike,
     grid: ArrayLike,
-    exception: list[str] = [],
+    exception: Iterable[str] = (),
     **kwargs,
 ) -> fits.BinTableHDU:
     r"""Bin an :class:`astropy.io.fits.BinTableHDU` via interpolation.
@@ -1617,8 +1615,8 @@ def _interpolateBinHDU(
         might not be the case for arbitrary values of the bin grid.
     grid : array_like
         The non-binned grid.
-    exception : list of str
-        The exceptions (i.e. table(s) that are not to be binned).
+    exception : iterable of str
+        Exceptions (i.e. table(s) not to be binned). Defaults to ``()``.
     normalizeError : bool, optional
         If ``True`` normalize the error. Defaults to ``True``.
 
@@ -1689,7 +1687,10 @@ def _interpolateBinHDU(
             if col.name == "EFF_WAVE":
                 bini = binGrid
             elif col.name == "EFF_BAND":
-                bini = np.gradient(binGrid)
+                if binGrid.size == 1:
+                    bini = np.array([0.0])
+                else:
+                    bini = np.gradient(binGrid)
             else:
                 if col.name in _oimDataTypeErr:
                     kind = "error"
@@ -1716,10 +1717,7 @@ def _interpolateBinHDU(
                 )
             )
 
-    newhdu = fits.BinTableHDU.from_columns(fits.ColDefs(new_cols))
-    newhdu.header = hdu.header
-    newhdu.update_header()
-    return newhdu
+    return fits.BinTableHDU.from_columns(new_cols, header=hdu.header)
 
 
 def intpBinWavelength(
@@ -1815,7 +1813,7 @@ def _rebin(
 def _rebinHDU(
     hdu: fits.BinTableHDU,
     binSize: int,
-    exception: list[str] = [],
+    exception: Iterable[str] = (),
 ) -> fits.BinTableHDU:
     """Rebin an HDU.
 
@@ -1825,8 +1823,8 @@ def _rebinHDU(
         The HDU to rebin.
     binsize : int
         The bin size.
-    exception : list of str
-        The exceptions. Defaults to ``[]``.
+    exception : iterable of str
+        Exceptions (i.e. table(s) not to be binned). Defaults to ``()``.
 
     Returns
     -------
