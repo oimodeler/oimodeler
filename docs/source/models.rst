@@ -1949,7 +1949,8 @@ sharing models between scripts/processes, and for the reproducability of a (fitt
 
 .. note::
 
-   The :class:`oimodeler.oimParam.oimParam`, :class:`oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>`, and 
+   The :class:`oimParam <oimodeler.oimParam.oimParam>`,
+   :class:`oimParamInterpolator <oimodeler.oimParam.oimParamInterpolator>`, and 
    :class:`oimComponent <oimodeler.oimComponent.oimComponent>` classes and all their subclasses have serialization
    implemented. These can be used identically to the below description for :class:`oimModel <oimodeler.oimModel.oimModel>`
 
@@ -1977,9 +1978,9 @@ can be done by
 
     The :func:`serialize() <oimodeler.oimModel.oimModel.serialize>` method has a ``skip_copy``
     keyword argument. This can be used to skip the deepcopies that are made during serialisation
-    to not corrupt mutuable objects in, for instance, the original `oimModel <oimodeler.oimModel.oimModel>`.
+    to not corrupt mutuable objects in, for instance, the original :class:`oimModel <oimodeler.oimModel.oimModel>`.
     It is turned off automatically for sub-dependencies of a serialization. That is
-    `oimModel <oimodeler.oimModel.oimModel>` has it turned off for its components as they are already deep
+    :class:`oimModel <oimodeler.oimModel.oimModel>` has it turned off for its components as they are already deep
     copied at the highest level.
 
 which enables storing it by various means (e.g. by pickling or storing it in JSON)
