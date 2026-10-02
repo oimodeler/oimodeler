@@ -369,8 +369,8 @@ def load_toml(toml_file: Path) -> dict[str, Any]:
 
     for value in dictionary.values():
         value["unit"] = u.Unit(value.get("unit", ""))
-        value["mini"] = np.float16(value.get("mini", "-inf"))
-        value["maxi"] = np.float16(value.get("maxi", "inf"))
+        value["mini"] = np.float32(value.get("mini", "-inf"))
+        value["maxi"] = np.float32(value.get("maxi", "inf"))
 
     return dictionary
 

@@ -147,24 +147,21 @@ class oimTempGrad(oimComponentRadialProfile):
             maxi=0,
             base="amp",
         )
-        self.params["kappa_abs"] = oimParam(
-            name="kappa_abs",
-            unit=u.cm**2 / u.g,
-            description="Absorption (silicate) opacity",
-            free=False,
-        )
 
         # TODO: Potentially generalise this for many different contributions.
+        self.params["kappa_abs"] = oimParam(
+            name="kappa_abs",
+            description="Silicate absorption opacity",
+            base="kappa",
+        )
         if "kappa_cont" in kwargs:
             self.params["kappa_cont"] = oimParam(
-                name="kappa_cont",
-                unit=u.cm**2 / u.g,
-                description="Absorption continuum opacity",
-                free=False,
+                name="kappa_cont", description="Continuum absorption opacity"
             )
             self.params["kappa_ratio"] = oimParam(
                 name="kappa_ratio",
-                description="Silicate to continuum ratio",
+                unit=u.g / u.cm**2,
+                description="Continuum (mass) ratio",
                 base="amp",
             )
 

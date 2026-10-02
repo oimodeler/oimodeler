@@ -106,6 +106,14 @@ name = "index"
 value = 1
 description = "Index"
 
+[kappa]
+name = "kappa"
+description = "Absorption opacity"
+unit = "cm2 / g"
+mini = 0
+maxi = 1e4
+free = false
+
 [mjd]
 name = "mjd"
 description = "MJD"
