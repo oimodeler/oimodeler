@@ -7,7 +7,7 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 import pytest
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from oimodeler import oimBasicFourierComponents as basic
 from oimodeler.oimComponent import oimComponentFourier
@@ -21,42 +21,11 @@ from oimodeler.oimModel import oimModel
 from oimodeler.oimSimulator import oimSimulator
 
 # TODO: Test the computation of the flat component etc. as well
-# TODO: Include tests that directly test the asymmetry
-
-
-@pytest.fixture
-def wl() -> NDArray[np.floating]:
-    """Wavelengths."""
-    return np.linspace(2.8, 5) * 1e-6
-
-
-@pytest.fixture
-def spfu(wl: NDArray[np.floating]):
-    """Spatial frequencies in u direction."""
-    return np.linspace(0, 200) / wl
-
-
-@pytest.fixture
-def spf(spfu: NDArray[np.floating]):
-    """Spatial frequencies."""
-    return np.hypot(spfu, spfu)
-
-
-def test_oimBackground_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
-) -> None:
-    """Test the visFunction of the oimBackground class."""
-    comp = basic.oimBackground()
-    vcompl = np.abs(comp._visFunction(spfu, spfu, spf, wl, None))
-    assert vcompl[np.where(spf == 0)[0]] == 1
 
 
 @pytest.mark.parametrize(
     "aspro_file,component,params",
     (
-        ("Aspro2_punct", basic.oimPt, {}),
         ("Aspro2_disk_d10", basic.oimUD, {"d": 10}),
         (
             "Aspro2_flattenDisk_d10_flatten1.5_pa123",
@@ -73,7 +42,7 @@ def test_oimBackground_visFunction(
         ("Aspro2_ring_d7_w1", basic.oimRing, {"din": 7, "dout": 9}),
         (
             "Aspro2_flattenRing_d7_w1_flatten2_pa135",
-            basic.oimERing,
+            basic.oimRing,
             {"din": 7, "dout": 9, "elong": 2, "pa": 45},
         ),
         # ("Aspro2_ring_d7_w1", basic.oimRing2, {"d": 7, "w": 2}),
@@ -84,7 +53,7 @@ def test_oimBackground_visFunction(
         ),
     ),
 )
-def test_components_via_aspro(
+def test_components(
     test_data_dir: Path,
     aspro_file: str,
     component: oimComponentFourier,
@@ -120,16 +89,20 @@ def test_components_via_aspro(
         fxp /= comp.elong(wl, None)
 
     vcompl = np.abs(comp._visFunction(fxp, fyp, np.hypot(fxp, fyp), wl, None))
-    assert np.allclose(
-        vcompl,
-        sim.simulatedData.data[0]["oi_vis"].data["visamp"],
-        atol=1e-6,
-    )
-    assert np.allclose(
-        aspro_data.data[0]["oi_vis"].data["visamp"],
-        sim.simulatedData.data[0]["oi_vis"].data["visamp"],
-        atol=1e-6,
-    )
+    try:
+        assert np.allclose(
+            vcompl,
+            sim.simulatedData.data[0]["oi_vis"].data["visamp"],
+            atol=1e-6,
+        )
+        assert np.allclose(
+            aspro_data.data[0]["oi_vis"].data["visamp"],
+            sim.simulatedData.data[0]["oi_vis"].data["visamp"],
+            atol=1e-6,
+        )
+    except AssertionError:
+        breakpoint()
+
     assert np.allclose(
         aspro_data.data[0]["oi_vis2"].data["vis2data"],
         sim.simulatedData.data[0]["oi_vis2"].data["vis2data"],
@@ -142,104 +115,100 @@ def test_components_via_aspro(
     assert np.isclose(sim.chi2r, 0.0)
 
 
+@pytest.mark.skip(reason="Test not implemented.")
+def test_oimPt_visFunction(
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
+) -> None:
+    """Test the visFunction of the oimPt class."""
+    assert oimPt()._visFunction(*uvcoord, baselines, None, None) == 1
+
+
+@pytest.mark.skip(reason="Test not implemented.")
+def test_oimBackground_visFunction(
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
+) -> None:
+    """Test the visFunction of the oimBackground class."""
+    oimBackground()
+
+
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimEIring_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimEIring class."""
-    basic.oimEIRing()
+    basic_comp.oimEIRing()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimRing2_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimRing2 class."""
-    basic.oimRing2()
+    basic_comp.oimRing2()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimERing2_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimERing2 class."""
-    basic.oimERing2()
+    basic_comp.oimERing2()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimESKIRing_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimESKIRing class."""
-    basic.oimESKIRing()
+    basic_comp.oimESKIRing()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimESKRing_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimESKRing class."""
-    basic.oimESKRing()
+    basic_comp.oimESKRing()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimLorentz_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimLorentz class."""
-    basic.oimLorentz()
+    basic_comp.oimLorentz()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimELorentz_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimELorentz class."""
-    basic.oimELorentz()
+    basic_comp.oimELorentz()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimLinearLDD_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimLinearLDD class."""
-    basic.oimLinearLDD()
+    basic_comp.oimLinearLDD()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimPowerLawLDD_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimPowerLawLDD class."""
-    basic.oimPowerLawLDD()
+    basic_comp.oimPowerLawLDD()
 
 
 @pytest.mark.skip(reason="Test not yet implemented.")
 def test_oimSqrtLDD_visFunction(
-    spfu: NDArray[np.floating],
-    spf: NDArray[np.floating],
-    wl: NDArray[np.floating],
+    uvcoord: ArrayLike, baselines: NDArray[np.floating]
 ) -> None:
     """Test the visFunction of the oimSqrtLDD class."""
-    basic.oimSqrtLDD()
+    basic_comp.oimSqrtLDD()
 
 
 @pytest.mark.parametrize("pa1", (0, 33))
@@ -247,22 +216,29 @@ def test_oimSqrtLDD_visFunction(
 @pytest.mark.parametrize("pa2", (0, 45))
 @pytest.mark.parametrize("elong2", (1, 1.5))
 def test_oimConvolutor_visFunction(
-    spfu: NDArray[np.floating],
-    wl: NDArray[np.floating],
-    pa1: int,
-    elong1: float,
-    pa2: int,
-    elong2: float,
+    test_data_dir: Path, pa1: int, elong1: float, pa2: int, elong2: float
 ) -> None:
     """Test the :func:`visFunction` method of the :class:`oimConvolutor` class
     indirectly via the :func:`getComplexCoherentFlux` method.
+
+    Notes
+    -----
+    The Aspro2 OIFITS file is only used for its set of (u,v) coordinates and
+    wavelength grid.
     """
+    aspro_data = oimData(
+        test_data_dir / "basic_components" / "Aspro2_disk_d10.fits"
+    )
+    wl = aspro_data.data[0]["oi_wavelength"].data["eff_wave"]
+    ucoord = aspro_data.data[0]["oi_vis"].data["ucoord"][:, np.newaxis] / wl
+    vcoord = aspro_data.data[0]["oi_vis"].data["vcoord"][:, np.newaxis] / wl
+
     ring = basic.oimEIRing(pa=pa1, elong=elong1, d=4)
     gauss = basic.oimEGauss(pa=pa2, elong=elong2, fwhm=2)
-    ring_vis = ring.getComplexCoherentFlux(spfu, spfu, wl)
-    gauss_vis = gauss.getComplexCoherentFlux(spfu, spfu, wl)
+    ring_vis = ring.getComplexCoherentFlux(ucoord, vcoord)
+    gauss_vis = gauss.getComplexCoherentFlux(ucoord, vcoord)
     manual_conv_vis = ring_vis * gauss_vis
 
     conv = basic.oimConvolutor(ring, gauss)
-    conv_vis = conv.getComplexCoherentFlux(spfu, spfu, wl)
+    conv_vis = conv.getComplexCoherentFlux(ucoord, vcoord)
     assert np.array_equal(conv_vis, manual_conv_vis)

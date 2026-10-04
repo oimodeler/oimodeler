@@ -31,7 +31,9 @@ class TestOimTempGrad:
     @pytest.fixture(scope="module")
     def data(self, test_data_dir: Path) -> oimData:
         """Data suited for temperature gradient."""
-        fits_files = sorted((test_data_dir / "oimTempGrad").glob("*.fits"))
+        fits_files = sorted(
+            (test_data_dir / "custom_components").glob("*.fits")
+        )
         lband_ind = [i for i, f in enumerate(fits_files) if "-LM_" in f.name]
         nband_ind = [i for i, f in enumerate(fits_files) if "_N_" in f.name]
 
@@ -55,7 +57,9 @@ class TestOimTempGrad:
     def vis_base(self, test_data_dir: Path) -> NDArray[np.float64]:
         """Baseline correlated fluxes for temperature gradient
         to detect if model executes correctly. Should be equal to test."""
-        return np.load(test_data_dir / "oimTempGrad" / "vis.npy")
+        return np.load(
+            test_data_dir / "custom_components" / "temp_grad_vis.npy"
+        )
 
     @pytest.fixture(scope="module")
     def star(self) -> oimPt:
@@ -69,7 +73,7 @@ class TestOimTempGrad:
         """Parameters for the base temperature gradient."""
         opac_file = (
             test_data_dir
-            / "oimTempGrad"
+            / "custom_components"
             / "dustkappa_olivine_graphite_1_20.inp"
         )
         op_wl, op = np.loadtxt(opac_file, usecols=[0, 1], unpack=True)

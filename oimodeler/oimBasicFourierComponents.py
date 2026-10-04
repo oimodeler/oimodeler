@@ -624,10 +624,7 @@ class oimRing2(oimComponentFourier):
     def _visFunction(self, xp, yp, rho, wl, t):
         d = self.params["d"](wl, t) * self.params["d"].unit.to(u.rad)
         w = self.params["w"](wl, t) * self.params["w"].unit.to(u.rad)
-
-        xx = np.pi * (d) * rho
-        dxx = np.pi * w * rho
-
+        xx, dxx = np.pi * d * rho, np.pi * w * rho
         return j0(xx) * np.nan_to_num(np.divide(2 * j1(dxx), dxx), nan=1)
 
     def _imageFunction(self, xx, yy, wl, t):
