@@ -47,8 +47,13 @@ def keplerCoordinates(phase, eccentricity, majorAxis):
 
 
 def binaryCoordinates(time, eccentricity, majorAxis, period):
+    if not 0 <= eccentricity < 1:
+        raise ValueError("Eccentricity must satisfy 0 <= e < 1 for an elliptic orbit")
     omega = 2 * np.pi / period
-    order = 20
+    # The required number of terms grows as (1-e)**(-3/2).
+    # for a 10 microarcsecond error for a <= 1 arcsecond
+    # Cap at 1000 terms. Beware that this may not be enough for eccentricities > 0.95
+    order = min(1001, max(20, int(np.ceil(12 / (1 - eccentricity) ** 1.5)) + 1))
     phi = -omega * time
     for k in range(1, order):
         phi = phi - 2 * special.jn(float(k), k * eccentricity) / float(
