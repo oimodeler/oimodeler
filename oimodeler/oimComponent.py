@@ -746,10 +746,7 @@ class oimComponentRadialProfile(
     @property
     def dr(self) -> None | NDArray[np.floating]:
         """Get the integration weights (mas)."""
-        if self._dr is None:
-            self._dr = np.gradient(self.r)
-
-        return self._dr
+        return np.gradient(self.r)
 
     def _getInternalGrid(self, simple=True, flatten=False, wl=None, t=None):
         wl0 = np.unique(wl) if self._wl is None else self._wl

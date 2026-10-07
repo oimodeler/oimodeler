@@ -169,7 +169,6 @@ class oimTempGrad(oimComponentRadialProfile):
 
         self.params["dist"] = oimParam(base="dist")
         self.params["f"].free = False
-        self._cache_key = None
         self._eval(**kwargs)
 
     @property
@@ -177,28 +176,15 @@ class oimTempGrad(oimComponentRadialProfile):
         """Gets the radial profile (mas)."""
         rin, rout = self.rin.value, self.rout.value
         dim, dist = self.dim.value, self.dist.value
-        grid_type = oimOptions.model.grid.type
-
-        key = (rin, rout, dim, dist, grid_type)
-        if key == self._cache_key:
-            return self._r
 
         rin, rout = rin / dist * 1e3, rout / dist * 1e3
-        if grid_type == "linear":
-            self._r = np.linspace(rin, rout, dim)
-        elif grid_type == "logarithmic":
+        if oimOptions.model.grid.type == "logarithmic":
             if rin <= 0:
                 raise ValueError("Logarithmic grid requires rin > 0.")
 
-            self._r = np.logspace(np.log10(rin), np.log10(rout), dim)
-        else:
-            raise ValueError(
-                f"Selected gridtype '{grid_type}' does not exist!"
-            )
+            return np.logspace(np.log10(rin), np.log10(rout), dim)
 
-        self._dr = np.gradient(self._r)
-        self._cache_key = key
-        return self._r
+        return np.linspace(rin, rout, dim)
 
     @property
     def Tin(self) -> float:
