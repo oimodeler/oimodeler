@@ -5,9 +5,9 @@ Created on Thu Mar 26 11:52:59 2026
 @author: ame
 """
 
+import astropy.units as u
 import numpy as np
 from astropy import units
-import astropy.units as u
 
 from oimodeler.oimComponent import oimComponentImage
 from oimodeler.oimParam import _standardParameters, oimParam

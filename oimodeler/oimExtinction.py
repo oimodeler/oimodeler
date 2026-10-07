@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy import interpolate
 
 FITZINDEB = np.genfromtxt(
@@ -12,22 +13,67 @@ FITZINDEBSPLINE = interpolate.splrep(FITZINDEB[0] / 1e10, FITZINDEB[1], s=1)
 
 
 def extlaw_FitzIndeb(
-    wavelength: float | np.ndarray, A_V: float = 10.0
-) -> float | np.ndarray:
-    """Extinction law of Fitzpatrick (1999, PASP, 111, 63) improved by
-    Indebetouw et al. (2005, ApJ, 619, 931), as obtained from VOSA
-    (https://svo2.cab.inta-csic.es/theory/vosa/).
-    Appropriate for 0.02-1000 µm."""
+    wavelength: float | NDArray[np.floating], A_V: float = 10.0
+) -> float | NDArray[np.floating]:
+    """Optical Extinction law [1]_, with infrared extension [2]_.
+
+    Appropriate for 0.02-1000 µm.
+
+    Parameters
+    ----------
+    wavelength : float or NDArray[np.floating]
+        Wavelength(s) to compute the extinction for.
+    A_V : float, optional
+        Defaults to ``10.0``.
+
+    Returns
+    -------
+    float or NDArray[np.floating]
+
+    Notes
+    -----
+    Obtained from `VOSA <https://svo2.cab.inta-csic.es/theory/vosa>`_.
+
+    References
+    ----------
+    .. [1] Fitzpatrick, "Correcting for the Effects of Interstellar Extinction",
+       PASP, Volume 111, id. 755, 63-75 pp., (1999).
+
+    .. [2] Indebetouw et al., "The Wavelength Dependence of Interstellar Extinction
+       from 1.25 to 8.0 Microns", ApJ, Volume 619, id. 2, 931-938 pp. (2005).
+    """
     kappa = interpolate.splev(wavelength, FITZINDEBSPLINE, der=0)
     return A_V * (kappa / 211.4)
 
 
-def extlaw_Cardelli89(wavelength, A_V=10.0, R_V=3.1):
-    """Extinction law from Cardelli et al. (1989, ApJ 345, 245).
-    Appropriate for 0.125-3.5 µm."""
+def extlaw_Cardelli89(
+    wavelength: float | NDArray[np.floating],
+    A_V: float = 10.0,
+    R_V: float = 3.1,
+) -> float | NDArray[np.floating]:
+    """Extinction law [1]_.
 
+    Appropriate for 0.125-3.5 µm.
+
+    Parameters
+    ----------
+    wavelength : float or NDArray[np.floating]
+        Wavelength(s) to compute the extinction for.
+    A_V : float, optional
+        Defaults to ``10.0``.
+    R_V : float, optional
+        Defaults to ``3.1``.
+
+    Returns
+    -------
+    float or NDArray[np.floating]
+
+    References
+    ----------
+    .. [1] Cardelli et al, "The Relationship between Infrared,
+    Optical, and Ultraviolet Extinction", ApJ, Volume 345, 245-256 pp., (1989).
+    """
     x = 1e6 / wavelength
-
     if np.isscalar(x):
         x = np.array([x])
 
