@@ -156,7 +156,9 @@ class oimTempGrad(oimComponentRadialProfile):
         )
         if "kappa_cont" in kwargs:
             self.params["kappa_cont"] = oimParam(
-                name="kappa_cont", description="Continuum absorption opacity"
+                name="kappa_cont",
+                description="Continuum absorption opacity",
+                base="kappa",
             )
             self.params["kappa_ratio"] = oimParam(
                 name="kappa_ratio",
