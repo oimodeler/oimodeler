@@ -467,8 +467,7 @@ def spectral_index(
     wl = np.unique(
         np.hstack([item for sublist in data.struct_wl for item in sublist])
     )
-    nu = SI.C / wl
-    return wl, np.gradient(np.log(blackbody(T, nu)), np.log(nu))
+    return wl, np.gradient(np.log(blackbody(T, wl)), np.log(SI.C / wl))
 
 
 def pad_image(
