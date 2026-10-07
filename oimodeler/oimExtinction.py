@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy import interpolate
-
-from .oimParam import _standardParameters, oimParam
 
 FITZINDEB = np.genfromtxt(
     Path(__file__).parent / "extlaws" / "FitzIndeb_3.1_VOSA.dat", unpack=True
@@ -142,46 +139,3 @@ def extlaw_Cardelli89(
         b[idx] = 13.670 + 4.257 * z - 0.420 * z**2 + 0.374 * z**3
 
     return (a + b / R_V) * A_V
-
-
-class ExtinctionMixIn:
-    """Adds extinction to an
-    :class:`oimComponent <oimodeler.oimComponent.oimComponent>`."""
-
-    extincted = False
-
-    def _setup_mixins(self, kwargs) -> None:
-        """Adds extinction to component initialisation."""
-        super()._setup_mixins(kwargs)
-
-        if "extlaw" in kwargs or kwargs.get("extincted", False):
-            self.extincted = True
-            self.extargs = []
-            self.extlaw = kwargs.get("extlaw", extlaw_FitzIndeb)
-
-            for extarg in inspect.getfullargspec(self.extlaw).args[1:]:
-                self.extargs.append(extarg)
-                self.params[extarg] = oimParam(
-                    **_standardParameters.get(extarg, {"name": extarg})
-                )
-
-        # TODO: Remove this after some time after it is standard behaviour
-        elif "A_V" in kwargs:
-            raise NotImplementedError(
-                "Extinction must now be defined by specifying extlaw or extincted, "
-                "instead only A_V"
-            )
-
-    def _apply_extinction(
-        self,
-        wl: NDArray[np.floating] | None = None,
-    ) -> NDArray[np.floating]:
-        """Apply (wavelength dependent if ``wl is not None``) extinction
-        if ``self.extincted=True``."""
-        if not self.extincted:
-            return np.array([1.0])
-
-        extinction = self.extlaw(
-            wl, *[self.params[extarg].value for extarg in self.extargs]
-        )
-        return 10 ** (-0.4 * extinction)
