@@ -225,13 +225,13 @@ class TestOimTempGrad:
         assert np.allclose(vis, vis2, atol=1e-2)
 
         # NOTE: Tests congurency of the logarithmic grids (i.e. same ratio + endpoints)
-        radii = model.components[1]._r / 1e3 * model.components[1].dist.value
+        radii = model.components[1].r / 1e3 * model.components[1].dist.value
         radii2 = [
-            model2.components[1]._r / 1e3 * model2.components[1].dist.value
+            model2.components[1].r / 1e3 * model2.components[1].dist.value
         ]
         for i in range(2, len(cut_radii) + 2):
             tmp_radii = (
-                model2.components[i]._r / 1e3 * model2.components[i].dist.value
+                model2.components[i].r / 1e3 * model2.components[i].dist.value
             )
             assert radii2[-1][-1] == pytest.approx(tmp_radii[0])
             radii2.append(tmp_radii)

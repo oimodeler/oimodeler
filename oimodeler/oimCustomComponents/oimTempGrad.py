@@ -178,13 +178,15 @@ class oimTempGrad(oimComponentRadialProfile):
         dim, dist = self.dim.value, self.dist.value
 
         rin, rout = rin / dist * 1e3, rout / dist * 1e3
-        if oimOptions.model.grid.type == "logarithmic":
+        if oimOptions.model.grid.type == "linear":
+            self._r = np.linspace(rin, rout, dim)
+        elif oimOptions.model.grid.type == "logarithmic":
             if rin <= 0:
                 raise ValueError("Logarithmic grid requires rin > 0.")
 
-            return np.logspace(np.log10(rin), np.log10(rout), dim)
+            self._r = np.logspace(np.log10(rin), np.log10(rout), dim)
 
-        return np.linspace(rin, rout, dim)
+        return self._r
 
     @property
     def Tin(self) -> float:
