@@ -5,9 +5,11 @@ from ..oimComponent import oimComponentFourier
 from ..oimParam import _standardParameters, oimParam
 
 
-# TODO: Rename with E convnetion? For Elliptical?
+# TODO: Combine with existing oimLorentz class
+# TODO: Verify functionality
+# TODO: Rename with E convention? For Elliptical?
 class oimGaussLorentz(oimComponentFourier):
-    """Gaussian-Lorentzian component defined in the Fourier space [1]_.
+    """Gaussian-Lorentzian component defined in the Fourier space.
 
     Parameters
     ----------
@@ -38,13 +40,6 @@ class oimGaussLorentz(oimComponentFourier):
         Position angle of the major axis (deg).
     elong : oimParam
         Elongation of the major axis.
-
-    References
-    ----------
-    .. [1] A. Lazareff et al., *Structure of Herbig AeBe disks at the
-    milliarcsecond scale . A statistical survey in the H band using
-    PIONIER-VLTI*, A&A, Vol. 599, id. A85, 41 pp. (2017).
-    `SciX record <https://scixplorer.org/abs/2017A%26A...599A..85L>`_
     """
 
     name = "Gauss-Lorentzian"
