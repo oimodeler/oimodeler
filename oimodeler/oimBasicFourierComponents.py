@@ -1,6 +1,6 @@
 # p -*- coding: utf-8 -*-
 """
-Basic model-components defined in the Fourier plan
+Basic model-components defined in Fourier space.
 """
 
 import operator
@@ -17,7 +17,7 @@ from .oimParam import _standardParameters, oimParam
 
 
 class oimPt(oimComponentFourier):
-    """Point Source component defined in the Fourier space.
+    """Point Source component defined in Fourier space.
 
     Parameters
     ----------
@@ -88,7 +88,7 @@ class oimPt(oimComponentFourier):
 
 
 class oimBackground(oimComponentFourier):
-    """Background component defined in the Fourier space
+    """Background component defined in Fourier space
 
     Parameters
     ----------
@@ -144,7 +144,7 @@ class oimBackground(oimComponentFourier):
 
 
 class oimUD(oimComponentFourier):
-    """Uniform Disk component defined in the Fourier space.
+    """Uniform Disk component defined in Fourier space.
 
     Parameters
     ----------
@@ -207,7 +207,7 @@ class oimUD(oimComponentFourier):
 
 
 class oimEllipse(oimUD):
-    """Uniform Ellipse component defined in the Fourier space.
+    """Uniform Ellipse component defined in Fourier space.
 
     Parameters
     ----------
@@ -258,7 +258,7 @@ class oimEllipse(oimUD):
 
 
 class oimGauss(oimComponentFourier):
-    """Gaussian Disk component defined in the Fourier space.
+    """Gaussian Disk component defined in Fourier space.
 
     Parameters
     ----------
@@ -322,7 +322,7 @@ class oimGauss(oimComponentFourier):
 
 
 class oimEGauss(oimGauss):
-    """Elliptical Gaussian component defined in the Fourier space.
+    """Elliptical Gaussian component defined in Fourier space.
 
     Parameters
     ----------
@@ -373,7 +373,7 @@ class oimEGauss(oimGauss):
 
 
 class oimIRing(oimComponentFourier):
-    """Infinitesimal Ring component defined in the Fourier space.
+    """Infinitesimal Ring component defined in Fourier space.
 
     Parameters
     ----------
@@ -492,7 +492,7 @@ class oimEIRing(oimIRing):
 
 
 class oimRing(oimComponentFourier):
-    """Ring component defined in the Fourier space.
+    """Ring component defined in Fourier space.
 
     Parameters
     ----------
@@ -575,7 +575,7 @@ class oimRing(oimComponentFourier):
 
 
 class oimRing2(oimComponentFourier):
-    """Ring component defined in the Fourier space.
+    """Ring component defined in Fourier space.
 
     Parameters
     ----------
@@ -647,7 +647,7 @@ class oimRing2(oimComponentFourier):
 
 
 class oimERing(oimRing):
-    """Elliptical Ring component defined in the Fourier space.
+    """Elliptical Ring component defined in Fourier space.
 
     Parameters
     ----------
@@ -702,7 +702,7 @@ class oimERing(oimRing):
 
 
 class oimERing2(oimRing2):
-    """Elliptical Ring component defined in the Fourier space.
+    """Elliptical Ring component defined in Fourier space.
 
     Parameters
     ----------
@@ -757,7 +757,7 @@ class oimERing2(oimRing2):
 
 
 class oimESKIRing(oimComponentFourier):
-    """Skewed Elliptical Infinitesimal Ring component defined in the Fourier space.
+    """Skewed Elliptical Infinitesimal Ring component defined in Fourier space.
 
     Parameters
     ----------
@@ -863,7 +863,7 @@ class oimESKIRing(oimComponentFourier):
 
 
 class oimESKGRing(oimComponentFourier):
-    """Skewed Elliptical Gaussian Ring component defined in the Fourier space.
+    """Skewed Elliptical Gaussian Ring component defined in Fourier space.
 
     Parameters
     ----------
@@ -959,7 +959,7 @@ class oimESKGRing(oimComponentFourier):
 
 
 class oimESKRing(oimComponentFourier):
-    """Skewed Elliptical Ring component defined in the Fourier space.
+    """Skewed Elliptical Ring component defined in Fourier space.
 
     Parameters
     ----------
@@ -1069,7 +1069,7 @@ class oimESKRing(oimComponentFourier):
 
 
 class oimLorentz(oimComponentFourier):
-    """Pseudo-Lorentzian component defined in the Fourier space [1]_.
+    r"""Pseudo-Lorentzian component defined in Fourier space.
 
     Parameters
     ----------
@@ -1101,12 +1101,21 @@ class oimLorentz(oimComponentFourier):
     fwhm : oimParam
         FWHM of the Lorentzian (mas).
 
-    References
-    ----------
-    .. [1] A. Lazareff et al., *Structure of Herbig AeBe disks at the
-    milliarcsecond scale . A statistical survey in the H band using
-    PIONIER-VLTI*, A&A, Vol. 599, id. A85, 41 pp. (2017).
-    `SciX record <https://scixplorer.org/abs/2017A%26A...599A..85L>`_
+    Notes
+    -----
+    The Pseudo-Lorentzian (with :math:`a=\mathrm{FWHM}/1.13`) is defined as
+
+    .. math::
+
+        \frac{a}{2\pi\sqrt{3}}\left(\frac{a^3}{2}+r^2\right)^{-3/2}
+
+    in image plane and
+
+    .. math::
+
+        \exp\left(-\frac{2\pi a}{\sqrt{3}}q\right)
+
+    in Fourier space :cite:p:`Lazareff2017`.
     """
 
     # TODO : Small difference between images using direct formula or inverse of vis function
@@ -1145,7 +1154,7 @@ class oimLorentz(oimComponentFourier):
 
 
 class oimELorentz(oimLorentz):
-    """Elliptical-Lorentzian component defined in the Fourier space [1]_.
+    r"""Elliptical-Lorentzian component defined in Fourier space.
 
     Parameters
     ----------
@@ -1185,12 +1194,21 @@ class oimELorentz(oimLorentz):
     elong : oimParam
         Elongation of the major axis.
 
-    References
-    ----------
-    .. [1] A. Lazareff et al., *Structure of Herbig AeBe disks at the
-    milliarcsecond scale . A statistical survey in the H band using
-    PIONIER-VLTI*, A&A, Vol. 599, id. A85, 41 pp. (2017).
-    `SciX record <https://scixplorer.org/abs/2017A%26A...599A..85L>`_
+    Notes
+    -----
+    The Pseudo-Lorentzian (with :math:`a=\mathrm{FWHM}/1.13`) is defined as
+
+    .. math::
+
+        \frac{a}{2\pi\sqrt{3}}\left(\frac{a^3}{2}+r^2\right)^{-3/2}
+
+    in image plane and
+
+    .. math::
+
+        \exp\left(-\frac{2\pi a}{\sqrt{3}}q\right)
+
+    in Fourier space :cite:p:`Lazareff2017`.
     """
 
     name = "Elliptical Pseudo Lorentzian"
@@ -1203,8 +1221,7 @@ class oimELorentz(oimLorentz):
 
 
 class oimLinearLDD(oimComponentFourier):
-    r"""Linear Limb Darkened Disk component defined in the Fourier space
-    [1]_ [2]_.
+    r"""Linear Limb Darkened Disk component defined in Fourier space.
 
     Parameters
     ----------
@@ -1242,21 +1259,12 @@ class oimLinearLDD(oimComponentFourier):
 
     Notes
     ------
-    The linear limb darkend disc is defined as [1]_ [2]_
+    The linear limb darkend disc is defined as
+    :cite:p:`DomicianodeSouza2003,DomicianodeSouza2021`
 
     .. math::
 
         \frac{I(\mu)}{I(1)}=1-a(1-\mu)
-
-    References
-    ----------
-    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
-    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
-    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
-    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
-    id. A19, 14 pp. (2021).
-    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "Linear Limb Darkened Disk "
@@ -1296,8 +1304,7 @@ class oimLinearLDD(oimComponentFourier):
 
 
 class oimQuadLDD(oimComponentFourier):
-    r"""Quadratic Limb Darkened Disk component defined in the Fourier space
-    [1]_ [2]_.
+    r"""Quadratic Limb Darkened Disk component defined in Fourier space.
 
     Parameters
     ----------
@@ -1339,21 +1346,12 @@ class oimQuadLDD(oimComponentFourier):
 
     Notes
     ------
-    The quadratic limb darkend disc is defined as [1]_ [2]_
+    The quadratic limb darkend disc is defined as
+    :cite:p:`DomicianodeSouza2003,DomicianodeSouza2021`
 
     .. math::
 
         \frac{I(\mu)}{I(1)}=1-a_1(1-\mu)-a_2(1-\mu)^2
-
-    References
-    ----------
-    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
-    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
-    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
-    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
-    id. A19, 14 pp. (2021).
-    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "Quadratic Limb Darkened Disk "
@@ -1405,8 +1403,7 @@ class oimQuadLDD(oimComponentFourier):
 
 
 class oimPowerLawLDD(oimComponentFourier):
-    r"""Power Law Limb Darkened Disk component defined in the Fourier space
-    [1]_ [2]_.
+    r"""Power Law Limb Darkened Disk component defined in Fourier space.
 
     Parameters
     ----------
@@ -1444,21 +1441,12 @@ class oimPowerLawLDD(oimComponentFourier):
 
     Notes
     ------
-    The power-law limb darkend disc is defined as [1]_ [2]_
+    The power-law limb darkend disc is defined as
+    :cite:p:`DomicianodeSouza2003,DomicianodeSouza2021`
 
     .. math::
 
         \frac{I(\mu)}{I(1)}=\mu^a
-
-    References
-    ----------
-    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
-    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
-    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
-    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
-    id. A19, 14 pp. (2021).
-    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "Power Law Limb Darkened Disk "
@@ -1500,8 +1488,7 @@ class oimPowerLawLDD(oimComponentFourier):
 
 
 class oimSqrtLDD(oimComponentFourier):
-    r"""Square-root Limb Darkened Disk component defined in the Fourier space
-    [1]_ [2]_.
+    r"""Square-root Limb Darkened Disk component defined in Fourier space.
 
     Parameters
     ----------
@@ -1543,21 +1530,12 @@ class oimSqrtLDD(oimComponentFourier):
 
     Notes
     ------
-    The square-root limb darkend disc is defined as [1]_ [2]_
+    The square-root limb darkend disc is defined as
+    :cite:p:`DomicianodeSouza2003,DomicianodeSouza2021`
 
     .. math::
 
         \frac{I(\mu)}{I(1)}=1-a_1(1-\mu)-a_2(1-\sqrt{\mu})
-
-    References
-    ----------
-    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
-    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
-    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
-    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
-    id. A19, 14 pp. (2021).
-    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "square-root Limb Darkened Disk "
@@ -1610,8 +1588,8 @@ class oimSqrtLDD(oimComponentFourier):
 
 
 class oim4CLDD(oimComponentFourier):
-    r"""Four coefficient Limb Darkened Disk component defined in the Fourier
-    space [1]_ [2]_.
+    r"""Four coefficient Limb Darkened Disk component defined in Fourier
+    space.
 
     Parameters
     ----------
@@ -1661,21 +1639,12 @@ class oim4CLDD(oimComponentFourier):
 
     Notes
     ------
-    The four-coefficient limb darkend disc is defined as [1]_ [2]_
+    The four-coefficient limb darkend disc is defined as
+    :cite:p:`DomicianodeSouza2003,DomicianodeSouza2021`
 
     .. math::
 
         \frac{I(\mu)}{I(1)}=1-a_1(1-\mu^{0.5})-a_2(1-\mu)-a_3(1-\mu^{1.5})-a_4(1-\mu^2)
-
-    References
-    ----------
-    .. [1] A. Domiciano de Souza, *Modelling and observation in stellar interferometry:
-    rotation, pulsation, and spots*, Université de Nice-Sophia Antipolis (2003).
-    `SciX record <https://scixplorer.org/abs/2003PhDT.......136D>`_
-    .. [2] A. Domiciano de Souza et al., *Refined fundamental parameters of Canopus from
-    combined near-IR interferometry and spectral energy distribution*, A&A, Vol. 654,
-    id. A19, 14 pp. (2021).
-    `SciX record <https://scixplorer.org/abs/2021A%26A...654A..19D>`_
     """
 
     name = "4 Coefficients Limb Darkened Disk "

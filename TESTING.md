@@ -15,7 +15,8 @@ pip install -e .[test]
 or make use of the [`pixi`](https://pixi.prefix.dev/latest/) framework
 
 ```bash
-pixi run test-slow
+pixi run test-all
+pixi run test-all-parallel
 ```
 
 ## Slow Tests
@@ -37,10 +38,10 @@ in the `examples/` directory
 
 ## Parallelisation
 
-The tests can be run in parallel (e.g. with 10 CPUs) using
+The tests can be run in parallel using
 
 ```bash
-pytest  -m 'not slow' --dist loadgroup  -n 10
+pytest  -m 'not slow' --dist loadgroup  -n auto
 ```
 
 or

@@ -5,17 +5,17 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
-import os
 import sys
 from pathlib import Path
 
 print("Python version")
-print (sys.version)
-sys.path.insert(0,str(Path(__file__).parent.parent.parent ))
-sys.path.insert(0,str(Path(__file__).parent.parent.parent / "oimodeler"))
-sys.path.insert(0,str(Path(__file__).parent.parent.parent / "examples" / "notebooks"))
-sys.path.insert(0,str(Path("sphinxext").resolve()))
+print(sys.version)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "oimodeler"))
+sys.path.insert(
+    0, str(Path(__file__).parent.parent.parent / "examples" / "notebooks")
+)
+sys.path.insert(0, str(Path("sphinxext").resolve()))
 print(sys.path)
 
 
@@ -24,36 +24,38 @@ from oimodeler import __version__
 release = __version__
 version = ".".join(__version__.split(".")[:2])
 
-project = 'oimodeler'
-copyright = '2024, Anthony Meilland'
-author = 'Anthony Meilland'
-
+project = "oimodeler"
+copyright = "2026, Anthony Meilland"
+author = "Anthony Meilland"
 
 
 extensions = [
-    'sphinx.ext.napoleon',
-    'sphinx.ext.duration',
-    'sphinx.ext.doctest',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'autodocsumm',
-    'sphinx_rtd_theme',
-    'matplotlib.sphinxext.plot_directive',
+    "sphinxcontrib.bibtex",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.duration",
+    "sphinx.ext.doctest",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "autodocsumm",
+    "sphinx_rtd_theme",
+    "matplotlib.sphinxext.plot_directive",
     #'myst_parser',
     #'sphinx_gallery.gen_gallery',
 ]
+bibtex_bibfiles = ["oimodeler.bib"]
+bibtex_reference_style = "author_year"
 
 napoleon_google_docstring = False
 napoleon_use_param = False
 napoleon_use_ivar = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', '_templates']
+exclude_patterns = ["_build", "_templates"]
 
 autosummary_generate = True
 # -- Options for HTML output -------------------------------------------------
@@ -61,34 +63,36 @@ autosummary_generate = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 html_logo = "../../images/oimodelerlogo_small.png"
 html_favicon = "../../images/favicon.ico"
 html_theme_options = {
-    'logo_only': True,
-    'display_version': True,
-    'style_nav_header_background': '#eeeeee',
-    'collapse_navigation': False,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
+    "logo_only": True,
+    "display_version": True,
+    "style_nav_header_background": "#eeeeee",
+    "collapse_navigation": False,
+    "sticky_navigation": True,
+    "navigation_depth": 4,
 }
 
 html_context = {
-    'css_files': ['_static/custom.css'],
-    }
-autodoc_member_order = 'bysource'
+    "css_files": ["_static/custom.css"],
+}
+autodoc_member_order = "bysource"
 # numpydoc_class_members_toctree = False
 
 
-autodoc_default_options = {'autosummary': True,
-                           'autosummary-no-nesting':False}
+autodoc_default_options = {
+    "autosummary": True,
+    "autosummary-no-nesting": False,
+}
 
-#sphinx_gallery_conf = {
+# sphinx_gallery_conf = {
 #    'examples_dirs': ['../../examples/tests'],
 #    'gallery_dirs': ['auto_examples'],
-#}
+# }

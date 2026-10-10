@@ -20,13 +20,40 @@ Citation
 
 If you make use of **oimodeler** in your work, please cite our SPIE paper (`HAL <https://cnrs.hal.science/hal-04797236>`_, `ADS <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/abstract>`_, `BibTeX <https://ui.adsabs.harvard.edu/abs/2024SPIE13095E..2WM/exportcitation>`_).
 
-The following list presents **oimodeler** features that are based on work by other researchers. If you use any of these features, please include the appropriate references and/or acknowledgments.
+The following list presents **oimodeler** features that are based on work by other researchers.
+If you use any of these features, please include the appropriate references and/or acknowledgments.
 
-.. csv-table:: Reference for **oimodeler** special features
-   :file: table_citation.csv
-   :header-rows: 1  
-   :delim: |
+.. list-table:: References for **oimodeler** special features
+   :header-rows: 1
    :widths: auto
+
+   * - Feature
+     - Reference paper(s) to cite
+     - Additional acknowledgment
+   * - :class:`oimDisco <oimodeler.oimCustomComponents.oimDisco.oimDisco>`
+     - | :cite:alp:`Vieira2015`
+       | :cite:alp:`Vieira2016`
+     - Developed by A. Domiciano de Souza for `AMHRA <https://amhra.oca.eu/AMHRA/index.htm>`_
+   * - :class:`oimKinematicDisk <oimodeler.oimCustomComponents.oimKinematicDisk.oimKinematicDisk>`
+     - :cite:alp:`Meilland2012`
+     - None
+   * - :class:`oimComponentRadialProfile <oimodeler.oimComponent.oimComponentRadialProfile>`
+     - :cite:alp:`Lazareff2017`
+     - This citation should be used for all from :class:`oimComponentRadialProfile <oimodeler.oimComponent.oimComponentRadialProfile>`
+       derived classes as well:
+       such as, :class:`oimRadialPowRing <oimodeler.oimCustomComponents.oimRadialRings.oimRadialPowRing>`,
+       :class:`oimRadialPow2Ring <oimodeler.oimCustomComponents.oimRadialRings.oimRadialPow2Ring>`,
+       :class:`oimRadialExpRing <oimodeler.oimCustomComponents.oimRadialRings.oimRadialExpRing>`,
+       and :class:`oimTempGrad <oimodeler.oimCustomComponents.oimTempGrad.oimTempGrad>`
+       )
+   * - :class:`oimTempGrad <oimodeler.oimCustomComponents.oimTempGrad.oimTempGrad>`
+     - | :cite:alp:`Lazareff2017`
+       | :cite:alp:`Varga2024`
+       | :cite:alp:`Scheuck2026`
+     - None
+   * - :class:`oimGrater <oimodeler.oimCustomComponents.oimGrater.oimGrater>`
+     - TODO
+     - None
 
 
 Contact
