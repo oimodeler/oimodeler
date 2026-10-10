@@ -13,8 +13,8 @@ import numpy as np
 from astropy.io import fits
 from matplotlib import gridspec, patches
 from matplotlib.axes import Axes
+from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
-from matplotlib.collections import  LineCollection
 from matplotlib.figure import Figure
 from matplotlib.legend_handler import HandlerLineCollection
 
@@ -150,7 +150,7 @@ oimPlotParamIsUVcoord = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 oimPlotParamColorCycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
 # NOTE: might be useful as unit cycles is not defined but cycle is
-u.add_enabled_units(u.def_unit("cycles",u.cycle))
+u.add_enabled_units(u.def_unit("cycles", u.cycle))
 
 
 def _errorplot(
@@ -182,10 +182,10 @@ def _errorplot(
 
     if "color" not in kwargs:
         kwargs["color"] = "grey"
-        
+
     if "lw" not in kwargs:
         kwargs["lw"] = 0.1
-        
+
     if smooth != 1:
         ker = np.ones(smooth) / smooth
         ys = np.convolve(y, ker, mode="same")  # [smooth//2:-smooth//2-1]
@@ -288,9 +288,7 @@ def _plotc(
 
     # Combine masks.
     mask = (
-        np.ma.getmaskarray(x)
-        | np.ma.getmaskarray(y)
-        | np.ma.getmaskarray(z)
+        np.ma.getmaskarray(x) | np.ma.getmaskarray(y) | np.ma.getmaskarray(z)
     )
 
     xd = np.asarray(np.ma.getdata(x), dtype=float)
@@ -298,12 +296,7 @@ def _plotc(
     zd = np.asarray(np.ma.getdata(z), dtype=float)
 
     # NaN and Inf are also considered invalid.
-    valid = (
-        ~mask
-        & np.isfinite(xd)
-        & np.isfinite(yd)
-        & np.isfinite(zd)
-    )
+    valid = ~mask & np.isfinite(xd) & np.isfinite(yd) & np.isfinite(zd)
 
     # ------------------------------------------------------------------
     # Extract line properties
@@ -349,9 +342,7 @@ def _plotc(
 
     if kwargs:
         names = ", ".join(kwargs.keys())
-        raise TypeError(
-            f"Unsupported argument(s) for plotc: {names}"
-        )
+        raise TypeError(f"Unsupported argument(s) for plotc: {names}")
 
     # ------------------------------------------------------------------
     # Get the color scale associated with this Axes
@@ -415,44 +406,44 @@ def _plotc(
 
         if valid[i] and valid[i + 1]:
 
-            segments.append([
-                [xd[i], yd[i]],
-                [xd[i + 1], yd[i + 1]],
-            ])
+            segments.append(
+                [
+                    [xd[i], yd[i]],
+                    [xd[i + 1], yd[i + 1]],
+                ]
+            )
 
             # Interpolate z at the center of the segment.
-            segment_z.append(
-                0.5 * (zd[i] + zd[i + 1])
-            )
+            segment_z.append(0.5 * (zd[i] + zd[i + 1]))
 
     # ------------------------------------------------------------------
     # Create LineCollection
     # ------------------------------------------------------------------
-    if linestyle!="":
+    if linestyle != "":
         line = LineCollection(
             segments,
             cmap=cmap,
             norm=norm,
         )
-    
+
         if segment_z:
             line.set_array(np.asarray(segment_z))
-    
+
         if linewidth is not None:
             line.set_linewidth(linewidth)
-    
+
         if linestyle is not None:
             line.set_linestyle(linestyle)
-    
+
         if alpha is not None:
             line.set_alpha(alpha)
-    
+
         if zorder is not None:
             line.set_zorder(zorder)
-    
+
         if label is not None:
             line.set_label(label)
-    
+
         ax.add_collection(line)
 
     # ------------------------------------------------------------------
@@ -472,7 +463,7 @@ def _plotc(
         }
 
         if markersize is not None:
-            scatter_kwargs["s"] = markersize ** 2
+            scatter_kwargs["s"] = markersize**2
 
         if markeredgecolor is not None:
             scatter_kwargs["edgecolors"] = markeredgecolor
@@ -498,7 +489,7 @@ def _plotc(
     # ------------------------------------------------------------------
     # Store artists
     # ------------------------------------------------------------------
-    if linestyle!="" :
+    if linestyle != "":
         state["artists"].append(line)
 
     if scatter is not None:
@@ -517,21 +508,15 @@ def _plotc(
     # ------------------------------------------------------------------
     if valid.any():
 
-        ax.update_datalim(
-            np.column_stack(
-                (xd[valid], yd[valid])
-            )
-        )
+        ax.update_datalim(np.column_stack((xd[valid], yd[valid])))
 
         ax.autoscale_view()
-    
+
     try:
         res = line
     except:
         res = scatter
     return res
-
-
 
 
 def uvPlot(
@@ -861,9 +846,7 @@ def getColorIndices(
                     iarr = len(names)
                     names.append(array)
                 idxi.append(np.zeros(nB, dtype=int) + iarr)
-                
-            
-            
+
             elif color == "byInsname":
                 array = datai[jdata].header["INSNAME"]
                 if array in names:
@@ -911,7 +894,6 @@ def getColorIndices(
     return idx, names
 
 
-
 def oimPlot(
     oifitsList: fits.HDUList,
     xname: str,
@@ -935,7 +917,6 @@ def oimPlot(
     kwargs_error: dict = {},
     **kwargs,
 ):
-
     """Plot the data from the oifits files.
 
     Parameters
@@ -1263,81 +1244,90 @@ def oimPlot(
 
                 flags = np.reshape(yflag[idata], shapey)[iB, :]
                 if showFlagged:
-                    flags = (flags*0).astype(bool)
-              
-                yplot = np.ma.masked_where(flags,ydata[idata][iB,:])
-                
-                labeli = (label + " " + 
-                         ColorNames[colorIdx[ifile][idata][iB]])
-                
-                #plots without colorscale <=> colors == baselines, files... 
+                    flags = (flags * 0).astype(bool)
+
+                yplot = np.ma.masked_where(flags, ydata[idata][iB, :])
+
+                labeli = label + " " + ColorNames[colorIdx[ifile][idata][iB]]
+
+                # plots without colorscale <=> colors == baselines, files...
                 if cname is None:
                     if errorbar:
                         kwargs_errori = kwargs_error.copy()
-                        kwargs_errori["zorder"]=0
+                        kwargs_errori["zorder"] = 0
                         if "color" not in kwargs_error:
                             kwargs_errori["color"] = colorTab[
-                                colorIdx[ifile][idata][iB]
-                                % ncol]
-                            
-                            
+                                colorIdx[ifile][idata][iB] % ncol
+                            ]
+
                         if errorbar == "classic":
-                            axe.errorbar(xdata[idata][iB, :],
-                                         yplot,
-                                         ydataerr[idata][iB, :],
-                                         ls="", marker="", 
-                                         **kwargs_errori)
-                            
+                            axe.errorbar(
+                                xdata[idata][iB, :],
+                                yplot,
+                                ydataerr[idata][iB, :],
+                                ls="",
+                                marker="",
+                                **kwargs_errori,
+                            )
+
                         else:
                             _errorplot(
-                            axe,
-                            xdata[idata][iB, :],
-                            yplot,
-                            ydataerr[idata][iB, :],
-                            **kwargs_errori
+                                axe,
+                                xdata[idata][iB, :],
+                                yplot,
+                                ydataerr[idata][iB, :],
+                                **kwargs_errori,
                             )
-                    
-                    axe.plot(xdata[idata][iB,:], yplot,
-                             color=colorTab[colorIdx[ifile][idata][iB] % ncol],
-                             label=labeli,
-                             **kwargs
+
+                    axe.plot(
+                        xdata[idata][iB, :],
+                        yplot,
+                        color=colorTab[colorIdx[ifile][idata][iB] % ncol],
+                        label=labeli,
+                        **kwargs,
                     )
-    
-                #plots with colorscale (cname!=None) using the function _plotc 
+
+                # plots with colorscale (cname!=None) using the function _plotc
                 else:
                     if errorbar:
                         kwargs_errori = kwargs_error.copy()
-                        kwargs_errori["zorder"]=0
+                        kwargs_errori["zorder"] = 0
                         if "color" not in kwargs_error:
                             kwargs_errori["color"] = "grey"
-                       
+
                         if errorbar == "classic":
-                            if "alpha" not in kwargs_error:    
+                            if "alpha" not in kwargs_error:
                                 kwargs_errori["alpha"] = 0.3
-                            axe.errorbar(xdata[idata][iB, :],
-                                         yplot,
-                                         ydataerr[idata][iB, :],
-                                         ls="", marker="",
-                                         **kwargs_errori)    
+                            axe.errorbar(
+                                xdata[idata][iB, :],
+                                yplot,
+                                ydataerr[idata][iB, :],
+                                ls="",
+                                marker="",
+                                **kwargs_errori,
+                            )
                         else:
                             _errorplot(
-                            axe,
-                            xdata[idata][iB, :],
-                            yplot,
-                            ydataerr[idata][iB, :],
-                            **kwargs_errori)
-                            
-                    res = _plotc(xdata[idata][iB,:],
-                                yplot,cdata[idata][iB,:],
-                                label=labeli,
-                                ax=axe,
-                                **kwargs)
-                    
-    if legend == True:    
+                                axe,
+                                xdata[idata][iB, :],
+                                yplot,
+                                ydataerr[idata][iB, :],
+                                **kwargs_errori,
+                            )
+
+                    res = _plotc(
+                        xdata[idata][iB, :],
+                        yplot,
+                        cdata[idata][iB, :],
+                        label=labeli,
+                        ax=axe,
+                        **kwargs,
+                    )
+
+    if legend == True:
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
         axe.legend(by_label.values(), by_label.keys())
-               
 
     if yscale is not None:
         axe.set_yscale(yscale)
@@ -1354,7 +1344,6 @@ def oimPlot(
     axe.set_xlabel(xlabel)
     axe.set_ylabel(ylabel)
 
- 
     if cname and showColorbar:
         plt.colorbar(res, ax=axe, label=clabel)
 
@@ -1714,13 +1703,13 @@ def oimSimplePlotWavelength(
     oifitsList : fits.HDUList
         A list of oifits files.
     ifile : int
-    The index of the file.
+        The index of the file.
     dataType : str
         The data type to plot.
     iB : int
-    The baseline index.
+        The baseline index.
     extver : int, optional
-    The extension version. The default is None.
+        The extension version. Defaults to ``None``.
     """
     xmult = u.m.to(xunit)
     idx = np.where(oimPlotParamName == dataType)[0][0]
@@ -1730,8 +1719,10 @@ def oimSimplePlotWavelength(
     oifitsi = oifitsList[ifile]
     wl = getWlFromOifits(oifitsi, arrName, extver=extver)
 
-    data = oifitsi[arrName, extver].data[dataType][iB, :]
-    err = oifitsi[arrName, extver].data[errorName][iB, :]
+    data = oifitsi[arrName, extver].data[dataType]
+    err = oifitsi[arrName, extver].data[errorName]
+    if data.ndim > 1:
+        data, err = data[iB, :], err[iB, :]
 
     if axe is None:
         axe = plt.gca()
@@ -1758,7 +1749,6 @@ class oimAxes(plt.Axes):
     def oiplot(
         self, oifitsList: fits.HDUList, xname: str, yname: str, **kwargs
     ):
-
         """Plot the data from the oifits files."""
         res = oimPlot(oifitsList, xname, yname, axe=self, **kwargs)
         self.xtype, self.ytype = xname, yname
@@ -1782,7 +1772,7 @@ class oimAxes(plt.Axes):
         elif self.ytype in ["VISPHI", "T3PHI"]:
             self.set_ylim(-180, 180)
 
-    def legend(self, *args,**kwargs):
+    def legend(self, *args, **kwargs):
         """Add a legend to the plot."""
 
         handles, labels = self.get_legend_handles_labels()
