@@ -7,6 +7,10 @@ from ..oimComponent import oimComponentFourier
 from ..oimParam import _standardParameters, oimParam
 
 
+# TODO: Combine with existing oimLorentz class
+# TODO: Verify functionality
+# TODO: Rename with E convention? For Elliptical?
+# TODO: Is this needed in its current form?
 class oimStarHaloGaussLorentz(oimComponentFourier):
     name = "Star and Halo component with Gauss-Lorentzian disk"
     shortname = "SHGL"

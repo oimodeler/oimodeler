@@ -9,7 +9,7 @@ import astropy.units as u
 import numpy as np
 from scipy.special import j1
 
-from ..oimComponent import oimComponentFourier, oimComponentRadialProfile
+from ..oimComponent import oimComponentFourier
 from ..oimParam import oimParam
 
 

@@ -12,6 +12,9 @@ from astropy.constants import G, M_sun, R_sun, c, h, k_B
 from ..oimComponent import oimComponentImage
 from ..oimParam import oimParam
 
+# TODO: Replace `astropy.constants` with those already initialised
+# in `oimodeler`
+
 
 def fastRotator(
     dim0,
@@ -28,8 +31,7 @@ def fastRotator(
     ldd=None,
 ):
     """
-    Equations are taken from Domiciano+ 2018
-    https://www.aanda.org/articles/aa/pdf/2018/11/aa33450-18.pdf
+    Equations are taken from :cite:alp:`DomicianodeSouza2018`.
     """
 
     nlam = np.size(lam)

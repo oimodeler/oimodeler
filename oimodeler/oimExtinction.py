@@ -15,32 +15,32 @@ FITZINDEBSPLINE = interpolate.splrep(FITZINDEB[0] / 1e10, FITZINDEB[1], s=1)
 def extlaw_FitzIndeb(
     wavelength: float | NDArray[np.floating], A_V: float = 10.0
 ) -> float | NDArray[np.floating]:
-    """Optical Extinction law [1]_, with infrared extension [2]_.
+    r"""Compute extinction using the :cite:alp:`Fitzpatrick1999` law with the infrared
+    extension of :cite:alp:`Indebetouw2005`.
 
-    Appropriate for 0.02-1000 µm.
+    The extinction curve is evaluated using a spline representation of the
+    combined extinction law. The resulting curve is normalized to the
+    visual extinction :math:`A_V`.
+
+    This implementation is valid for wavelengths 0.02-1000 μm.
 
     Parameters
     ----------
     wavelength : float or NDArray[np.floating]
-        Wavelength(s) to compute the extinction for.
+        Wavelength(s) (m) at which to evaluate the extinction law.
     A_V : float, optional
-        Defaults to ``10.0``.
+        Visual extinction in magnitudes. Sets the normalization of the
+        extinction curve. Defaults to ``10.0``.
 
     Returns
     -------
     float or NDArray[np.floating]
+        Extinction at the specified wavelength(s) (mag).
 
     Notes
     -----
-    Obtained from `VOSA <https://svo2.cab.inta-csic.es/theory/vosa>`_.
-
-    References
-    ----------
-    .. [1] Fitzpatrick, "Correcting for the Effects of Interstellar Extinction",
-       PASP, Volume 111, id. 755, 63-75 pp., (1999).
-
-    .. [2] Indebetouw et al., "The Wavelength Dependence of Interstellar Extinction
-       from 1.25 to 8.0 Microns", ApJ, Volume 619, id. 2, 931-938 pp. (2005).
+    The extinction curve is obtained from `VOSA
+    <https://svo2.cab.inta-csic.es/theory/vosa>`_.
     """
     kappa = interpolate.splev(wavelength, FITZINDEBSPLINE, der=0)
     return A_V * (kappa / 211.4)
@@ -51,27 +51,39 @@ def extlaw_Cardelli89(
     A_V: float = 10.0,
     R_V: float = 3.1,
 ) -> float | NDArray[np.floating]:
-    """Extinction law [1]_.
+    r"""Compute extinction using the :cite:alp:`Cardelli1989` law.
 
-    Appropriate for 0.125-3.5 µm.
+    The extinction is calculated using the piecewise polynomial
+    parameterization of the extinction curve as a function of inverse
+    wavelength. The curve is normalized by the visual extinction
+    :math:`A_V` and parameterized by :math:`R_V`, the ratio of total to
+    selective visual extinction.
+
+    This implementation is valid for wavelengths 0.125-3.5 μm.
 
     Parameters
     ----------
     wavelength : float or NDArray[np.floating]
-        Wavelength(s) to compute the extinction for.
+        Wavelength(s) (m) at which to evaluate the extinction law.
     A_V : float, optional
-        Defaults to ``10.0``.
+        Visual extinction in magnitudes. Defaults to ``10.0``.
     R_V : float, optional
-        Defaults to ``3.1``.
+        Ratio of total to selective visual extinction,
+        :math:`R_V=A_V/E(B-V)`. Controls the shape of the extinction
+        curve. Defaults to ``3.1``.
 
     Returns
     -------
     float or NDArray[np.floating]
+        Extinction at the specified wavelength(s) (mag).
 
-    References
-    ----------
-    .. [1] Cardelli et al, "The Relationship between Infrared,
-    Optical, and Ultraviolet Extinction", ApJ, Volume 345, 245-256 pp., (1989).
+        .. math::
+
+            A(\lambda)=A_V\left[a(x)+\frac{b(x)}{R_V}\right],
+
+        where :math:`x = 1/\lambda` when the wavelength is expressed in
+        micrometres, and :math:`a(x)` and :math:`b(x)` are the
+        wavelength-dependent functions defined by the extinction law.
     """
     x = 1e6 / wavelength
     if np.isscalar(x):

@@ -728,7 +728,7 @@ This example will be added when the ``oimComponentRadialProfile`` is implemented
 
 ..  _create_interp:
 
-Adding Interpolators
+Adding interpolators
 ====================
 
 In the `createCustomParamInterpolator.py <https://github.com/oimodeler/oimodeler/blob/main/examples/ExpandingSoftware/createCustomParamInterpolator.py>`_
@@ -983,9 +983,84 @@ and plot everything together.
 .. image:: ../../images/createInterp1.png
   :alt: Alternative text
 
-Adding data Filters
+Adding data filters
 ===================
 
-Adding Fitters
+Adding fitters
 ==============
 
+Adding mixins
+=================
+
+Mixins provide a way to extend the functionality of :class:`oimComponent <oimodeler.oimComponent.oimComponent>` and its
+subclassed without having to reimplement their underlying behaviour. They can be used to introduce additional parameters,
+modify coordinate transformations, apply physical effects, or otherwise add functionality/alter a component.
+
+Now follows an explanation of what is important, when to implement a new mixin. For full examples see 
+:class:`EllipticalMixIn <oimodeler.oimMixIn.EllipticalMixIn>` or :class:`EllipticalMixIn <oimodeler.oimMixIn.ExtinctionMixIn>`.
+
+Mixin structure
+---------------
+
+A mixin is a class that adds a specific piece of functionality to an existing component. It should be
+designed to work alongside the component's existing implementation and other mixins.
+
+For example, :class:`EllipticalMixIn <oimodeler.oimMixIn.EllipticalMixIn>` adds elliptical geometry,
+while :class:`EllipticalMixIn <oimodeler.oimMixIn.ExtinctionMixIn>` introduces wavelength-dependent extinction.
+
+When implementing a new mixin, consider the following elements:
+
+* **Initialization:** Determine how the additional functionality should be enabled and initialize its parameters.
+* **Integration:** Ensure that new functionality can be incorporated into existing components without interfering
+  with its other behaviour.
+
+Initializing a mixin
+--------------------
+
+For new computations to be added to :class:`oimComponent <oimodeler.oimComponent.oimComponent>` or its subclasses,
+overload the :func:`_setup_mixins <oimodeler.oimComponent.oimComponent._setup_mixins>` method:
+
+.. code-block:: python
+
+   class NewMixIn:
+       new_feature = False
+
+       def _setup_mixins(self, kwargs) -> None:
+           super()._setup_mixins(kwargs)
+
+           if kwargs.get("new_feature", False):
+               self.new_feature = True
+               self.params["new_param"] = oimParam(...)
+
+
+Here, ``new_feature`` controls whether the new functionality is enabled. If so, ``new_param`` is added to the
+component's parameter dictionary.
+
+The existing mixins illustrate different ways of enabling functionality.
+:class:`EllipticalMixIn <oimodeler.oimMixIn.EllipticalMixIn>` enables ellipticity when ``elliptic=True`` or when
+one certain parameters (``pa``, ``elong``, or ``cosi``) are passed.
+:class:`ExtinctionMixIn <oimodeler.oimMixIn.ExtinctionMixIn>` enables extinction when an extinction law is supplied
+or ``extincted=True``.
+
+Additional model parameters should be represented by :class:`oimParam <oimodeler.oimParam.oimParam>` and stored
+in ``self.params``.
+
+Adding functionality
+--------------------
+
+The main purpose of a mixin is to provide additional behaviour through methods that can be used by the component
+implementation and be re-used in any number of components through inheritance.
+
+For instance, :class:`EllipticalMixIn <oimodeler.oimMixIn.EllipticalMixIn>` implements 
+:func:`_apply_elliptical_xy <oimodeler.oimMixIn.EllipticalMixIn._apply_elliptical_xy>` and
+:func:`_apply_elliptical_uv <oimodeler.oimMixIn.EllipticalMixIn._apply_elliptical_uv>` to transform spatial and
+Fourier coordinates, respectively.
+
+A new mixin should follow the pattern most appropriate to its functionality and clearly document the expected inputs,
+outputs, and its behaviour when disabled.
+
+A mixin should be implemented so that it can be combined with the relevant component classes through inheritance. Its
+initialization method should cooperate with the parent initialization chain by calling ``super()._setup_mixins(kwargs)``.
+
+This allows multiple mixins to participate in the setup process, provided their inheritance and method-resolution order
+are configured appropriately. The mixin should not assume that unrelated mixins are enabled or that their parameters exist.

@@ -6,7 +6,7 @@ from ..oimParam import oimParam
 
 
 class oimRadialPowRing(oimComponentRadialProfile):
-    """A ring defined by a radial intensity profile in r^p.
+    r"""A ring defined by a radial intensity profile (:math:`\propto r^p`).
 
     It accounts for elongation and rotation.
 
@@ -100,7 +100,7 @@ class oimRadialPowRing(oimComponentRadialProfile):
 
 
 class oimRadialPowRing2(oimComponentRadialProfile):
-    """A ring defined by a radial intensity profile in r^p.
+    r"""A ring defined by a radial intensity profile (:math:`\propto r^p`).
 
     It accounts for elongation and rotation.
 

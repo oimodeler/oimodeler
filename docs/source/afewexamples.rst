@@ -1,4 +1,4 @@
-A Few examples
+A few examples
 ==============
 
 Here are some plots from the 
