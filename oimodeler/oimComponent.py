@@ -117,8 +117,13 @@ class oimComponent:
         self._eval(**kwargs, checkParam=False)
 
     def _setup_mixins(self, kwargs) -> None:
-        """Set up mixins. That is, additional capabilities for the component
-        (e.g. ellipticity, extinction)."""
+        """Set up additional component capabilities provided by mixins.
+
+        Initialization hook for mixins that extend the component's functionality,
+        (e.g. elliptical geometry or wavelength-dependent extinction).
+        Subclasses can override/overload this method to initialize additional
+        parameters and configuration.
+        """
 
     def _paramstr(self):
         txt = []
