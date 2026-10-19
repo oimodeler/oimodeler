@@ -105,6 +105,9 @@ test-cov = "pytest --cov=oimodeler"
 test-cov-parallel = "pytest -m --cov=oimodeler -n auto"
 test-parallel = "pytest -m 'not slow' -n auto"
 
+[tool.pixi.target.osx-arm64.dependencies]
+pyfftw = "==0.15.1"
+
 [tool.pixi.feature.docs.dependencies]
 python = ">=3.9,<3.13"
 
