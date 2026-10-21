@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-from numpy.typing import NDArray
 from scipy import interpolate
 
 FITZINDEB = np.genfromtxt(
@@ -13,79 +12,45 @@ FITZINDEBSPLINE = interpolate.splrep(FITZINDEB[0] / 1e10, FITZINDEB[1], s=1)
 
 
 def extlaw_FitzIndeb(
-    wavelength: float | NDArray[np.floating], A_V: float = 10.0
-) -> float | NDArray[np.floating]:
-    r"""Compute extinction using the :cite:alp:`Fitzpatrick1999` law with the infrared
-    extension of :cite:alp:`Indebetouw2005`.
-
-    The extinction curve is evaluated using a spline representation of the
-    combined extinction law. The resulting curve is normalized to the
-    visual extinction :math:`A_V`.
-
-    This implementation is valid for wavelengths 0.02-1000 μm.
-
-    Parameters
-    ----------
-    wavelength : float or NDArray[np.floating]
-        Wavelength(s) (m) at which to evaluate the extinction law.
-    A_V : float, optional
-        Visual extinction in magnitudes. Sets the normalization of the
-        extinction curve. Defaults to ``10.0``.
-
-    Returns
-    -------
-    float or NDArray[np.floating]
-        Extinction at the specified wavelength(s) (mag).
-
-    Notes
-    -----
-    The extinction curve is obtained from `VOSA
-    <https://svo2.cab.inta-csic.es/theory/vosa>`_.
+    wavelength: float | np.ndarray, A_V: float = 10.0
+) -> float | np.ndarray:
+    """Extinction law of Fitzpatrick (1999, PASP, 111, 63) improved by
+    Indebetouw et al. (2005, ApJ, 619, 931), as obtained from VOSA
+    (https://svo2.cab.inta-csic.es/theory/vosa/).
+    Appropriate for 0.02-1000 µm.
+    
+    Inputs:
+    - wavelength: wavelength array of the model (in m)
+    - A_V: visual extinction
+    
+    Output:
+    - flux attenuation factor
+    
     """
     kappa = interpolate.splev(wavelength, FITZINDEBSPLINE, der=0)
-    return A_V * (kappa / 211.4)
+    A_lambda = A_V * (kappa / 211.4)
+
+    return 10 ** (-0.4 * A_lambda)
 
 
-def extlaw_Cardelli89(
-    wavelength: float | NDArray[np.floating],
-    A_V: float = 10.0,
-    R_V: float = 3.1,
-) -> float | NDArray[np.floating]:
-    r"""Compute extinction using the :cite:alp:`Cardelli1989` law.
-
-    The extinction is calculated using the piecewise polynomial
-    parameterization of the extinction curve as a function of inverse
-    wavelength. The curve is normalized by the visual extinction
-    :math:`A_V` and parameterized by :math:`R_V`, the ratio of total to
-    selective visual extinction.
-
-    This implementation is valid for wavelengths 0.125-3.5 μm.
-
-    Parameters
-    ----------
-    wavelength : float or NDArray[np.floating]
-        Wavelength(s) (m) at which to evaluate the extinction law.
-    A_V : float, optional
-        Visual extinction in magnitudes. Defaults to ``10.0``.
-    R_V : float, optional
-        Ratio of total to selective visual extinction,
-        :math:`R_V=A_V/E(B-V)`. Controls the shape of the extinction
-        curve. Defaults to ``3.1``.
-
-    Returns
-    -------
-    float or NDArray[np.floating]
-        Extinction at the specified wavelength(s) (mag).
-
-        .. math::
-
-            A(\lambda)=A_V\left[a(x)+\frac{b(x)}{R_V}\right],
-
-        where :math:`x = 1/\lambda` when the wavelength is expressed in
-        micrometres, and :math:`a(x)` and :math:`b(x)` are the
-        wavelength-dependent functions defined by the extinction law.
+def extlaw_Cardelli89(wavelength, A_V=10.0, R_V=3.1):
+    """Extinction law from Cardelli et al. (1989, ApJ 345, 245).
+    Appropriate for 0.125-3.5 µm.
+    
+    Inputs:
+    - wavelength: wavelength array of the model (in m)
+    - A_V: visual extinction
+    - R_V: total-to-selective extinction ratio (R_V=E(B-V)/A_V)
+    
+    Output:
+    - flux attenuation factor
+    
     """
+    
+    
+
     x = 1e6 / wavelength
+
     if np.isscalar(x):
         x = np.array([x])
 
@@ -149,5 +114,34 @@ def extlaw_Cardelli89(
         z = x[idx] - 8.0
         a[idx] = -1.073 - 0.628 * z + 0.137 * z**2 - 0.070 * z**3
         b[idx] = 13.670 + 4.257 * z - 0.420 * z**2 + 0.374 * z**3
+    
+    A_lambda = (a + b / R_V) * A_V
+    
+    return 10 ** (-0.4 * A_lambda)
 
-    return (a + b / R_V) * A_V
+
+def extlaw_water_ice(wavelength: float | np.ndarray, rel_amp: float = 0.16)-> float | np.ndarray:
+  
+    """Simple gaussian-like extinction law mimicking 
+    the broad water ice absorption feature centered at 3.1um.
+    
+    Inputs:
+    - wavelength: wavelength array of the model 
+    - rel_amp: relative amplitude, with respect to the continuum, of the gaussian mimicking the absorption feature
+    
+    Output:
+    - flux attenuation factor
+    
+    """
+       
+    PEAK_WAVELENGTH   = 3.16e-6
+    SIGMA  = 74.6e-9
+    extinction = 1 - rel_amp * np.exp(-0.5 * ((wavelength - PEAK_WAVELENGTH) / SIGMA) ** 2)
+
+    return extinction
+
+
+
+
+
+
