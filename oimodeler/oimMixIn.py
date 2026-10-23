@@ -254,12 +254,11 @@ class ExtinctionMixIn:
         self,
         wl: NDArray[np.floating] | None = None,
     ) -> NDArray[np.floating]:
-        """Compute the multiplicative attenuation due to extinction.
+        """Returns the flux attenuation factor due to extinction.
 
         The selected extinction law is evaluated at the supplied
         wavelengths using the current values of its model parameters.
-        The resulting extinction, expressed in magnitudes, is converted
-        into a multiplicative transmission factor.
+        The resulting extinction is already expressed in flux attenuation.
 
         Parameters
         ----------
@@ -270,8 +269,8 @@ class ExtinctionMixIn:
         Returns
         -------
         NDArray[np.floating]
-            Multiplicative attenuation factor computed as
-            ``10**(-0.4 * extinction)``. If extinction is disabled,
+            Multiplicative attenuation factor.
+            If extinction is disabled,
             returns an array containing a single value of ``1.0``.
 
         Notes
@@ -284,4 +283,4 @@ class ExtinctionMixIn:
         extinction = self.extlaw(
             wl, *[self.params[extarg].value for extarg in self.extargs]
         )
-        return 10 ** (-0.4 * extinction)
+        return extinction
