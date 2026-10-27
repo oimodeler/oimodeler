@@ -16,6 +16,8 @@ from dynesty import DynamicNestedSampler, NestedSampler
 from dynesty import plotting as dyplot
 from matplotlib import cm
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from numpy.typing import NDArray
 from scipy.optimize import minimize
 from tqdm import tqdm
 
@@ -315,9 +317,9 @@ class oimFitterEmcee(oimFitter):
                 "values of your priors may be switched."
             )
 
-        #TODO: for some reason these lines create a bug for single free parameter plot
-        #kwargs["truths"] = kwargs.get("truths", truths)
-        #print(kwargs["truths"])
+        # TODO: for some reason these lines create a bug for single free parameter plot
+        # kwargs["truths"] = kwargs.get("truths", truths)
+        # print(kwargs["truths"])
         fig = corner.corner(chain, labels=labels, **kwargs)
         if savefig is not None:
             plt.savefig(savefig)
@@ -358,10 +360,13 @@ class oimFitterEmcee(oimFitter):
         chi2max = chi2limfact * chi2min
         chi2bins = np.linspace(chi2max, chi2min, ncolors)
         if "cmap" in kwargs:
-            cmap = mpl.colormaps.get_cmap(kwargs.pop("cmap")).resampled(ncolors)
+            cmap = mpl.colormaps.get_cmap(kwargs.pop("cmap")).resampled(
+                ncolors
+            )
         else:
-            cmap = mpl.colormaps.get_cmap(mpl.rcParams["image.cmap"]).resampled(ncolors)
-
+            cmap = mpl.colormaps.get_cmap(
+                mpl.rcParams["image.cmap"]
+            ).resampled(ncolors)
 
         for i in range(self.nfree):
             for icol in range(ncolors):
@@ -921,119 +926,165 @@ class oimFitterRegularGrid(oimFitter):
 
         return fig, ax
 
-def oimComputeChi2PlusOneUncertainties(  
+
+# TODO: Should the computation be split from the plotting? [mb]
+def oimComputeChi2PlusOneUncertainties(
     fit,
-    nmax: int = 1e5,
+    nmax: int = int(1e5),
     plot: bool = False,
-    plotFact = 1.2,
-    log = False,
+    plotFact: float = 1.2,
+    log: bool = False,
     dataTypes=None,
-    searchFact:float = 1,
-):
+    searchFact: float = 1.0,
+    progress: bool = False,
+) -> NDArray[np.floating] | tuple[NDArray[np.floating], Figure, Axes]:
+    r"""Computes parameter uncertainties from :math:`\chi^2+1`.
 
-    res, _, _, err = fit.getResults(
-        discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
-    )
-    chi2min = fit.simulator.chi2r
-    params = fit.model.getParameters()
-    
-    errs=[]
+    Parameters
+    ----------
+    fit : oimFitter
+        The fitter containing the best-fit.
+    nmax : int, optional
+        The number of maximum iterations for the error computation. Defaults to
+        ``100_000``.
+    plot : bool, optional
+        If ``True``, plots the error computation results in terms of :math:`chi^2`
+        for each parameter. Defaults to ``False``.
+    plotFact : float, optional
+        Defaults to ``1.2``.
+    log : bool, optional
+        If ``True`` and ``plot=True`` sets the y-axis of the plot (i.e. :math:`chi^2`)
+        to logscale. Defaults to ``False``.
+    dataTypes : , optional
+        The columns of an OIFITS passed to the
+        :func:`oimSimulator.compute <oimodeler.oimSimulator.compute>` method. Defaults
+        to ``None``.
+    searchFact : float, optional
+        A multiplicative factor determining the step size of each error during iteration.
+        Defaults to ``1.0`` (i.e. a step equal to the param's original error).
+    progress : bool, optional
+        If ``True``, will show a progress bar for the error computation.
+        Defaults to ``False``.
 
-    if plot:
-        chi2_arr=[]
-        pval_arr=[]
-    for ip, pi in enumerate(tqdm(fit.freeParams)):
-        if plot:
-            chi2mapi=[chi2min]
-            pvali=[params[pi].value]
-        fit.getResults(
-            discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
-        )
-        val0  = params[pi].value
-        step0 = params[pi].error
-        chi2i = chi2min
-        stop = False
-        n=0
-        nomore= False
-        while chi2i<(chi2min+1)*plotFact or stop:
-            params[pi].value
-            params[pi].value+=step0*searchFact
-            
-            fit.simulator.compute(computeChi2=True,dataTypes=dataTypes)
-            chi2i=fit.simulator.chi2r
-            n+=1
-            if plot:
-                pvali.append(params[pi].value)
-                chi2mapi.append(chi2i)
-            if chi2i<(chi2min+1) and not(nomore):
-                errp = params[pi].value-val0
-            if chi2i>(chi2min+1): 
-                nomore = True
-            if n>nmax:
-                stop=True
-
-        params[pi].value = val0
-        chi2i = chi2min
-        stop = False
-        n=0
-        nomore= False
-        while  chi2i<(chi2min+1)*plotFact or stop:
-            params[pi].value
-            params[pi].value-=step0*searchFact
-            fit.simulator.compute(computeChi2=True,dataTypes=dataTypes)
-            chi2i=fit.simulator.chi2r
-            n+=1
-            if plot:
-                pvali.append(params[pi].value)
-                chi2mapi.append(chi2i)
-            if chi2i<(chi2min+1) and not(nomore):
-                errm = val0-params[pi].value
-            if chi2i>(chi2min+1): 
-                nomore = True
-            if n>nmax:
-                stop=True
-        
-        
-        if plot:
-            chi2mapi=np.array(chi2mapi)
-            pvali=np.array(pvali)
-            idx = np.argsort(pvali)
-            
-            chi2_arr.append(chi2mapi[idx])
-            pval_arr.append(pvali[idx])
-        errs.append([errm,errp])
-        
-    errs=np.array(errs)
-    err_mean=np.mean(errs,axis=1)
-    
+    Returns
+    -------
+    err_mean : NDArray[np.floating]
+        The mean errors derived from :math:`chi^2+1`. In case of non-finite :math:`chi^2` or
+        non determined errors, the errors of the input parameters are returned.
+    fig : Figure, optional
+        The figure of the plot. Returned if ``plot=True``.
+    ax : Axes, optional
+        The axes of the plot. Returned if ``plot=True``.
+    """
     if plot:
         fig, ax = plt.subplots(
-            1, fit.nfree, figsize=(18 , 25/ fit.nfree), sharey=True
+            1, fit.nfree, figsize=(18, 25 / fit.nfree), sharey=True
         )
         if fit.nfree == 1:
             ax = [ax]
-            
+
+    res = fit.getResults(
+        discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
+    )[0]
+    chi2min, params = fit.simulator.chi2r, fit.model.getParameters()
+
+    errs = []
+    if plot:
+        chi2_arr, pval_arr = [], []
+
+    free_params = fit.freeParams
+    if progress:
+        free_params = tqdm(free_params)
+
+    for ip, pi in enumerate(free_params):
+        if plot:
+            chi2mapi = [chi2min]
+            pvali = [params[pi].value]
+        fit.getResults(
+            discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
+        )
+        val0, step0 = params[pi].value, params[pi].error
+        n, chi2i, errp = 0, chi2min, step0
+        while chi2i < (chi2min + 1) * plotFact:
+            if n > nmax:
+                break
+
+            n += 1
+            params[pi].value += step0 * searchFact
+            fit.simulator.compute(computeChi2=True, dataTypes=dataTypes)
+            chi2i = fit.simulator.chi2r
+
+            if plot:
+                pvali.append(params[pi].value)
+                chi2mapi.append(chi2i)
+
+            if chi2i < (chi2min + 1) and not (chi2i > (chi2min + 1)):
+                errp = params[pi].value - val0
+
+        params[pi].value = val0
+        n, chi2i, errm = 0, chi2min, step0
+        while chi2i < (chi2min + 1) * plotFact:
+            if n > nmax:
+                break
+
+            n += 1
+            params[pi].value -= step0 * searchFact
+            fit.simulator.compute(computeChi2=True, dataTypes=dataTypes)
+            chi2i = fit.simulator.chi2r
+
+            if plot:
+                pvali.append(params[pi].value)
+                chi2mapi.append(chi2i)
+
+            if chi2i < (chi2min + 1) and not (chi2i > (chi2min + 1)):
+                errm = val0 - params[pi].value
+
+        if plot:
+            chi2mapi = np.array(chi2mapi)
+            pvali = np.array(pvali)
+            idx = np.argsort(pvali)
+
+            chi2_arr.append(chi2mapi[idx])
+            pval_arr.append(pvali[idx])
+
+        errs.append([errm, errp])
+
+    errs = np.array(errs)
+    err_mean = np.mean(errs, axis=1)
+
+    if all(err_mean == [p.error for p in fit.freeParams.values()]):
+        warnings.warn(
+            "Either Chi2 is non-finite, or ``searchFact`` needs to be set smaller."
+            " Input errors will be returned!"
+        )
+
+    if plot:
+        fig, ax = plt.subplots(
+            1, fit.nfree, figsize=(18, 25 / fit.nfree), sharey=True
+        )
+        if fit.nfree == 1:
+            ax = [ax]
+
         for ip, pi in enumerate(fit.freeParams):
-            
-            ax[ip].plot(pval_arr[ip],chi2_arr[ip],color="r")
-            
-            ax[ip].plot([res[ip]-errs[ip,0],res[ip]+errs[ip,1]],
-                [chi2min + 1]*2,
-                color="b"
+            ax[ip].plot(pval_arr[ip], chi2_arr[ip], color="r")
+            ax[ip].plot(
+                [res[ip] - errs[ip, 0], res[ip] + errs[ip, 1]],
+                [chi2min + 1] * 2,
+                color="b",
             )
             unit = f"{params[pi].unit.to_string(format='latex')}"
-            ax[ip].set_title(f"{pi} \n{res[ip]:.3f}"
-                             f"$\\pm${err_mean[ip]:.3f} {unit}",fontsize=8)
-            txt=f"{params[pi].name}  ({unit})".split("($\\mathrm{}$)")[0]
+            ax[ip].set_title(
+                f"{pi} \n{res[ip]:.3f}" f"$\\pm${err_mean[ip]:.3f} {unit}",
+                fontsize=8,
+            )
+            txt = f"{params[pi].name}  ({unit})".split("($\\mathrm{}$)")[0]
             ax[ip].set_xlabel(txt)
-            
+
         ax[0].set_ylabel("$\\chi^2_r$")
         if log:
             ax[0].set_yscale("log")
         fig.tight_layout()
 
         return err_mean, fig, ax
-    else:
-        return err_mean
 
-
+    return err_mean
