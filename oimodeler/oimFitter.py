@@ -996,9 +996,9 @@ def oimComputeChi2PlusOneUncertainties(
             pvali = [params[pi].value]
 
         val0, step0 = params[pi].value, params[pi].error
-        chi2i, errp = chi2min, step0
-        for _ in range(nmax):
-            if chi2i > target * plotFact:
+        chi2i, errp, n = chi2min, step0, 0
+        while chi2i < (chi2min + 1) * plotFact:
+            if n > nmax:
                 break
 
             params[pi].value += step0 * searchFact
@@ -1012,10 +1012,12 @@ def oimComputeChi2PlusOneUncertainties(
             if chi2i < target and not chi2i > target:
                 errp = params[pi].value - val0
 
+            n += 1
+
         params[pi].value = val0
-        chi2i, errm = chi2min, step0
-        for _ in range(nmax):
-            if chi2i > target * plotFact:
+        chi2i, errm, n = chi2min, step0, 0
+        while chi2i < target * plotFact:
+            if n > nmax:
                 break
 
             params[pi].value -= step0 * searchFact
@@ -1028,6 +1030,8 @@ def oimComputeChi2PlusOneUncertainties(
 
             if chi2i < target and not chi2i > target:
                 errm = val0 - params[pi].value
+
+            n += 1
 
         if plot:
             chi2mapi = np.array(chi2mapi)
