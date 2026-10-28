@@ -976,17 +976,11 @@ def oimComputeChi2PlusOneUncertainties(
     ax : Axes, optional
         The axes of the plot. Returned if ``plot=True``.
     """
-    if plot:
-        fig, ax = plt.subplots(
-            1, fit.nfree, figsize=(18, 25 / fit.nfree), sharey=True
-        )
-        if fit.nfree == 1:
-            ax = [ax]
-
     res = fit.getResults(
         discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
     )[0]
     chi2min, params = fit.simulator.chi2r, fit.model.getParameters()
+    target = chi2min + 1
 
     errs = []
     if plot:
@@ -1000,16 +994,13 @@ def oimComputeChi2PlusOneUncertainties(
         if plot:
             chi2mapi = [chi2min]
             pvali = [params[pi].value]
-        fit.getResults(
-            discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
-        )
+
         val0, step0 = params[pi].value, params[pi].error
-        n, chi2i, errp = 0, chi2min, step0
-        while chi2i < (chi2min + 1) * plotFact:
-            if n > nmax:
+        chi2i, errp = chi2min, step0
+        for _ in range(nmax):
+            if chi2i > target * plotFact:
                 break
 
-            n += 1
             params[pi].value += step0 * searchFact
             fit.simulator.compute(computeChi2=True, dataTypes=dataTypes)
             chi2i = fit.simulator.chi2r
@@ -1018,16 +1009,15 @@ def oimComputeChi2PlusOneUncertainties(
                 pvali.append(params[pi].value)
                 chi2mapi.append(chi2i)
 
-            if chi2i < (chi2min + 1) and not (chi2i > (chi2min + 1)):
+            if chi2i < target and not chi2i > target:
                 errp = params[pi].value - val0
 
         params[pi].value = val0
-        n, chi2i, errm = 0, chi2min, step0
-        while chi2i < (chi2min + 1) * plotFact:
-            if n > nmax:
+        chi2i, errm = chi2min, step0
+        for _ in range(nmax):
+            if chi2i > target * plotFact:
                 break
 
-            n += 1
             params[pi].value -= step0 * searchFact
             fit.simulator.compute(computeChi2=True, dataTypes=dataTypes)
             chi2i = fit.simulator.chi2r
@@ -1036,7 +1026,7 @@ def oimComputeChi2PlusOneUncertainties(
                 pvali.append(params[pi].value)
                 chi2mapi.append(chi2i)
 
-            if chi2i < (chi2min + 1) and not (chi2i > (chi2min + 1)):
+            if chi2i < target and not chi2i > target:
                 errm = val0 - params[pi].value
 
         if plot:
@@ -1048,14 +1038,15 @@ def oimComputeChi2PlusOneUncertainties(
             pval_arr.append(pvali[idx])
 
         errs.append([errm, errp])
+        params[pi].value = val0
 
     errs = np.array(errs)
     err_mean = np.mean(errs, axis=1)
 
     if all(err_mean == [p.error for p in fit.freeParams.values()]):
         warnings.warn(
-            "Either Chi2 is non-finite, or ``searchFact`` needs to be set smaller."
-            " Input errors will be returned!"
+            " New errors are equal to input errors. Either Chi2 is non-finite,"
+            " or ``searchFact`` needs to be set to a smaller value."
         )
 
     if plot:
@@ -1069,7 +1060,7 @@ def oimComputeChi2PlusOneUncertainties(
             ax[ip].plot(pval_arr[ip], chi2_arr[ip], color="r")
             ax[ip].plot(
                 [res[ip] - errs[ip, 0], res[ip] + errs[ip, 1]],
-                [chi2min + 1] * 2,
+                [target] * 2,
                 color="b",
             )
             unit = f"{params[pi].unit.to_string(format='latex')}"
