@@ -927,7 +927,7 @@ class oimFitterRegularGrid(oimFitter):
         return fig, ax
 
 
-# TODO: Should the computation be split from the plotting? [mb]
+# TODO: Should the computation be split from the plotting? [mbsck]
 def oimComputeChi2PlusOneUncertainties(
     fit,
     nmax: int = int(1e5),
@@ -997,7 +997,7 @@ def oimComputeChi2PlusOneUncertainties(
 
         val0, step0 = params[pi].value, params[pi].error
         chi2i, errp, n = chi2min, step0, 0
-        while chi2i < (chi2min + 1) * plotFact:
+        while chi2i < target * plotFact:
             if n > nmax:
                 break
 

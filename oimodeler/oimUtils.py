@@ -697,12 +697,12 @@ def getConfigName(
         staindexes = data[iarr].data["STA_INDEX"]
 
         staidx = np.unique(data[idx[idata]].data["STA_INDEX"].flatten())
-        s = staidx.size
-        namei = ""
+        namei, s = "", staidx.size
         for i in range(s):
             namei += stanames[np.where(staindexes == staidx[i])[0]][0]
             if i < s - 1:
                 namei += "-"
+
         names.append(namei)
 
     if not already_open:

@@ -5,7 +5,7 @@ various plotting function and classes
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -826,9 +826,9 @@ def getColorIndices(
             if color == "byFile":
                 fname = datai.filename()
                 if fname == None:
-                    fname = "File {}".format(idata)
+                    fname = f"File {idata}"
                 else:
-                    fname = os.path.basename(fname)
+                    fname = Path(fname).name
 
                 if fname in names:
                     ifname = names.index(fname)
