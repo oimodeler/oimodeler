@@ -160,7 +160,6 @@ class oimSimulator:
                         oimDataArrDict[dataij.name]["data"],
                         oimDataArrDict[dataij.name]["err"],
                     ):
-
                         shape = dataij.data[dataName].shape
                         err = dataij.data[errName]
 
@@ -198,9 +197,7 @@ class oimSimulator:
         chi2List = []
         residuals = []
 
-        if computeSimulatedData and (
-            checkSimulatedData or self.simulatedData is None
-        ):
+        if computeSimulatedData and (checkSimulatedData or self.simulatedData is None):
             self.simulatedData = oimData()
             for datai in self.data.data:
                 self.simulatedData.addData(hdulistDeepCopy(datai))
@@ -264,8 +261,7 @@ class oimSimulator:
                         val.append(corrFlux2Flux(vcompli))
                         # Fucking GRAVITY patch!
                         if "FLUXDATA" in [
-                            c.name
-                            for c in data.data[ifile][arrNum].data.columns
+                            c.name for c in data.data[ifile][arrNum].data.columns
                         ]:
                             quantities.append("FLUXDATA")
                         else:
@@ -286,7 +282,6 @@ class oimSimulator:
                     # NOTE: Computing the chi2
                     if computeChi2:
                         for ival in range(len(val)):
-
                             if nwl == 1 and len(dataVal[ival].shape) == 1:
                                 dataVal[ival] = dataVal[ival][:, None]
                                 dataErr[ival] = dataErr[ival][:, None]
@@ -297,12 +292,8 @@ class oimSimulator:
                                 if quantities[ival] in ["VISPHI", "T3PHI"]:
                                     dphi = np.rad2deg(
                                         np.angle(
-                                            np.exp(
-                                                1j * np.deg2rad(dataVal[ival])
-                                            )
-                                            * np.exp(
-                                                -1j * np.deg2rad(val[ival])
-                                            )
+                                            np.exp(1j * np.deg2rad(dataVal[ival]))
+                                            * np.exp(-1j * np.deg2rad(val[ival]))
                                         )
                                     )
                                     resi = (
@@ -321,8 +312,7 @@ class oimSimulator:
                                     chi2i = resi**2
 
                                 nelChi2 += np.sum(
-                                    (dataErr[ival] != 0)
-                                    * np.logical_not(flag[ival])
+                                    (dataErr[ival] != 0) * np.logical_not(flag[ival])
                                 )
                                 chi2 += np.sum(np.nan_to_num(chi2i))
                                 chi2List.append(chi2i)
@@ -344,12 +334,11 @@ class oimSimulator:
 
                 if nelChi2 != 0:
                     self.chi2 = (
-                        self.chi2_0
-                        + self.priorWeight * self.chi2Prior * self.nelChi2_0
+                        self.chi2_0 + self.priorWeight * self.chi2Prior * self.nelChi2_0
                     )
-                    self.degFree = self.nelChi2_0 * (
-                        1 + self.priorWeight
-                    ) - len(self.model.getFreeParameters())
+                    self.degFree = self.nelChi2_0 * (1 + self.priorWeight) - len(
+                        self.model.getFreeParameters()
+                    )
                 else:
                     self.chi2 = self.chi2Prior * self.priorWeight
                     self.degFree = self.priorWeight - len(
@@ -427,31 +416,33 @@ class oimSimulator:
         arr : str or list of str
             The name(s) of the OIFITS column(s) to be plotted.
         simulated : bool, optional
-            If `True`, simulated data are plotted. Default is `True`.
+            If ``True``, simulated data are plotted. Defaults to ``True``.
         savefig : str or pathlib.Path, optional
-            Saves the plot. Default is `None`.
+            Saves the plot. Defaults to ``None``.
         visLog : bool, optional
-            If `True`, sets the y-scale to logarithmic. Default is `False`.
+            If ``True``, sets the y-scale to logarithmic. Defaults to ``False``.
         xaxis : str, optional
-            OIFITS information plotted on the x-axis. Default is `"SPAFREQ"`.
+            OIFITS information plotted on the x-axis. The name of the x-axis parameter.
+             Can be ``"LENGTH"``, ``"SPAFREQ"``, ``"PA"``, or ``"EFF_WAVE"``. Defaults to
+             ``"SPAFREQ"``.
         xunit : str, optional
-            Unit of the x-axis. Default is `"cycle/rad"`.
+            Unit of the x-axis. Defaults to ``"cycle/rad"``.
         cname : str, optional
-            OIFITS information plotted on the colorbar. Default is `"EFF_WAVE"`.
+            OIFITS information plotted on the colorbar. Defaults to ``"EFF_WAVE"``.
         cunit : str, optional
-            Unit of the colorbar. Default is `"micron"`.
+            Unit of the colorbar. Defaults to ``"micron"``.
         cmap : str, optional
-            Name of the colormap. Default is `"plasma"`.
+            Name of the colormap. Defaults to ``"plasma"``.
         colorbar : bool, optional
-            If `True`, plots a colorbar. Default is `True`.
+            If ``True``, plots a colorbar. Defaults to ``True``.
         kwargsData : dict, optional
-            Data keyword arguments passed to the `oiplot` method. Default is `{}`.
+            Data keyword arguments passed to the `oiplot` method. Defaults to ``{}``.
         kwargsSimulatedData : dict, optional
-            Simulated data keyword arguments passed to `oiplot` method. Default is `{}`.
+            Simulated data keyword arguments passed to `oiplot` method. Defaults to ``{}``.
         fig : matplotlib.figure.Figure, optional
-            Figure used for the plotting. Default is `None`.
+            Figure used for the plotting. Defaults to ``None``.
         axe : matplotlib.axes.Axes, optional
-            Axes used for the plotting. Default is `None`.
+            Axes used for the plotting. Defaults to ``None``.
         """
         kwargsData0 = {
             "cname": cname,
@@ -529,7 +520,10 @@ class oimSimulator:
             xlabel = oimPlotParamLabelShort[idxC]
             cunittext = f"{kwargsData['cunit']:latex_inline}"
             fig.colorbar(
-                scale, ax=axe.ravel().tolist(), label=f"{xlabel} ({cunittext})"
+                scale,
+                norm=kwargsData.get("norm", None),
+                ax=axe.ravel().tolist(),
+                label=f"{xlabel} ({cunittext})",
             )
 
         if savefig is not None:
@@ -625,8 +619,7 @@ class oimSimulator:
                             np.angle(
                                 np.exp(
                                     1j * np.deg2rad(dat[p_arr].data[param])
-                                    - 1j
-                                    * np.deg2rad(fit_dat[p_arr].data[param])
+                                    - 1j * np.deg2rad(fit_dat[p_arr].data[param])
                                 )
                             )
                         )
@@ -771,9 +764,7 @@ class oimSimulator:
 
         kwargsResiduals = {**kwargsResiduals0, **kwargsResiduals}
         kwargsResiduals["cunit"] = u.Unit(cunit)
-        if not ("ls" in kwargsResiduals) and not (
-            "linestyle" in kwargsResiduals
-        ):
+        if not ("ls" in kwargsResiduals) and not ("linestyle" in kwargsResiduals):
             kwargsResiduals["ls"] = ""
             kwargsResiduals["marker"] = "."
 
@@ -795,7 +786,6 @@ class oimSimulator:
         ):
             residuals_data.addData(hdulistDeepCopy(fit_dat))
             for param in arr:
-
                 idx_p = np.where(oimPlotParamName == param)[0][0]
                 p_arr = oimPlotParamArr[idx_p]
                 p_err = oimPlotParamError[idx_p]
@@ -809,8 +799,7 @@ class oimSimulator:
                             np.angle(
                                 np.exp(
                                     1j * np.deg2rad(dat[p_arr].data[param])
-                                    - 1j
-                                    * np.deg2rad(fit_dat[p_arr].data[param])
+                                    - 1j * np.deg2rad(fit_dat[p_arr].data[param])
                                 )
                             )
                         )
@@ -878,7 +867,6 @@ class oimSimulator:
 
         # NOTE: Plotting loop: Plotting residuals
         for i in range(nplots):
-
             scale = axe[2 * i + 1].oiplot(
                 residuals_data,
                 xaxis,
