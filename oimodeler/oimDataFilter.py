@@ -140,9 +140,7 @@ class oimRemoveArrayFilter(oimDataFilterComponent):
     def _filteringFunction(self, data) -> None:
         """Applies the filter to the data."""
         for arri in self.params["arr"]:
-            while (
-                len(np.where(np.array([t.name for t in data]) == arri)[0]) != 0
-            ):
+            while len(np.where(np.array([t.name for t in data]) == arri)[0]) != 0:
                 data.pop(arri)
 
 
@@ -214,9 +212,7 @@ class oimDataTypeFilter(oimDataFilterComponent):
 
     name = "Data Type Filter"
     shortname = "DTFilt"
-    description = (
-        "Sets column values to 0 by colum name(s) : VIS2DATA, VISAMP..."
-    )
+    description = "Sets column values to 0 by colum name(s) : VIS2DATA, VISAMP..."
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -277,9 +273,7 @@ class oimKeepDataTypeFilter(oimDataFilterComponent):
 
         dataType = self.params["dataType"]
         arr0 = np.array(["PRIMARY", "OI_ARRAY", "OI_WAVELENGTH", "OI_TARGET"])
-        arr2Keep = np.unique(
-            np.array([getDataArrname(dti) for dti in dataType])
-        )
+        arr2Keep = np.unique(np.array([getDataArrname(dti) for dti in dataType]))
 
         hduname = [hdu.name for hdu in data]
 
@@ -401,9 +395,7 @@ class oimWavelengthRangeFilter(oimDataFilterComponent):
                 wlRange = wlRange.reshape((1, len(wlRange)))
 
             for wlRangei in wlRange:
-                expr += (
-                    f"((EFF_WAVE<{wlRangei[0]}) | (EFF_WAVE>{wlRangei[1]})) &"
-                )
+                expr += f"((EFF_WAVE<{wlRangei[0]}) | (EFF_WAVE>{wlRangei[1]})) &"
             expr = expr[:-1]
             oifitsFlagWithExpression(
                 data, self.params["arr"], None, expr, keepOldFlag=True
@@ -575,9 +567,7 @@ class oimWavelengthIntpBinFilter(oimDataFilterComponent):
 
     name = "Wavelength Interpolation Binning Filter"
     shortname = "WlIntpBinFilt"
-    description = (
-        "Binning to wavelength grid with interpolation at window edges."
-    )
+    description = "Binning to wavelength grid with interpolation at window edges."
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -856,9 +846,7 @@ class oimDiffErrFilter(oimDataFilterComponent):
 
     name = "Differential Error Filter"
     shortname = "DiffErrFilt"
-    description = (
-        "Compute differential error from std inside or outside a range"
-    )
+    description = "Compute differential error from std inside or outside a range"
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -923,6 +911,7 @@ class oimSetMinErrFilter(oimDataFilterComponent):
         self.params["values"] = 5
         self.params["dataType"] = "VISPHI"
         self.params["relThreshold"] = None
+        self.params["relValue"] = None
         self._eval(**kwargs)
 
     def _filteringFunction(self, data) -> None:
@@ -932,5 +921,6 @@ class oimSetMinErrFilter(oimDataFilterComponent):
             self.params["dataType"],
             self.params["values"],
             self.params["relThreshold"],
+            self.params["relValue"],
             extver=None,
         )

@@ -464,9 +464,7 @@ def spectral_index(
     IAU Symposium, Vol. 115, p. 1 (1987).
     `SciX record <https://scixplorer.org/abs/1987IAUS..115....1L>`_
     """
-    wl = np.unique(
-        np.hstack([item for sublist in data.struct_wl for item in sublist])
-    )
+    wl = np.unique(np.hstack([item for sublist in data.struct_wl for item in sublist]))
     return wl, np.gradient(np.log(blackbody(T, wl)), np.log(SI.C / wl))
 
 
@@ -1215,9 +1213,9 @@ def createOiWavelength(**kwargs):
 
 def createOiVis(**kwargs):
     """Create an ``"OI_VIS"`` table from a dictionary of data."""
-    return _createOiTab(
-        "OI_VIS", OI_VIS_KEYWORDS, OI_VIS_COLUMNS, "VISAMP", **kwargs
-    )[0]
+    return _createOiTab("OI_VIS", OI_VIS_KEYWORDS, OI_VIS_COLUMNS, "VISAMP", **kwargs)[
+        0
+    ]
 
 
 def createOiVis2(**kwargs):
@@ -1229,9 +1227,7 @@ def createOiVis2(**kwargs):
 
 def createOiT3(**kwargs):
     """Create an ``"OI_T3"`` table from a dictionary of data."""
-    return _createOiTab(
-        "OI_T3", OI_T3_KEYWORDS, OI_T3_COLUMNS, "T3AMP", **kwargs
-    )[0]
+    return _createOiTab("OI_T3", OI_T3_KEYWORDS, OI_T3_COLUMNS, "T3AMP", **kwargs)[0]
 
 
 def createOiFlux(**kwargs):
@@ -1345,15 +1341,11 @@ def cutWavelengthRange(
                 if datai.header["INSNAME"] == insname:
                     colDefs = []
                     for col in datai.columns:
-                        if np.isin(col.name, _cutArr) or np.isin(
-                            col.name, addCut
-                        ):
+                        if np.isin(col.name, _cutArr) or np.isin(col.name, addCut):
                             format0 = col.format[-1]
                             shape = datai.data[col.name].shape
                             if len(shape) == 2:
-                                arr = np.take(
-                                    datai.data[col.name], idx_wl_cut, axis=1
-                                )
+                                arr = np.take(datai.data[col.name], idx_wl_cut, axis=1)
                                 colDefs.append(
                                     fits.Column(
                                         name=col.name,
@@ -1494,21 +1486,14 @@ def spectralSmoothing(
                                 nB = dims[0]
                                 for iB in range(nB):
                                     datai = np.exp(
-                                        complex(0, 1)
-                                        * data[i].data[coli.name][iB, :]
+                                        complex(0, 1) * data[i].data[coli.name][iB, :]
                                     )
                                     datai_real = np.real(datai)
                                     datai_imag = np.imagl(datai)
 
-                                    conv_real = np.convolve(
-                                        datai_real, kernel, "same"
-                                    )
-                                    conv_imag = np.convolve(
-                                        datai_imag, kernel, "same"
-                                    )
-                                    data_conv = np.complex(
-                                        conv_real, conv_imag
-                                    )
+                                    conv_real = np.convolve(datai_real, kernel, "same")
+                                    conv_imag = np.convolve(datai_imag, kernel, "same")
+                                    data_conv = np.complex(conv_real, conv_imag)
 
                                     data[i].data[coli.name][iB, :] = data_conv
 
@@ -1520,12 +1505,10 @@ def spectralSmoothing(
                             if len(dims) == 2:
                                 nB = dims[0]
                                 for iB in range(nB):
-                                    data[i].data[coli.name][iB, :] = (
-                                        np.convolve(
-                                            data[i].data[coli.name][iB, :],
-                                            kernel,
-                                            "same",
-                                        )
+                                    data[i].data[coli.name][iB, :] = np.convolve(
+                                        data[i].data[coli.name][iB, :],
+                                        kernel,
+                                        "same",
                                     )
                             else:
                                 data[i].data[coli.name] = np.convolve(
@@ -1749,10 +1732,7 @@ def intpBinWavelength(
             window = np.full(binGrid.shape, np.diff(binGrid)[0])
 
         binEdgeValues = np.array(
-            [
-                (bin - win / 2, bin + win / 2)
-                for win, bin in zip(window, binGrid)
-            ]
+            [(bin - win / 2, bin + win / 2) for win, bin in zip(window, binGrid)]
         )
         binMasks = np.array(
             [(wl > lower) & (wl < upper) for lower, upper in binEdgeValues]
@@ -1844,7 +1824,7 @@ def _rebinHDU(
                     binij = _rebin(hdu.data[coli.name][jB], binSize, kind=kind)
                     bini.append(binij)
                 bini = np.array(bini)
-                newformat = f"{shape[1]//binSize}{coli.format[-1]}"
+                newformat = f"{shape[1] // binSize}{coli.format[-1]}"
             else:
                 bini = hdu.data[coli.name]
 
@@ -2120,10 +2100,7 @@ def oifitsKeepTelescopes(
             telescopes_to_keep = np.array(telescopes_to_keep)
 
             idx_to_keep = np.where(
-                [
-                    set(BB.split("-")).issubset(telescopes_to_keep)
-                    for BB in baselines
-                ]
+                [set(BB.split("-")).issubset(telescopes_to_keep) for BB in baselines]
             )[0]
 
             for iB, Bi in enumerate(baselines):
@@ -2234,9 +2211,7 @@ def computeDifferentialError(
     if isinstance(data, (str, Path)):
         data = fits.open(data)
 
-    ranges = np.array(
-        ranges, dtype="int64" if rangeType == "index" else "float64"
-    )
+    ranges = np.array(ranges, dtype="int64" if rangeType == "index" else "float64")
 
     if ranges.ndim == 1:
         ranges = ranges.reshape(1, ranges.size)
@@ -2249,7 +2224,6 @@ def computeDifferentialError(
     for datai in data[1:]:
         if datai.name in extnames:
             if datai.header["EXTVER"] in extver or extver == [None]:
-
                 wl = getWlFromOifits(
                     data, arr=datai.name, extver=datai.header["EXTVER"]
                 )
@@ -2269,9 +2243,7 @@ def computeDifferentialError(
 
                 for dataTypei in getDataType(datai.name):
                     if dataTypei in dataType:
-                        dataTypeiErr = _oimDataTypeErr[
-                            _oimDataType.index(dataTypei)
-                        ]
+                        dataTypeiErr = _oimDataTypeErr[_oimDataType.index(dataTypei)]
                         if getDataTypeIsAnalysisComplex(dataTypei):
                             for iB in range(nB):
                                 err = circstd(
@@ -2288,9 +2260,10 @@ def computeDifferentialError(
 
 def setMinimumError(
     data: str | Path | fits.HDUList,
-    dataTypes: str | list[str],
-    values: float | list[float],
-    relThreshold: float | list[float | None] | None = None,
+    dataTypes: str | Iterable[str],
+    values: float | Iterable[float],
+    relThreshold: float | Iterable[float | None] | None = None,
+    relValue: float | Iterable[float | None] | None = None,
     extver: int | list[int] | None = None,
 ) -> None:
     """Set the minimum error of a given data type to a given value.
@@ -2299,20 +2272,23 @@ def setMinimumError(
     ----------
     data: str or pathlib.Path or astropy.io.fits.HDUList
         Either a path to an OIFITS file or an `astropy.io.fits.HDUList`.
-    dataTypes : str or list of str
+    dataTypes : str or iterable of str
         The data types.
-    values : float or list of float
+    values : float or iterable of float
         The minimum error value. If passed as a ``list``, must have the
         same length as ``dataType``.
-    extver : int or list of int, optional
+    extver : int or iterable of int, optional
         The extension/table version. Defaults to ``None``.
-    relThreshold : float or list of float, optional
-        Can be used for ``dataType in ["VISAMP", "VIS2DATA"]``. Switches from the
-        scheme where the errors are compared/computed relatively to the values of the
-        datapoints to one where this is only done if they are above the ``relThreshold``.
-        This can be, for instance, useful to avoid extremly small errors for correlated
-        fluxes < 1. If passed as ``list``, must have the same length as ``dataType``.
-        Defaults to ``None``.
+    relThreshold : float or iterable of float, optional
+        A relative threshold under which the errors are not set to the minimum value.
+        Useful in the case of percentage based minimum errors on very faint/resolved
+        sources (e.g. < 1 Jy). If an ``Iterable`` is passed it must be of the same
+        length as ``dataType``. Defaults to ``None``.
+    relValue : float or iterable of float, optional
+        If ``relThreshold is not None`` then the provided value will be set as a hard
+        floor, where ``relThreshold`` applies. Useful in the case of percentage based
+        minimum errors on very faint/resolved sources (e.g. < 1 Jy). If an ``Iterable``
+        is passed it must be of the same length as ``dataType``. Defaults to ``None``.
     """
     if isinstance(data, (str, Path)):
         data = fits.open(data)
@@ -2323,10 +2299,10 @@ def setMinimumError(
     values = [values] if not isinstance(values, Iterable) else values
     extver = [extver] if not isinstance(extver, Iterable) else extver
     if not isinstance(relThreshold, Iterable):
-        relThreshold = [relThreshold]
+        relThreshold = [relThreshold] * len(dataTypes)
 
-    if relThreshold == [None]:
-        relThreshold *= len(dataTypes)
+    if not isinstance(relValue, Iterable):
+        relValue = [relValue] * len(dataTypes)
 
     extnames = np.unique([getDataArrname(dti) for dti in dataTypes])
     for datai in data[1:]:
@@ -2335,9 +2311,7 @@ def setMinimumError(
         ):
             for dataTypei in getDataType(datai.name):
                 if dataTypei in dataTypes:
-                    dataTypeiErr = _oimDataTypeErr[
-                        _oimDataType.index(dataTypei)
-                    ]
+                    dataTypeiErr = _oimDataTypeErr[_oimDataType.index(dataTypei)]
                     vali = values[dataTypes.index(dataTypei)]
                     if getDataTypeIsAnalysisComplex(dataTypei):
                         datai.data[dataTypeiErr] = np.maximum(
@@ -2345,15 +2319,17 @@ def setMinimumError(
                         )
                     else:
                         vali /= 100
-                        relThresholdi = relThreshold[
-                            dataTypes.index(dataTypei)
-                        ]
-                        mask = (
-                            datai.data[dataTypeiErr] / datai.data[dataTypei]
-                        ) < vali
+                        relThresholdi = relThreshold[dataTypes.index(dataTypei)]
+                        relValuei = relValue[dataTypes.index(dataTypei)]
+                        mask = (datai.data[dataTypeiErr] / datai.data[dataTypei]) < vali
 
                         if relThresholdi is not None:
-                            mask &= datai.data[dataTypei] >= relThresholdi
+                            mask_thresh = datai.data[dataTypei] >= relThresholdi
+                            if relValuei is not None:
+                                mask_rel = mask & ~mask_thresh
+                                datai.data[dataTypeiErr][mask_rel] = relValuei
+
+                            mask &= mask_thresh
 
                         datai.data[dataTypeiErr][mask] = (
                             vali * datai.data[dataTypei][mask]
@@ -2522,7 +2498,6 @@ def listParamInterpolators(details: bool = False, save2csv: bool = False):
 
 # %%
 class _terminalColor:
-
     BACKGROUND_BLACK = "\033[40m"
     BACKGROUND_RED = "\033[41m"
     BACKGROUND_GREEN = "\033[42m"
