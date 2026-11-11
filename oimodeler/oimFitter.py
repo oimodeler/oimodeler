@@ -233,9 +233,7 @@ class oimFitterEmcee(oimFitter):
         chi2limfact: int | float = 20,
         **kwargs,
     ):
-        chi2 = -2 * self.sampler.get_log_prob(
-            discard=discard, flat=True, thin=thin
-        )
+        chi2 = -2 * self.sampler.get_log_prob(discard=discard, flat=True, thin=thin)
         chain = self.sampler.get_chain(discard=discard, flat=True, thin=thin)
         filtered_chain = chain[np.where(chi2 <= chi2limfact * chi2.min())[0]]
 
@@ -246,9 +244,7 @@ class oimFitterEmcee(oimFitter):
         elif mode == "median":
             res = np.median(filtered_chain, axis=0)
         else:
-            raise NameError(
-                "'mode' should be either 'best', 'mean' or 'median'"
-            )
+            raise NameError("'mode' should be either 'best', 'mean' or 'median'")
 
         err_m, err_p = np.ndarray([self.nfree]), np.ndarray([self.nfree])
         for iparam in range(self.nfree):
@@ -296,7 +292,7 @@ class oimFitterEmcee(oimFitter):
         )
         kwargs = {**kwargs0, **kwargs}
 
-        labels, truths = [], []
+        labels, truths, fmts = [], [], []
         for name, param in self.freeParams.items():
             label = name
             if param.unit.to_string() != "":
@@ -304,11 +300,10 @@ class oimFitterEmcee(oimFitter):
 
             truths.append(param.value)
             labels.append(label)
+            fmts.append(".2f" if 1e-2 <= np.abs(param.value) < 1e4 else ".2e")
 
         chain = self.sampler.get_chain(discard=discard, flat=True, thin=thin)
-        chi2 = -2 * self.sampler.get_log_prob(
-            discard=discard, flat=True, thin=thin
-        )
+        chi2 = -2 * self.sampler.get_log_prob(discard=discard, flat=True, thin=thin)
         chain = chain[np.where(chi2 < chi2limfact * chi2.min())[0]]
         if chain.size == 0:
             raise ValueError(
@@ -317,9 +312,9 @@ class oimFitterEmcee(oimFitter):
                 "values of your priors may be switched."
             )
 
-        # TODO: for some reason these lines create a bug for single free parameter plot
+        # FIXME: for some reason these lines create a bug for single free parameter plot
         # kwargs["truths"] = kwargs.get("truths", truths)
-        # print(kwargs["truths"])
+        kwargs["title_fmt"] = kwargs.get("title_fmt", fmts)
         fig = corner.corner(chain, labels=labels, **kwargs)
         if savefig is not None:
             plt.savefig(savefig)
@@ -360,20 +355,15 @@ class oimFitterEmcee(oimFitter):
         chi2max = chi2limfact * chi2min
         chi2bins = np.linspace(chi2max, chi2min, ncolors)
         if "cmap" in kwargs:
-            cmap = mpl.colormaps.get_cmap(kwargs.pop("cmap")).resampled(
-                ncolors
-            )
+            cmap = mpl.colormaps.get_cmap(kwargs.pop("cmap")).resampled(ncolors)
         else:
-            cmap = mpl.colormaps.get_cmap(
-                mpl.rcParams["image.cmap"]
-            ).resampled(ncolors)
+            cmap = mpl.colormaps.get_cmap(mpl.rcParams["image.cmap"]).resampled(ncolors)
 
         for i in range(self.nfree):
             for icol in range(ncolors):
                 if icol != 0:
                     idxi = np.where(
-                        (chi2f > chi2bins[icol])
-                        & (chi2f <= chi2bins[icol - 1])
+                        (chi2f > chi2bins[icol]) & (chi2f <= chi2bins[icol - 1])
                     )[0]
 
                 else:
@@ -424,9 +414,7 @@ class oimFitterDynesty(oimFitter):
     """A multinested fitter that has generally a better coverage of the
     global (than MCMC) parameter space."""
 
-    description = (
-        "Dynamic/static nested sampler (based on the the dynesty package)"
-    )
+    description = "Dynamic/static nested sampler (based on the the dynesty package)"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -498,9 +486,7 @@ class oimFitterDynesty(oimFitter):
             res = quantiles[1]
             err_m, err_p = np.diff(quantiles, axis=0)
         else:
-            raise NameError(
-                "'mode' should be either 'best', 'mean' or 'median'"
-            )
+            raise NameError("'mode' should be either 'best', 'mean' or 'median'")
 
         err = np.mean([err_m, err_p], axis=0)
         for iparam, parami in enumerate(self.freeParams.values()):
@@ -527,7 +513,7 @@ class oimFitterDynesty(oimFitter):
         )
         kwargs = {**kwargs0, **kwargs}
 
-        labels, truths = [], []
+        labels, truths, fmts = [], [], []
         for name, param in self.freeParams.items():
             label = name
             if param.unit.to_string() != "":
@@ -535,8 +521,10 @@ class oimFitterDynesty(oimFitter):
 
             truths.append(param.value)
             labels.append(label)
+            fmts.append(".2f" if 1e-2 <= np.abs(param.value) < 1e4 else ".2e")
 
         kwargs["truths"] = kwargs.get("truths", truths)
+        kwargs["title_fmt"] = kwargs.get("title_fmt", fmts)
         results = self.sampler.results
         fig, _ = dyplot.cornerplot(results, labels=labels, **kwargs)
 
@@ -577,9 +565,7 @@ class oimFitterDynesty(oimFitter):
 
 
 class oimFitterMinimize(oimFitter):
-    description = (
-        r"a simple :math:`\chi^2` minimizer using the numpy Minimize function"
-    )
+    description = r"a simple :math:`\chi^2` minimizer using the numpy Minimize function"
 
     def __init__(self, *args, **kwargs):
 
@@ -702,7 +688,6 @@ class oimFitterRegularGrid(oimFitter):
                 self.gridSize.append(gi.size)
                 self.grid.append(gi)
         else:
-
             raise TypeError(
                 "Steps, min, max and gridParams arrays should have the same sizes"
             )
@@ -720,9 +705,7 @@ class oimFitterRegularGrid(oimFitter):
         for i in tqdm(range(n), disable=not (progress)):
             igrid = np.unravel_index(i, self.gridSize)
             for iparam in range(len(igrid)):
-                self.gridParams[iparam].value = self.grid[iparam][
-                    igrid[iparam]
-                ]
+                self.gridParams[iparam].value = self.grid[iparam][igrid[iparam]]
             self.simulator.compute(computeChi2=True, dataTypes=self.dataTypes)
             self.chi2rMap[igrid] = self.simulator.chi2r
         return kwargs
@@ -826,7 +809,6 @@ class oimFitterRegularGrid(oimFitter):
                     "when the grid dimension is higher than 2"
                 )
             elif ndims == 2 and params is None:
-
                 im = self.chi2rMap
 
                 im_params = [self.gridParams[0], self.gridParams[1]]
@@ -837,9 +819,7 @@ class oimFitterRegularGrid(oimFitter):
                 dim1 = np.where(np.array(self.gridParams) == params[0])[0][0]
                 dim2 = np.where(np.array(self.gridParams) == params[1])[0][0]
 
-                mins = np.unravel_index(
-                    np.argmin(self.chi2rMap), self.gridSize
-                )
+                mins = np.unravel_index(np.argmin(self.chi2rMap), self.gridSize)
 
                 # That is very ugly but I don't know how to programatically select axes
                 txt = "self.chi2rMap["
@@ -862,9 +842,7 @@ class oimFitterRegularGrid(oimFitter):
 
             min_idx = np.unravel_index(min_idx, self.chi2rMap.shape)
 
-            contour_kwargs["levels"] = (
-                np.array(contour_kwargs["levels"]) * chi2rmin
-            )
+            contour_kwargs["levels"] = np.array(contour_kwargs["levels"]) * chi2rmin
 
             sm = ax.imshow(
                 np.transpose(im),
@@ -901,7 +879,6 @@ class oimFitterRegularGrid(oimFitter):
                 )
 
             if plotMin:
-
                 label = (
                     rf"min $\chi^2_r$ = {chi2rmin:.1f}"
                     f" at {im_params[0].name}={xmin:.1f}"
@@ -976,9 +953,9 @@ def oimComputeChi2PlusOneUncertainties(
     ax : Axes, optional
         The axes of the plot. Returned if ``plot=True``.
     """
-    res = fit.getResults(
-        discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3
-    )[0]
+    res = fit.getResults(discard=int(fit.sampler.chain.shape[1] * 0.8), chi2limfact=3)[
+        0
+    ]
     chi2min, params = fit.simulator.chi2r, fit.model.getParameters()
     target = chi2min + 1
 
@@ -1054,9 +1031,7 @@ def oimComputeChi2PlusOneUncertainties(
         )
 
     if plot:
-        fig, ax = plt.subplots(
-            1, fit.nfree, figsize=(18, 25 / fit.nfree), sharey=True
-        )
+        fig, ax = plt.subplots(1, fit.nfree, figsize=(18, 25 / fit.nfree), sharey=True)
         if fit.nfree == 1:
             ax = [ax]
 
@@ -1069,7 +1044,7 @@ def oimComputeChi2PlusOneUncertainties(
             )
             unit = f"{params[pi].unit.to_string(format='latex')}"
             ax[ip].set_title(
-                f"{pi} \n{res[ip]:.3f}" f"$\\pm${err_mean[ip]:.3f} {unit}",
+                f"{pi} \n{res[ip]:.3f}$\\pm${err_mean[ip]:.3f} {unit}",
                 fontsize=8,
             )
             txt = f"{params[pi].name}  ({unit})".split("($\\mathrm{}$)")[0]
