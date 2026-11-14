@@ -730,9 +730,60 @@ class oimComponentImage(ExtinctionMixIn, oimComponent):
 class oimComponentRadialProfile(
     ExtinctionMixIn, EllipticalMixIn, oimComponent
 ):
-    """Base class for components defined by a radial profile."""
+    r"""Base class for components defined by a radial profile.
+
+    Optionally applies azimuthal Fourier modulation to a radial brightness
+    distribution, in the component's intrinsic (deprojected) coordinates:
+
+    .. math::
+
+        I(r,\phi,\lambda,t) = I_0(r,\lambda,t)
+        \left[1 + \sum_{m=1}^{M} a_m(\lambda,t)
+        \cos\left(m[\phi-\phi_m(\lambda,t)]\right)\right].
+
+    Parameters
+    ----------
+    asymmetric : bool, optional
+        Enable azimuthal modulation. Defaults to ``False``.
+    modulation : int, optional
+        Highest azimuthal Fourier order, ``M``; defaults to ``1``.
+        Only used when ``asymmetric=True``. The former keyword
+        ``modulation_order`` is also accepted for compatibility.
+    skw1, skw2, ... : float or oimInterp, optional
+        Amplitudes of the corresponding harmonics. The available parameters
+        depend on ``modulation``.
+    skwPa1, skwPa2, ... : float or oimInterp, optional
+        Phases of the corresponding harmonics, in degrees by default. These
+        parameters may be time dependent, allowing rotating asymmetries.
+    rotPeriod : float, optional
+        Signed period (days) of a rigidly rotating azimuthal pattern. If
+        omitted, no extra rotation is applied. A negative value reverses the
+        rotation direction. Must be nonzero when provided.
+    rotT0 : float, optional
+        Reference epoch (MJD) at which the pattern has the angles specified
+        by ``skwPa1``, ``skwPa2``, etc. Required together with ``rotPeriod``.
+        Both rotation quantities are model parameters, initially fixed.
+
+    Notes
+    -----
+    The modulation applies both to ``getImage`` and the complex coherent flux
+    computed by ``getComplexCoherentFlux``. The Fourier term for harmonic
+    ``m`` is proportional to ``(-1j)**m * J_m(2*pi*r*q)``. The symmetric
+    model is unchanged when ``asymmetric=False``.
+
+    When ``rotPeriod`` is set, all harmonics rotate together in the
+    deprojected component plane with angular shift
+    ``2*pi*(MJD-rotT0)/rotPeriod``. This is rigid pattern rotation,
+    not radial Keplerian differential rotation. When ``t=None`` the
+    reference epoch is used.
+
+    Only the azimuthal amplitudes and phases are evaluated per observation;
+    the Fourier radial kernels follow the existing common uv grid of the
+    upstream implementation.
+    """
 
     asymmetric = False
+    modulation = 1
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -741,7 +792,71 @@ class oimComponentRadialProfile(
         self.normalizeImage = True
         self.params["dim"] = oimParam(base="dim")
         self._r, self._dr = None, None
+
+        # Create modulation parameters before applying their keyword values.
+        self.asymmetric = bool(kwargs.pop("asymmetric", self.asymmetric))
+        modulation_order = kwargs.pop("modulation_order", self.modulation)
+        self.modulation = int(kwargs.pop("modulation", modulation_order))
+
+        # Optional, shared rigid rotation of the azimuthal pattern.
+        # No new parameters or different evaluation path for existing models.
+        self._rotating_asymmetry = "rotPeriod" in kwargs
+        if "rotT0" in kwargs and not self._rotating_asymmetry:
+            raise ValueError("rotT0 requires rotPeriod")
+        if self._rotating_asymmetry:
+            if not self.asymmetric:
+                raise ValueError("rotPeriod requires asymmetric=True")
+            if "rotT0" not in kwargs:
+                raise ValueError("rotPeriod requires rotT0 (reference MJD)")
+            self.params["rotPeriod"] = oimParam(
+                name="rotPeriod", value=1.0, unit=units.day, free=False,
+                description="Signed rigid rotation period (days)",
+            )
+            self.params["rotT0"] = oimParam(
+                name="rotT0", value=0.0, unit=units.day, free=False,
+                description="Rotation reference epoch (MJD)",
+            )
+
+        if self.asymmetric:
+            if self.modulation < 1:
+                raise ValueError("modulation must be at least 1")
+
+            for m in range(1, self.modulation + 1):
+                amp_name = f"skw{m}"
+                phase_name = f"skwPa{m}"
+
+                self.params[amp_name] = oimParam(**_standardParameters["skw"])
+                self.params[phase_name] = oimParam(**_standardParameters["skwPa"])
+
+                # Unique parameter names
+                self.params[amp_name].name = amp_name
+                self.params[phase_name].name = phase_name
+
+                # Higher harmonics start with zero amplitude
+                if m > 1:
+                    self.params[amp_name].value = 0.0
+
         self._eval(**kwargs, checkParam=False)
+        if self._rotating_asymmetry:
+            period = float(self.params["rotPeriod"].value)
+            if not np.isfinite(period) or period == 0:
+                raise ValueError("rotPeriod must be finite and nonzero")
+
+    def _rotation_phase(self, wl, t):
+        """Rigid pattern rotation, in radians, relative to the reference MJD."""
+        if not self._rotating_asymmetry:
+            return 0.0
+        period = (
+            self.params["rotPeriod"](wl, t)
+            * self.params["rotPeriod"].unit.to(units.day)
+        )
+        t0 = (
+            self.params["rotT0"](wl, t)
+            * self.params["rotT0"].unit.to(units.day)
+        )
+        if np.any(~np.isfinite(period)) or np.any(np.asarray(period) == 0):
+            raise ValueError("rotPeriod must be finite and nonzero")
+        return 2.0 * np.pi * (np.asarray(t) - t0) / period
 
     @property
     def r(self) -> None | NDArray[np.floating]:
@@ -794,6 +909,8 @@ class oimComponentRadialProfile(
         return res
 
     def getImage(self, dim, pixSize, wl=None, t=None):
+        if t is None and self._rotating_asymmetry:
+            t = self.params["rotT0"].value
         wl, t = 0 if wl is None else wl, 0 if t is None else t
         t, wl = np.array(t).flatten(), np.array(wl).flatten()
         nt, nwl = t.size, wl.size
@@ -816,6 +933,22 @@ class oimComponentRadialProfile(
         x_arr, y_arr = self._apply_elliptical_xy(x_arr, y_arr, wl_arr, t_arr)
         r_arr = np.hypot(x_arr, y_arr)
         im = self._radialProfileFunction(r_arr, wl_arr, t_arr)
+
+        if self.asymmetric:
+            # Work in deprojected coordinates, consistent with the radial grid.
+            phi = np.arctan2(y_arr, x_arr)
+            modulation = np.ones_like(phi, dtype=float)
+            rotation_phase = self._rotation_phase(wl_arr, t_arr)
+            for m in range(1, self.modulation + 1):
+                amp = self.params[f"skw{m}"](wl_arr, t_arr)
+                phase = (
+                    self.params[f"skwPa{m}"](wl_arr, t_arr)
+                    * self.params[f"skwPa{m}"].unit.to(units.rad)
+                )
+                phase = phase + rotation_phase
+                modulation += amp * np.cos(m * (phi - phase))
+            im = np.asarray(im).reshape(-1) * modulation
+
         im = np.nan_to_num(
             im.reshape(dims)
             * self._apply_extinction(wl)[np.newaxis, :, np.newaxis, np.newaxis]
@@ -834,7 +967,16 @@ class oimComponentRadialProfile(
         return im
 
     def getComplexCoherentFlux(self, ucoord, vcoord, wl=None, t=None):
+        """Compute coherent flux, including optional azimuthal harmonics.
+
+        Each harmonic uses a Bessel ``J_m`` radial transform and the phase
+        ``(-1j)**m * skw_m * cos(m * (psi - skwPa_m))``. Amplitude and phase
+        are evaluated at each observation's wavelength and time, rather than
+        being applied to a Fourier kernel shared by all observations.
+        """
         wl = ucoord * 0 if wl is None else wl
+        if t is None and self._rotating_asymmetry:
+            t = ucoord * 0 + self.params["rotT0"].value
         t = ucoord * 0 if t is None else t
 
         # TODO: Performance: Move the `np.unique` lines into ``oimData``
@@ -853,21 +995,44 @@ class oimComponentRadialProfile(
             * np.hypot(fxp0, fyp0)[np.newaxis, :]
         )
         kernel = j0(kr)
-
-        # FIXME: Not yet tested for correct output values.
-        if self.asymmetric:
-            psi = np.arctan2(fxp0, fyp0)
-            for i in range(1, self.modulation + 1):
-                skwi = getattr(self, f"skw{i}")(wl, t)
-                skwPai = getattr(self, f"skwPa{i}").qty(wl, t).to(u.rad).value
-                kernel += (
-                    (-1j) ** i * skwi * np.cos(i * (psi - skwPai)) * jv(i, kr)
-                )
-
-        kernel *= (2 * np.pi * r * self.dr * MAS2RAD)[:, np.newaxis]
+        weights = (2 * np.pi * r * self.dr * MAS2RAD)[:, np.newaxis]
+        kernel *= weights
 
         # TODO: Grid is overcomputed: (nwl * nuv[m]) < (nwl * nuv[cycle/rad])
         vc0 = Ir0 @ kernel * 1e23 + 0j
+
+        if self.asymmetric:
+            # Keep angular modulation OUTSIDE the common Fourier kernel:
+            # skw_m and skwPa_m can vary with wavelength and epoch.
+            tidx = idx_t if Ir0.shape[0] != 1 else 0
+            vc = np.asarray(vc0[tidx, idx_wl, idx_uvcoord], dtype=complex).copy()
+            psi = np.arctan2(fyp0, fxp0)[idx_uvcoord]
+            rotation_phase = self._rotation_phase(wl, t)
+
+            for m in range(1, self.modulation + 1):
+                mode_kernel = jv(m, kr) * weights
+                mode_transform = Ir0 @ mode_kernel * 1e23
+                amp = self.params[f"skw{m}"](wl, t)
+                phase = (
+                    self.params[f"skwPa{m}"](wl, t)
+                    * self.params[f"skwPa{m}"].unit.to(units.rad)
+                )
+                phase = phase + rotation_phase
+                vc += (
+                    (-1j) ** m
+                    * amp
+                    * np.cos(m * (psi - phase))
+                    * mode_transform[tidx, idx_wl, idx_uvcoord]
+                )
+
+            return (
+                vc
+                * self._ftTranslateFactor(ucoord, vcoord, wl, t)
+                * self.f(wl, t)
+                * self._apply_extinction(wl)
+            )
+
+        # Unmodified symmetric case from the upstream implementation.
         vc0 *= (
             self._ftTranslateFactor(
                 ucoord0[np.newaxis, np.newaxis],
