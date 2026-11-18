@@ -5,6 +5,7 @@ Tests for the oimodeler.oimCustomComponents sub-package.
 from __future__ import annotations
 
 import copy
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -26,14 +27,12 @@ from oimodeler.oimSimulator import oimSimulator
 
 
 class TestOimTempGrad:
-    """Tests ``oimCustomComponents.oimTempGrad``."""
+    """Tests `oimTempGrad <oimodeler.oimCustomComponents.oimTempGrad.oimTempGrad>`."""
 
     @pytest.fixture(scope="module")
     def data(self, test_data_dir: Path) -> oimData:
         """Data suited for temperature gradient."""
-        fits_files = sorted(
-            (test_data_dir / "custom_components").glob("*.fits")
-        )
+        fits_files = sorted((test_data_dir / "custom_components").glob("*.fits"))
         lband_ind = [i for i, f in enumerate(fits_files) if "-LM_" in f.name]
         nband_ind = [i for i, f in enumerate(fits_files) if "_N_" in f.name]
 
@@ -48,18 +47,14 @@ class TestOimTempGrad:
             targets=nband_ind, bin=7, normalizeError=False
         )
         filt_keep = oimKeepDataTypeFilter(dataType=["FLUXDATA", "VISAMP"])
-        data.setFilter(
-            oimDataFilter([filt_wl_L, filt_keep, filt_bin_L, filt_bin_N])
-        )
+        data.setFilter(oimDataFilter([filt_wl_L, filt_keep, filt_bin_L, filt_bin_N]))
         return data
 
     @pytest.fixture(scope="module")
     def vis_base(self, test_data_dir: Path) -> NDArray[np.float64]:
         """Baseline correlated fluxes for temperature gradient
         to detect if model executes correctly. Should be equal to test."""
-        return np.load(
-            test_data_dir / "custom_components" / "temp_grad_vis.npy"
-        )
+        return np.load(test_data_dir / "custom_components" / "temp_grad_vis.npy")
 
     @pytest.fixture(scope="module")
     def star(self) -> oimPt:
@@ -67,14 +62,10 @@ class TestOimTempGrad:
         return oimPt(f=oimInterp("starWl", T=4600, L=2.23, dist=121))
 
     @pytest.fixture(scope="module")
-    def temp_grad_kwargs(
-        self, test_data_dir: Path
-    ) -> dict[str, float | oimInterp]:
+    def temp_grad_kwargs(self, test_data_dir: Path) -> dict[str, float | oimInterp]:
         """Parameters for the base temperature gradient."""
         opac_file = (
-            test_data_dir
-            / "custom_components"
-            / "dustkappa_olivine_graphite_1_20.inp"
+            test_data_dir / "custom_components" / "dustkappa_olivine_graphite_1_20.inp"
         )
         op_wl, op = np.loadtxt(opac_file, usecols=[0, 1], unpack=True)
         return {
@@ -161,9 +152,7 @@ class TestOimTempGrad:
         sim = oimSimulator(data=data, model=model)
         sim.compute(computeChi2=True, computeSimulatedData=True)
         vis = np.abs(
-            model.getComplexCoherentFlux(
-                data.vect_u, data.vect_v, data.vect_wl
-            )
+            model.getComplexCoherentFlux(data.vect_u, data.vect_v, data.vect_wl)
         )
 
         assert sim_temp_grad.chi2r == pytest.approx(sim.chi2r)
@@ -204,9 +193,7 @@ class TestOimTempGrad:
         sim.compute(computeChi2=True, computeSimulatedData=True)
 
         vis = np.abs(
-            model.getComplexCoherentFlux(
-                data.vect_u, data.vect_v, data.vect_wl
-            )
+            model.getComplexCoherentFlux(data.vect_u, data.vect_v, data.vect_wl)
         )
 
         model2 = copy.deepcopy(model)
@@ -217,27 +204,33 @@ class TestOimTempGrad:
         sim2.compute(computeChi2=True, computeSimulatedData=True)
 
         vis2 = np.abs(
-            model2.getComplexCoherentFlux(
-                data.vect_u, data.vect_v, data.vect_wl
-            )
+            model2.getComplexCoherentFlux(data.vect_u, data.vect_v, data.vect_wl)
         )
         assert np.isclose(sim.chi2r, sim2.chi2r, atol=1e-2)
         assert np.allclose(vis, vis2, atol=1e-2)
 
         # NOTE: Tests congurency of the logarithmic grids (i.e. same ratio + endpoints)
         radii = model.components[1].r / 1e3 * model.components[1].dist.value
-        radii2 = [
-            model2.components[1].r / 1e3 * model2.components[1].dist.value
-        ]
+        radii2 = [model2.components[1].r / 1e3 * model2.components[1].dist.value]
         for i in range(2, len(cut_radii) + 2):
-            tmp_radii = (
-                model2.components[i].r / 1e3 * model2.components[i].dist.value
-            )
+            tmp_radii = model2.components[i].r / 1e3 * model2.components[i].dist.value
             assert radii2[-1][-1] == pytest.approx(tmp_radii[0])
             radii2.append(tmp_radii)
 
         assert radii[0] == pytest.approx(radii2[0][0])
         assert radii[-1] == pytest.approx(radii2[-1][-1])
-        assert np.allclose(
-            np.diff(np.log(radii)), np.diff(np.log(radii2)).sum(0)
+        assert np.allclose(np.diff(np.log(radii)), np.diff(np.log(radii2)).sum(0))
+
+    @pytest.mark.benchmark
+    def test_benchmark(
+        self, benchmark, temp_grad_kwargs: dict[str, float | oimInterp], dim: int = 500
+    ):
+        """Tests the computational performance."""
+        comp_kwargs = copy.deepcopy(temp_grad_kwargs)
+
+        wl = np.linspace(8, 13, dim) * 1e-6
+        spfu = np.linspace(0, 300, dim) / wl
+        tg = oimTempGrad(**comp_kwargs)
+        benchmark.pedantic(
+            tg.getComplexCoherentFlux, args=(spfu, spfu, wl), rounds=200, iterations=10
         )

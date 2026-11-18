@@ -37,6 +37,7 @@ dependencies = [
   "scipy>=1.13.1",
   "toml>=0.10.2",
   "tqdm>=4.67.1",
+  "pytest-benchmark>=5.3.1,<6",
 ]
 
 [project.optional-dependencies]
@@ -104,6 +105,7 @@ test-all-parallel = "pytest -n auto"
 test-cov = "pytest --cov=oimodeler"
 test-cov-parallel = "pytest -m --cov=oimodeler -n auto"
 test-parallel = "pytest -m 'not slow' -n auto"
+benchmark = "pytest-benchmark"
 
 [tool.pixi.target.osx-arm64.dependencies]
 pyfftw = "==0.15.1"
